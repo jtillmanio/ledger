@@ -214,3 +214,79 @@ describe("the cadence (AC-3, AC-4)", () => {
     expect((await stored()).parked_review).toBe("never");
   });
 });
+
+// ---- Task 5.15, part 5 of 5 (TASK-111): what /parked lists, and how it says each book's age ----
+
+describe("parkedBooks: what /parked lists (TASK-111 AC-2)", () => {
+  beforeEach(async () => {
+    await sql`INSERT INTO authors (id, name) VALUES ('au', 'Brandon Sanderson')`;
+    await sql`INSERT INTO book_universes (id, name) VALUES ('cos', 'Cosmere')`;
+    await sql`INSERT INTO book_series (id, name, total_books) VALUES ('mb', 'Mistborn', 7)`;
+    await sql`INSERT INTO books (id, title, author_id, universe_id, series_id, series_position, word_count, word_count_source)
+              VALUES ('c', 'Charlie', 'au', 'cos', 'mb', 4, 120000, 'stated'), ('d', 'Delta', NULL, NULL, NULL, NULL, NULL, NULL)`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'c', 'to_read'), (${USER}, 'd', 'to_read')`;
+  });
+
+  it("every live Parked book, oldest parked first, then by title; a removed or unparked book isn't listed", async () => {
+    await sql`UPDATE book_status SET status = 'parked', parked_on = ${ago(14)} WHERE book_id = 'a'`;
+    await sql`UPDATE book_status SET status = 'parked', parked_on = ${ago(120)} WHERE book_id IN ('c', 'gone')`;
+    await sql`UPDATE book_status SET status = 'parked', parked_on = ${ago(14)} WHERE book_id = 'd'`;
+    expect((await q.parkedBooks(USER)).map((b) => [b.id, b.parked_on])).toEqual([
+      ["c", ago(120)], ["a", ago(14)], ["d", ago(14)],
+    ]);
+  });
+
+  it("carries the row's line and the picker's header: author, universe, series #n, words, and whether it was mid-read", async () => {
+    await sql`UPDATE book_status SET status = 'parked', parked_on = ${ago(120)}, started_on = ${ago(150)},
+                                     started_on_precision = 'exact' WHERE book_id = 'c'`;
+    await sql`UPDATE book_status SET status = 'parked', parked_on = ${ago(14)} WHERE book_id = 'd'`;
+    const [c, d] = await q.parkedBooks(USER);
+    expect(c).toMatchObject({
+      id: "c", title: "Charlie", author: "Brandon Sanderson", universe: "Cosmere", series: "Mistborn", series_position: 4,
+      words: 120000, estimated: false, started_on_precision: "exact",
+    });
+    expect(d).toMatchObject({
+      id: "d", title: "Delta", author: null, universe: null, series: null, series_position: null,
+      words: null, estimated: false, started_on_precision: "none",
+    });
+  });
+
+  it("nothing parked lists nothing", async () => {
+    expect(await q.parkedBooks(USER)).toEqual([]);
+  });
+});
+
+describe("the Inbox row's line: N parked, and since when it has been due (TASK-111 AC-4)", () => {
+  it("monthly, reviewed 40 days ago: due since a month after that review; never reviewed: just the count; never: no day", async () => {
+    const { reviewDueOn } = await import("../src/lib/parked");
+    const { parkedReviewLine } = await import("../src/lib/inbox");
+    expect(reviewDueOn({ cadence: "monthly", reviewedOn: ago(40) })).toBe("2027-03-03");
+    expect(reviewDueOn({ cadence: "quarterly", reviewedOn: "2026-11-30" })).toBe("2027-02-28");
+    expect(reviewDueOn({ cadence: "monthly", reviewedOn: null })).toBeNull();
+    expect(reviewDueOn({ cadence: "never", reviewedOn: ago(40) })).toBeNull();
+    expect(parkedReviewLine({ cadence: "monthly", reviewedOn: ago(40), parked: 3 }, NOW)).toBe("3 parked · due since 3 Mar");
+    expect(parkedReviewLine({ cadence: "quarterly", reviewedOn: null, parked: 1 }, NOW)).toBe("1 parked");
+    // The day it fell due agrees with the due rule: due on it, not the day before.
+    const state = { cadence: "monthly" as const, reviewedOn: ago(40), parked: 3 };
+    expect(reviewDue(state, "2027-03-03")).toBe(true);
+    expect(reviewDue(state, "2027-03-02")).toBe(false);
+  });
+});
+
+describe("parkedAge: how long a book has been parked (TASK-111 AC-2)", () => {
+  it("today, days, weeks, calendar months, then years", async () => {
+    const { parkedAge } = await import("../src/lib/parked");
+    expect(parkedAge(TODAY, TODAY)).toBe("Parked today");
+    expect(parkedAge(ago(1), TODAY)).toBe("Parked 1 day");
+    expect(parkedAge(ago(6), TODAY)).toBe("Parked 6 days");
+    expect(parkedAge(ago(7), TODAY)).toBe("Parked 1 week");
+    expect(parkedAge(ago(14), TODAY)).toBe("Parked 2 weeks");
+    // Feb 15 to Mar 15 is a calendar month: 28 days here.
+    expect(parkedAge("2027-02-15", TODAY)).toBe("Parked 1 month");
+    expect(parkedAge("2027-02-16", TODAY)).toBe("Parked 3 weeks");
+    expect(parkedAge("2026-11-15", TODAY)).toBe("Parked 4 months");
+    expect(parkedAge("2026-11-16", TODAY)).toBe("Parked 3 months");
+    expect(parkedAge("2026-03-15", TODAY)).toBe("Parked 1 year");
+    expect(parkedAge("2024-01-01", TODAY)).toBe("Parked 3 years");
+  });
+});

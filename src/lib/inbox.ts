@@ -1,4 +1,6 @@
 import { ZONE } from "@/lib/finish-date";
+import { releaseDay } from "@/lib/format";
+import { reviewDueOn, type ParkedReviewState } from "@/lib/parked";
 
 /**
  * Quick capture (task 1.4b, product #21): what a note may hold, and where its
@@ -65,6 +67,17 @@ export function jotted(at: Date | string, now: Date = new Date()): string {
   if (days < 14) return "last week";
   if (days < 60) return `${Math.floor(days / 7)} weeks ago`;
   return monthYear.format(new Date(at));
+}
+
+/**
+ * The *Parked review* row's line (task 5.15, TASK-111, D-105): *3 parked · due since 15 Oct*, or *3 parked*
+ * before the first review, when it fell due as soon as something was parked. A plain fact, no nudge copy.
+ * `now` fixes "this year" for the day, as every date the app shows (task 1.16).
+ */
+export function parkedReviewLine(review: ParkedReviewState, now: Date = new Date()): string {
+  const since = reviewDueOn(review);
+  const n = `${review.parked.toLocaleString("en-US")} parked`;
+  return since ? `${n} · due since ${releaseDay(since, now)}` : n;
 }
 
 /**

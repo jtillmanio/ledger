@@ -1738,6 +1738,45 @@ export async function parkedReview(userId: string, now = new Date()): Promise<Pa
   return { ...state, due: reviewDue(state, today(now)) };
 }
 
+/** One row of the parked review (task 5.15, TASK-111): a Parked book, with what its row and the picker's header say. */
+export type ParkedBook = {
+  id: string; title: string; author: string | null; cover_url: string | null;
+  /** Where it belongs (`bookSub`; task 2.2l, D-134), as `PlanBook` carries it. */
+  universe: string | null; series: string | null; series_position: number | null;
+  /** The Eastern day it was parked (TASK-108), for *Parked 4 months*. */
+  parked_on: string;
+  /** Not `none`: parked mid-read (`isParkedMidRead`), offered *Pick it back up*. */
+  started_on_precision: Precision;
+  /** `planBook`'s words: the stated count, else pages x your words per page (50 pages or more); null when unknown. */
+  words: number | null;
+  estimated: boolean;
+};
+
+/**
+ * Everything you've parked (task 5.15, TASK-111, D-105), for `/parked`: every live Parked book, the
+ * one parked longest first, then by title. Books only, until 5.16's runs. Words as `planBook` works
+ * them out, so *Plan…*'s picker can say what the book adds to a period without a read of its own.
+ */
+export async function parkedBooks(userId: string): Promise<ParkedBook[]> {
+  const rows = await sql<ParkedBook[]>`
+    SELECT b.id, b.title, a.name AS author, b.cover_url,
+           bu.name AS universe, bs.name AS series, b.series_position,
+           st.parked_on::text AS parked_on, st.started_on_precision,
+           COALESCE(b.word_count, CASE WHEN b.page_count >= 50
+                                       THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
+           CASE WHEN b.word_count IS NOT NULL THEN b.word_count_source = 'estimated'
+                ELSE b.page_count >= 50 END AS estimated
+    FROM book_status st
+    JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
+    LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_series bs ON bs.id = b.series_id
+    LEFT JOIN book_universes bu ON bu.id = b.universe_id
+    LEFT JOIN reading_settings rs ON rs.user_id = ${userId}
+    WHERE st.user_id = ${userId} AND st.status = 'parked'
+    ORDER BY st.parked_on, b.title, b.id`;
+  return rows.map((r) => ({ ...r, estimated: r.estimated === true }));
+}
+
 /** One `plan_capacity` row: a year (`quarter` null) or one of its quarters (task 2.1). */
 export interface PeriodCapacity {
   period: string;

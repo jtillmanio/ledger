@@ -48,6 +48,26 @@ export function addMonths(day: string, months: number): string {
   return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(Math.min(d, last)).padStart(2, "0")}`;
 }
 
+const DAY_MS = 86_400_000;
+const plural = (n: number, unit: string) => `${n} ${unit}${n === 1 ? "" : "s"}`;
+
+/**
+ * How long a book has been parked, as `/parked`'s row says it (task 5.15, TASK-111): *Parked today*,
+ * *Parked 3 days*, *Parked 2 weeks*, *Parked 4 months*, *Parked 1 year*. Months are calendar months
+ * (`addMonths`, as the due rule counts them), so the 15th to the 15th is a month whatever its length.
+ * Both days are `YYYY-MM-DD`; `today` is the Eastern day (D-67).
+ */
+export function parkedAge(parkedOn: string, today: string): string {
+  let months = 0;
+  while (addMonths(parkedOn, months + 1) <= today) months++;
+  if (months >= 12) return `Parked ${plural(Math.floor(months / 12), "year")}`;
+  if (months >= 1) return `Parked ${plural(months, "month")}`;
+  const days = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${parkedOn}T00:00:00Z`)) / DAY_MS);
+  if (days <= 0) return "Parked today";
+  if (days < 7) return `Parked ${plural(days, "day")}`;
+  return `Parked ${plural(Math.floor(days / 7), "week")}`;
+}
+
 /** What the due rule reads: the cadence, the last review (null before the first) and how many books are parked. */
 export interface ParkedReviewState {
   cadence: ParkedCadence;
@@ -65,4 +85,14 @@ export function reviewDue({ cadence, reviewedOn, parked }: ParkedReviewState, to
   if (parked <= 0 || cadence === "never") return false;
   if (reviewedOn === null) return true;
   return today >= addMonths(reviewedOn, CADENCE_MONTHS[cadence]);
+}
+
+/**
+ * The day the review comes (or came) due after the last one: that review plus the cadence's months, as
+ * `reviewDue` counts them. Null before the first review (due as soon as something is parked) and on *never*.
+ * The Inbox row's *due since …* (TASK-111).
+ */
+export function reviewDueOn({ cadence, reviewedOn }: Pick<ParkedReviewState, "cadence" | "reviewedOn">): string | null {
+  if (reviewedOn === null || cadence === "never") return null;
+  return addMonths(reviewedOn, CADENCE_MONTHS[cadence]);
 }

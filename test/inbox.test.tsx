@@ -26,6 +26,8 @@ let lastRun: string | null = "waid-ff";
 vi.mock("@/db/queries", () => ({
   unresolvedNotes: async () => notes,
   lastTouchedRun: async () => lastRun,
+  // Nothing parked, so the review isn't due and draws no row (task 5.15, TASK-111; test/inbox.test.ts has the row).
+  parkedReview: async () => ({ cadence: "quarterly", reviewedOn: null, parked: 0, due: false }),
 }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;

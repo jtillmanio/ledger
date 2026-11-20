@@ -1907,6 +1907,40 @@ h2.group-head{margin:2.25rem 0 .75rem}
 .sk-gotit{flex:0 0 auto;width:4rem;height:44px;border-radius:var(--r-sm)}
 @media (min-width:768px){ .sk-gotit{height:32px} }
 
+/* The parked review (task 5.15, TASK-111; mockup `parked`): a book row whose three verbs are grey (`.btn.sec`,
+   never red), 44px on a phone row and 32px from the tablet up. On a phone they wrap onto their own line
+   under the text, lined up with it; from the tablet they sit at the row's end. A kept row folds to its title
+   and *Kept parked*, muted. *Done reviewing* ends the list. */
+.rows .row.book-row.parked-row{flex-wrap:wrap;padding-right:0}
+.parked-row .rb{flex:1;min-width:0;overflow-wrap:anywhere}
+.parked-verbs{display:flex;flex-wrap:wrap;gap:.5rem;flex:1 0 100%;padding-left:calc(var(--cv-row-w) + .75rem)}
+.parked-verbs .btn{min-height:44px;box-shadow:none}
+.parked-problem{flex:1 0 100%;padding-left:calc(var(--cv-row-w) + .75rem);margin-top:0}
+.rows .row.book-row.parked-kept{padding-right:0;color:var(--muted)}
+.parked-kept .row-title{color:var(--muted)}
+.parked-done{margin:1.5rem 0 0}
+.parked-done .btn{min-height:44px}
+.parked-done .neutral-error{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:.75rem 0 0}
+.rows .row.sk-bookrow.parked-sk-row{flex-wrap:wrap;padding-right:0}
+.parked-sk-row .rb{flex:1;min-width:0}
+.sk-verbs{flex:1 0 100%;height:44px;margin-left:calc(var(--cv-row-w) + .75rem);border-radius:var(--r-sm)}
+.sk-done{display:block;width:9rem;height:44px;margin-top:1.5rem;border-radius:var(--r-sm)}
+@media (min-width:768px){
+  .rows .row.book-row.parked-row{flex-wrap:nowrap;align-items:center}
+  .parked-verbs{flex:0 0 auto;padding-left:0;justify-content:flex-end}
+  .parked-verbs .btn{min-height:32px}
+  .parked-problem{flex:0 1 12rem;padding-left:0;text-align:right}
+  .rows .row.sk-bookrow.parked-sk-row{flex-wrap:nowrap;align-items:center}
+  .sk-verbs{flex:0 0 17rem;height:32px;margin-left:0}
+  .parked-done .btn{min-height:32px}
+  .sk-done{height:32px}
+}
+/* The Library's way to the review under its Parked filter: grey text and a link, as the dashboard's line. */
+.list-parked-line{margin:.5rem 0 0;font-size:.8125rem;line-height:1.25rem}
+.list-parked-line a{display:inline-flex;align-items:center;gap:.25rem;min-height:24px;color:var(--muted);
+  text-decoration:underline;text-decoration-color:var(--faint-deco);text-underline-offset:3px}
+.list-parked-line a:hover{color:var(--ink)}
+
 /* The queue row, the one the dashboard's Reorder and the status tab share (M-08). */
 .queue{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
 .qrow{display:flex;align-items:center;gap:.5rem;min-height:56px;padding:.5rem 0;border-bottom:1px solid var(--rule);
@@ -2331,15 +2365,16 @@ section[data-plan="year"] h2.group-head{color:var(--blocked)}
 .year-so-far dt{font-size:.75rem;line-height:1rem;color:var(--muted)}
 .year-so-far dd{margin:0;font:500 28px/32px var(--mono);letter-spacing:-.02em;color:var(--ink)}
 /* The books you're waiting for (task 5.7): grey text and a link, never a state colour. */
-.year-so-far .coming-out,.year-so-far .progress-link{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:.8125rem;line-height:1.25rem}
-.year-so-far .coming-out a,.year-so-far .progress-link a{display:inline-flex;align-items:center;gap:.25rem;min-height:24px;color:var(--muted);
+/* The parked review's *Review N parked →* (task 5.15, TASK-111) is the same grey line, after Coming out's. */
+.year-so-far :is(.coming-out,.parked-line,.progress-link){margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:.8125rem;line-height:1.25rem}
+.year-so-far :is(.coming-out,.parked-line,.progress-link) a{display:inline-flex;align-items:center;gap:.25rem;min-height:24px;color:var(--muted);
   text-decoration:underline;text-decoration-color:var(--faint-deco);text-underline-offset:3px}
-.year-so-far .coming-out a:hover,.year-so-far .progress-link a:hover{color:var(--ink)}
+.year-so-far :is(.coming-out,.parked-line,.progress-link) a:hover{color:var(--ink)}
 /* Task 5.12's *Progress* link is a grey line like *Coming out*'s: under it, it takes no second rule. */
 .progress-line a{display:inline-flex;align-items:center;min-height:24px;color:var(--muted);
   text-decoration:underline;text-decoration-color:var(--faint-deco);text-underline-offset:3px}
 .progress-line a:hover{color:var(--ink)}
-.year-so-far .coming-out + .progress-link{margin-top:.25rem;padding-top:0;border-top:0}
+.year-so-far :is(.coming-out,.parked-line) + :is(.parked-line,.progress-link){margin-top:.25rem;padding-top:0;border-top:0}
 
 /* The tablet (§14.5): the horizontal hero around 150 × 225, and the side rail stacked as two columns, 1.5 : 1. */
 @media (min-width:768px){

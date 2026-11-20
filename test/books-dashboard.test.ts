@@ -686,3 +686,57 @@ describe("Coming out on the rollup slot (task 5.7, TASK-100, AC-4)", () => {
     await (await import("../src/db")).sql.end();
   });
 });
+
+describe("the parked review's line on the rollup slot (task 5.15, TASK-111, AC-4)", () => {
+  /** Mid-month, so a monthly review 40 days back is due and one 10 days back isn't. */
+  const DAY = "2026-11-17";
+  async function dashboard() {
+    vi.resetModules();
+    vi.doMock("@/lib/auth", async (orig) => ({ ...(await orig<typeof import("../src/lib/auth")>()), requireUserId: async () => USER }));
+    vi.doMock("@/lib/finish-date", async (orig) => ({ ...(await orig<typeof import("../src/lib/finish-date")>()), today: () => DAY }));
+    vi.doMock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, refresh: () => {} }), usePathname: () => "/books" }));
+    const { createElement } = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const Books = (await import("../src/app/books/page")).default;
+    const { UndoProvider } = await import("../src/components/Undo");
+    try {
+      return renderToStaticMarkup(createElement(UndoProvider, null, await Books()));
+    } finally {
+      await (await import("../src/db")).sql.end();
+    }
+  }
+  const rollupOf = (html: string) => {
+    const from = html.slice(html.indexOf('data-slot="rollup"'));
+    return from.slice(0, from.indexOf("</section>"));
+  };
+  async function parked(n: number, reviewedOn: string | null) {
+    await books(...Array.from({ length: n }, (_, i) => ({ id: `pk${i}` })));
+    for (let i = 0; i < n; i++) {
+      await sql`INSERT INTO book_status (user_id, book_id, status, parked_on) VALUES (${USER}, ${`pk${i}`}, 'parked', '2026-06-01')`;
+    }
+    await sql`INSERT INTO reading_settings (user_id, parked_review, parked_reviewed_on) VALUES (${USER}, 'monthly', ${reviewedOn})`;
+  }
+
+  it("due (monthly, 3 parked, last review 40 days ago): Review 3 parked →, grey, linking /parked, after Coming out and before the progress link", async () => {
+    await parked(3, "2026-10-08");
+    await books({ id: "out-1" });
+    await sql`INSERT INTO releases (book_id, release_date) VALUES ('out-1', '2026-11-16')`;
+    const html = await dashboard();
+    const rollup = rollupOf(html);
+    expect(rollup).toMatch(
+      /<p class="coming-out">.*<\/p><p class="parked-line"><a [^>]*href="\/parked"[^>]*>Review 3 parked <span aria-hidden="true">→<\/span><\/a><\/p><p class="progress-link">/);
+    expect(rollup).not.toMatch(/danger|style="[^"]*#/);
+    const slots = [...html.matchAll(/data-slot="([a-z]+)"/g)].map((m) => m[1]);
+    expect(slots).toEqual(["now", "next", "position", "situation", "rollup"]);
+  });
+
+  it("not due (reviewed 10 days ago), or nothing parked: no line, no link to /parked", async () => {
+    await parked(2, "2026-11-07");
+    expect(await dashboard()).not.toContain('href="/parked"');
+    await sql`UPDATE book_status SET status = 'to_read', parked_on = NULL`;
+    await sql`UPDATE reading_settings SET parked_reviewed_on = NULL`;
+    const html = await dashboard();
+    expect(html).not.toContain('href="/parked"');
+    expect(html).not.toContain("parked-line");
+  });
+});

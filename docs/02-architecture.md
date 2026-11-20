@@ -100,7 +100,7 @@ Every page. One dashboard per medium, with the lists one level down (design §11
 | `/comics/releases` | New issues in the series you follow, each offered for adding to its run (task 5.8, D-35) |
 | `/comics/editions` | Trades and omnibuses, with *Collected* and *Read* per edition (task 5.10) |
 | `/comics/series/[key]` | One volume: every catalog issue of it, the runs that place each with its read state there, and gap stubs (task 5.13) |
-| `/books` | Books dashboard (task 2.2) — the book in hand or *Between books*, the quarter's shelf, the quarter strip, On deck, the year so far, with *Coming out*'s line (task 5.7) |
+| `/books` | Books dashboard (task 2.2) — the book in hand or *Between books*, the quarter's shelf, the quarter strip, On deck, the year so far, with *Coming out*'s line (task 5.7) and, when the parked review is due, *Review N parked →* (task 5.15) |
 | `/books/status` | In flight · Up next · Done, for books |
 | `/books/list` | Master list: search, filter by status, to-read level, year or genre, series completion |
 | `/books/add` | Add books: search Hardcover, paste a list, or by hand, with a destination (a quarter or year, On deck, Someday, or a shelf) |
@@ -108,6 +108,7 @@ Every page. One dashboard per medium, with the lists one level down (design §11
 | `/books/shelves` | Your books shelves by name: each with `read / total` from `shelf_progress`, a meter, and its next three unread in shelf order; *+ New shelf* (task 5.1) |
 | `/books/shelves/[id]` | One shelf: its description, follow control and *+ Add to shelf* (Add books with the shelf chosen); its books in shelf order with each one's note, edited in place, and the reorder controls (task 5.1) |
 | `/books/releases` | Coming out: the books you want when they come out (a release and no status), *Out now* then by month, then *No date yet*; *Got it* moves one to Someday, with an Undo (D-35) |
+| `/parked` | The parked review (task 5.15, F-66, D-105): everything you've parked, books first (5.16 adds runs), the one parked longest first, each with *Parked 4 months* and three verbs, each one write with Undo: *Keep parked*, *Plan…* (2.3's picker; *Pick it back up* for a book parked mid-read) and *Unlisted*; *Done reviewing* records the review. Reached from the books dashboard's *Review N parked →*, the Inbox's *Parked review* row and the Library's *Parked* filter; no nav item |
 | `/books/series` | Every series with `read / total` from `series_progress` and its next unread book (task 5.9) |
 | `/books/series/[id]` | One series: its books in position order with status and dates, the next unread marked, a grey gap row for each position the series states and the library lacks (*Add* opens Add books with the series named), and the follow control (task 5.9) |
 | `/books/authors/[id]` | One author: `read / total` from `author_progress`, a meter, the follow control, and the live books by published year with the next unread marked (task 5.11) |
@@ -124,7 +125,7 @@ Every page. One dashboard per medium, with the lists one level down (design §11
 | `/music/status` | In flight · Up next · Done, for albums (task 9.6) |
 | `/music/artist/[id]` | An artist's discography with status, the song ranking and album favourites (tasks 9.3–9.5) |
 | `/progress` | In the middle of · Completed, every medium on one page (task 5.12, F-69; D-109): a chip per medium (*All · Books · Comics*), `?tab=` and `?medium=` in the URL, each row its kind, `read / total` from its progress view, a `--ready` meter and the next thing or the finish's month; a series nests under its universe and a subseries under its series (D-119); *On hold* a collapsed group (D-118). One read (`progressRows`), nothing stored; beside Inbox in the nav |
-| `/inbox` | Quick-capture inbox: book, comic, watch or unsure notes to resolve |
+| `/inbox` | Quick-capture inbox: book, comic, watch or unsure notes to resolve; when the parked review is due, a *Parked review* row heads the list until it is done (task 5.15) |
 | `/session` | Reading sessions: after-the-fact minutes entry, attach to a book or run; feeds Settings → *Measured from sessions* (the timer is 6.12, D-8) |
 
 **Route handlers** (`src/app/api/`): `/api/progress/{issue,range,book}`,
@@ -223,7 +224,7 @@ tables.
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
   - **Queries per page, in one wave.** `/comics` 7, `/comics/runs` 2, a run 3,
-    `/comics/status` 4, `/books/status` 5 (task 5.14: *Listen next*, the listen queue in its order, for Up next and its count), `/books/list` 5, `/books` 13 (task 4.4: the last Calibre sync, one scalar row, for the stale-sync line; task 5.7: the wanted releases, *Coming out*'s own query, for the rollup's line), `/books/plan` 5 (task 2.10: capacity, rail, rows, your pace; task 2.7: the year's acceptance), `/books/top` 2 (task 3.4b: the years, and the year asked for or this one; a third query in a second wave only when that year has no read and the page opens the newest instead), `/books/shelves` 1 (task 5.1: every shelf with its counts and next three unread), a shelf's page 2 (task 5.1: the shelf and its books, together; the books read checks the shelf is yours itself), `/books/series` 1 (task 5.9: every series with its counts and next unread), a series' page 1 (task 5.9: its counts, follow, live books and gap positions, one read), an author's page and a universe's page 1 each (task 5.11: its counts, follow and live books, one read), `/progress` 1 (task 5.12: every row of *In the middle of*, *On hold* and *Completed*, books and comics, in one statement), `/inbox` 2, `/settings` 3 (task 4.4: the last Calibre sync, for its *Calibre* row), `/settings/calibre` 4 (task 4.4: the runs and their counts, the books with no Calibre id, the newest ten runs' reports in one read, and the authors of the books they created, together), `/watch` none, `/login` none, `/` none (a redirect), each page's queries started together
+    `/comics/status` 4, `/books/status` 5 (task 5.14: *Listen next*, the listen queue in its order, for Up next and its count), `/books/list` 5, `/books` 14 (task 4.4: the last Calibre sync, one scalar row, for the stale-sync line; task 5.7: the wanted releases, *Coming out*'s own query, for the rollup's line; task 5.15: the parked review, one row, for *Review N parked →*), `/books/plan` 5 (task 2.10: capacity, rail, rows, your pace; task 2.7: the year's acceptance), `/books/top` 2 (task 3.4b: the years, and the year asked for or this one; a third query in a second wave only when that year has no read and the page opens the newest instead), `/books/shelves` 1 (task 5.1: every shelf with its counts and next three unread), a shelf's page 2 (task 5.1: the shelf and its books, together; the books read checks the shelf is yours itself), `/books/series` 1 (task 5.9: every series with its counts and next unread), a series' page 1 (task 5.9: its counts, follow, live books and gap positions, one read), an author's page and a universe's page 1 each (task 5.11: its counts, follow and live books, one read), `/progress` 1 (task 5.12: every row of *In the middle of*, *On hold* and *Completed*, books and comics, in one statement), `/inbox` 3 (task 5.15: the parked review, one row, for its *Parked review* row), `/parked` 2 (task 5.15: the parked books and the review's state, together), `/settings` 3 (task 4.4: the last Calibre sync, for its *Calibre* row), `/settings/calibre` 4 (task 4.4: the runs and their counts, the books with no Calibre id, the newest ten runs' reports in one read, and the authors of the books they created, together), `/watch` none, `/login` none, `/` none (a redirect), each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
     The dashboard (then `/`) and `/books/list` went from 4 to 5 with the inbox
@@ -303,6 +304,7 @@ tables.
     | `/comics/status` | 24,000 | 175,000 | 35 | 100 |
     | `/books/status` | 24,000 | 175,400 | 35 | 100 |
     | `/progress` | 24,000 | 175,400 | 35 | 100 |
+    | `/parked` | 24,000 | 175,400 | 35 | 100 |
     | `/comics/bendis-disassembled` | 26,800 | 172,000 | 50 | 100 |
     | `/comics/busiek-avengers` | 28,000 | 171,000 | 72 | 100 |
     | `/books` | 19,000 | 175,000 | 36 | 100 |
@@ -312,6 +314,10 @@ tables.
     | `/settings` | 16,800 | 173,000 | 32 | 100 |
     | `/watch` | 12,500 | 173,000 | 28 | 100 |
     <!-- /perf-budget -->
+
+    Task 5.15 (TASK-111) adds `/parked`, the parked review, at `/books/status`'s numbers: a list of book
+    rows whose verbs are client buttons and whose plan picker loads only when *Plan…* is pressed. Its tap
+    starts on the Library's *Parked* filter, which always links to it (it has no nav item).
 
     Task 4.3 (TASK-085, PR #269) raised the two run routes' requests, and the
     large run's document + RSC: every spine row now draws a cover box, and a row

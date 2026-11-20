@@ -18,6 +18,8 @@ const routes: [string, string][] = [
   ["/books/shelves/[id]", "../src/app/books/shelves/[id]/loading"],
   ["/books", "../src/app/books/loading"],
   ["/inbox", "../src/app/inbox/loading"],
+  // The parked review (task 5.15, TASK-111): its rows and their verbs' box, then Done reviewing.
+  ["/parked", "../src/app/parked/loading"],
   ["/settings", "../src/app/settings/loading"],
   ["/watch", "../src/app/watch/loading"],
 ];

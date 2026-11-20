@@ -1,14 +1,14 @@
 ---
 id: TASK-111
 title: 5.15 Parked (5 of 5) — the /parked review, the dashboard line and the Inbox row
-status: Ready
+status: Done
 depends_on: [TASK-109, TASK-110, TASK-127]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
 plan_status: approved
-planned_at_commit: 3f7a31d
+planned_at_commit: e591e5d
 ---
 
 # TASK-111 — 5.15 Parked (5 of 5) — the /parked review, the dashboard line and the Inbox row
@@ -32,7 +32,7 @@ A review page lists everything you've parked, oldest first, and lets you keep ea
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check (proposed):**, verbatim; this part proves, in the browser (0.11) on the test database: the review's *Plan…* opens 2.3's picker, *Unlisted* writes `unlisted` and Undo puts back `parked`, the dashboard line shows only when the review is due, and nothing on the dashboard or the review resolves to `--danger`. TASK-108 to TASK-110 prove the rest): (proposed; the owner agrees it by merging or edits it first)
+- [x] AC-1 (roadmap **Check (proposed):**, verbatim; this part proves, in the browser (0.11) on the test database: the review's *Plan…* opens 2.3's picker, *Unlisted* writes `unlisted` and Undo puts back `parked`, the dashboard line shows only when the review is due, and nothing on the dashboard or the review resolves to `--danger`. TASK-108 to TASK-110 prove the rest): (proposed; the owner agrees it by merging or edits it first)
 `npm test`: parking the 2nd of 3 books in 2027 Q1
 writes `parked`, removes its plan row and leaves Q1 at ordinals 1–2, and
 Undo restores `to_read` at position 2. A parked book is absent from
@@ -45,11 +45,11 @@ makes it not due. In the browser (0.11), the review's *Plan…* opens 2.3's
 picker, *Unlisted* writes `unlisted` and Undo puts back `parked`, and the
 dashboard line shows only when the review is due. Nothing on the
 dashboard or the review resolves to `--danger`.
-- [ ] AC-2: Given two books parked 4 months and 2 weeks ago, `/parked` lists the older first, each with its *Parked …* age; a book parked from `reading` shows *Pick it back up* in place of *Plan…*, and pressing it returns it to In flight with its start date.
-- [ ] AC-3: *Plan…* → a quarter places the book at that quarter's end and takes it off the review; its Undo puts it back to `parked` and removes the plan row.
-- [ ] AC-4: With the review due, the books dashboard's rollup slot shows *Review N parked →* (N = the parked count) linking to `/parked`, and the Inbox's first row is *Parked review*; after *Done reviewing*, both are gone; the five slots keep their order.
-- [ ] AC-5: `design/mockups.html` draws `/parked` and the dashboard line at phone, tablet and desktop, and `design/mockups-index.md` lists them (task 5.15); `docs/02-architecture.md` § 5 lists `/parked`.
-- [ ] AC-6: The review and the line meet the UX floor (`docs/04-design.md` § 10): `/parked` with nothing parked draws a calm empty state, loading skeletons, an error state; every verb is a real button naming its book, ≥ 24px (44px on a phone row); contrast in light and dark; no computed colour on the dashboard or the review equals `--danger`; screenshots at each `ui.viewports` width.
+- [x] AC-2: Given two books parked 4 months and 2 weeks ago, `/parked` lists the older first, each with its *Parked …* age; a book parked from `reading` shows *Pick it back up* in place of *Plan…*, and pressing it returns it to In flight with its start date.
+- [x] AC-3: *Plan…* → a quarter places the book at that quarter's end and takes it off the review; its Undo puts it back to `parked` and removes the plan row.
+- [x] AC-4: With the review due, the books dashboard's rollup slot shows *Review N parked →* (N = the parked count) linking to `/parked`, and the Inbox's first row is *Parked review*; after *Done reviewing*, both are gone; the five slots keep their order.
+- [x] AC-5: `design/mockups.html` draws `/parked` and the dashboard line at phone, tablet and desktop, and `design/mockups-index.md` lists them (task 5.15); `docs/02-architecture.md` § 5 lists `/parked`.
+- [x] AC-6: The review and the line meet the UX floor (`docs/04-design.md` § 10): `/parked` with nothing parked draws a calm empty state, loading skeletons, an error state; every verb is a real button naming its book, ≥ 24px (44px on a phone row); contrast in light and dark; no computed colour on the dashboard or the review equals `--danger`; screenshots at each `ui.viewports` width.
 
 ## Out of scope
 
@@ -75,12 +75,20 @@ dashboard or the review resolves to `--danger`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The *From TASK-127* note's undo fixes (Context): `restoreListen`, `undoInside` and `undoBookStatus` back to `parked` leaving a `listen_queue` row; `undoMoveIn` refusing only `unlisted`, not `parked`; the unlocked status read in `undoBookStatus` (check first: it now takes `lockBook` on the book row), and the rule in `.claude/rules/schema.md`. Schema-reviewer (TASK-111, R1): `/parked` makes the listen-queue half reachable from a screen: a review verb (*Plan…* or *Unlisted*), then *Queue to listen* on that book, then the verb's Undo leaves a Parked book in `listen_queue` (`undoInside` and `undoBookStatus` back to `parked`; fix: take the book off the queue under `lockListen`, or refuse). Its own work, not this task's: a new phase-5 roadmap item with a proposed **Check:**, and its row in M17's table (`docs/06-tasklist.md`) → docs/05-roadmap.md § 5.18 (new) (approved at plan, owner 2026-11-20)
+- Schema-reviewer (R1, minor): a `/parked` tab left open while the book is unparked elsewhere still offers *Plan…*, which then runs a plain add (no `unparked` in its entry) → not tracked: it is any Add books add of a To read book, its Undo is that add's, and the next refresh drops the row
+- Schema-reviewer (R1, minor): *Pick it back up* on a book parked from Listening brings it back as Reading, its start kept → not tracked: accepted as is; both are In flight, and the format is the read's to say when it is finished
+- Spec-reviewer (R2): the error state is tested as drawn (swapped into `<main>`), not by pressing *Try again* through a real failed render → not tracked: AC-6 asks for the state drawn; every other route's error state is tested the same way
+- Test-auditor: `expectNoDanger` compares against `--danger` in the page's current theme only, while axe and contrast run in both → not tracked: the same helper and limit as `books-dashboard.spec.ts` and `dashboard-covers.spec.ts`; a suite-wide change, not this task's
+- `design/mockups-index.md`'s line ranges had drifted before this task (`releases` read 5451–5554, it is at 5542); the rows this task touched carry true ranges → not tracked: the ranges are a reading aid, and `scripts/screen.ps1` finds a screen by its `data-id`
+- UI walk: under `/books/list?status=parked` the Library's series section still lists every series, and did before anything was parked → not tracked: the Library's series section, which this task doesn't touch; the walk saw it the same with the filter showing 0 books
+
 ## Plan
 
 Approved by the owner 2026-11-20, with the plan gate's answers: split in two (the writes are TASK-127, which this depends on); the Library's *Parked · N* chip stays a filter, and with it on a grey *Review parked →* line links to `/parked` (no nav item); the dashboards' inbox chip counts notes only.
 
 **Steps**
-1. `src/db/queries.ts` `parkedBooks(userId)`: every live Parked book, oldest `parked_on` first (then title): id, title, author, `parked_on`, `started_on_precision`. `src/lib/parked.ts` `parkedAge(parkedOn, today)`: *Parked today*, *Parked 3 days*, *Parked 2 weeks*, *Parked 4 months*, *Parked 1 year* (calendar months, `addMonths`).
+1. `src/db/queries.ts` `parkedBooks(userId)`: every live Parked book, oldest `parked_on` first (then title): id, title, author, `universe`, `series`, `series_position` (the row's line and the picker's header, `bookSub`, as 2.2l's `PlanBook` carries them: D-134, revision 1), `parked_on`, `started_on_precision`. `src/lib/parked.ts` `parkedAge(parkedOn, today)`: *Parked today*, *Parked 3 days*, *Parked 2 weeks*, *Parked 4 months*, *Parked 1 year* (calendar months, `addMonths`).
 2. `/parked` (`src/app/parked/page.tsx`): `parkedBooks` and `parkedReview` together; the heading, a grey *Last reviewed …* line (or *Not reviewed yet*), a *Books* group of `ParkedRow`s, and *Done reviewing* (`src/components/ParkedDone.tsx`: `POST /api/parked/review`, its Undo `DELETE` with the change, a failed save's neutral line with Retry). Nothing parked: a calm slate, *Nothing parked.* with one action, **Open the Library**. `loading.tsx`: skeleton rows at the loaded size. `error.tsx` if the app's shared error boundary doesn't cover the route.
 3. `src/components/ParkedRow.tsx`: the title, author and *Parked 4 months*; three real buttons, each naming its book (`aria-label`), ≥ 44px on a phone row:
    - **Keep parked**: writes nothing (the Check needs nothing stored); the row folds to *Kept parked*, and the Undo toast unfolds it.
@@ -100,11 +108,19 @@ Approved by the owner 2026-11-20, with the plan gate's answers: split in two (th
 - AC-4 server side: `test/books-dashboard.test.ts` and `test/inbox.test.ts` (the line and the row only when due); `test/parked-review.test.ts` › `parkedBooks` order and `parkedAge`; `test/query-budget.test.ts` (the new budgets).
 - AC-5: by eye (the redraw), and `docs/02-architecture.md` read by the spec-reviewer.
 
+**Files added while implementing** (each inside a step, none widening it): `src/app/parked/error.tsx` (step 2: the app has no shared error boundary); `test/inbox.test.tsx` (its `@/db/queries` mock gains a not-due `parkedReview`, which `/inbox` now reads); `test/loading-states.test.tsx` (`/parked`'s skeleton joins the route list); `scripts/perf/routes.mjs` and `scripts/perf/budget.json` (`test/perf.test.ts` wants every top-level screen measured: `/parked` at `/books/status`'s budget, its tap from the Library's *Parked* filter, and `docs/02-architecture.md`'s budget table with it); `test/e2e/shard-times.json` (the new spec's time in `w390-light`, its one project, so the committed shard plan stays balanced). `src/lib/parked.ts` also gains `reviewDueOn`, the Inbox row's *due since …*, beside `reviewDue` and sharing its months.
+
+**Re-checked 2026-11-20 at `e591e5d` (owner):** the plan was stale against 2.2l (#305: `PlanBook` and the picker's header gained the book's universe and series; step 1 now carries them) and the *From TASK-127* note, which goes to its own roadmap item (Follow-ups) and changes nothing here.
+
 **Risks**: the `/books` budget test and the Lighthouse budget for `/books` (one more query, a few hundred bytes); e2e fixtures must set `reading_settings` and `parked_on` on the test database only. TASK-100's *Coming out* line is already in the slot: the parked line goes after it, as drawn.
 
 ## Review log
 
 _Filled by /implement-task. One line per round._
+
+- Verify R1 FAIL(3) (issue-search.test.tsx: a CSS comment naming --danger; perf.test.ts: /parked not in the route list; e2e-shards.test.ts: the new spec unrecorded) → fixed | Verify R2 PASS (129 files, 2439 tests; parked-review.spec.ts 7/7 in w390-light; mockup-tablet.spec.ts 20/20 in w1280-light) | CI R1 PASS (d08dc40: 10/10 shards, tests, check; Vercel preview deployed)
+- Schema R1 APPROVE (one MAJOR outside the diff: the listen-queue undo gap is now reachable from /parked → added to the approved follow-up) | Spec R1 CHANGES (AC-6 UNTESTED: the error state, the skeleton at its loaded size, the line's floor; optional: *due since*) → tests added | Verify R3 PASS (129 files, 2440 tests; parked-review.spec.ts 9/9) | CI R2 PASS (acce607: 10/10 shards)
+- Spec R2 APPROVE (findings 1–4 closed; 5 is close-out's) | Schema not re-run (no data-layer file changed since its APPROVE) | Audit R1 PASS (every AC's test fails at e591e5d; restoration OK) | UI R1 PASS (AC-2 partly walked on the dev data: one parked book, no mid-read one; the spec proves the rest; the dev database's last review was left at 20 Nov, its Undo toast expired; the owner chose to leave it) | Close-out check APPROVE (1 placed, 5 not tracked; 5.15 ticked in both docs)
 
 ## Blocked
 
@@ -112,7 +128,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (R1 FAIL(3): three existing tests pinned lists the new route and spec join; R2, R3 PASS); CI rounds: 2, both PASS
+- Review rounds: 2 (spec R1 CHANGES → R2 APPROVE; schema R1 APPROVE; audit R1 PASS; UI R1 PASS)
+- First-pass AC FAILs: 0 (AC-6 had three clauses UNTESTED at spec R1, not failing)
+- Plan revisions after approval: 1 (step 1's `bookSub` fields, after 2.2l; owner 2026-11-20)

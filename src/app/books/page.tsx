@@ -4,12 +4,13 @@ import BooksNow, { nowLede } from "@/components/BooksNow";
 import CalibreSyncLine from "@/components/CalibreSyncLine";
 import ComingOutLine, { comingOutCounts } from "@/components/ComingOutLine";
 import OnDeckRow from "@/components/OnDeckRow";
+import ParkedReviewLine from "@/components/ParkedReviewLine";
 import PlanShelf from "@/components/PlanShelf";
 import QuarterStrip from "@/components/QuarterStrip";
 import { DashboardVerbs, HeaderVerbs, ThumbBar, type BarConfig } from "@/components/ThumbBar";
 import {
-  booksInHand, inboxCount, keepGoing, lastCalibreSync, lastFinish, onDeck, planAcceptance, planCapacity, quarterBlocks, quarterShelf,
-  readingSettings, wantedReleases, yearSoFar,
+  booksInHand, inboxCount, keepGoing, lastCalibreSync, lastFinish, onDeck, parkedReview, planAcceptance, planCapacity, quarterBlocks,
+  quarterShelf, readingSettings, wantedReleases, yearSoFar,
 } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
 import { today } from "@/lib/finish-date";
@@ -42,8 +43,9 @@ export default async function Books() {
   const pace = readingSettings(userId);
   // One wave (architecture § Operational posture): Now's *Next in* rides on booksInHand, and
   // *Or keep going* (2.2d) leaves out the quarter's offer itself, so neither waits on another read. The rollup's
-  // *Coming out* line (5.7) reads the page's own query, so its counts are the list's.
-  const [hand, last, shelf, blocks, capacity, deck, soFar, settings, inbox, keep, acceptance, synced, wanted] = await Promise.all([
+  // *Coming out* line (5.7) reads the page's own query, so its counts are the list's; the parked review's (5.15)
+  // reads the same rule `/parked` and the Inbox do.
+  const [hand, last, shelf, blocks, capacity, deck, soFar, settings, inbox, keep, acceptance, synced, wanted, review] = await Promise.all([
     booksInHand(userId),
     lastFinish(userId),
     quarterShelf(userId, period),
@@ -57,6 +59,7 @@ export default async function Books() {
     planAcceptance(year),
     lastCalibreSync(),
     wantedReleases(userId, day),
+    parkedReview(userId),
   ]);
   // The strip's overage is grey once the year is accepted as a stretch year (task 2.7); the card itself is the plan page's.
   const settled = decisionState(capacity.year, acceptance?.acceptedTotal ?? null) === "settled";
@@ -131,6 +134,8 @@ export default async function Books() {
               <div><dt>new authors</dt><dd className="mono">{soFar.newAuthors.toLocaleString()}</dd></div>
             </dl>
             <ComingOutLine {...comingOutCounts(wanted, day)} />
+            {/* The parked review, when it is due (task 5.15, D-105): grey, a link, after Coming out's line. */}
+            <ParkedReviewLine review={review} />
             {/* Everything in the middle of and everything finished (task 5.12): a grey link, as *Coming out*'s line. */}
             <p className="progress-link">
               <Link href="/progress?medium=books" prefetch={false}>In the middle of · Completed <span aria-hidden="true">→</span></Link>

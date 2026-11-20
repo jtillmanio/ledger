@@ -130,6 +130,7 @@
  "w390-light|listen-queue.spec.ts": 15400,
  "w390-light|markup.spec.ts": 10900,
  "w390-light|new-shelf.spec.ts": 6100,
+ "w390-light|parked-review.spec.ts": 20000,
  "w390-light|parked.spec.ts": 12100,
  "w390-light|paste-books.spec.ts": 6500,
  "w390-light|place-them.spec.ts": 24300,
