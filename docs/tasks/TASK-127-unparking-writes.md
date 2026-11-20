@@ -58,7 +58,13 @@ A Parked book can leave Parked the ways the review needs: an add to Someday or a
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Candidate decision: the review's *Unlisted* is the one status write that sets `unlisted`, from Parked only (amends D-86); and an add unparks a Parked book as it promotes an Unlisted one (applies D-105) (approved at plan; written at close-out, owner approves the row) → `docs/review/decisions.md`
+- Candidate decision: the review's *Unlisted* is the one status write that sets `unlisted`, from Parked only (amends D-86); and an add unparks a Parked book as it promotes an Unlisted one (applies D-105) (approved at plan; the owner approved the row at close-out, 2026-11-20; PR #304) → `docs/review/decisions.md` § D-166
+- The 5.15 row of `docs/03-data-model.md` § 4 says `parked_on` is written by `saveBookStatus` and cleared on leaving it, and the status is set only on a book To read, Reading or Listening; an add now clears it and the undos restore it, and *Unlisted* is set from Parked (approval queued; the owner's yes was not for this item) → `docs/OWNER-CHECKLIST.md` § Approvals from follow-ups
+- The listen queue's refusal leaks through `restoreListen`, an add's undo and `undoBookStatus` back to Parked (schema-reviewer; outside the approved plan, which kept `restoreListen` unchanged) → `docs/tasks/TASK-111-parked-review-and-reminders.md` § Context (arrived after the plan was approved)
+- A plan move's undo (`undoMoveIn`) refuses only `unlisted`, so it can put a plan row back under a book parked since (schema-reviewer; predates this task) → `docs/tasks/TASK-111-parked-review-and-reminders.md` § Context (arrived after the plan was approved)
+- The add's undo guard for an unparked book (`to_read`, no `parked_on`, no other plan row) can't tell a book started, read and set back to To read since from one untouched, so that undo parks it again (schema-reviewer) → not tracked: accepted; the window is the toast's, the book returns to Parked and nothing is lost
+- The undo's older status-row selects (`bareStatus`, `promotedRows`) are read before the plan lock without `FOR UPDATE`, so a park racing an undo can deadlock and one request answers 500 (schema-reviewer; the new unparked select locks its rows) → not tracked: predates this task, nothing is corrupted
+- The plan revision (four client undo bodies pass `unparked` through) → not tracked: done in this PR (plan revision 1)
 
 ## Plan
 

@@ -311,6 +311,13 @@ Planning-doc edits and candidate decisions waiting for your yes
 session, and that session or the next `/track-follow-ups` run makes the change
 and notes where it went.
 
+- [ ] Reword the 5.15 row of `docs/03-data-model.md` § 4 (from TASK-127, 5.15,
+      PR #304, D-166): `parked_on` is "written by `saveBookStatus` on entering
+      Parked and cleared on leaving it", and now an add that unparks a Parked
+      book (`promote`) clears it too, and the undos of an add and of leaving
+      Parked put it back; the same row's "set only on a book To read, Reading
+      or Listening" gains the review's *Unlisted*, which sets `unlisted` from
+      Parked only (D-86 amended).
 - [ ] Amend D-120 in `docs/review/decisions.md` (from TASK-105, 5.12, PR #300):
       the phone's tab row is now the medium's enabled items, then every item of
       the global group (*Inbox*, then *Progress*), not *Inbox* alone. Record a

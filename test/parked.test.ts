@@ -349,6 +349,29 @@ describe("the readers that leave a parked book out, and the filter that lists it
 // (Add books' *Use that*, *Paste a list*) to Someday or a plan level puts it back on your list, `to_read`, and
 // plans it; the add's undo puts back `parked` and the day. The review's *Unlisted* is the one status write that
 // sets `unlisted`, from Parked only.
+/**
+ * Runs `work` inside a transaction on a second connection to the TEST database (testSql's pool is one wide, and
+ * beforeAll has pointed DATABASE_URL at the test database, which testSql refuses: TEST_DATABASE_URL, checked there),
+ * then commits it. `work` starts the write under test, waits for it to block on what the transaction holds
+ * (`blocked`), and writes what should commit while it waits.
+ */
+async function whileHolding(work: (t: postgres.TransactionSql, blocked: () => Promise<void>) => Promise<void>) {
+  const other = postgres(requireTestUrl({ TEST_DATABASE_URL: process.env.TEST_DATABASE_URL }), { max: 1, prepare: false, onnotice: () => {} });
+  const blocked = async () => {
+    for (let i = 0; i < 200; i++) {
+      const [{ n }] = await sql`SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'`;
+      if (n > 0) return;
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    throw new Error("the write under test never blocked");
+  };
+  try {
+    await other.begin((t) => work(t, blocked));
+  } finally {
+    await other.end();
+  }
+}
+
 describe("an add unparks a Parked book, and its undo parks it again (TASK-127, AC-1, AC-2)", () => {
   const DAY = "2026-06-01";
   const jsonReq = (method: string, body: unknown) => new Request("http://ledger.test/api/books", {
@@ -456,6 +479,21 @@ describe("an add unparks a Parked book, and its undo parks it again (TASK-127, A
     expect(await plan("d")).toEqual(planBefore);
   });
 
+  it("refuses the undo, changing nothing, when a plan row commits while it waits for the plan lock", async () => {
+    await parkD();
+    const result = await (await addTo({ kind: "someday" })).json();
+    let undoing!: Promise<Response>;
+    await whileHolding(async (t, blocked) => {
+      await t`SELECT pg_advisory_xact_lock(hashtext(${`ledger:plan:${USER}`}))`;
+      undoing = undoAdd(entryOf(result));
+      await blocked();
+      await t`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${USER}, 'd', '2028', NULL)`;
+    });
+    expect((await undoing).status).toBe(409);
+    expect(await row("d")).toMatchObject({ status: "to_read", parked_on: null });
+    expect(await plan("d")).toEqual(["2028:null"]);
+  }, 20000);
+
   it("an undo whose unparked isn't a list of { bookId, parkedOn } is malformed: 400, nothing changed", async () => {
     await parkD();
     const result = await (await addTo({ kind: "someday" })).json();
@@ -498,7 +536,7 @@ describe("the add re-reads the status under the plan lock (TASK-127, AC-3)", () 
       // The add is waiting on the plan lock once an advisory lock request is not granted.
       let waiting = 0;
       for (let i = 0; i < 200 && waiting === 0; i++) {
-        [{ n: waiting }] = await sql`SELECT count(*)::int AS n FROM pg_locks WHERE locktype = 'advisory' AND NOT granted`;
+        [{ n: waiting }] = await sql`SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'`;
         if (waiting === 0) await new Promise((r) => setTimeout(r, 20));
       }
       expect(waiting).toBeGreaterThan(0);
@@ -554,6 +592,21 @@ describe("Unlisted from Parked (TASK-127, AC-4)", () => {
     expect(res.status).toBe(400);
     expect(await row("b")).toEqual(before);
   });
+
+  it("refuses Unlisted for a book an add unparked and planned while the write waited for its status row", async () => {
+    await park("b");
+    let unlisting!: Promise<Response>;
+    await whileHolding(async (t, blocked) => {
+      // What an add does to a Parked book: the status row, then its plan row; committed after Unlisted has read.
+      await t`UPDATE book_status SET status = 'to_read', parked_on = NULL WHERE book_id = 'b'`;
+      unlisting = post({ bookId: "b", status: "unlisted" });
+      await blocked();
+      await t`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${USER}, 'b', 'on_deck', NULL)`;
+    });
+    expect((await unlisting).status).toBe(400);
+    expect((await row("b")).status).toBe("to_read");
+    expect(await sql`SELECT period FROM reading_plan WHERE book_id = 'b'`).toEqual([{ period: "on_deck" }]);
+  }, 20000);
 
   it("an Unlisted book set to Unlisted again is refused: 400", async () => {
     await sql`UPDATE book_status SET status = 'unlisted' WHERE book_id = 'b'`;

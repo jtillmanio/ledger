@@ -294,7 +294,8 @@ Release, test isolation) and the Hard rules a reviewer checks.
   on purpose, *not now, but not gone*. A status write sets it, and only on a
   book To read, Reading or Listening (`PARKS_FROM`); any other is refused.
   `book_status.parked_on` is the Eastern day it was parked, set exactly while
-  Parked (its CHECK), written and cleared only by `saveBookStatus`. Parking
+  Parked (its CHECK), set only by `saveBookStatus`, which also clears it
+  (an add's `promote` clears it on an unpark, and the undos put it back). Parking
   takes the book out of every plan row (each quarter closes up) and off the
   listen queue in the status write's transaction, and `undoBookStatus` puts
   each back at its place. The start stays, so *parked mid-read* is derived

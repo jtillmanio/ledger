@@ -193,7 +193,10 @@ export async function saveBookStatus(
         startedOn: bookStatus.startedOn, startPrecision: bookStatus.startedOnPrecision, notes: bookStatus.notes,
         parkedOn: bookStatus.parkedOn,
       })
-      .from(bookStatus).where(mine);
+      // FOR UPDATE, after the book's lock (task 5.15): an add that moves the book (`promote`) takes the status row
+      // without the book's lock, so this waits for it and reads what it left. A stale `parked` would let *Unlisted*
+      // pass over a book the add has just planned.
+      .from(bookStatus).where(mine).for("update");
     // Parked is put away from your list (task 5.15): never a book finished, given up, Unlisted or with no status.
     if (status === "parked" && !(before && PARKS_FROM.includes(before.status))) {
       throw new RefusedStatus("only a book to read, reading or listening can be parked");
@@ -2563,7 +2566,9 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
     if (ours.length !== promoted.size) return false;
   }
   if (unparkedIds.length) {
-    const ours = await tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(unparkedRows);
+    // Locked in id order, before the plan lock below: a park takes the status row, then the plan lock.
+    const ours = await tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(unparkedRows)
+      .orderBy(bookStatus.bookId).for("update");
     if (ours.length !== unparkedIds.length) return false;
   }
   if (touched.length || unparkedIds.length) {
@@ -2617,7 +2622,13 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
       .returning({ bookId: bookStatus.bookId });
     if (back.length !== promoted.size) throw refused;
   }
-  // Back to Parked on the day it had, after its plan row is out: a Parked book is in no plan (task 5.15).
+  // Back to Parked on the day it had, after its plan row is out: a Parked book is in no plan (task 5.15). The plan
+  // is read again under its lock: a plan write that committed since the check above refuses the whole undo.
+  if (unparkedIds.length) {
+    const stray = await inPlan(userId, tx, (t) => t.select({ bookId: readingPlan.bookId }).from(readingPlan)
+      .where(and(eq(readingPlan.userId, userId), inArray(readingPlan.bookId, unparkedIds))).limit(1));
+    if (stray.length) throw refused;
+  }
   for (const [bookId, parkedOn] of unparkedDays) {
     const back = await tx.update(bookStatus).set({ status: "parked", parkedOn })
       .where(and(unparkedRows, eq(bookStatus.bookId, bookId))).returning({ bookId: bookStatus.bookId });
