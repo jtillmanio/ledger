@@ -3,7 +3,7 @@
 - **Verification (D-97, D-141): one local chain; the browser suite is CI's.**
   `verify.full` is `npx tsc --noEmit`, `npm run lint`, `npm run test:no-e2e`.
   No local run of the whole browser suite and no local build: CI runs both,
-  every project on four shards, in about 10 minutes.
+  every project on ten shards (balanced by recorded time, D-167), in about 8 minutes.
   - Before the first run, check cheaply: run the test files the task added or
     changed (`node scripts/test-files.mjs <files>`; vitest, SQL and Python as
     they are, browser specs in one project, `w390-light`; add

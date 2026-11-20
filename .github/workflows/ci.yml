@@ -113,8 +113,14 @@ jobs:
   # and the shard serves it with `next start` (E2E_SERVER), so no route is
   # compiled on its first request. scripts/e2e.mjs refuses without
   # TEST_DATABASE_URL; DATABASE_URL exists only for the build, and names nothing.
-  # Eight shards (D-143): the suite's own time halves, against about 1.5 minutes
-  # of setup each shard repeats; a public repo's runner minutes cost nothing.
+  # Ten shards (D-143, D-167): the suite's own time divides, against about 1.5
+  # minutes of setup each shard repeats; a public repo's runner minutes cost
+  # nothing. Ten, not more: GitHub's free plan runs 20 jobs at once, and a PR
+  # and a push to main overlap (ten and ten, with `tests` and the rest queueing).
+  # Which spec files a shard runs is E2E_SHARD, n/N: scripts/lib/e2e-shards.mjs
+  # balances them by recorded time (test/e2e/shard-times.json), where Playwright's
+  # own `--shard` splits by test count and left the slowest shard 30% over the
+  # fastest. Each shard names its blob report, so the merged reports don't collide.
   e2e:
     name: e2e ${{ needs.scope.outputs.e2e_scope }} ${{ matrix.shard }}/${{ strategy.job-total }}
     needs: scope
@@ -124,10 +130,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     env:
       E2E_SERVER: start
       E2E_SCOPE: ${{ needs.scope.outputs.e2e_scope }}
+      E2E_SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
+      PLAYWRIGHT_BLOB_OUTPUT_NAME: report-${{ matrix.shard }}.zip
     steps:
       - uses: actions/checkout@v7
       - name: Start PostgreSQL
@@ -136,7 +144,17 @@ jobs:
           database: reading_test
       - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc, cache: npm }
-      - run: npm ci
+      # node_modules restored whole (about 540 MB) instead of 40 s of `npm ci`
+      # every shard; keyed on the lockfile and the Node version, so a changed
+      # dependency installs fresh. No package runs an install script.
+      - name: Restore node_modules
+        id: modules
+        uses: actions/cache@v6
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json', '.nvmrc') }}
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npm run test:db:reset
       - run: npm run build
         env:
@@ -145,7 +163,7 @@ jobs:
       # needs (it ships Google Chrome), and --with-deps fetches 25 MB of fonts
       # from an apt mirror that has taken 13 minutes for one shard.
       - run: npx playwright install chromium
-      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/${{ strategy.job-total }} --reporter=list,blob
+      - run: npm run test:e2e -- --reporter=list,blob
       - name: Upload this shard's report
         if: always()
         uses: actions/upload-artifact@v7
@@ -172,18 +190,28 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
-        with: { node-version-file: .nvmrc, cache: npm }
-      - run: npm ci
+        with: { node-version-file: .nvmrc }
+      # Only Playwright's report tool, in a folder of its own: the repo's whole
+      # `npm ci` was 35 to 50 seconds of a one-minute job, and a folder with no
+      # playwright.config.ts needs none of the repo's other packages.
+      - name: Install Playwright's report tool
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw"
+          cd "$RUNNER_TEMP/pw"
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund --ignore-scripts "@playwright/test@$(node -p "require(process.env.GITHUB_WORKSPACE + '/package.json').devDependencies['@playwright/test']")"
       - uses: actions/download-artifact@v8
         with:
           pattern: e2e-blob-*
           path: all-blob-reports
           merge-multiple: true
-      - run: npx playwright merge-reports --reporter html ./all-blob-reports
+      - name: Merge the shards' reports
+        working-directory: ${{ runner.temp }}/pw
+        run: node node_modules/@playwright/test/cli.js merge-reports --reporter html "$GITHUB_WORKSPACE/all-blob-reports"
       - uses: actions/upload-artifact@v7
         with:
           name: e2e-report
-          path: playwright-report/
+          path: ${{ runner.temp }}/pw/playwright-report/
           retention-days: 7
 
   # The browser suite's time budget (D-161): each test's time in each project,
@@ -205,14 +233,23 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
-        with: { node-version-file: .nvmrc, cache: npm }
-      - run: npm ci
+        with: { node-version-file: .nvmrc }
+      # The scripts below are plain Node; only the report merge needs a package,
+      # so it gets Playwright's report tool alone, as e2e-report does.
+      - name: Install Playwright's report tool
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw"
+          cd "$RUNNER_TEMP/pw"
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund --ignore-scripts "@playwright/test@$(node -p "require(process.env.GITHUB_WORKSPACE + '/package.json').devDependencies['@playwright/test']")"
       - uses: actions/download-artifact@v8
         with:
           pattern: e2e-blob-*
           path: all-blob-reports
           merge-multiple: true
-      - run: npx playwright merge-reports --reporter json ./all-blob-reports > e2e-results.json
+      - name: Merge the shards' reports to JSON
+        working-directory: ${{ runner.temp }}/pw
+        run: node node_modules/@playwright/test/cli.js merge-reports --reporter json "$GITHUB_WORKSPACE/all-blob-reports" > "$GITHUB_WORKSPACE/e2e-results.json"
       - run: node scripts/e2e-budget.mjs record e2e-results.json e2e-times.json
       - if: env.FULL_SCOPE == 'true'
         uses: actions/upload-artifact@v7
@@ -220,6 +257,14 @@ jobs:
           name: e2e-times
           path: e2e-times.json
           retention-days: 90
+      # How lopsided the shard plan was, priced with this run's own times (D-167).
+      # A note in the summary: never a failure.
+      - name: Shard balance
+        if: env.FULL_SCOPE == 'true'
+        continue-on-error: true
+        env:
+          SHARDS: 10
+        run: node scripts/e2e-shards.mjs balance e2e-times.json
       - name: Find main's recorded times
         id: baseline
         if: env.FULL_SCOPE == 'true' && github.event_name == 'pull_request'
@@ -230,7 +275,7 @@ jobs:
         if: env.FULL_SCOPE == 'true'
         env:
           # The e2e matrix's size (test/e2e-budget.test.ts keeps them equal).
-          SHARDS: 8
+          SHARDS: 10
           EVENT: ${{ github.event_name }}
           LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
           BASELINE_RUN: ${{ steps.baseline.outputs.run_id }}

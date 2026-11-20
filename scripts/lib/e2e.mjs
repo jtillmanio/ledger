@@ -4,6 +4,7 @@
 // without a browser. Like every test, it reads TEST_DATABASE_URL and nothing
 // else, and never falls back to DATABASE_URL (testdb.mjs).
 import { checkTestUrl } from "./testdb.mjs";
+import { parseShard } from "./e2e-shards.mjs";
 
 // The default port. Not 3000, which is the owner's `npm run dev`. A worktree
 // gets its own from scripts/worktree-slot.mjs (E2E_PORT in .env.worktree,
@@ -61,14 +62,14 @@ export const E2E_BEHAVIOUR = ["w390-light", "w768-light", "w1280-light", "w390-r
 // `@floor`: the test checks how the screen fits or looks (the UX floor: axe,
 // contrast, sizes and positions, sideways scroll, markup a layout could change).
 // It runs at every layout, light: 360 (the tightest phone), 390, 768, 1024 (a
-// layout of its own, D-33) and 1280, and with touch, which draws the controls a
-// hover hides at rest. It needs no dark project: `contrastFailures` and
-// `screenshot` check the page in both themes, switching the colour scheme in
-// place. Not with reduced motion, which changes motion and no layout or colour
-// (D-167): a floor or feel test that reads the project's own motion setting says
-// so with `@motion`.
+// layout of its own, D-33) and 1280. It needs no dark project: `contrastFailures`
+// and `screenshot` check the page in both themes, switching the colour scheme in
+// place. Not with reduced motion or touch (D-167): reduced motion changes motion
+// and no layout or colour, and both share w390-light's viewport. A floor or feel
+// test that reads the project's own motion setting or pointer says so with
+// `@motion` or `@touch`.
 export const FLOOR_TAG = "@floor";
-export const E2E_FLOOR = ["w360-light", "w390-light", "w768-light", "w1024-light", "w1280-light", "w390-touch"];
+export const E2E_FLOOR = ["w360-light", "w390-light", "w768-light", "w1024-light", "w1280-light"];
 
 // `@motion`: the test also runs at w390-reduced-motion, where an untagged one
 // does already. For a `@floor` or `@feel` test whose assertions read the
@@ -76,11 +77,15 @@ export const E2E_FLOOR = ["w360-light", "w390-light", "w768-light", "w1024-light
 // An `@at-` tag still wins.
 export const MOTION_TAG = "@motion";
 export const MOTION_PROJECT = "w390-reduced-motion";
+// `@touch`: the same for w390-touch, for a `@floor` or `@feel` test that needs
+// the coarse pointer (controls a hover hides at rest are drawn there).
+export const TOUCH_TAG = "@touch";
+export const TOUCH_PROJECT = "w390-touch";
 
 // `@feel`: a feel-pass surface screenshotted in its states, which design §10
 // asks for at every width, 412 too (D-40): `@floor`'s projects and w412-light.
 export const FEEL_TAG = "@feel";
-export const E2E_FEEL = ["w360-light", "w390-light", "w412-light", "w768-light", "w1024-light", "w1280-light", "w390-touch"];
+export const E2E_FEEL = ["w360-light", "w390-light", "w412-light", "w768-light", "w1024-light", "w1280-light"];
 
 /**
  * The projects a scope runs, each with the grep that picks its tests. An
@@ -102,6 +107,7 @@ export function e2eProjects(scope) {
       ...(E2E_FLOOR.includes(p.name) ? [only(FLOOR_TAG)] : []),
       ...(E2E_FEEL.includes(p.name) ? [only(FEEL_TAG)] : []),
       ...(p.name === MOTION_PROJECT ? [only(MOTION_TAG)] : []),
+      ...(p.name === TOUCH_PROJECT ? [only(TOUCH_TAG)] : []),
       new RegExp(`@at-${p.name}(?![\\w-])`),
     ],
   }));
@@ -121,6 +127,10 @@ export function e2eProjects(scope) {
  * E2E_SCOPE picks the projects: `core` (the default, E2E_CORE) or `full`,
  * every project, which CI runs.
  *
+ * E2E_SHARD, n/N (CI's shards, D-167), makes playwright.config.ts run only the
+ * spec files shard n of N holds, balanced by recorded time (e2e-shards.mjs); unset
+ * runs them all. It stands in for Playwright's own `--shard`.
+ *
  * E2E_PORT picks where the server listens (e2ePort): a worktree's comes from
  * .env.worktree, so two sessions' suites can run at once.
  *
@@ -136,6 +146,8 @@ export function planE2e(env) {
   if (scope !== "core" && scope !== "full") return { error: `E2E_SCOPE is "${scope}": use core or full.` };
   const { port, error: portError } = e2ePort(env);
   if (portError) return { error: portError };
+  const shard = parseShard(env.E2E_SHARD);
+  if (shard && "error" in shard) return { error: shard.error };
   return {
     scope,
     clear: mode === "dev" ? DEV_CACHE : null,

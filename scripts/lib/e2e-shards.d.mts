@@ -1,0 +1,11 @@
+export const DEFAULT_UNIT_MS: number;
+export type ShardUnit = { key: string; project: string; file: string; ms: number };
+export type Shard = { ms: number; units: ShardUnit[] };
+export const unitKey: (project: string, file: string) => string;
+export function parseShard(value: string | undefined): { current: number; total: number } | { error: string } | null;
+export function shardUnits(projects: string[], files: string[], times: Record<string, number>): ShardUnit[];
+export function planShards(units: ShardUnit[], total: number): Shard[];
+export function filesByProject(plan: Shard[], current: number): Map<string, string[]>;
+export function filesMatcher(files: string[]): RegExp;
+export function imbalance(plan: Shard[], actual: Record<string, number>): { sums: number[]; mean: number; slowest: number; ratio: number };
+export function groupTimes(tests: Record<string, number>, keep?: Set<string>): Record<string, number>;

@@ -4,9 +4,11 @@
 // projects). Run it with `npm run test:e2e` (`npm run test:e2e:full` for
 // every project), which refuses first when TEST_DATABASE_URL is unsafe;
 // this file checks again, so a bare `npx playwright test` is no way round it.
+import { readdirSync, readFileSync } from "node:fs";
 import { defineConfig, type Project } from "@playwright/test";
 import { loadDotEnv } from "./scripts/lib/testdb.mjs";
 import { e2eProjects, planE2e } from "./scripts/lib/e2e.mjs";
+import { filesByProject, filesMatcher, parseShard, planShards, shardUnits } from "./scripts/lib/e2e-shards.mjs";
 
 loadDotEnv();
 const plan = planE2e(process.env);
@@ -14,13 +16,33 @@ if (plan.error !== undefined) throw new Error(plan.error);
 
 const STATE = "test/e2e/.auth/state.json";
 
+// CI's shard n of N (E2E_SHARD, D-167): the spec files each project runs in
+// this shard, from the recorded times in test/e2e/shard-times.json. Every
+// (project, file) pair belongs to exactly one shard whatever its time, so a new
+// spec runs. Unset (a local run), every project runs every spec file.
+const projectsOfScope = e2eProjects(plan.scope);
+const shard = parseShard(process.env.E2E_SHARD);
+const mine = shard && !("error" in shard)
+  ? filesByProject(
+      planShards(
+        shardUnits(
+          projectsOfScope.map((p) => p.name),
+          readdirSync("test/e2e").filter((f) => f.endsWith(".spec.ts")),
+          JSON.parse(readFileSync("test/e2e/shard-times.json", "utf8")),
+        ),
+        shard.total,
+      ),
+      shard.current,
+    )
+  : null;
+
 // The projects, and which tests each runs: scripts/lib/e2e.mjs (E2E_SCOPE,
-// the untagged, `@floor`, `@feel` and `@at-<project>` tags, D-161).
+// the untagged, `@floor`, `@feel`, `@motion` and `@at-<project>` tags, D-161).
 const projects: Project[] = [
   { name: "setup", testMatch: /auth\.setup\.ts/ },
-  ...e2eProjects(plan.scope).map(({ name, use, grep }) => ({
+  ...projectsOfScope.map(({ name, use, grep }) => ({
     name,
-    testMatch: /.*\.spec\.ts/,
+    testMatch: mine ? filesMatcher(mine.get(name) ?? []) : /.*\.spec\.ts/,
     grep,
     dependencies: ["setup"],
     use: { storageState: STATE, ...use },

@@ -243,9 +243,10 @@ describe("e2eScope: how much of the browser suite a run checks (D-80)", () => {
     expect(e2e).toContain("name: e2e ${{ needs.scope.outputs.e2e_scope }} ${{ matrix.shard }}/${{ strategy.job-total }}");
   });
 
-  it("the browser suite runs in eight shards, each named for its place among them (D-143)", () => {
+  it("the browser suite runs in ten shards, each named for its place among them (D-143, D-167)", () => {
     const e2e = ciJob("e2e");
-    expect(e2e).toContain("shard: [1, 2, 3, 4, 5, 6, 7, 8]");
-    expect(e2e).toContain("--shard=${{ matrix.shard }}/${{ strategy.job-total }}");
+    expect(e2e).toContain("shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]");
+    // The spec files a shard runs come from E2E_SHARD (test/e2e-shards.test.ts), not Playwright's --shard.
+    expect(e2e).toContain("E2E_SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}");
   });
 });
