@@ -4882,7 +4882,7 @@ it is converted.
     next* in queue order; Done's *Listened* chip lists only books with an
     audio read; each tab's count equals its rows. The export test passes with
     `listen_queue`.
-- ☐ 5.15 **Parked: put a book away on purpose, and review it on a schedule**
+- ☑ 5.15 **Parked: put a book away on purpose, and review it on a schedule**
   · M. Owner intake, 2026-11-02 (owner: *an on-hold type status for all media
   types: I put an item in it and it doesn't show up in my currently consuming
   feed or in my plan; once a month or quarter I get a notification or email to
@@ -5053,6 +5053,35 @@ it is converted.
     has the row counts it as already owned. Undoing an add to Someday whose
     created book has since gained a `calibre_id` answers 409 and changes
     nothing. Screenshots at 360px and 1280px.
+
+- ☐ 5.18 **A Parked book stays out of the plan and the listen queue, through
+  every undo** · S. *From TASK-127 and TASK-111 (5.15, PR #304, PR #311;
+  schema reviews):* 5.15's invariant is that a Parked book is in no plan
+  row and not in `listen_queue`. The forward writes keep it (`saveBookStatus`
+  under the status-row lock, `queueListen` refusing a Parked book), but four
+  undos can break it. Depends on 5.15.
+  - **The listen queue.** `undoInside` (an add's undo) and `undoBookStatus`
+    with `prior.status = 'parked'` put a book back to Parked while a
+    `listen_queue` row written since (it was To read) stays. `/parked` makes
+    this reachable from a screen (TASK-111): *Plan…* or *Unlisted*, then
+    *Queue to listen* on that book, then the verb's Undo. `restoreListen` (a
+    queue *Remove* undone after the book was parked) queues a Parked book.
+    Decide for each whether it takes the book off the queue (under
+    `lockListen`) or refuses, and say so in `.claude/rules/schema.md`.
+  - **The plan.** `undoMoveIn` (`src/db/writes.ts`) refuses only a book gone
+    `unlisted`, so it can put a plan row back under a book parked since:
+    refuse `parked` too.
+  - **The lock.** `undoBookStatus` reads the book's status and its plan rows;
+    check it takes `lockBook` on the book row, as `saveBookStatus` does, so an
+    undo of a park racing an add that unparks and plans the same book can't
+    leave it in two periods.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first)
+    `npm test`: plan a Parked book from the review to 2027 Q1, queue it to
+    listen, and undo the plan: the book is `parked` with no `reading_plan` row
+    and no `listen_queue` row, or the undo answers 409 and changes nothing.
+    The same for an *Unlisted* from the review and its undo. Undoing a queue
+    *Remove* after the book was parked leaves it off the queue. Undoing a plan
+    move after the book was parked answers 409 and writes no plan row.
 
 ---
 
