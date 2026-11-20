@@ -1054,6 +1054,131 @@ test.describe("the book's place on its row (2.2j)", () => {
   });
 });
 
+// Task 2.2k (D-139): with a full quarter planned, `/books` stays the width of the screen and only the
+// Up next shelf scrolls, inside its own box. The bug TASK-051's check found (an absolute `.sr-only`
+// ordinal escaping the row's clip and widening the page, 392 to 640px at 360 to 412px with four or more
+// cards, and at 768px with seven) was fixed by 2.2g's `.shelf .card{position:relative}` (PR #213), so
+// these tests keep it fixed: every card carries what 2.2j draws (two-line title, a long author,
+// universe and series line) and a cover, and the shelf is as full as the width allows.
+const COVER_HOST = "https://covers.e2e.test";
+const COVER_PIXEL = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64",
+);
+const FS_AUTHOR = "Dash Author With A Remarkably Long Name";
+const FS_UNIVERSE = "E2E Dash Shelf Universe Of The Very Long Name";
+const FS_SERIES = "E2E Dash Shelf Series Of The Very Long Name";
+
+/**
+ * On top of `seed({ reading: true })`, whose quarter holds One (1) and Three (3) to read: `cards`
+ * shelf cards in all (One, Three, then new books at 4, 5, …), each with a two-line title, a cover on
+ * the fake host and the long author, universe and series line. The fake host answers every cover.
+ */
+async function seedFullShelf(page: Page, cards: number) {
+  await page.route(`${COVER_HOST}/**`, (route) => route.fulfill({ status: 200, contentType: "image/png", body: COVER_PIXEL }));
+  await withSql(async (sql) => {
+    await sql`INSERT INTO authors (id, name) VALUES ('e2e-dash-fs-au', ${FS_AUTHOR})`;
+    await sql`INSERT INTO book_universes (id, name) VALUES ('e2e-dash-fs-uni', ${FS_UNIVERSE})`;
+    await sql`INSERT INTO book_series (id, name) VALUES ('e2e-dash-fs-ser', ${FS_SERIES})`;
+    for (const [i, id] of [[1, "e2e-dash-1"], [2, "e2e-dash-3"]] as const) {
+      await sql`UPDATE books SET author_id = 'e2e-dash-fs-au', universe_id = 'e2e-dash-fs-uni', series_id = 'e2e-dash-fs-ser',
+                series_position = ${i}, cover_url = ${`${COVER_HOST}/${id}.png`} WHERE id = ${id}`;
+    }
+    for (let n = 3; n <= cards; n++) {
+      const id = `e2e-dash-fs-${n}`;
+      await sql`INSERT INTO books (id, title, author_id, universe_id, series_id, series_position, page_count, word_count,
+                                   word_count_source, cover_url)
+                VALUES (${id}, ${`E2E Dash Shelf Card ${n} and a Rather Long Second Line`}, 'e2e-dash-fs-au', 'e2e-dash-fs-uni',
+                        'e2e-dash-fs-ser', ${n}, 250, 80000, 'stated', ${`${COVER_HOST}/${id}.png`})`;
+      await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${id}, 'to_read')`;
+      await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${E2E_USER}, ${id}, ${PERIOD}, ${n + 1})`;
+    }
+  });
+}
+
+test.describe("a full Up next shelf (2.2k)", () => {
+  test.beforeEach(() => seed({ reading: true }));
+
+  const shelf = (page: Page) => page.locator('[data-slot="next"] ul.shelf');
+  /** Scrolls card `i` to the row's start at once (the row smooth-scrolls otherwise), then reads the boxes that matter. */
+  async function inBox(page: Page, i: number) {
+    const card = shelf(page).locator("li.card").nth(i);
+    await card.evaluate((el) => {
+      const ul = el.parentElement!;
+      const pad = parseFloat(getComputedStyle(ul).paddingLeft);
+      ul.scrollTo({ left: el.getBoundingClientRect().left - ul.getBoundingClientRect().left + ul.scrollLeft - pad, behavior: "instant" });
+    });
+    const [row, c, title, ordinal] = await Promise.all([
+      shelf(page).boundingBox(), card.boundingBox(), card.locator(".card-title").boundingBox(), card.locator(".sr-only").boundingBox(),
+    ]);
+    return { row: row!, card: c!, title: title!, ordinal: ordinal! };
+  }
+
+  test("six books (seven from 768px) with long titles and place lines: the page keeps the screen's width, every card sits inside the shelf's box (AC-1, AC-2, AC-5)", FEEL, async ({ page }, info) => {
+    const width = page.viewportSize()!.width;
+    const count = width >= 768 ? 7 : 6;
+    await seedFullShelf(page, count);
+    await open(page);
+    await expect(shelf(page).locator("li.card")).toHaveCount(count);
+    // Every card says what 2.2j draws: the long author, universe and series, all of it, wrapping.
+    for (const sub of await shelf(page).locator(".card-sub").all()) {
+      await expect(sub).toContainText(`${FS_AUTHOR} · ${FS_UNIVERSE} · ${FS_SERIES} #`);
+    }
+    await expectNoHorizontalScroll(page);
+
+    for (let i = 0; i < count; i++) {
+      const { row, card, title, ordinal } = await inBox(page, i);
+      const inside = (b: { x: number; width: number }, what: string) => {
+        expect(b.x, `card ${i + 1}: ${what} starts inside the shelf`).toBeGreaterThanOrEqual(row.x - 1);
+        expect(b.x + b.width, `card ${i + 1}: ${what} ends inside the shelf`).toBeLessThanOrEqual(row.x + row.width + 1);
+      };
+      inside(card, "the card");
+      inside(title, "the title");
+      inside(ordinal, "the hidden ordinal");
+      // Not clipped by the page: the card, scrolled into view, is whole in the viewport.
+      expect(card.x, `card ${i + 1} starts on screen`).toBeGreaterThanOrEqual(0);
+      expect(card.x + card.width, `card ${i + 1} ends on screen`).toBeLessThanOrEqual(width);
+      await expectNoHorizontalScroll(page);
+    }
+    await page.evaluate(() => document.querySelector<HTMLElement>('[data-slot="next"] ul.shelf')!.scrollTo({ left: 0, behavior: "instant" }));
+    await floor(page);
+    await screenshot(page, info, "2.2k-books-full-shelf");
+  });
+
+  test("at 360px the shelf scrolls inside its box and its last card comes into view whole (AC-3)", ONCE, async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await seedFullShelf(page, 6);
+    await open(page);
+    await expect(shelf(page).locator("li.card")).toHaveCount(6);
+    const m = await shelf(page).evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
+    expect(m.scroll, "the shelf holds more than it shows").toBeGreaterThan(m.client);
+    await expectNoHorizontalScroll(page);
+
+    const { row, card } = await inBox(page, 5);
+    expect(card.x, "the last card is whole inside the shelf, left").toBeGreaterThanOrEqual(row.x);
+    expect(card.x + card.width, "and right").toBeLessThanOrEqual(row.x + row.width);
+    expect(card.x + card.width, "and on screen").toBeLessThanOrEqual(360);
+    const end = await shelf(page).evaluate((el) => el.scrollLeft + el.clientWidth - el.scrollWidth);
+    expect(Math.abs(end), "the shelf is scrolled to its end").toBeLessThanOrEqual(1);
+    await expectNoHorizontalScroll(page);
+  });
+
+  test("at 1280px ‹ › appear and page the shelf (AC-3)", DESK, async ({ page }) => {
+    await seedFullShelf(page, 9);
+    await open(page);
+    await expect(shelf(page).locator("li.card")).toHaveCount(9);
+    const earlier = page.getByRole("button", { name: /^Earlier in Up next/ });
+    const later = page.getByRole("button", { name: /^Later in Up next/ });
+    await expect(earlier).toHaveAttribute("aria-disabled", "true");
+    await hydrated(later);
+    await later.click();
+    await expect.poll(() => shelf(page).evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+    await expect(earlier).not.toHaveAttribute("aria-disabled", "true");
+    await earlier.click();
+    await expect.poll(() => shelf(page).evaluate((el) => el.scrollLeft)).toBe(0);
+    await expectNoHorizontalScroll(page);
+  });
+});
+
 test.describe("never finished, nothing planned", () => {
   test.beforeEach(seedEmpty);
 
