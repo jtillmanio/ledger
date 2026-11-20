@@ -1,14 +1,14 @@
 ---
 id: TASK-105
 title: 5.12 In the middle of, and completed (2 of 2) — the /progress page, its tabs and chips
-status: Ready
+status: In progress
 depends_on: [TASK-104]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: ae89713
 ---
 
 # TASK-105 — 5.12 In the middle of, and completed (2 of 2) — the /progress page, its tabs and chips
@@ -84,7 +84,106 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-20, kept whole: it is already 2 of 2, the mockup must be drawn in this PR, and
+its merge ticks 5.12. Over the 8-file line (10 source files) with `splitPolicy: split`; the owner chose
+not to split further.
+
+### Steps
+
+1. **`src/lib/progress.ts` (new, pure):** `parseProgressTab(?tab=)` → `middle` (default) | `completed`;
+   `parseMedium(?medium=)` → `all` (default) | `books` | `comics`; `progressHref(tab, medium)` that keeps
+   the other (`/progress`, `?tab=completed`, `?medium=books`, both); `byMedium(rows, medium)`; `nestRows(rows)`
+   → a tree from `parentKind`/`parentId` (children under their parent in list order, a parent keeps its own
+   place; a subseries can sit two deep, under a series under a universe); `rowHref(row, tab)`: series
+   `/books/series/<id>`, universe `/books/universes/<id>`, author `/books/authors/<id>`, shelf
+   `/books/shelves/<id>`, run `/comics/<id>` (with `#p-<next.ordinal>` on *In the middle of*), subseries and
+   track null (no page yet: not links); `finishedLabel("2026-03")` → `finished Mar 2026`.
+2. **A shared tablist:** `src/components/Tablist.tsx` (new, client) is `StatusTabs`' strip made generic:
+   `tabs: { key, name, href, count }[]`, `selected`, `label`, `panelId`, the same arrow, Home and End keys,
+   links with `replace` and `scroll={false}`, and the sliding ink. `StatusTabs.tsx` becomes a thin wrapper and
+   renders the same markup as now. In `globals.css`, `.tab-ink` width becomes `calc(100% / var(--n,3))`, with
+   `--n` set by `Tablist`.
+3. **The page:** `src/app/progress/page.tsx` (server, `force-dynamic`, metadata *Progress · Ledger*) reads
+   `searchParams` and `requireUserId`, then makes one `progressRows(userId)` call. h1 *Progress*. The tabs are
+   *In the middle of · Completed*, each with its row count under the chip (On hold isn't counted in the tab;
+   it carries its own). The chips row is *All · Books · Comics*, real links in `.filters` `role="group"`
+   `aria-label="Medium"` with `aria-current` on the chosen one, so the tab and chip are both in the URL. Also
+   `src/app/progress/loading.tsx` (h1, `sk-tabs`, chip and row skeletons at the loaded size) and
+   `src/app/progress/error.tsx` (as the author page's).
+4. **`src/components/ProgressRows.tsx` (new):** a nested list. Each row: the medium's glyph (`book` or
+   `book-open` from the sprite, with an sr-only *Books* or *Comics*), the kind as a grey badge (*series,
+   subseries, universe, author, shelf, run, track*), the name (a link where `rowHref` gives one, else text),
+   `read / total` in mono, an `.emeter` filled with `--ready` (`fillShare` from `WhereItSits`), and below it
+   `Next: {label}` on *In the middle of* (none on a track or with `next` null) or *finished Mon YYYY* on
+   *Completed* (none with no month). Children are indented (`ul` inside the parent's `li`). *On hold* is a
+   small client disclosure (`OnHold`): a real `<button aria-expanded>` *On hold* with its count in mono,
+   collapsed at first, below the middle rows, drawing the same rows when open; absent with none under the
+   chip.
+5. **Empty states** (`EmptySlate`, one action each): *In the middle of*, All and Books: *Nothing in the
+   middle.* *Follow a series as Reading to see it here.* **Open the Library** (`/books/list`); Comics:
+   *Nothing in the middle.* *Runs you start land here.* **Open Runs** (`/comics/runs`). *Completed*: *Nothing
+   completed yet.* *A series, shelf or run with every book or issue read lands here.* with the same action
+   for its chip. On hold still draws under an empty middle.
+6. **Nav:** in `src/components/nav/items.ts`, `{ id: "progress", label: "Progress", href: "/progress", icon:
+   "chart-no-axes-gantt", enabled: true, group: "global" }` after Inbox. `tabRowItems` ends with every global
+   item (… Inbox, Progress) rather than Inbox alone, so the phone's tab row shows it. In
+   `src/components/nav/Icons.tsx`, the lucide `chart-no-axes-gantt` path is added to `IconName` and the
+   sprite.
+7. **Rollup links:** in `src/app/books/page.tsx`, a grey link line in the `year-so-far` (rollup) slot after
+   `ComingOutLine`: *In the middle of · Completed →* to `/progress?medium=books`. In
+   `src/app/comics/(dash)/page.tsx`, which has no `data-slot="rollup"`, the link goes on the *All runs* line
+   under the totals rollup: *In the middle of · Completed* to `/progress?medium=comics`. The order of the five
+   slots doesn't change.
+8. **Docs:** `design/mockups.html` gains a `progress` section with phone 360 (middle with nesting and On hold
+   collapsed, then open; Completed; the empty middle), tablet 834 (*Progress* current on the rail) and
+   desktop (current in the sidebar) frames, with notes. `design/mockups-index.md` lists `progress`.
+   `docs/02-architecture.md` § 5 gets the `/progress` route row, and § 7's query counts get `/progress` 1.
+
+### Files
+
+- New: `src/lib/progress.ts`, `src/components/Tablist.tsx`, `src/components/ProgressRows.tsx`,
+  `src/app/progress/page.tsx`, `src/app/progress/loading.tsx`, `src/app/progress/error.tsx`.
+- Changed: `src/components/StatusTabs.tsx` (delegates to Tablist), `src/components/nav/items.ts`,
+  `src/components/nav/Icons.tsx`, `src/app/globals.css` (`.tab-ink` width, the progress rows, indent, On
+  hold), `src/app/books/page.tsx`, `src/app/comics/(dash)/page.tsx`.
+- Docs: `design/mockups.html`, `design/mockups-index.md`, `docs/02-architecture.md`.
+- Tests: `test/progress-lib.test.ts` (new), `test/e2e/progress.spec.ts` (new), `test/nav-items.test.tsx`,
+  `test/query-budget.test.ts`, `test/e2e/tab-row.spec.ts` (its expectations once Progress joins the row).
+- Not in "Files likely touched": Tablist, StatusTabs, Icons, globals.css, lib/progress, error.tsx,
+  query-budget.test.ts, tab-row.spec.ts.
+
+### Test strategy
+
+- AC-1, AC-2: `test/e2e/progress.spec.ts`, seeding the Check's fixtures under E2E ids: *In the middle of*
+  lists the reading series, the shelf and the run, each with its kind, `read / total` and next thing; the
+  *Books* chip hides the run, and *Comics* hides the books rows; the tab and chip survive a reload; the
+  series under a listed universe is inside the universe's row, indented; nothing is written (row counts in
+  the follow and progress tables are unchanged). Membership and counts are TASK-104's
+  (`test/progress-page.test.ts`).
+- AC-3: the same spec: *On hold* is a button with `aria-expanded="false"` and its count; after a click it is
+  `true` and lists the tracking series at 2 / 5, and the series is not above it.
+- AC-4: the same spec: *Completed* lists the 5-of-5 series and the 10-of-10 run, each with `finished {Mon YYYY}`;
+  the series is a link to `/books/series/<id>`, and the run to `/comics/<id>`.
+- AC-5: `test/nav-items.test.tsx`: *Progress* is after Inbox in the rail and the sidebar and last in
+  `tabRowItems`, current on `/progress` in each. The e2e spec: the books and comics dashboards' rollup links
+  open `/progress` with the chip chosen. The mockup section and its index row are checked by hand and by
+  spec-reviewer.
+- AC-6: the e2e spec: axe; each tab's empty state with one action (on a fixture-free chip or a cleared
+  fixture); the loading skeletons (rendered `loading.tsx`) and the error state (rendered `error.tsx`);
+  keyboard on the tablist (←/→) and the chips (Tab, Enter); contrast; targets ≥ 24px; nothing red; no
+  sideways scroll; screenshots at every `ui.viewports` width.
+- `test/progress-lib.test.ts`: tab and medium parsing, hrefs keeping the other parameter, nesting (two
+  deep, an orphan stands alone, children placed under a parent listed after them), `rowHref` per kind, the
+  month label.
+- `test/query-budget.test.ts`: `/progress` is 1 query in 1 wave.
+
+### Risks
+
+- One more global item could crowd the 768px rail at short heights; `shell.spec` and the screenshots will
+  show it.
+- Changing `tabRowItems` changes the existing expectations in `nav-items.test.tsx` and `tab-row.spec.ts`.
+- `progressRows` hasn't been timed at real scale: time it on the development data during the UI walk.
+- StatusTabs' refactor must keep `status.spec.ts` green; it is run in one project before the PR.
 
 ## Review log
 
