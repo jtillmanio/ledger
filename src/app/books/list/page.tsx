@@ -103,6 +103,13 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
         <BookSort params={{ status, level, genre, owned, q }} {...order} />
       </div>
 
+      {/* Under the Parked filter, the way to the review (task 5.15, TASK-111; the plan gate: no nav item): grey, a link. */}
+      {status === "parked" && (
+        <p className="parked-line list-parked-line">
+          <Link prefetch={false} href="/parked">Review parked <span aria-hidden="true">→</span></Link>
+        </p>
+      )}
+
       {/* Where a to-read book sits (task 1.9): read from to_read_level, the same four levels the plan draws. */}
       {status === "to_read" && (
         <div className="filters" role="group" aria-label="To read level">

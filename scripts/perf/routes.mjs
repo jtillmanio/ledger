@@ -40,6 +40,9 @@ export const ROUTES = [
   { id: "inbox", path: "/inbox", signedIn: true, tap: { from: "/books/list", selector: 'nav a[href="/inbox"]' } },
   // Progress (task 5.12) sits beside Inbox: the rail, the sidebar and the phone's tab row, so the tap clicks the first match.
   { id: "progress", path: "/progress", signedIn: true, tap: { from: "/books/list", selector: 'nav a[href="/progress"]' } },
+  // The parked review (task 5.15, TASK-111) has no nav item: the Library's Parked filter always carries its
+  // *Review parked →* link, whatever is parked, so the tap starts there.
+  { id: "parked", path: "/parked", signedIn: true, tap: { from: "/books/list?status=parked", selector: 'a[href="/parked"]' } },
   // Settings (task 2.0): the rail's and sidebar's foot and the phone bar's gear; the tap clicks the first match, the gear's on a phone.
   { id: "settings", path: "/settings", signedIn: true, tap: { from: "/comics", selector: 'a[href="/settings"]' } },
   // The watch shell (task 1.8): the nav's link, with the slate and nothing more until 8.x.

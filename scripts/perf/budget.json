@@ -12,6 +12,7 @@
     "comics-status": { "docRscBytes": 24000, "jsBytes": 175000, "requests": 35, "a11y": 100 },
     "books-status": { "docRscBytes": 24000, "jsBytes": 175400, "requests": 35, "a11y": 100 },
     "progress": { "docRscBytes": 24000, "jsBytes": 175400, "requests": 35, "a11y": 100 },
+    "parked": { "docRscBytes": 24000, "jsBytes": 175400, "requests": 35, "a11y": 100 },
     "inbox": { "docRscBytes": 16000, "jsBytes": 173000, "requests": 31, "a11y": 100 },
     "settings": { "docRscBytes": 16800, "jsBytes": 173000, "requests": 32, "a11y": 100 },
     "watch": { "docRscBytes": 12500, "jsBytes": 173000, "requests": 28, "a11y": 100 }

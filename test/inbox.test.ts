@@ -265,6 +265,54 @@ describe("the list and the count (AC-1, AC-4)", () => {
   });
 });
 
+describe("the Parked review row (task 5.15, TASK-111, AC-4)", () => {
+  const inbox = async () => {
+    const Inbox = (await import("../src/app/inbox/page")).default;
+    return renderToStaticMarkup(createElement(UndoProvider, null, await Inbox()));
+  };
+  /** The *Unresolved* list's rows, in order: each row's title text. */
+  const rows = (html: string) => [...html.matchAll(/<span class="rt">([^<]*)<\/span>/g)].map((m) => m[1]);
+  const heading = (html: string) => /<h2 class="s">Unresolved<span class="more">(\d+)<\/span><\/h2>/.exec(html)?.[1];
+
+  beforeEach(async () => {
+    await sql`INSERT INTO book_status (user_id, book_id, status, parked_on)
+              VALUES (${USER}, 'the-blade-itself-joe-abercrombie', 'parked', '2026-01-10')`;
+  });
+
+  it("due (one parked, never reviewed): Parked review is the first row, above the notes, with Review linking /parked; the count includes it", async () => {
+    await note("a note", { ago: 1 });
+    const html = await inbox();
+    expect(rows(html)).toEqual(["Parked review", "a note"]);
+    expect(html).toMatch(/<li class="row note parked-review">.*1 parked.*<a [^>]*href="\/parked"[^>]*>Review<\/a><\/li>/);
+    expect(html).toMatch(/<a [^>]*aria-label="Review parked books"[^>]*>Review<\/a>/);
+    expect(heading(html)).toBe("2");
+    expect(html).not.toMatch(/danger/);
+    // The dashboards' inbox chip still counts notes only (owner, at the plan gate).
+    expect(await queries.inboxCount(USER)).toBe(1);
+  });
+
+  it("due with no notes: the row, and no Nothing waiting slate", async () => {
+    const html = await inbox();
+    expect(rows(html)).toEqual(["Parked review"]);
+    expect(heading(html)).toBe("1");
+    expect(html).not.toContain("Nothing waiting");
+  });
+
+  it("after Done reviewing the row is gone, and with no notes the slate is back; never due shows no row", async () => {
+    const review = await import("../src/app/api/parked/review/route");
+    expect((await review.POST()).status).toBe(200);
+    let html = await inbox();
+    expect(rows(html)).toEqual([]);
+    expect(html).not.toContain('href="/parked"');
+    expect(html).toContain("Nothing waiting");
+    expect(heading(html)).toBe("0");
+
+    await sql`UPDATE reading_settings SET parked_review = 'never', parked_reviewed_on = NULL`;
+    html = await inbox();
+    expect(html).not.toContain("Parked review");
+  });
+});
+
 /** The comics dashboard (`/comics`) and the books master list (`/books/list`; the books dashboard is 2.2's), rendered against the TEST database. */
 async function dashboards() {
   const Home = (await import("../src/app/comics/(dash)/page")).default;

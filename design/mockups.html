@@ -2537,7 +2537,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
         <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
         <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
         <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
-        <p class="tb-mu" style="margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:.8125rem"><a href="#" style="display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:underline;text-underline-offset:3px">2 out now · 3 coming this month <span aria-hidden="true">&rarr;</span></a></p>
+        <p class="tb-mu" style="margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:.8125rem"><a href="#" style="display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:underline;text-underline-offset:3px">2 out now · 3 coming this month <span aria-hidden="true">&rarr;</span></a></p><p class="tb-mu" style="margin:4px 0 0;font-size:.8125rem"><a href="#" style="display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:underline;text-underline-offset:3px">Review 3 parked <span aria-hidden="true">&rarr;</span></a></p>
       </section>
     </div>
   </div>
@@ -2738,7 +2738,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
         <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
         <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
         <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
-        <p class="tb-mu" style="margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:.8125rem"><a href="#" style="display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:underline;text-underline-offset:3px">2 out now · 3 coming this month <span aria-hidden="true">&rarr;</span></a></p>
+        <p class="tb-mu" style="margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:.8125rem"><a href="#" style="display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:underline;text-underline-offset:3px">2 out now · 3 coming this month <span aria-hidden="true">&rarr;</span></a></p><p class="tb-mu" style="margin:4px 0 0;font-size:.8125rem"><a href="#" style="display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:underline;text-underline-offset:3px">Review 3 parked <span aria-hidden="true">&rarr;</span></a></p>
       </section>
     </div>
   </div>
@@ -2846,7 +2846,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
         <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
         <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
         <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
-        <p class="tb-mu" style="margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:.8125rem"><a href="#" style="display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:underline;text-underline-offset:3px">2 out now · 3 coming this month <span aria-hidden="true">&rarr;</span></a></p>
+        <p class="tb-mu" style="margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:.8125rem"><a href="#" style="display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:underline;text-underline-offset:3px">2 out now · 3 coming this month <span aria-hidden="true">&rarr;</span></a></p><p class="tb-mu" style="margin:4px 0 0;font-size:.8125rem"><a href="#" style="display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:underline;text-underline-offset:3px">Review 3 parked <span aria-hidden="true">&rarr;</span></a></p>
       </section>
     </div>
     </div>
@@ -2928,6 +2928,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li><b>On deck</b> is the books with no year yet. <b>Plan</b> moves one to the end of this quarter, with Undo. On the desktop it is hidden at rest with a fine pointer and shown on row hover or <code>:focus-within</code>, the row turning <code>--raise</code> (FP-D15; the first row is drawn hovered); with touch it is always shown.</li>
     <li><b>2026 so far</b> is three counts on <code>--raise</code>, all this year: books (with <i>3 listened</i> beside them), pages, and new authors (an author first read this year). Plain text until Stats (6.2) exists.</li>
     <li><span class="chg">Task 5.7 (D-35):</span> <b>Coming out</b>, <i>notify me</i> in the app: under the three counts, one grey line, <i>2 out now &middot; 3 coming this month &rarr;</i>, a link to <code>/books/releases</code> (reading frames at 390, 834 and the desktop). Its counts are the page's own: <i>out now</i> is its <i>Out now</i> group (a date on or before today, Eastern), <i>coming this month</i> its group for this month (later this month). A zero part is left out, and with both zero there is no line (owner, at TASK-100's plan gate), so the other frames draw none. <code>--muted</code> text, underlined, never a state colour; the arrow is hidden from the name. The slots keep their order: it is part of the rollup. The digest email stays 7.6.</li>
+<li><span class="chg">Task 5.15 (D-105):</span> <b>the parked review</b>, its reminder in the app (owner, 2026-11-02): when the review is due (Settings → <i>Review parked items</i>, monthly or quarterly, and something parked), one more grey line under <i>Coming out</i>'s, <i>Review 3 parked &rarr;</i>, a link to <code>/parked</code> (<code>parked</code>). No nudge copy, never a state colour; absent when the review isn't due. Drawn on the reading frames at 390, 834 and the desktop.</li>
     <li><b>The verbs.</b> Reading: <i>Log progress &middot; &#10003; finished &middot; search</i>, and on the desktop header <i>Search &middot; Finished it &middot; Log pages</i>, primary last. <i>Log progress</i> / <i>Log pages</i> are drawn unavailable (dimmed, <code>aria-disabled</code>, the reason <i>Logging pages arrives with sessions (2.1b)</i>). <i>&#10003; finished</i> finishes the book today in one tap, with Undo and 2.2c&rsquo;s offer. <i>Between books</i> drops <i>Finished it</i>; its primary names the offer in full, and below about 1100px it truncates and keeps the full title in its accessible name.</li>
     <li><b>Not here:</b> the capacity card with <b>Rebalance</b> and <b>Accept</b> (2.7) and <i>Place them</i> (2.8) live on <code>/books/plan</code> only (owner, at the plan gate, Q2); the <i>Place them</i> sheet frame moved to <code>plan</code>. The <i>Library</i> is reached from the tab row (phone), the rail and the sidebar.</li>
   </ul></div>
@@ -5642,6 +5643,104 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li><b>Navigation:</b> <i>Coming out</i> sits under Books after <i>Top</i> and before <i>Add</i>, in the tab row, the rail and the sidebar, with a neutral calendar-and-clock icon.</li>
   </ul></div>
 </section>
+<section class="screen" data-id="parked">
+<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <div class="wrap">
+    <h1 class="t">Parked</h1>
+    <p class="lede">Last reviewed 14 Aug</p>
+    <div class="group">
+      <div class="ghead">Books<span class="n">4</span></div>
+      <div class="row" style="flex-wrap:wrap"><span class="cv m k3">GOM</span>
+        <div class="rb"><span class="rh"><span class="rt">Gardens of the Moon</span></span>
+          <div class="rs">Steven Erikson · Malazan #1</div><div class="rs">Parked 7 months</div></div><div style="flex:1 0 100%;display:flex;flex-wrap:wrap;gap:8px;padding-left:62px"><button class="btn sec sm" style="min-height:44px" aria-label="Keep parked: Gardens of the Moon">Keep parked</button><button class="btn sec sm" style="min-height:44px" aria-label="Plan Gardens of the Moon" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:44px" aria-label="Unlisted: Gardens of the Moon">Unlisted</button></div></div>
+      <div class="row" style="flex-wrap:wrap"><span class="cv m k1">ANA</span>
+        <div class="rb"><span class="rh"><span class="rt">Anathem</span></span>
+          <div class="rs">Neal Stephenson</div><div class="rs">Parked 4 months</div></div><div style="flex:1 0 100%;display:flex;flex-wrap:wrap;gap:8px;padding-left:62px"><button class="btn sec sm" style="min-height:44px" aria-label="Keep parked: Anathem">Keep parked</button><button class="btn sec sm" style="min-height:44px" aria-label="Pick it back up: Anathem">Pick it back up</button><button class="btn sec sm" style="min-height:44px" aria-label="Unlisted: Anathem">Unlisted</button></div></div>
+      <div class="row"><span class="rb"><span class="rh"><span class="rt" style="color:var(--muted)">Piranesi</span></span>
+          <div class="rs">Kept parked</div></span></div>
+      <div class="row" style="flex-wrap:wrap"><span class="cv m k2">NOW</span>
+        <div class="rb"><span class="rh"><span class="rt">The Name of the Wind</span></span>
+          <div class="rs">Patrick Rothfuss · Kingkiller #1</div><div class="rs">Parked 2 weeks</div></div><div style="flex:1 0 100%;display:flex;flex-wrap:wrap;gap:8px;padding-left:62px"><button class="btn sec sm" style="min-height:44px" aria-label="Keep parked: The Name of the Wind">Keep parked</button><button class="btn sec sm" style="min-height:44px" aria-label="Plan The Name of the Wind" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:44px" aria-label="Unlisted: The Name of the Wind">Unlisted</button></div></div>
+    </div>
+    <p style="margin:24px 0 0"><button class="btn" style="min-height:44px">Done reviewing</button></p>
+  </div>
+</div></div></div>
+<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <div class="wrap">
+    <h1 class="t">Parked</h1>
+    <p class="lede">Last reviewed 14 Aug</p>
+    <div class="slate"><b>Nothing parked.</b><p>A book you park waits here, off your list and out of the plan, until you decide what to do with it.</p><a class="btn sm" href="#">Open the Library</a></div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="tab"><div class="frame-in"><div class="app" data-theme="light" data-medium="books"><nav class="rail" aria-label="Main"><span class="rail-word" aria-hidden="true">L</span><div class="rg"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="rl">Dashboard</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 7a2 2 0 0 0-2 2v11"/><path d="M5.803 18H5a2 2 0 0 0 0 4h9.5a.5.5 0 0 0 .5-.5V21"/><path d="M9 15V4a2 2 0 0 1 2-2h9.5a.5.5 0 0 1 .5.5v14a.5.5 0 0 1-.5.5H11a2 2 0 0 1 0-4h10"/></svg></span><span class="rl">Library</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></span><span class="rl">Top</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M16 14v2.2l1.6 1"/><path d="M16 2v4"/><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M3 10h5"/><path d="M8 2v4"/><circle cx="16" cy="16" r="6"/></svg></span><span class="rl">Coming out</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span><span class="rl">Add</span></a></div></nav><div class="tabmain">
+  <div class="wrap">
+    <h1 class="t">Parked</h1>
+    <p class="lede">Last reviewed 14 Aug</p>
+    <div class="group">
+      <div class="ghead">Books<span class="n">4</span></div>
+      <div class="row"><span class="cv m k3">GOM</span>
+        <div class="rb"><span class="rh"><span class="rt">Gardens of the Moon</span></span>
+          <div class="rs">Steven Erikson · Malazan #1</div><div class="rs">Parked 7 months</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: Gardens of the Moon">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Plan Gardens of the Moon" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: Gardens of the Moon">Unlisted</button></div></div>
+      <div class="row"><span class="cv m k1">ANA</span>
+        <div class="rb"><span class="rh"><span class="rt">Anathem</span></span>
+          <div class="rs">Neal Stephenson</div><div class="rs">Parked 4 months</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: Anathem">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Pick it back up: Anathem">Pick it back up</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: Anathem">Unlisted</button></div></div>
+      <div class="row"><span class="rb"><span class="rh"><span class="rt" style="color:var(--muted)">Piranesi</span></span>
+          <div class="rs">Kept parked</div></span></div>
+      <div class="row"><span class="cv m k2">NOW</span>
+        <div class="rb"><span class="rh"><span class="rt">The Name of the Wind</span></span>
+          <div class="rs">Patrick Rothfuss · Kingkiller #1</div><div class="rs">Parked 2 weeks</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: The Name of the Wind">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Plan The Name of the Wind" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: The Name of the Wind">Unlisted</button></div></div>
+    </div>
+    <p style="margin:24px 0 0"><button class="btn">Done reviewing</button></p>
+  </div>
+</div></div></div></div>
+<div class="frame" data-w="desk"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
+    <aside class="side"><div class="brand">Ledger</div>
+    <a>Search<span class="kbd">Ctrl K</span></a>
+    <a>Inbox<span class="kbd">6</span></a>
+    <div class="grp">Books</div>
+    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
+    <a><i class="ico" aria-hidden="true">&#9776;</i>Library</a>
+    <a><i class="ico" aria-hidden="true">&#9636;</i>Plan</a>
+    <a><i class="ico" aria-hidden="true">&#9733;</i>Top books</a>
+    <a><i class="ico" aria-hidden="true">&#9719;</i>Coming out</a>
+    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
+    <div class="grp">&nbsp;</div>
+    <a>Settings</a>
+    <div class="syncpill" role="status" aria-live="polite" data-state="online">Synced</div>
+    </aside>
+  <div class="main"><div class="wrap">
+    <h1 class="t">Parked</h1>
+    <p class="lede">Last reviewed 14 Aug</p>
+    <div class="group">
+      <div class="ghead">Books<span class="n">4</span></div>
+      <div class="row"><span class="cv m k3">GOM</span>
+        <div class="rb"><span class="rh"><span class="rt">Gardens of the Moon</span></span>
+          <div class="rs">Steven Erikson · Malazan #1</div><div class="rs">Parked 7 months</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: Gardens of the Moon">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Plan Gardens of the Moon" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: Gardens of the Moon">Unlisted</button></div></div>
+      <div class="row"><span class="cv m k1">ANA</span>
+        <div class="rb"><span class="rh"><span class="rt">Anathem</span></span>
+          <div class="rs">Neal Stephenson</div><div class="rs">Parked 4 months</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: Anathem">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Pick it back up: Anathem">Pick it back up</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: Anathem">Unlisted</button></div></div>
+      <div class="row"><span class="rb"><span class="rh"><span class="rt" style="color:var(--muted)">Piranesi</span></span>
+          <div class="rs">Kept parked</div></span></div>
+      <div class="row"><span class="cv m k2">NOW</span>
+        <div class="rb"><span class="rh"><span class="rt">The Name of the Wind</span></span>
+          <div class="rs">Patrick Rothfuss · Kingkiller #1</div><div class="rs">Parked 2 weeks</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: The Name of the Wind">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Plan The Name of the Wind" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: The Name of the Wind">Unlisted</button></div></div>
+    </div>
+    <p style="margin:24px 0 0"><button class="btn">Done reviewing</button></p>
+  </div></div>
+</div></div></div>
+
+<div class="notes"><h3>Parked</h3>
+  <ul>
+    <li><b>Task 5.15 (D-105, F-66):</b> the parked review. Everything you've parked, books first (5.16 adds runs), the one parked longest first, each with how long: <i>Parked 4 months</i> (calendar months, as the due rule counts them).</li>
+    <li><b>Three verbs a row</b>, each one write with Undo, each a real button named for its book, grey (<code>.btn.sec</code>), never red: <b>Keep parked</b> writes nothing and folds the row to <i>Kept parked</i>; <b>Plan&hellip;</b> opens 2.3's picker (a quarter, a year, On deck or Someday), and the book leaves the review for the end of what you chose; <b>Unlisted</b> lets it go. A book parked mid-read has <b>Pick it back up</b> in place of <i>Plan&hellip;</i>: back to Reading with its start. 44px on a phone row, where the verbs wrap under the text; 32px from the tablet up, at the row's end.</li>
+    <li><b>Done reviewing</b> records the review, whatever is left parked: the dashboard's <i>Review 3 parked &rarr;</i> and the Inbox's <i>Parked review</i> row go until the cadence comes round. Its toast offers Undo.</li>
+    <li><b>Empty:</b> <i>Nothing parked.</i> with one action, <i>Open the Library</i>, and no <i>Done reviewing</i>. Loading is skeleton rows at the loaded size; the error state is a grey &times;, never red, with <i>Try again</i>.</li>
+    <li><b>Navigation:</b> no nav item. Reached from the books dashboard's line, the Inbox's row and the Library's <i>Parked</i> filter, which gains a grey <i>Review parked &rarr;</i> under its chips.</li>
+  </ul></div>
+</section>
 
 <!-- ══ SEARCH ══ -->
 <section class="screen" data-id="search">
@@ -6019,8 +6118,12 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="ctl"><span class="seg"><span role="button" aria-pressed="false" tabindex="0">Books</span><span role="button" aria-pressed="true" tabindex="0" data-on>Comics</span><span role="button" aria-pressed="false" tabindex="0">Watch</span><span role="button" aria-pressed="false" tabindex="0">Unsure</span></span>
       <button class="btn sm" style="margin-left:auto">Save</button></div>
 
-    <h3 class="s">Unresolved<span class="more">6</span></h3>
+    <h3 class="s">Unresolved<span class="more">7</span></h3>
     <div class="group">
+      <div class="row"><span class="rb">
+        <span class="rh"><span class="rt" style="font-weight:500;font-size:.875rem">Parked review</span></span>
+        <div class="rs"><span class="bdg dn">books</span> 3 parked &middot; due since 15 Oct</div></span>
+        <a class="btn sec sm" href="#" aria-label="Review parked books">Review</a></div>
       <div class="row"><span class="rb">
         <span class="rh"><span class="rt" style="font-weight:500;font-size:.875rem">Priest's Black Panther — apparently great</span></span>
         <div class="rs"><span class="bdg dn">comics</span> 2 days ago</div></span>
@@ -6075,8 +6178,12 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
       <div class="ctl"><span class="seg"><span role="button" aria-pressed="false" tabindex="0">Books</span><span role="button" aria-pressed="true" tabindex="0" data-on>Comics</span><span role="button" aria-pressed="false" tabindex="0">Watch</span><span role="button" aria-pressed="false" tabindex="0">Unsure</span></span>
       <button class="btn sm" style="margin-left:auto">Save</button></div>
     </div><div>
-      <h3 class="s">Unresolved<span class="more">6</span></h3>
+      <h3 class="s">Unresolved<span class="more">7</span></h3>
       <div class="group">
+        <div class="row"><span class="rb">
+          <span class="rh"><span class="rt" style="font-weight:500;font-size:.875rem">Parked review</span></span>
+          <div class="rs"><span class="bdg dn">books</span> 3 parked &middot; due since 15 Oct</div></span>
+          <a class="btn sec sm" href="#" aria-label="Review parked books">Review</a></div>
       <div class="row"><span class="rb">
         <span class="rh"><span class="rt" style="font-weight:500;font-size:.875rem">Priest's Black Panther — apparently great</span></span>
         <div class="rs"><span class="bdg dn">comics</span> 2 days ago</div></span>
@@ -6103,6 +6210,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li><b>Desktop:</b> Capture on the left, the unresolved queue on the right, so jotting a new note and clearing an old one are the same visit.</li>
     <li><b>Zero required fields.</b> One text box, an optional books/comics tag, save. Designed for ten seconds on a phone, not a data-entry session.</li>
     <li>Unresolved items surface with a count on the dashboard, so nothing rots silently.</li>
+    <li><b>Parked review (task 5.15, D-105):</b> when the parked review is due, one <i>Parked review</i> row heads <i>Unresolved</i>, <i>3 parked &middot; due since 15 Oct</i> (or <i>3 parked</i> before the first review), with <b>Review</b>, a link to <code>/parked</code>, until <i>Done reviewing</i>. The heading's count includes it; the dashboards' inbox chip counts notes only. No push notification.</li>
     <li><b>Resolve</b> routes into the right existing flow — New Run for comics, Add books for books — with the raw text carried through as a search term.</li>
     <li>Books had only the old To-Read tab&#39;s 497 raw lines for this, settled by extract before cutover (task 1.27, D-111). This gives comics the same thing and unifies both.</li>
   </ul></div>

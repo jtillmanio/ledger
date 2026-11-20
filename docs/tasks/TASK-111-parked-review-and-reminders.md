@@ -1,7 +1,7 @@
 ---
 id: TASK-111
 title: 5.15 Parked (5 of 5) — the /parked review, the dashboard line and the Inbox row
-status: Ready
+status: In progress
 depends_on: [TASK-109, TASK-110, TASK-127]
 size: M
 model: sonnet
@@ -102,6 +102,8 @@ Approved by the owner 2026-11-20, with the plan gate's answers: split in two (th
 - AC-4 server side: `test/books-dashboard.test.ts` and `test/inbox.test.ts` (the line and the row only when due); `test/parked-review.test.ts` › `parkedBooks` order and `parkedAge`; `test/query-budget.test.ts` (the new budgets).
 - AC-5: by eye (the redraw), and `docs/02-architecture.md` read by the spec-reviewer.
 
+**Files added while implementing** (each inside a step, none widening it): `src/app/parked/error.tsx` (step 2: the app has no shared error boundary); `test/inbox.test.tsx` (its `@/db/queries` mock gains a not-due `parkedReview`, which `/inbox` now reads); `test/loading-states.test.tsx` (`/parked`'s skeleton joins the route list); `scripts/perf/routes.mjs` and `scripts/perf/budget.json` (`test/perf.test.ts` wants every top-level screen measured: `/parked` at `/books/status`'s budget, its tap from the Library's *Parked* filter, and `docs/02-architecture.md`'s budget table with it); `test/e2e/shard-times.json` (the new spec's time in `w390-light`, its one project, so the committed shard plan stays balanced). `src/lib/parked.ts` also gains `reviewDueOn`, the Inbox row's *due since …*, beside `reviewDue` and sharing its months.
+
 **Re-checked 2026-11-20 at `e591e5d` (owner):** the plan was stale against 2.2l (#305: `PlanBook` and the picker's header gained the book's universe and series; step 1 now carries them) and the *From TASK-127* note, which goes to its own roadmap item (Follow-ups) and changes nothing here.
 
 **Risks**: the `/books` budget test and the Lighthouse budget for `/books` (one more query, a few hundred bytes); e2e fixtures must set `reading_settings` and `parked_on` on the test database only. TASK-100's *Coming out* line is already in the slot: the parked line goes after it, as drawn.
@@ -109,6 +111,8 @@ Approved by the owner 2026-11-20, with the plan gate's answers: split in two (th
 ## Review log
 
 _Filled by /implement-task. One line per round._
+
+- Verify R1 FAIL(3) (issue-search.test.tsx: a CSS comment naming --danger; perf.test.ts: /parked not in the route list; e2e-shards.test.ts: the new spec unrecorded) → fixed | Verify R2 PASS (129 files, 2439 tests; parked-review.spec.ts 7/7 in w390-light; mockup-tablet.spec.ts 20/20 in w1280-light)
 
 ## Blocked
 

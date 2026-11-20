@@ -26,7 +26,8 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   // Task 2.7 adds the year's stretch-year acceptance (one row), so the strip's overage can read settled.
   // Task 4.4 adds the last Calibre sync (one scalar row) for the stale-sync line, in the same wave.
   // Task 5.7 adds the wanted releases (Coming out's own query) for the rollup's line, in the same wave.
-  "/books": { queries: 13, waves: 1 },
+  // Task 5.15 (TASK-111) adds the parked review (one row) for the rollup's *Review N parked* line, in the same wave.
+  "/books": { queries: 14, waves: 1 },
   // The plan page (task 2.10): the year's capacity, the rail's books, the quarters' rows and your pace, together;
   // task 2.7 adds the year's acceptance row, for the capacity card and the settled hatch.
   "/books/plan": { queries: 5, waves: 1 },
@@ -48,7 +49,10 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   "/books/universes/[id]": { queries: 1, waves: 1 },
   // Progress (task 5.12): every row of both tabs and On hold, for books and comics, in one statement.
   "/progress": { queries: 1, waves: 1 },
-  "/inbox": { queries: 2, waves: 1 },
+  // Task 5.15 (TASK-111) adds the parked review (one row) for the *Parked review* row, in the same wave.
+  "/inbox": { queries: 3, waves: 1 },
+  // The parked review (task 5.15, TASK-111): the parked books and the review's state, together.
+  "/parked": { queries: 2, waves: 1 },
   // Task 4.4 adds the last Calibre sync (one scalar row) for the *Calibre* row, in the same wave.
   "/settings": { queries: 3, waves: 1 },
   // The Calibre page (task 4.4): the runs and their counts, the books with no Calibre id, the newest runs' reports
@@ -163,6 +167,7 @@ const pages: [string, () => Promise<unknown>][] = [
   ["/progress", async () =>
     (await import("../src/app/progress/page")).default({ searchParams: Promise.resolve({}) })],
   ["/inbox", async () => (await import("../src/app/inbox/page")).default()],
+  ["/parked", async () => (await import("../src/app/parked/page")).default()],
   ["/settings", async () => (await import("../src/app/settings/page")).default()],
   ["/settings/calibre", async () => (await import("../src/app/settings/calibre/page")).default()],
   ["/watch", async () => (await import("../src/app/watch/page")).default()],
