@@ -94,15 +94,15 @@ _Approved by the owner 2026-11-20._
 - `src/components/useBookWrite.ts`, `src/lib/format.ts`, `src/lib/parked.ts` (not in Files likely touched: `parkable`) — labels and the rule.
 - `src/components/BookStatus.tsx`, `src/components/BookRowMenu.tsx` — *Park*.
 - `src/app/books/list/page.tsx` — the chip.
-- `design/mockups.html`, `design/mockups-index.md` — `blist` redraw.
-- `test/format.test.ts` (not listed), `test/library-page.test.tsx`, `test/e2e/parked.spec.ts` (new).
+- `design/mockups.html`, `design/mockups-index.md` — `blist` redraw, and *Park* on `bookdetail`'s *Your record* control (the sheet renders `BookStatus`).
+- `test/add-book-sheet.test.tsx` and `test/parked.test.ts` (not listed), `test/library-page.test.tsx`, `test/e2e/parked.spec.ts` (new); `test/e2e/audiobooks.spec.ts` (pinned the control's buttons, which gain *Park* on a Listening book).
 - Listed but unchanged: `src/lib/library-sort.ts` (`libraryHref` already carries any status), `src/components/BookListSearch.tsx` (the Library row's badge is its tag), `src/components/BookSearch.tsx` (gets *Parked* through `placeTag`).
 
 **Test strategy**
 
-- AC-1 (this part's clauses), AC-4: `test/format.test.ts` — `placeTag` of a Parked book is *Parked*; `test/e2e/parked.spec.ts` — the chip lists a parked book, the Library box lists it with the *parked* badge, Add books' search tags it *Parked* under *In your library*.
+- AC-1 (this part's clauses), AC-4: `test/add-book-sheet.test.tsx` — Add books' result for a Parked book is tagged *Parked* (through `placeTag`); `test/e2e/parked.spec.ts` — the chip lists a parked book, the Library box lists it with the *parked* badge, Add books' search tags it *Parked* under *In your library*.
 - AC-2: `parked.spec.ts` seeds its own three to-read books in one quarter (deleted after); *Park* on the 2nd → *Parked, N+1* lists it without a reload; *Undo* → `to_read`, back in the quarter at ordinal 2.
-- AC-3: `parked.spec.ts` — *Park* in the control and the `⋯` for to-read, reading and listening, absent for read, DNF and Unlisted; its colour and background are not `--danger` or `--blocked`. `test/parked.test.ts` (or `format.test.ts`) — `parkable` agrees with `PARKS_FROM`.
+- AC-3: `parked.spec.ts` — *Park* in the control and the `⋯` for to-read, reading and listening, absent for read, DNF and Unlisted; its colour and background are not `--danger` or `--blocked`. `test/parked.test.ts` — `parkable` agrees with `PARKS_FROM`.
 - AC-5: manual / spec-reviewer reads the `blist` frames and the index row.
 - AC-6: `test/library-page.test.tsx` — the chip's name, count, href (sort and owned kept), absent at 0; `parked.spec.ts` — empty state at `?status=parked`, the chip and *Park* real controls ≥ 24px with names, axe, contrast light and dark, screenshots at 360 and 1280.
 
