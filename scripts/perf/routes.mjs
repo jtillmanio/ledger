@@ -38,6 +38,8 @@ export const ROUTES = [
   { id: "books-status", path: "/books/status", signedIn: true, tap: { from: "/books/list", selector: 'a[href="/books/status"]' } },
   // Inbox is in the rail, the sidebar and (since 2.2i) the phone's tab row: the tap clicks the first match, the tab row's on a phone.
   { id: "inbox", path: "/inbox", signedIn: true, tap: { from: "/books/list", selector: 'nav a[href="/inbox"]' } },
+  // Progress (task 5.12) sits beside Inbox: the rail, the sidebar and the phone's tab row, so the tap clicks the first match.
+  { id: "progress", path: "/progress", signedIn: true, tap: { from: "/books/list", selector: 'nav a[href="/progress"]' } },
   // Settings (task 2.0): the rail's and sidebar's foot and the phone bar's gear; the tap clicks the first match, the gear's on a phone.
   { id: "settings", path: "/settings", signedIn: true, tap: { from: "/comics", selector: 'a[href="/settings"]' } },
   // The watch shell (task 1.8): the nav's link, with the slate and nothing more until 8.x.

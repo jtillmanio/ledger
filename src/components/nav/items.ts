@@ -10,7 +10,7 @@ export type NavGroup = "media" | "medium" | "global" | "foot";
 export type IconName =
   | "layout-dashboard" | "list-checks" | "layers" | "route" | "plus" | "calendar-range" | "library"
   | "list-ordered" | "calendar-clock" | "book-open" | "book" | "book-copy" | "book-marked" | "tv" | "inbox" | "download" | "search"
-  | "settings" | "film";
+  | "settings" | "film" | "chart-no-axes-gantt";
 
 export interface NavItem {
   id: string;
@@ -77,6 +77,9 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "watch-add", label: "Add", href: "/watch/add", icon: "plus", enabled: false, group: "medium", medium: "watch" },
 
   { id: "inbox", label: "Inbox", href: "/inbox", icon: "inbox", enabled: true, group: "global" },
+  // Everything in the middle of and everything completed, every medium on one page (task 5.12, D-109).
+  // Under no medium, as Inbox is: the phone's tab row draws it after Inbox. Neutral icon: hue identifies data.
+  { id: "progress", label: "Progress", href: "/progress", icon: "chart-no-axes-gantt", enabled: true, group: "global" },
 
   // Search is 6.1. Settings (2.0) is the rail's and the sidebar's foot and, on the phone, the gear at
   // the bar's right end; Export moved into it as *Export everything* (a plain <a href="/api/export">
@@ -104,13 +107,14 @@ export const mediumItems = (items: NavItem[], medium: Medium) =>
   inGroup(items, "medium").filter((i) => i.medium === medium);
 
 /**
- * What the phone's tab row draws (2.2i, D-120): the medium's enabled items, then Inbox. With no
- * medium yet (a hard load of /inbox or /settings, before the server's last medium streams in)
- * it is Inbox alone, so the row never flashes the wrong medium's screens.
+ * What the phone's tab row draws (2.2i, D-120): the medium's enabled items, then every global item
+ * (Inbox, then Progress, task 5.12). With no medium yet (a hard load of /inbox or /settings, before
+ * the server's last medium streams in) it is the global items alone, so the row never flashes the
+ * wrong medium's screens.
  */
 export const tabRowItems = (items: NavItem[], medium: Medium | null): NavItem[] => [
   ...(medium ? mediumItems(items, medium) : []),
-  ...inGroup(items, "global").filter((i) => i.id === "inbox"),
+  ...inGroup(items, "global"),
 ];
 
 /**

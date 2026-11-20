@@ -2132,10 +2132,43 @@ p.muted[id^="dnd-help"]{margin:.5rem 0 0}
 .tabs [role="tab"][aria-selected="true"]{color:var(--ink);font-weight:600}
 .tabs [role="tab"] .n{font-size:.6875rem;font-weight:500;font-variant-numeric:tabular-nums;color:inherit}
 .tabs [role="tab"]:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring);border-radius:var(--r-sm)}
-.tab-ink{position:absolute;left:0;bottom:-1px;width:calc(100% / 3);height:2px;background:var(--m,var(--brand));
+.tab-ink{position:absolute;left:0;bottom:-1px;width:calc(100% / var(--n,3));height:2px;background:var(--m,var(--brand));
   transform:translateX(calc(var(--i,0) * 100%));transition:transform var(--dur-2) var(--ease-out)}
 @media (hover:hover) and (pointer:fine){ .tabs [role="tab"][aria-selected="false"]:hover{color:var(--ink)} }
 .sk-tabs{height:45px;margin:.75rem 0 1rem}
+
+/* --- Progress (task 5.12, 2 of 2; mockup `progress`) -------------------------------------------
+   One list per tab, a row each: the medium's glyph, the name, the kind as a grey badge, `read / total` in mono,
+   a meter filled with --ready (D-26) and the next thing or the finish's month. A row's own rows nest beneath
+   it, indented under a rule (D-119). The name is the row's link (`row-link`: the whole row is the target)
+   where the thing has a page. *On hold* is a collapsed group whose head is a real button. */
+.progress-page .prog-chips{margin:.25rem -4px 1rem}
+.prog-rows,.prog-kids{list-style:none;margin:0;padding:0}
+.prog-li + .prog-li,.prog-kids > .prog-li{border-top:1px solid var(--line)}
+.prog-kids{margin-left:1.75rem;border-left:2px solid var(--rule)}
+.prog-item.row{border-bottom:0;align-items:flex-start}
+.prog-glyph{flex:0 0 auto;display:grid;place-items:center;width:20px;height:24px;color:var(--muted)}
+.prog-name{min-height:24px;line-height:24px;overflow-wrap:anywhere}
+.prog-kind{flex:0 0 auto;align-self:center}
+.prog-item .emeter{display:block;height:5px;border-radius:var(--r-full);background:var(--sunk);margin-top:.4375rem;overflow:hidden}
+.prog-item .emeter i{display:block;height:100%;border-radius:var(--r-full);background:var(--ready)}
+.prog-next{overflow-wrap:anywhere}
+.prog-item .chev{align-self:center}
+.prog-hold{margin-top:1.5rem}
+.prog-hold h2.group-head{margin:0}
+.prog-hold-btn{display:flex;align-items:center;gap:.5rem;width:100%;min-height:44px;padding:0;margin:0;cursor:pointer;
+  font:inherit;letter-spacing:inherit;text-transform:inherit;text-align:left;color:inherit;background:none;border:0}
+.prog-hold-btn:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring);border-radius:var(--r-sm)}
+.prog-hold-chev{display:inline-block;width:1rem;text-align:center;font-size:1.125rem;line-height:1;color:var(--faint);
+  transition:transform var(--dur-2) var(--ease-out)}
+.prog-hold-btn[aria-expanded="true"] .prog-hold-chev{transform:rotate(90deg)}
+.prog-hold [hidden]{display:none}
+/* Top-aligned, so a bar never stretches the line the loaded text sets (the row stays the loaded row's height). */
+.prog-item .sk{display:inline-block;vertical-align:top;max-width:100%}
+.prog-item .sk-rt{height:.9375rem}
+.prog-item .sk-rm{height:.75rem}
+.prog-item .sk-rs{height:.8125rem}
+.sk-glyph{width:20px;height:20px}
 
 span.meter{display:block}
 /* *Read <full label>*: named in full, drawn to the width the row leaves it (its title keeps the rest). */
@@ -2298,10 +2331,12 @@ section[data-plan="year"] h2.group-head{color:var(--blocked)}
 .year-so-far dt{font-size:.75rem;line-height:1rem;color:var(--muted)}
 .year-so-far dd{margin:0;font:500 28px/32px var(--mono);letter-spacing:-.02em;color:var(--ink)}
 /* The books you're waiting for (task 5.7): grey text and a link, never a state colour. */
-.year-so-far .coming-out{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:.8125rem;line-height:1.25rem}
-.year-so-far .coming-out a{display:inline-flex;align-items:center;gap:.25rem;min-height:24px;color:var(--muted);
+.year-so-far .coming-out,.year-so-far .progress-link{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:.8125rem;line-height:1.25rem}
+.year-so-far .coming-out a,.year-so-far .progress-link a{display:inline-flex;align-items:center;gap:.25rem;min-height:24px;color:var(--muted);
   text-decoration:underline;text-decoration-color:var(--faint-deco);text-underline-offset:3px}
-.year-so-far .coming-out a:hover{color:var(--ink)}
+.year-so-far .coming-out a:hover,.year-so-far .progress-link a:hover{color:var(--ink)}
+/* Task 5.12's *Progress* link is a grey line like *Coming out*'s: under it, it takes no second rule. */
+.year-so-far .coming-out + .progress-link{margin-top:.25rem;padding-top:0;border-top:0}
 
 /* The tablet (§14.5): the horizontal hero around 150 × 225, and the side rail stacked as two columns, 1.5 : 1. */
 @media (min-width:768px){

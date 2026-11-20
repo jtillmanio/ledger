@@ -131,6 +131,10 @@ export default async function Books() {
               <div><dt>new authors</dt><dd className="mono">{soFar.newAuthors.toLocaleString()}</dd></div>
             </dl>
             <ComingOutLine {...comingOutCounts(wanted, day)} />
+            {/* Everything in the middle of and everything finished (task 5.12): a grey link, as *Coming out*'s line. */}
+            <p className="progress-link">
+              <Link href="/progress?medium=books" prefetch={false}>In the middle of · Completed <span aria-hidden="true">→</span></Link>
+            </p>
           </section>
         </aside>
       </div>
