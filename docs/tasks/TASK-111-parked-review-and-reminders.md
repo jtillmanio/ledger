@@ -27,6 +27,8 @@ A review page lists everything you've parked, oldest first, and lets you keep ea
 - **Not drawn yet:** the mockup gains `/parked` and the dashboard line at phone, tablet and desktop widths, before they are built; `design/mockups-index.md` lists them (`ui.redrawFiles`).
 - Design: `design/mockups.html` § `bdash`, § `capture` (the Inbox screen); `design/STYLE_GUIDE.md` § 14 (the five slots); `docs/04-design.md` § 10 The UX floor, § 12 The dashboards; `.claude/rules/ui.md` (nothing on a dashboard is red; *Remove* and *Drop* only may be red, and *Unlisted* is neither).
 - Decisions: D-105, D-37, D-83.
+- *From TASK-109 (5.15, PR #299), owner's answer at its plan gate:* an add to a plan level (On deck, a year or a quarter: `writeDestination` in `src/db/writes.ts`, Add books' *Use that* and *Paste a list*) moves a Parked book to `to_read` and plans it, as it moves an Unlisted one (`promote`), clearing `parked_on` with the status. Re-read the status under the plan lock, so a park that commits between the `waiting` read and `placeInPlan` can't leave a planned Parked book. The review's *Plan…* needs the same unparking. Its undo puts back `parked` and the day.
+- *From TASK-109 (5.15, PR #299), owner's answer at its plan gate:* `queueListen` (`/api/listen-queue`) refuses a Parked book with 400 and writes nothing. The UI already hides *Queue to listen* for one (`queueable` in `src/lib/status-tabs.ts`), so this only closes the API.
 
 ## Acceptance criteria
 

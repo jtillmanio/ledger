@@ -1,7 +1,7 @@
 ---
 id: TASK-109
 title: 5.15 Parked (2 of 4) — Park on the status control and the row, the Parked chip and the search tag
-status: In progress
+status: Review
 depends_on: [TASK-108]
 size: M
 model: sonnet
@@ -33,7 +33,7 @@ From a book's status control or its row you can park it, with an Undo; the Libra
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check (proposed):**, verbatim; this part proves, in the browser (0.11) on the test database: a parked book present under the master list's *Parked* chip and in search tagged *Parked*. TASK-108 proves the data clauses, TASK-110 the cadence, TASK-111 the review and the dashboard line): (proposed; the owner agrees it by merging or edits it first)
+- [x] AC-1 (roadmap **Check (proposed):**, verbatim; this part proves, in the browser (0.11) on the test database: a parked book present under the master list's *Parked* chip and in search tagged *Parked*. TASK-108 proves the data clauses, TASK-110 the cadence, TASK-111 the review and the dashboard line): (proposed; the owner agrees it by merging or edits it first)
 `npm test`: parking the 2nd of 3 books in 2027 Q1
 writes `parked`, removes its plan row and leaves Q1 at ordinals 1–2, and
 Undo restores `to_read` at position 2. A parked book is absent from
@@ -46,11 +46,11 @@ makes it not due. In the browser (0.11), the review's *Plan…* opens 2.3's
 picker, *Unlisted* writes `unlisted` and Undo puts back `parked`, and the
 dashboard line shows only when the review is due. Nothing on the
 dashboard or the review resolves to `--danger`.
-- [ ] AC-2: Given a planned to-read book, choosing *Park* on its status control moves it under *Parked · N* (N up by one) without a reload, and the toast's *Undo* puts it back to *To read* in its quarter at its position.
-- [ ] AC-3: *Park* is offered for a to-read, reading or listening book and not for a read, DNF or Unlisted one; it is drawn grey, never `--danger` or `--blocked`.
-- [ ] AC-4: Typing a parked book's title into the Library box lists it tagged *Parked*; Add books' search shows it as yours, tagged *Parked*.
-- [ ] AC-5: `design/mockups.html`'s `blist` frame draws *Park*, the *Parked · N* chip and a parked row, and `design/mockups-index.md` names them (task 5.15).
-- [ ] AC-6: The Library and status control meet the UX floor (`docs/04-design.md` § 10): *Parked* with no books draws the list's empty state, the chip and verb are real controls with names, ≥ 24px, contrast in light and dark, screenshots at 360px and 1280px.
+- [x] AC-2: Given a planned to-read book, choosing *Park* on its status control moves it under *Parked · N* (N up by one) without a reload, and the toast's *Undo* puts it back to *To read* in its quarter at its position.
+- [x] AC-3: *Park* is offered for a to-read, reading or listening book and not for a read, DNF or Unlisted one; it is drawn grey, never `--danger` or `--blocked`.
+- [x] AC-4: Typing a parked book's title into the Library box lists it tagged *Parked*; Add books' search shows it as yours, tagged *Parked*.
+- [x] AC-5: `design/mockups.html`'s `blist` frame draws *Park*, the *Parked · N* chip and a parked row, and `design/mockups-index.md` names them (task 5.15).
+- [x] AC-6: The Library and status control meet the UX floor (`docs/04-design.md` § 10): *Parked* with no books draws the list's empty state, the chip and verb are real controls with names, ≥ 24px, contrast in light and dark, screenshots at 360px and 1280px.
 
 ## Out of scope
 
@@ -74,8 +74,9 @@ dashboard or the review resolves to `--danger`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- An add to a plan level (On deck, a year, a quarter: `writeDestination`, Add books' *Use that*) moves a Parked book to `to_read` and plans it, as it moves an Unlisted one, re-reading the status under the plan lock so a park committing in between can't leave a planned Parked book; TASK-111's *Plan…* needs the same unparking (owner, at TASK-109's plan gate) (approved at plan) → `docs/tasks/TASK-111-parked-review-and-reminders.md` § Context
-- `queueListen` (`/api/listen-queue`) refuses a Parked book (400), as the UI already hides *Queue to listen* for one (`queueable`) (owner, at TASK-109's plan gate) (approved at plan) → `docs/tasks/TASK-111-parked-review-and-reminders.md` § Context
+- An add to a plan level (On deck, a year, a quarter: `writeDestination`, Add books' *Use that*) moves a Parked book to `to_read` and plans it, as it moves an Unlisted one, re-reading the status under the plan lock so a park committing in between can't leave a planned Parked book; TASK-111's *Plan…* needs the same unparking (owner, at TASK-109's plan gate) (approved at plan; placed as PR #299) → `docs/tasks/TASK-111-parked-review-and-reminders.md` § Context
+- `queueListen` (`/api/listen-queue`) refuses a Parked book (400), as the UI already hides *Queue to listen* for one (`queueable`) (owner, at TASK-109's plan gate) (approved at plan; placed as PR #299) → `docs/tasks/TASK-111-parked-review-and-reminders.md` § Context
+- The ui-verifier could not reach a Reading, Listening or DNF book on the development database (it has none, and making one was refused), so *Park* on those was proven only by `test/e2e/parked.spec.ts` on the test database → not tracked: covered by the browser spec in CI, every project
 
 ## Plan
 
@@ -113,7 +114,7 @@ _Approved by the owner 2026-11-20._
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (tsc, lint, test:no-e2e 2318; parked.spec 7/7 after one fix: the `⋯`'s Park named the toast *this book*) | CI R1 PASS (f5aabae, every project) | Spec R1 CHANGES (Park not drawn on bookdetail's Your record nor the Reading-pressed blist frames) → R2 APPROVE | Audit R1 CHANGES (library-page empty-state test non-discriminating, dropped) → R2 PASS | UI R1 PASS (AC-3's Reading, Listening and DNF clauses unreachable on the dev database; the spec covers them) | Schema n/a (no schema, query or ETL change)
 
 ## Blocked
 
@@ -121,7 +122,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1 (plus touched-spec reruns after each fix)
+- Review rounds: spec 2, audit 2, UI 1
+- First-pass AC FAILs: 0 (AC-5's redraw incomplete at spec R1)
+- Plan revisions after approval: 1 (the test files named as built; bookdetail's control redrawn)
