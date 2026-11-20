@@ -12,6 +12,7 @@ import ClosingCard from "@/components/ClosingCard";
 import { NAMES, useBookWrite, type BookStatusName, type BookWritten, type WithNote } from "@/components/useBookWrite";
 import { startAfterFinish } from "@/lib/finish-date";
 import { listenGlyph, readWhen, type Precision } from "@/lib/format";
+import { parkable } from "@/lib/parked";
 
 type Status = BookStatusName;
 type Finish = { on: string | null; precision: Precision };
@@ -35,7 +36,7 @@ type Editing =
  * so it adds nothing to the Library's or Now's first load (the performance budget). */
 const AllReads = lazy(() => import("@/components/AllReads"));
 
-const STATUSES: { status: Exclude<Status, "unlisted">; label: string }[] = [
+const STATUSES: { status: Exclude<Status, "unlisted" | "parked">; label: string }[] = [
   { status: "to_read", label: "To read" },
   { status: "reading", label: "Reading" },
   { status: "listening", label: "Listening" },
@@ -46,7 +47,8 @@ const STATUSES: { status: Exclude<Status, "unlisted">; label: string }[] = [
 const IN_PROGRESS: readonly Status[] = ["reading", "listening"];
 const AFTER_FINISH = "That's after the day you finished.";
 
-/** The book an undo has just put back to Unlisted: its row takes focus when it is drawn again. */
+/** The book an undo has just put back to Unlisted, or back from a park that took its row off the list
+ * (task 5.15): its row takes focus when it is drawn again, on *Add to Someday* or else its status badge. */
 let refocus: string | null = null;
 
 /** The collapsed row's badge: `read Jul 2022`, `read ~Jul 2022`, `read`, `reading`. */
@@ -93,6 +95,16 @@ function startValue(d: Finish): FinishValue {
  * *Add to Someday*, which writes `to_read`; expanded, none of the four is
  * pressed. On the Unlisted list the row leaves after the add; its Undo brings
  * it back with focus on *Add to Someday*.
+ *
+ * **Park** (task 5.15, D-105) follows DNF for a book To read, Reading or
+ * Listening (`parkable`), grey like DNF: parking is not a warning. It saves at
+ * once, and the server takes the book out of its plan and off the listen queue
+ * in the same write; the toast's Undo puts back the status, the period and the
+ * place. A Parked book has a grey *parked* badge and, expanded, *Park* pressed;
+ * To read, Reading or Listening takes it back. A park leaves most lists (only
+ * *Parked*, a search and the owned filters show it), so an Undo that brings the
+ * row back puts focus on its badge. The row's `⋯` offers the same *Park*, through
+ * this control's own write.
  *
  * The date line (task 1.17, data model 2.18): while Reading or Listening, *Started …*; once
  * Read, *Started …* and *Finished …*. Each is a button named with the date it
@@ -163,6 +175,7 @@ export default function BookStatus({
   const openers = { read: readButton, started: startedButton, finished: finishedButton, status: statusButton };
 
   const unlisted = saved.status === "unlisted";
+  const parked = saved.status === "parked";
   const dated = saved.status === "reading" || saved.status === "listening" || saved.status === "read";
   // The book's reads load once its row is open on a dated status, and again after any save or undo.
   const { reads, failed: readsFailed, reload } = useReads(bookId, open && dated);
@@ -175,11 +188,12 @@ export default function BookStatus({
     setSaved(fromProps());
   }
 
-  // After an undo put this book back to Unlisted, wherever its row is drawn again.
+  // After an undo put this book back to Unlisted, or brought its row back from a park, wherever it is drawn again.
   useEffect(() => {
-    if (refocus === bookId && addButton.current) {
+    const target = addButton.current ?? toggle.current;
+    if (refocus === bookId && target) {
       refocus = null;
-      addButton.current.focus();
+      target.focus();
     }
   });
 
@@ -238,7 +252,8 @@ export default function BookStatus({
           void reload();
         },
         onUndone: () => {
-          if (before.status === "unlisted") refocus = bookId;
+          // A park that took the row off the list unmounted it (its badge is gone): focus it when it comes back.
+          if (before.status === "unlisted" || (next === "parked" && !toggle.current?.isConnected)) refocus = bookId;
           setSaved(before);
           // The start offered after *Reading*, and the DNF's closing card, have nothing left to set once the status is undone.
           setEditing((e) => (e?.kind === "one" && e.fresh ? null : e));
@@ -247,13 +262,15 @@ export default function BookStatus({
         },
       });
       if ("refused" in done) {
-        // Refused, and nothing written: say why under the control.
+        // Refused, and nothing written: say why under the control, opened if the `⋯` asked.
         setRefused(`Not saved: ${done.refused}.`);
+        setOpen(true);
         return null;
       }
       return done;
     } catch {
       setFailed(true);
+      setOpen(true);
       return null;
     } finally {
       setSaving(false);
@@ -278,7 +295,8 @@ export default function BookStatus({
     });
   }
 
-  async function choose(next: Status, button: HTMLButtonElement) {
+  /** `name` is the toast's: the `⋯`'s *Park* reads it from the row, as the badge has not been pressed. */
+  async function choose(next: Status, button: HTMLButtonElement, name = title) {
     if (saving) return;
     if (closing) closeCard(false);
     if (next === "read") {
@@ -293,7 +311,7 @@ export default function BookStatus({
     // DNF asks why (task 5.5).
     const stops = next === "dnf";
     // The page waits while *Started* or the closing card is offered, so the row is still here to answer it.
-    const done = await write(next, undefined, undefined, begins || stops);
+    const done = await write(next, undefined, name, begins || stops);
     if (!done) return;
     statusButton.current = button;
     if (begins) {
@@ -395,11 +413,12 @@ export default function BookStatus({
 
   return (
     <>
-      {menu && <BookRowMenu bookId={bookId} status={saved.status} owned={owned} />}
+      {menu && <BookRowMenu bookId={bookId} status={saved.status} owned={owned}
+        onPark={(opener) => void choose("parked", opener, readTitle())} />}
       {/* One shape for every status, so the badge keeps its focus when *Add to Someday* goes. */}
       <span className="status-line">
         <button type="button" ref={toggle}
-          className={`bdg status-toggle${saved.status === "read" || unlisted ? " dn" : ""}`}
+          className={`bdg status-toggle${saved.status === "read" || unlisted || parked ? " dn" : ""}`}
           aria-expanded={open} aria-controls={open ? panelId : undefined} onClick={() => {
             readTitle();
             if (open && editing) closeEditor(false);
@@ -427,6 +446,13 @@ export default function BookStatus({
               {s.label}
             </button>
           ))}
+          {/* Put away on purpose (task 5.15): grey as DNF is, the `dnf` class being the grey stop's. */}
+          {(parkable(saved.status) || parked) && (
+            <button type="button" className="opt dnf" aria-pressed={parked}
+              onClick={(e) => void choose("parked", e.currentTarget)}>
+              Park
+            </button>
+          )}
         </div>
         {/* DNF asks why (task 5.5): the reason is the book's note, and the toast's Undo takes back both. */}
         {closing && (

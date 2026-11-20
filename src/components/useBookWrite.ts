@@ -9,13 +9,15 @@ import type { FinishOffer } from "@/db/queries";
 import { offerChips } from "@/lib/follow-offer";
 import type { Precision } from "@/lib/format";
 
-/** `unlisted` (task 1.21, D-86) is shown and undone to, never chosen: no button sets it. */
-export type BookStatusName = "to_read" | "reading" | "listening" | "read" | "dnf" | "unlisted";
+/** `unlisted` (task 1.21, D-86) is shown and undone to, never chosen: no button sets it. `parked`
+ * (task 5.15, D-105) is *Park*'s, put away on purpose. */
+export type BookStatusName = "to_read" | "reading" | "listening" | "read" | "dnf" | "unlisted" | "parked";
 export type StoredDate = { on: string | null; precision: Precision };
 
 /** The toast's words for a status. */
 export const NAMES: Record<BookStatusName, string> = {
   to_read: "to read", reading: "reading", listening: "listening", read: "read", dnf: "DNF", unlisted: "unlisted",
+  parked: "parked",
 };
 
 /** What the server answered to a save. */

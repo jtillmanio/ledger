@@ -6,6 +6,14 @@
  * such a book *Pick it back up*, which keeps the start. `listBooks` rows carry
  * both fields.
  */
+/**
+ * Whether a book is offered *Park* (task 5.15, TASK-109): To read, Reading or
+ * Listening. The browser's twin of `PARKS_FROM` in `src/db/writes.ts`, which
+ * refuses any other (test/parked.test.ts keeps the two equal).
+ */
+export const parkable = (status: string | null | undefined): boolean =>
+  status === "to_read" || status === "reading" || status === "listening";
+
 export function isParkedMidRead(row: { status: string; started_on_precision: string }): boolean {
   return row.status === "parked" && row.started_on_precision !== "none";
 }

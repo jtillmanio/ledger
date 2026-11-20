@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Menu, { type MenuItem } from "@/components/Menu";
 import { useUndo } from "@/components/Undo";
 import { useQueueListen } from "@/lib/listen-queue";
+import { parkable } from "@/lib/parked";
 import { queueable } from "@/lib/status-tabs";
 
 // Loaded on the first *Follow…* or *Plan for…*: a Library of 500 rows carries none of it until then.
@@ -47,7 +48,9 @@ const held = (owned: readonly OwnedCopy[]): Record<OwnedCopy, boolean> => ({
  * A Library row's `⋯` (task 2.2c; mockup `follow`), named *More for <title>*,
  * whose items are *Plan for…* (task 2.3; a to-read book only), which opens the
  * plan picker, *Queue to listen* (task 5.14; not while Listening or Parked), which
- * puts it at the end of Up next's *Listen next* with an undo toast, *Follow…*, which
+ * puts it at the end of Up next's *Listen next* with an undo toast, *Park* (task 5.15;
+ * To read, Reading or Listening), which is `BookStatus`'s own park handed down as
+ * `onPark`, one write and one Undo whichever route, *Follow…*, which
  * opens the sheet of what the book belongs to, and
  * what you own (task 5.17, D-132): *I own it on paper* and *I own the audiobook*,
  * whatever the status. Each says which way it goes (*I don't own it on paper*
@@ -58,8 +61,10 @@ const held = (owned: readonly OwnedCopy[]): Record<OwnedCopy, boolean> => ({
  * the title is read from the row's `.row-title`, as `BookStatus` reads it.
  * Closing a sheet puts focus back on the `⋯`.
  */
-export default function BookRowMenu({ bookId, status = "to_read", owned = [] }: {
+export default function BookRowMenu({ bookId, status = "to_read", owned = [], onPark }: {
   bookId: string; status?: string; owned?: readonly OwnedCopy[];
+  /** Parks the book through the status control's write (task 5.15); `opener` is the `⋯`. Left out, no *Park*. */
+  onPark?: (opener: HTMLButtonElement) => void;
 }) {
   const router = useRouter();
   const { push, fail } = useUndo();
@@ -107,6 +112,8 @@ export default function BookRowMenu({ bookId, status = "to_read", owned = [] }: 
     ...(status === "to_read" ? [{ label: "Plan for…", onSelect: (opener: HTMLButtonElement) => setOpen({ sheet: "plan", opener }) }] : []),
     // The listen queue (task 5.14): at its end, an undo toast; not while Listening or Parked.
     ...(queueable(status) ? [{ label: "Queue to listen", onSelect: () => void queueListen(bookId, title) }] : []),
+    // Put away on purpose (task 5.15): the status control's write, so its toast and Undo are the same.
+    ...(onPark && parkable(status) ? [{ label: "Park", onSelect: (opener: HTMLButtonElement) => onPark(opener) }] : []),
     { label: "Follow…", onSelect: (opener) => setOpen({ sheet: "follow", opener }) },
     ...(["physical", "audio"] as const).map((format): MenuItem => ({
       label: have[format] ? COPY[format].disown : COPY[format].own,
