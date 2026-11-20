@@ -46,7 +46,38 @@
   judged on the close-out head; CI skips the browser suite there when only
   docs changed since a run that passed every project (D-145), and the gate
   reads that run. The floor is unchanged: never push to or merge into
-  `main`, never force-push, never start Release.
+  `main`, never force-push (the one exception is `--force-with-lease` to
+  this task's branch after a drift rebase, below), never start Release.
+- **Check drift at close-out, and rebase on main when it says so (owner,
+  2026-11-20).** After the close-out commit and before pushing it, run
+  `npm run drift` on the task branch (it fetches `origin/main` itself;
+  `scripts/branch-drift.mjs`, `.claude/rules/git.md` § *Merging*).
+  - **Exit 0, "merge as-is"**: push the close-out as usual.
+  - **Exit 1, "update first"**: `git rebase origin/main`. Then run
+    `verify.full` again (and the touched specs in one project when main's
+    changes or the rebase touched UI or a spec), and push with
+    `git push --force-with-lease origin <task-branch>`: never `--force`,
+    never a branch that isn't this task's (`workflow.allowForceWithLease`).
+    CI runs again on the rebased head, and that run is the gate. Record it in
+    the Review log: `Drift R1 update first (behind 6; both changed
+    src/lib/plan.ts) → rebased | Verify R3 PASS | CI R3 PASS`.
+  - **Before rebasing**, `git status --porcelain` must show nothing but
+    files git ignores: changes that aren't this task's are the owner's work,
+    so don't stash or commit them; stop and ask.
+  - **A conflict**: resolve it only where both sides' intent is plain from
+    their diffs (this task's own files, a list both sides appended to), then
+    `git rebase --continue`. Otherwise `git rebase --abort` and stop: ask
+    (attended) or go to the Blocked path (unattended). A migration on each
+    side (drift names it) always stops: the branch's migration is
+    regenerated after main's, under `.claude/rules/schema.md`, and that is
+    the owner's call.
+  - **Exit 2** (it can't tell: a failed fetch, an unknown ref): say so in the
+    PR's **How it was verified** and carry on; the owner runs
+    `npm run drift -- <n>` before merging.
+  - **Phase 7, before reporting the gates green**: run `npm run drift` once
+    more. If main moved while CI ran and it now says "update first", rebase
+    and push again as above, at most once; after that, report it and leave
+    the call to the owner's drift check at merge.
 - **No separate "link follow-ups" commit (D-145).** The PR exists from
   Phase 3, so at close-out write `PR #<n>` straight into every placement where
   the kit would write the branch name (`track-follow-ups/classify.md`), in the

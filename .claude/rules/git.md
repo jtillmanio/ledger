@@ -186,3 +186,8 @@ and wait for `check` again.
   Metron, Open Library, Hardcover and Fandom caches, and `backups/`.
 - `--force-with-lease` after a rebase is allowed (`workflow.allowForceWithLease`
   is `true`, G-19); plain `--force` is denied.
+- `/implement-task` runs `npm run drift` itself at close-out, before the
+  close-out push, and rebases the task branch on `main` when it says "update
+  first" (owner, 2026-11-20; the ready gate "Up to date enough with main",
+  `.claude/project/implement-task.md` § *Check drift at close-out*). The
+  owner's drift check before merging stays: `main` can move after close-out.
