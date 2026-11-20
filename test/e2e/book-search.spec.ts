@@ -246,6 +246,17 @@ test("a result's Year or quarter… adds the book at the end of a quarter, and U
   await expect(row.getByRole("button", { name: `Year or quarter…: ${LIBRARY.title}`, exact: true })).not.toHaveAttribute("aria-disabled", "true");
 });
 
+test("a Hardcover result's plan sheet header stays author · words, with no universe (task 2.2l, AC-4)", ONCE, async ({ page }) => {
+  await search(page, "piranesi");
+  const row = fromHardcover(page).getByRole("listitem", { name: "Piranesi The Complete Etchings Hardcover", exact: true });
+  await expect(row.locator(".rs")).toHaveText("Luigi Ficacci · 800 pages");
+  const opener = row.getByRole("button", { name: "Year or quarter…: Piranesi: The Complete Etchings", exact: true });
+  await hydrated(opener);
+  await opener.click();
+  const sheet = page.getByRole("dialog", { name: "Piranesi" });
+  await expect(sheet.locator(".pp-by")).toHaveText(/^Luigi Ficacci · ~[\d,]+k words$/);
+});
+
 test("typing pir and pausing lists results without Enter; pi asks nothing; piranesi typed quickly is one request (task 1.22, AC-1)", async ({ page }, info) => {
   await page.goto("/books/add");
   const box = page.getByRole("searchbox", { name: "Title or author" });

@@ -6,13 +6,17 @@ import Sheet, { useSheetClose } from "@/components/Sheet";
 import { useUndo } from "@/components/Undo";
 import type { PlanBook, YearCapacity } from "@/db/queries";
 import type { PlanBudget, PlanMove } from "@/db/writes";
-import { quarterName } from "@/lib/format";
+import { bookSub, quarterName } from "@/lib/format";
 import { easternYear, formatWords } from "@/lib/settings";
 
 /** The book the sheet is for: its words and, to move it, where it sits now. */
 export type PickerBook = {
   /** Shown beside the author; the sheet's heading says the title. */
   author: string | null;
+  /** Where a library book belongs, as its row says it (`bookSub`; task 2.2l, D-134). A Hardcover result has none. */
+  universe?: string | null;
+  series?: string | null;
+  series_position?: number | null;
   /** Stated, or an estimate when `estimated`; null when unknown. */
   words: number | null;
   estimated: boolean;
@@ -105,13 +109,17 @@ export function PlanPickerBody({ book, verb, onConfirm, onCancel }: {
   const total = (n: number | undefined) => (n === undefined ? "" : formatWords(n));
   const row = typeof top === "number" ? years && years !== "failed" ? years[top - first] : undefined : undefined;
   const planned = book.from === undefined ? null : book.from === "someday" ? "Someday" : endName(book.from);
+  // *author · universe · series #n*, as every books row says it (`bookSub`).
+  const by = bookSub({
+    author: book.author, universe: book.universe ?? null, series: book.series ?? null, series_position: book.series_position ?? null,
+  });
 
   return (
     <div className="pp">
-      {(book.words !== null || book.author || planned) && (
+      {(book.words !== null || by || planned) && (
         <div className="pp-head">
           <p className="pp-by">
-            {book.author}{book.author && book.words !== null && " · "}
+            {by}{by && book.words !== null && " · "}
             {book.words !== null && <span className="mono">{book.estimated ? "~" : ""}{k(book.words)} words</span>}
           </p>
           {planned && <span className="bdg rg">planned · {planned}</span>}
@@ -275,6 +283,9 @@ export function MoveBody({ bookId, title }: { bookId: string; title: string }) {
 
   return (
     <PlanPickerBody verb="Move" onConfirm={move} onCancel={close}
-      book={{ author: book.author, words: book.words, estimated: book.estimated, bookId, from }} />
+      book={{
+        author: book.author, universe: book.universe, series: book.series, series_position: book.series_position,
+        words: book.words, estimated: book.estimated, bookId, from,
+      }} />
   );
 }

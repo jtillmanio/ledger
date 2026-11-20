@@ -6,7 +6,7 @@ import Cover, { Pending } from "@/components/Cover";
 import type { LibraryHit } from "@/db/queries";
 import { addTo, type Target } from "@/lib/book-add";
 import { Headphones } from "@/components/nav/Icons";
-import { listenGlyph, placeTag } from "@/lib/format";
+import { bookSub, listenGlyph, placeTag } from "@/lib/format";
 import { queueable } from "@/lib/status-tabs";
 import type { HardcoverBook } from "@/lib/hardcover";
 import { useSearch } from "@/lib/use-search";
@@ -181,10 +181,10 @@ export default function BookSearch({
     const hc = pick.kind === "hardcover" ? pick.book : null;
     const year = lib ? lib.published_year : hc!.year;
     const pages = lib ? lib.page_count : hc!.pages;
-    const series = lib ? lib.series : hc!.series;
-    const position = lib ? lib.series_position : hc!.position;
-    const sub = [lib ? lib.author : authorList(hc!.authors), series && `${series}${position != null ? ` #${position}` : ""}`,
-      pages && `${pages} pages`].filter(Boolean).join(" · ");
+    // *author · universe · series #n* as every books row says it (`bookSub`, task 2.2l, D-134), then its pages.
+    // A Hardcover result has no universe.
+    const place = lib ?? { author: authorList(hc!.authors), universe: null, series: hc!.series, series_position: hc!.position };
+    const sub = [bookSub(place), pages && `${pages} pages`].filter(Boolean).join(" · ");
     const subtitle = hc?.subtitle ?? null;
     const label = addTo(done ? (wheres[key] ?? target) : target);
     // The words a plan total would gain: the stated count, else pages at your words per page (50 or more).
