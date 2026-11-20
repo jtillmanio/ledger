@@ -1,7 +1,7 @@
 ---
 id: TASK-127
 title: 5.15 Parked (4 of 5) — the unparking writes, Unlisted from Parked and the listen queue's refusal
-status: In progress
+status: Review
 depends_on: [TASK-109, TASK-110]
 size: M
 model: sonnet
@@ -28,12 +28,12 @@ A Parked book can leave Parked the ways the review needs: an add to Someday or a
 
 ## Acceptance criteria
 
-- [ ] AC-1: Given a Parked book (`parked_on` set), an add of it by `{ use }` (`addBooks`, `POST /api/books/bulk`) to a quarter, a bare year or On deck leaves it `to_read` with `parked_on` NULL and that period's plan row (a quarter: at its end, ordinal N+1); to Someday it leaves it `to_read` with `parked_on` NULL and no plan row. The entry names it in `unparked` with its `parked_on`.
-- [ ] AC-2: That add's undo (`undoAddBooks`, `DELETE /api/books`) puts the book back to `parked` with the same `parked_on`, removes the plan row it wrote and closes the quarter up (the books after it at their old ordinals), and answers true, also for a Parked book with an earlier read (a `finished_on` on its status); when the book has moved on since (no longer `to_read`, or given another plan row), it answers false and changes nothing.
-- [ ] AC-3: With the plan lock held by another connection, an add of a `to_read` book to a quarter waits; a park written and committed meanwhile (status `parked`) leaves the add placing no plan row: the book ends Parked with no `reading_plan` row (the add re-reads the status after taking the plan lock).
-- [ ] AC-4: `POST /api/progress/book { status: 'unlisted' }` on a Parked book writes `unlisted` with `parked_on` NULL and its undo (`DELETE` with the change) puts back `parked` and the same `parked_on`; on a book To read, Reading, Listening, Read, DNF or with no status it answers 400 and writes nothing.
-- [ ] AC-5: `POST /api/listen-queue` (`queueListen`) on a Parked book answers 400 and writes no `listen_queue` row; a To read book still queues (200).
-- [ ] AC-6: `.claude/rules/schema.md` says a Parked book's add to Someday or a plan level moves it to `to_read` (its undo puts back `parked` and the day), and that the review's *Unlisted* is the one status write that sets `unlisted`, from Parked only.
+- [x] AC-1: Given a Parked book (`parked_on` set), an add of it by `{ use }` (`addBooks`, `POST /api/books/bulk`) to a quarter, a bare year or On deck leaves it `to_read` with `parked_on` NULL and that period's plan row (a quarter: at its end, ordinal N+1); to Someday it leaves it `to_read` with `parked_on` NULL and no plan row. The entry names it in `unparked` with its `parked_on`.
+- [x] AC-2: That add's undo (`undoAddBooks`, `DELETE /api/books`) puts the book back to `parked` with the same `parked_on`, removes the plan row it wrote and closes the quarter up (the books after it at their old ordinals), and answers true, also for a Parked book with an earlier read (a `finished_on` on its status); when the book has moved on since (no longer `to_read`, or given another plan row), it answers false and changes nothing.
+- [x] AC-3: With the plan lock held by another connection, an add of a `to_read` book to a quarter waits; a park written and committed meanwhile (status `parked`) leaves the add placing no plan row: the book ends Parked with no `reading_plan` row (the add re-reads the status after taking the plan lock).
+- [x] AC-4: `POST /api/progress/book { status: 'unlisted' }` on a Parked book writes `unlisted` with `parked_on` NULL and its undo (`DELETE` with the change) puts back `parked` and the same `parked_on`; on a book To read, Reading, Listening, Read, DNF or with no status it answers 400 and writes nothing.
+- [x] AC-5: `POST /api/listen-queue` (`queueListen`) on a Parked book answers 400 and writes no `listen_queue` row; a To read book still queues (200).
+- [x] AC-6: `.claude/rules/schema.md` says a Parked book's add to Someday or a plan level moves it to `to_read` (its undo puts back `parked` and the day), and that the review's *Unlisted* is the one status write that sets `unlisted`, from Parked only.
 
 ## Out of scope
 
@@ -94,7 +94,7 @@ Approved by the owner 2026-11-20 at TASK-111's plan gate, as the first half of i
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | CI R1 FAIL (e2e-budget only: 6.1 min a shard against the 6.0 ceiling; tests and every browser project green; this PR adds 0 test runs) | Spec R1 CHANGES (schema.md `parked_on` writers; follow-up bullet) → R2 APPROVE | Schema R1 CHANGES (saveBookStatus unlocked read, undo lock order and plan recheck, listen-queue leaks, undoMoveIn) → R2 APPROVE | Audit R1 PASS | Verify R2 PASS | CI R2 FAIL (e2e-budget only: 6.5 min a shard; main at e01e95d, the same 2084 test runs, is itself 6.5 min, so the gate fails every PR until main shrinks or the owner applies `e2e-growth`: owner action) | UI n/a (no screen changes)
 
 ## Blocked
 
@@ -102,7 +102,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2 (spec-reviewer and schema-reviewer; test-auditor 1)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1 (the four client undo bodies pass `unparked` through)
