@@ -1,7 +1,7 @@
 ---
 id: TASK-109
 title: 5.15 Parked (2 of 4) — Park on the status control and the row, the Parked chip and the search tag
-status: Review
+status: Done
 depends_on: [TASK-108]
 size: M
 model: sonnet
