@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -157,5 +157,44 @@ describe("scripts/branch-drift.mjs against a real repository", () => {
     const r = spawnSync(process.execPath, [SCRIPT, "--base", "no-such-ref", "--no-fetch"], { cwd: dir, encoding: "utf8" });
     expect(r.stderr).toMatch(/^branch-drift: /);
     expect(r.status).toBe(2);
+  });
+});
+
+// Owner, 2026-11-20: /implement-task runs the drift check at close-out and
+// rebases on main when it says "update first", instead of leaving it all to
+// the owner at merge.
+describe("drift at close-out (kit settings)", () => {
+  const root = resolve(".");
+  const read = (f: string) => readFileSync(join(root, f), "utf8");
+
+  it("is a ready gate between verify.full and ci", () => {
+    const gates = JSON.parse(read(".claude/kit.json")).workflow.readyGates as (string | { name: string; check: string; by: string })[];
+    const i = gates.findIndex((g) => typeof g === "object" && g.name === "Up to date enough with main");
+    expect(i).toBeGreaterThan(gates.indexOf("verify.full"));
+    expect(i).toBeLessThan(gates.indexOf("ci"));
+    const gate = gates[i] as { check: string; by: string };
+    expect(gate.by).toBe("claude");
+    expect(gate.check).toContain("npm run drift");
+    expect(gate.check).toContain("--force-with-lease");
+  });
+
+  it("is a close-out step that rebases on origin/main and pushes with a lease, never --force", () => {
+    const implement = read(".claude/project/implement-task.md");
+    expect(implement).toContain("Check drift at close-out, and rebase on main when it says so");
+    expect(implement).toContain("git rebase origin/main");
+    expect(implement).toContain("git push --force-with-lease origin <task-branch>");
+    expect(implement).toContain("git rebase --abort");
+    expect(read(".claude/rules/git.md")).toContain("`/implement-task` runs `npm run drift` itself at close-out");
+  });
+
+  it("lets the commands run without a prompt, and still denies a plain force push", () => {
+    const { allow, deny } = JSON.parse(read(".claude/settings.json")).permissions as { allow: string[]; deny: string[] };
+    for (const shell of ["Bash", "PowerShell"]) {
+      for (const cmd of ["npm run drift", "git rebase origin/main", "git rebase --abort", "git push --force-with-lease origin task/*"]) {
+        expect(allow, `${shell}(${cmd})`).toContain(`${shell}(${cmd})`);
+      }
+      expect(deny).toContain(`${shell}(git push --force *)`);
+      expect(allow.filter((p) => p.startsWith(`${shell}(git push --force-with-lease`)).every((p) => !/origin (main|master)\b/.test(p))).toBe(true);
+    }
   });
 });
