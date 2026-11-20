@@ -2336,6 +2336,9 @@ section[data-plan="year"] h2.group-head{color:var(--blocked)}
   text-decoration:underline;text-decoration-color:var(--faint-deco);text-underline-offset:3px}
 .year-so-far .coming-out a:hover,.year-so-far .progress-link a:hover{color:var(--ink)}
 /* Task 5.12's *Progress* link is a grey line like *Coming out*'s: under it, it takes no second rule. */
+.progress-line a{display:inline-flex;align-items:center;min-height:24px;color:var(--muted);
+  text-decoration:underline;text-decoration-color:var(--faint-deco);text-underline-offset:3px}
+.progress-line a:hover{color:var(--ink)}
 .year-so-far .coming-out + .progress-link{margin-top:.25rem;padding-top:0;border-top:0}
 
 /* The tablet (§14.5): the horizontal hero around 150 × 225, and the side rail stacked as two columns, 1.5 : 1. */

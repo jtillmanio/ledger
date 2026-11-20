@@ -316,6 +316,8 @@ test("the books and comics dashboards' rollups link to Progress with the chip ch
   await page.goto("/books");
   const books = page.locator('[data-slot="rollup"] a[href="/progress?medium=books"]');
   await expect(books).toHaveText(/In the middle of · Completed/);
+  // Grey, as Coming out's line is, never a state colour.
+  await expect(books).toHaveCSS("color", await tokenColour(page, "--muted"));
   await books.click();
   await expect(page).toHaveURL(/\/progress\?medium=books$/);
   await expect(chips(page).getByRole("link", { name: "Books", exact: true })).toHaveAttribute("aria-current", "true");
@@ -323,6 +325,7 @@ test("the books and comics dashboards' rollups link to Progress with the chip ch
   await page.goto("/comics");
   const comics = page.locator('main a[href="/progress?medium=comics"]');
   await expect(comics).toHaveText(/In the middle of · Completed/);
+  await expect(comics).toHaveCSS("color", await tokenColour(page, "--muted"));
   await comics.click();
   await expect(page).toHaveURL(/\/progress\?medium=comics$/);
   await expect(chips(page).getByRole("link", { name: "Comics", exact: true })).toHaveAttribute("aria-current", "true");
