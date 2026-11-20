@@ -1,7 +1,7 @@
 ---
 id: TASK-119
 title: 3.5b The book sheet's own writes (2 of 3) — Move and Shelves, a sheet from the sheet
-status: Draft
+status: Ready
 depends_on: [TASK-118, TASK-124]
 size: M
 model: opus

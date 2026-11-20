@@ -1,7 +1,7 @@
 ---
 id: TASK-122
 title: 5.17b Own it from Search and By hand (1 of 2) — the writes, the paste check and the sync's refusal
-status: Draft
+status: Ready
 depends_on: [TASK-094]
 size: M
 model: opus

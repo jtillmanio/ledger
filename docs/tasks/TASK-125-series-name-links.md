@@ -1,7 +1,7 @@
 ---
 id: TASK-125
 title: 5.9 Series (3 of 3) — every series name in the app links to its page
-status: Draft
+status: Ready
 depends_on: [TASK-102]
 size: M
 model: sonnet
