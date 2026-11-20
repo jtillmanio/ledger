@@ -1,7 +1,7 @@
 ---
 id: TASK-117
 title: 2.2l The universe and series on Add books' search results and the plan sheet
-status: In progress
+status: Review
 depends_on: [TASK-062, TASK-064]
 size: M
 model: sonnet
@@ -30,11 +30,11 @@ A library book found in Add books' search, and a book in the plan sheet's header
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm test`: given a book by Brandon Sanderson in universe *Cosmere*, series *Mistborn* at 4, with `page_count` 330, its library hit has the line *Brandon Sanderson · Cosmere · Mistborn #4 · 330 pages*, built from `bookSub` and followed by its pages; a hit with no universe reads as it does today; a Hardcover hit is unchanged. 2.2j's source scan no longer exempts `BookSearch.tsx`. The plan sheet's header for that book reads *Brandon Sanderson · Cosmere · Mistborn #4* followed by its words. In the browser (0.11) a long series name wraps at 360px in both, with no horizontal scroll, and axe passes.
-- [ ] AC-2: On the test database, `librarySearch` answers `universe` for each hit: the universe's name for a book in one, null for a book in none; and `planBook` answers the book's `universe`, `series` and `series_position`.
-- [ ] AC-3: Given a library book in universe *Discworld* and series *Discworld City Watch* at 2 (the series name contains the universe's), its search line reads *author · Discworld City Watch #2 · N pages*, naming it once, as `bookSub` does on the Library row. Given a library book with no series and no universe, the line is *author · N pages*.
-- [ ] AC-4: The plan sheet opened from a library search result in Add books and from the Library's `⋯` *Plan for…* show the same header line for the same book; from a Hardcover result it stays *author(s) · words*.
-- [ ] AC-5: Add books' search results and the plan sheet meet the UX floor (`docs/04-design.md` § 10): a long line wraps with no ellipsis and no horizontal scroll at 360px, axe passes, text contrast, a screenshot at 360px and 1280px of each.
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm test`: given a book by Brandon Sanderson in universe *Cosmere*, series *Mistborn* at 4, with `page_count` 330, its library hit has the line *Brandon Sanderson · Cosmere · Mistborn #4 · 330 pages*, built from `bookSub` and followed by its pages; a hit with no universe reads as it does today; a Hardcover hit is unchanged. 2.2j's source scan no longer exempts `BookSearch.tsx`. The plan sheet's header for that book reads *Brandon Sanderson · Cosmere · Mistborn #4* followed by its words. In the browser (0.11) a long series name wraps at 360px in both, with no horizontal scroll, and axe passes.
+- [x] AC-2: On the test database, `librarySearch` answers `universe` for each hit: the universe's name for a book in one, null for a book in none; and `planBook` answers the book's `universe`, `series` and `series_position`.
+- [x] AC-3: Given a library book in universe *Discworld* and series *Discworld City Watch* at 2 (the series name contains the universe's), its search line reads *author · Discworld City Watch #2 · N pages*, naming it once, as `bookSub` does on the Library row. Given a library book with no series and no universe, the line is *author · N pages*.
+- [x] AC-4: The plan sheet opened from a library search result in Add books and from the Library's `⋯` *Plan for…* show the same header line for the same book; from a Hardcover result it stays *author(s) · words*.
+- [x] AC-5: Add books' search results and the plan sheet meet the UX floor (`docs/04-design.md` § 10): a long line wraps with no ellipsis and no horizontal scroll at 360px, axe passes, text contrast, a screenshot at 360px and 1280px of each.
 
 ## Out of scope
 
@@ -61,6 +61,9 @@ A library book found in Add books' search, and a book in the plan sheet's header
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- The search row's buttons (*Add to Someday*, *Year or quarter…*, *Queue to listen*) are 34px high at phone widths, under the 44px the UX floor gives primary controls (ui-verifier, 2.2l) → not tracked: pre-existing, drawn that way since 1.4c, and above the 24px floor the browser specs hold
+- The Library's genre chip strip scrolls sideways inside its own container at 1280px (ui-verifier, 2.2l) → not tracked: pre-existing and by design; the page itself does not scroll
 
 ## Plan
 
@@ -94,7 +97,7 @@ Approved by the owner, 2026-11-20. Kept whole past the size check (about 12 file
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | CI R1 PASS (tests, 8 e2e shards) | Audit R1 CHANGES (AC-3 test non-discriminating; added the Discworld sheet header) → fixed | Verify R2 PASS | Spec R1 APPROVE | Schema R1 APPROVE | UI R1 NOT RUN (sign-in blocked; owner approved reading the passcode line) → R2 PASS (6 widths)
 
 ## Blocked
 
@@ -102,7 +105,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1 (spec, schema and UI each once; UI needed a second run to sign in)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0

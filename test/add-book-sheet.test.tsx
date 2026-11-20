@@ -652,6 +652,8 @@ describe("A library result names its universe and series (task 2.2l, D-134)", ()
     await open();
     await search("book");
     expect(rs()).toEqual(["Terry Pratchett · Discworld City Watch #2 · 400 pages", "Some Author · 250 pages"]);
+    // The sheet's header is a line only this task draws, and it names the series once too.
+    expect(await planFor(0)).toBe("Terry Pratchett · Discworld City Watch #2 · ~110k words");
   });
 
   it("a Hardcover result's plan sheet stays author · words (AC-4)", async () => {

@@ -2520,7 +2520,7 @@ nothing resolves to `--danger`.
 
 *(Check proposed by TASK-051; the owner agrees it by merging, or edits it.)*
 
-### ☐ 2.2l The universe and series on Add books' search results and the plan sheet · M
+### ☑ 2.2l The universe and series on Add books' search results and the plan sheet · M
 *Noticed by TASK-062 (2.2j); owner's call at its plan gate, 2026-11-12: left out of 2.2j. The plan sheet was added at its close-out, the same day.*
 
 Add books' search results (`src/components/BookSearch.tsx`) build their own
