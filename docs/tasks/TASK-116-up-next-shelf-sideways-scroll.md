@@ -1,7 +1,7 @@
 ---
 id: TASK-116
 title: 2.2k The books page scrolls sideways with a full Up next shelf
-status: In progress
+status: Review
 depends_on: [TASK-049]
 size: S
 model: sonnet
@@ -31,11 +31,11 @@ With a full quarter planned, `/books` stays the width of the screen on a phone a
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): with six books planned in the current quarter, `/books` at 360px, 390px and 412px has `documentElement.scrollWidth` equal to the viewport width (`expectNoHorizontalScroll`); the *Up next* shelf scrolls inside its own box and no card is clipped by the page. The same at 768px with seven. axe passes and nothing resolves to `--danger`.
-- [ ] AC-2: The PR names the outcome of the exploration (*reproduced* with its trigger, or *not reproduced* with what was tried and the PR that likely fixed it). If reproduced: the e2e test seeds that trigger and fails on `main` at at least one of the four widths, and passes with the fix. Either way, AC-1's test seeds two-line titles and a long author, universe and series line on every card (as 2.2j draws it), and each card's `.card-title` and `.sr-only` stay inside the shelf's `ul` box (`boundingBox` x and right edge within it, scrolled into view).
-- [ ] AC-3: The shelf still scrolls: at 360px with six books, `ul.shelf`'s `scrollWidth` is greater than its `clientWidth`, and scrolling it to the end shows the last card whole. At 1280px the ‹ › pager still appears and pages the shelf.
-- [ ] AC-4: The comics *Up next* shelf (`QueueShelf`) with six runs has no sideways scroll at 360px either, and its cards measure as before the change (same card width and gap).
-- [ ] AC-5: The books dashboard with a full shelf meets the UX floor (`docs/04-design.md` § 10): no horizontal scroll, axe, text contrast, a screenshot at each `ui.viewports` width.
+- [x] AC-1 (roadmap **Check:**, verbatim): with six books planned in the current quarter, `/books` at 360px, 390px and 412px has `documentElement.scrollWidth` equal to the viewport width (`expectNoHorizontalScroll`); the *Up next* shelf scrolls inside its own box and no card is clipped by the page. The same at 768px with seven. axe passes and nothing resolves to `--danger`.
+- [x] AC-2: The PR names the outcome of the exploration (*reproduced* with its trigger, or *not reproduced* with what was tried and the PR that likely fixed it). If reproduced: the e2e test seeds that trigger and fails on `main` at at least one of the four widths, and passes with the fix. Either way, AC-1's test seeds two-line titles and a long author, universe and series line on every card (as 2.2j draws it), and each card's `.card-title` and `.sr-only` stay inside the shelf's `ul` box (`boundingBox` x and right edge within it, scrolled into view).
+- [x] AC-3: The shelf still scrolls: at 360px with six books, `ul.shelf`'s `scrollWidth` is greater than its `clientWidth`, and scrolling it to the end shows the last card whole. At 1280px the ‹ › pager still appears and pages the shelf.
+- [x] AC-4: The comics *Up next* shelf (`QueueShelf`) with six runs has no sideways scroll at 360px either, and its cards measure as before the change (same card width and gap).
+- [x] AC-5: The books dashboard with a full shelf meets the UX floor (`docs/04-design.md` § 10): no horizontal scroll, axe, text contrast, a screenshot at each `ui.viewports` width.
 
 ## Out of scope
 
@@ -57,6 +57,8 @@ With a full quarter planned, `/books` stays the width of the screen on a phone a
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+None: the exploration and the tests turned up nothing left out.
 
 ## Plan
 
@@ -111,7 +113,7 @@ None.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 harness error (vitest, lowercase drive) → R2 PASS | Audit R1 PASS (mutated `.shelf .card` to `position:static`: new tests fail at 640px / 872px; comics pin fails on a 14px gap) | Spec R1 APPROVE | UI skipped (no UI file changed; the dev database has nothing planned, so the plan's seven-book walk has no fixture; the FEEL screenshots in CI and the owner's preview walk cover it) | CI R1 PASS (all eight e2e shards, check, e2e-budget, Vercel)
 
 ## Blocked
 
@@ -119,7 +121,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1 was vitest's lowercase-drive harness error, not a test failure)
+- Review rounds: 1 (spec-reviewer APPROVE; test-auditor PASS)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
