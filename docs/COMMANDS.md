@@ -152,11 +152,12 @@ npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in
                             # serves an existing `npm run build` with `next start` instead (CI's shards do). E2E_SHARD=n/N
                             # runs only the spec files shard n of N holds, balanced by recorded time (CI's ten shards, D-167)
 npm run test:e2e:full       # the same at every project, 360-1280px light and dark (E2E_SCOPE=full): what CI runs
-npm run e2e:plan -- <e2e-times.json> [--list <list.json>]
-                            # rewrites test/e2e/shard-times.json, the times CI's shard plan balances by, from the `e2e-times`
-                            # artifact of a run on main (D-167); --list is `npm run test:e2e:full -- --list --reporter=json`
-                            # saved to a file, so only tests the suite schedules today count. The e2e-budget job's summary says
-                            # when the plan has drifted (slowest shard over 1.1x the mean)
+npm run e2e:plan -- <e2e-times.json>... [--list <list.json>]
+                            # rewrites test/e2e/shard-times.json, the times CI's shard plan balances by, as the mean of the
+                            # `e2e-times` artifacts given (D-167; three or more: one run's times move 30% between runs);
+                            # --list is `npm run test:e2e:full -- --list --reporter=json` saved to a file, so only tests the
+                            # suite schedules today count. The e2e-budget job's summary says when the plan has drifted
+                            # (slowest shard over 1.25x the mean in that run)
 npm run test:e2e:build      # `next build` with the suite's server environment, then the core projects against
                             # `next start` over that build (--build, D-97): no route compiles on its first
                             # request, and never a stale build. test:all's browser step; arguments after --.

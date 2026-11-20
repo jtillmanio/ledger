@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { e2eProjects, planE2e } from "../scripts/lib/e2e.mjs";
 import {
-  DEFAULT_UNIT_MS, filesByProject, filesMatcher, groupTimes, imbalance, parseShard, planShards, shardUnits, unitKey,
+  DEFAULT_UNIT_MS, averageTimes, filesByProject, filesMatcher, groupTimes, imbalance, parseShard, planShards, shardUnits, unitKey,
 } from "../scripts/lib/e2e-shards.mjs";
 import { ci, ciJob } from "./ci-yml";
 
@@ -153,6 +153,23 @@ describe("groupTimes: one time per spec file per project from a recorded run", (
   it("counts only the tests the suite still schedules when given them", () => {
     const keep = new Set(["a.spec.ts › one [w390-light]", "b.spec.ts › x [w390-light]"]);
     expect(groupTimes(tests, keep)).toEqual({ "w390-light|a.spec.ts": 1200, "w390-light|b.spec.ts": 400 });
+  });
+});
+
+describe("averageTimes: the plan comes from the mean of several runs", () => {
+  it("averages a unit over the runs that have it, rounded to 100 ms, in key order", () => {
+    const runs: Record<string, number>[] = [
+      { "p|a.spec.ts": 3000, "p|b.spec.ts": 1000 },
+      { "p|a.spec.ts": 5000, "q|a.spec.ts": 700 },
+      { "p|a.spec.ts": 4100 },
+    ];
+    expect(averageTimes(runs)).toEqual({ "p|a.spec.ts": 4000, "p|b.spec.ts": 1000, "q|a.spec.ts": 700 });
+    expect(Object.keys(averageTimes(runs))).toEqual(["p|a.spec.ts", "p|b.spec.ts", "q|a.spec.ts"]);
+  });
+
+  it("one run is that run, and none is nothing", () => {
+    expect(averageTimes([{ "p|a": 1234 }])).toEqual({ "p|a": 1200 });
+    expect(averageTimes([])).toEqual({});
   });
 });
 

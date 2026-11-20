@@ -91,6 +91,22 @@ export function imbalance(plan, actual) {
   return { sums, mean, slowest, ratio: mean === 0 ? 1 : slowest / mean };
 }
 
+/**
+ * The mean of several runs' `groupTimes`, per unit, rounded to 100 ms. A unit a run lacks (a file that did not
+ * run in that project then) counts for the runs that have it only: a missing time is not a zero.
+ */
+export function averageTimes(runs) {
+  const sums = {};
+  const counts = {};
+  for (const run of runs) {
+    for (const [key, ms] of Object.entries(run)) {
+      sums[key] = (sums[key] ?? 0) + ms;
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+  }
+  return Object.fromEntries(Object.keys(sums).sort().map((k) => [k, Math.round(sums[k] / counts[k] / 100) * 100]));
+}
+
 /** `{ "<project>|<file>": ms }` from a recorded run's `{ "<file> › … [<project>]": ms }`, rounded to 100 ms. */
 export function groupTimes(tests, keep) {
   const grouped = {};

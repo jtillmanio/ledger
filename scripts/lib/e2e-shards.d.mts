@@ -8,4 +8,5 @@ export function planShards(units: ShardUnit[], total: number): Shard[];
 export function filesByProject(plan: Shard[], current: number): Map<string, string[]>;
 export function filesMatcher(files: string[]): RegExp;
 export function imbalance(plan: Shard[], actual: Record<string, number>): { sums: number[]; mean: number; slowest: number; ratio: number };
+export function averageTimes(runs: Record<string, number>[]): Record<string, number>;
 export function groupTimes(tests: Record<string, number>, keep?: Set<string>): Record<string, number>;
