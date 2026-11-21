@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { RefusedStatus, redateBookRead, undoBookRedate, type BookRedate } from "@/db/writes";
+import { RefusedStatus, isRankExit, redateBookRead, undoBookRedate, type BookRedate } from "@/db/writes";
 import { bookReads } from "@/db/queries";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { isFinish, resolveFinish, resolveStart, startAfterFinish, type Finish } from "@/lib/finish-date";
@@ -32,6 +32,10 @@ export async function GET(req: Request) {
  * undone by that status change's own undo (`DELETE /api/progress/book`), which
  * puts back the whole row it found. Answers `{ redate }`, which `DELETE` here
  * sends back to undo this re-date alone.
+ *
+ * A ranked read moved to another year, or to no date, leaves its old year's
+ * ranking, which closes up (task 3.4c): `redate.unranked` holds those ranks, and
+ * the undo puts them back with the date.
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -67,7 +71,8 @@ export async function POST(req: Request) {
 }
 
 /** A re-date's undo: `{ redate }` as the POST answered it. 409 when the read has
- * been re-dated since, and nothing is changed. */
+ * been re-dated since, or its old year's ranking has moved since (task 3.4c), and
+ * nothing is changed. A malformed rank change is a 400. */
 export async function DELETE(req: Request) {
   const userId = await apiUserId();
   if (!userId) return unauthorized();
@@ -98,8 +103,12 @@ function validDates(d: unknown, inProgress: boolean): boolean {
 
 function validRedate(r: unknown): r is BookRedate {
   if (typeof r !== "object" || r === null) return false;
-  const { bookId, readId, before, after } = r as Record<string, unknown>;
+  const { bookId, readId, before, after, unranked } = r as Record<string, unknown>;
   if (typeof bookId !== "string" || bookId === "") return false;
   if (readId !== null && !isId(readId)) return false;
+  // The old year's ranks a re-date out of it changed (task 3.4c): a finished read's only; missing before 3.4c.
+  if (unranked !== undefined && unranked !== null && !(readId !== null && isRankExit(unranked, readId as number))) {
+    return false;
+  }
   return validDates(before, readId === null) && validDates(after, readId === null);
 }

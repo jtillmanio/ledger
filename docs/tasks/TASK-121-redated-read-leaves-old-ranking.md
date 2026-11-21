@@ -1,14 +1,14 @@
 ---
 id: TASK-121
 title: 3.4c A re-dated read leaves its old year's ranking
-status: Ready
+status: In progress
 depends_on: [TASK-077]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: d9efddf
 ---
 
 # TASK-121 — 3.4c A re-dated read leaves its old year's ranking
@@ -66,7 +66,33 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-11-21 (with step 4's cross-year refusal, and `ledger_test_3` for this worktree).
+
+**Steps**
+
+1. `src/db/writes.ts`: pull the reorder out of `rankRead` into a helper (`rerank(tx, userId, own, rank)` → `{ before, after, left }`); `rank: null` takes a read out of its year and renumbers the rest from 1. A type `RankExit = { year: number; before; after; left }`; `BookRedate.unranked?` and `BookStatusChange.unranked?` carry it, null when no rank moved (optional: an undo payload answered before 3.4c has none).
+2. The re-date (`redateBookRead`, and `saveBookStatus`'s *Finished* correction): read the read's rank and year (`rankedRead`), write the dates, read the year again; ranked and its year changed (another year, or none) → the helper takes it out of the old year, in the same transaction. A re-date within the year keeps its rank. A start after its finish throws before any write.
+3. Lock order, one everywhere: the per-user ranking lock (`inRanking`), then `lockBook`. `redateBookRead` / `undoBookRedate` take it for a finished read (`readId` set); `saveBookStatus` when the status is `read`; `undoBookStatus` when the change re-dated a read (`edited`). Same order as `rankRead`, so no deadlock.
+4. The undos refuse, changing nothing, unless the read is still unranked and the old year's ranking is exactly `left` (the check `undoRank` makes, shared as a helper); then the date and every rank in `before` go back. Also refused: the read has been ranked since and the undo would move it to another year (it would carry its new rank across: a tie and a gap).
+5. Routes: `validRedate` and `validChange` accept `unranked` through `isRankExit(u, readId)` exported from `writes.ts` (a route file can't export helpers): the read in `before` with a rank and in `after` with none, not in `left`, the same reads in both, ≤ 1000 rows; the status change's needs `edited`. A malformed one is 400, nothing written.
+
+**Files**
+
+- `src/db/writes.ts`: the helper, the four writes, the types, `isRankExit`
+- `src/app/api/progress/book/read/route.ts`: `validRedate` accepts `unranked`
+- `src/app/api/progress/book/route.ts`: `validChange` accepts `unranked`
+- `test/year-rank.test.ts`: AC-1 to AC-6
+
+**Test strategy** (`test/year-rank.test.ts`, five ranked 2025 reads)
+
+- AC-1: `describe("re-dating a ranked read through All reads (roadmap 3.4c check, AC-1)")`: into 2024, to no date (each with one undo), another 2025 day.
+- AC-2: the same three and the undo through `/api/progress/book` (*Read* on the book already read).
+- AC-3: re-date out of 2025, a rank write to 2025, then the undo: 409 from the route, `false` from `undoBookRedate`; ranks, date and `year_rank` as the rank write left them.
+- AC-4: an unranked read into 2024 changes no `year_rank`; a start after its finish is 400 and no rank changes.
+- AC-5: the POSTs answer `unranked`, the DELETEs take it; a malformed one is 400 and writes nothing.
+- AC-6: a re-date and a rank write run together (10 rounds), all complete, ranks contiguous; and the lock order: with the ranking lock held on another connection, a re-date waits on it with the book's row still free (`FOR UPDATE NOWAIT` succeeds from a third connection).
+
+**Risks**: AC-4's "same transaction" is shown indirectly (no write can be made to fail after the rank change); the auditor may call it weak.
 
 ## Review log
 
