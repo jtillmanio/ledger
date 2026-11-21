@@ -9,6 +9,7 @@
 // can't be ranked. No rating is written: the rank is the only rating.
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireTestUrl } from "../scripts/lib/testdb.mjs";
+import postgres from "postgres";
 import { answer, done, next, start, type Answer } from "../src/lib/rank-insert";
 import { testSql, truncateAll } from "./db";
 
@@ -24,15 +25,22 @@ let rank: typeof import("../src/app/api/progress/book/rank/route");
 let note: typeof import("../src/app/api/progress/book/note/route");
 let status: typeof import("../src/app/api/progress/book/route");
 let books: typeof import("../src/app/api/books/route");
+let reads: typeof import("../src/app/api/progress/book/read/route");
+let writes: typeof import("../src/db/writes");
 let appSql: { end: () => Promise<void> };
+/** The TEST database's URL, read before DATABASE_URL points at it (requireTestUrl refuses after). */
+let testUrl: string;
 
 beforeAll(async () => {
   // src/db reads DATABASE_URL at import time: point it at the TEST database first.
-  process.env.DATABASE_URL = requireTestUrl();
+  testUrl = requireTestUrl();
+  process.env.DATABASE_URL = testUrl;
   rank = await import("../src/app/api/progress/book/rank/route");
   note = await import("../src/app/api/progress/book/note/route");
   status = await import("../src/app/api/progress/book/route");
   books = await import("../src/app/api/books/route");
+  reads = await import("../src/app/api/progress/book/read/route");
+  writes = await import("../src/db/writes");
   appSql = (await import("../src/db")).sql;
 });
 
@@ -442,5 +450,316 @@ describe("a book's note (3.4)", () => {
     const entry = { destination: someday, created: added.created, added: added.added, statused: added.statused };
     expect((await books.DELETE(req("/api/books", "DELETE", entry))).status).toBe(409);
     expect(await row("nostatus")).toMatchObject({ status: "to_read", notes: "Gift from Sam." });
+  });
+});
+
+// Task 3.4c (TASK-121, D-101, D-122): a ranked read re-dated into another year,
+// or to no date, leaves its old year's ranking in the re-date's own transaction:
+// the year closes up, and the read waits unranked in its new year. Its one undo
+// puts back the date and the old year's ranks, and refuses, changing nothing,
+// once that year's ranking has moved since. A re-date within the year keeps it.
+describe("re-dating a ranked read (roadmap 3.4c check, TASK-121)", () => {
+  const redate = (body: unknown) => reads.POST(req("/api/progress/book/read", "POST", body));
+  const undoRedate = (r: unknown) => reads.DELETE(req("/api/progress/book/read", "DELETE", { redate: r }));
+  const correct = (body: Record<string, unknown>) =>
+    status.POST(req("/api/progress/book", "POST", { status: "read", ...body }));
+  const undoCorrect = (change: unknown) => status.DELETE(req("/api/progress/book", "DELETE", { change }));
+  const day = (date: string) => ({ mode: "date", date });
+
+  /** The latest read's finish, and the book's status row's: the two never disagree (D-133). */
+  async function finishOf(id: string) {
+    const [r] = await sql`SELECT finished_on::text AS on FROM read_events WHERE book_id = ${id} ORDER BY id DESC LIMIT 1`;
+    const [s] = await sql`SELECT finished_on::text AS on FROM book_status WHERE user_id = ${USER} AND book_id = ${id}`;
+    expect(s.on).toBe(r.on);
+    return r.on as string | null;
+  }
+
+  /** Re-date a3 (ranked 3 of five in 2025) through *All reads*. */
+  async function moveA3(finish: unknown) {
+    const res = await redate({ bookId: "a3", readId: await readOf("a3"), finish });
+    expect(res.status).toBe(200);
+    return (await res.json()).redate;
+  }
+  /** Re-date a3 through a *Finished* correction (*Read* on the book already read). */
+  async function correctA3(finish: unknown) {
+    const res = await correct({ bookId: "a3", finish });
+    expect(res.status).toBe(200);
+    const { change } = await res.json();
+    expect(change.edited).toMatchObject({ id: await readOf("a3") });
+    return change;
+  }
+
+  const CLOSED_2025 = ["a1:1", "a2:2", "a4:3", "a5:4"];
+
+  describe("through All reads (roadmap check, AC-1)", () => {
+    it("into 2024: 2025 is 1–4, the read unranked in 2024, 2024's ranks unchanged; one undo restores it", async () => {
+      const r = await moveA3(day("2024-05-05"));
+      expect(await ranking(2025)).toEqual(CLOSED_2025);
+      expect(await rankOf("a3")).toBeNull();
+      expect(await finishOf("a3")).toBe("2024-05-05");
+      expect(await ranking(2024)).toEqual(BEFORE_2024);
+      const left = [await readOf("a1"), await readOf("a2"), await readOf("a4"), await readOf("a5")];
+      expect(r.unranked).toMatchObject({ year: 2025, left });
+
+      expect((await undoRedate(r)).status).toBe(200);
+      expect(await ranking(2025)).toEqual(BEFORE_2025);
+      expect(await finishOf("a3")).toBe("2025-03-10");
+      expect(await ranking(2024)).toEqual(BEFORE_2024);
+    });
+
+    it("to no date: 2025 is 1–4 and the read has no year and no rank; one undo restores it", async () => {
+      const r = await moveA3({ mode: "none" });
+      expect(await ranking(2025)).toEqual(CLOSED_2025);
+      expect(await rankOf("a3")).toBeNull();
+      expect(await finishOf("a3")).toBeNull();
+      expect(await ranking(2024)).toEqual(BEFORE_2024);
+
+      expect((await undoRedate(r)).status).toBe(200);
+      expect(await ranking(2025)).toEqual(BEFORE_2025);
+      expect(await finishOf("a3")).toBe("2025-03-10");
+    });
+
+    it("to another day of 2025: it keeps 3, and the re-date carries no rank change", async () => {
+      const r = await moveA3(day("2025-08-20"));
+      expect(await rankOf("a3")).toBe(3);
+      expect(await ranking(2025)).toEqual(BEFORE_2025);
+      expect(r.unranked).toBeNull();
+      expect((await undoRedate(r)).status).toBe(200);
+      expect(await finishOf("a3")).toBe("2025-03-10");
+      expect(await rankOf("a3")).toBe(3);
+    });
+  });
+
+  describe("through a Finished correction (AC-2)", () => {
+    it("into 2024: 2025 is 1–4, the read unranked in 2024; its one undo restores the date and the five", async () => {
+      const change = await correctA3(day("2024-05-05"));
+      expect(await ranking(2025)).toEqual(CLOSED_2025);
+      expect(await rankOf("a3")).toBeNull();
+      expect(await finishOf("a3")).toBe("2024-05-05");
+      expect(await ranking(2024)).toEqual(BEFORE_2024);
+      expect(change.unranked).toMatchObject({ year: 2025 });
+
+      expect((await undoCorrect(change)).status).toBe(200);
+      expect(await ranking(2025)).toEqual(BEFORE_2025);
+      expect(await finishOf("a3")).toBe("2025-03-10");
+    });
+
+    it("to no date: 2025 is 1–4, the read has no rank; its one undo restores it", async () => {
+      const change = await correctA3({ mode: "none" });
+      expect(await ranking(2025)).toEqual(CLOSED_2025);
+      expect(await rankOf("a3")).toBeNull();
+      expect(await finishOf("a3")).toBeNull();
+
+      expect((await undoCorrect(change)).status).toBe(200);
+      expect(await ranking(2025)).toEqual(BEFORE_2025);
+      expect(await finishOf("a3")).toBe("2025-03-10");
+    });
+
+    it("to another day of 2025: it keeps 3", async () => {
+      const change = await correctA3(day("2025-08-20"));
+      expect(await rankOf("a3")).toBe(3);
+      expect(await ranking(2025)).toEqual(BEFORE_2025);
+      expect(change.unranked).toBeNull();
+    });
+  });
+
+  describe("the undo once the old year has moved (AC-3)", () => {
+    it("All reads: a rank write to 2025 since refuses the undo, 409 and false, and changes nothing", async () => {
+      const r = await moveA3(day("2024-05-05"));
+      expect((await setRank({ readId: await readOf("a5"), rank: 1 })).status).toBe(200);
+      const moved = await allReads();
+      expect(await ranking(2025)).toEqual(["a5:1", "a1:2", "a2:3", "a4:4"]);
+
+      expect((await undoRedate(r)).status).toBe(409);
+      expect(await allReads()).toEqual(moved);
+      expect(await writes.undoBookRedate(USER, r)).toBe(false);
+      expect(await allReads()).toEqual(moved);
+      expect(await finishOf("a3")).toBe("2024-05-05");
+      expect(await rankOf("a3")).toBeNull();
+    });
+
+    it("a Finished correction: a rank write to 2025 since refuses its undo, 409 and false, and changes nothing", async () => {
+      const change = await correctA3(day("2024-05-05"));
+      expect((await setRank({ readId: await readOf("a5"), rank: 1 })).status).toBe(200);
+      const moved = await allReads();
+
+      expect((await undoCorrect(change)).status).toBe(409);
+      expect(await allReads()).toEqual(moved);
+      expect(await writes.undoBookStatus(USER, change)).toBe(false);
+      expect(await allReads()).toEqual(moved);
+      expect(await finishOf("a3")).toBe("2024-05-05");
+    });
+
+    it("the read ranked in its new year since: the undo would carry that rank back across, so it is refused", async () => {
+      const r = await moveA3(day("2024-05-05"));
+      expect((await setRank({ readId: await readOf("a3"), rank: 1 })).status).toBe(200);
+      const moved = await allReads();
+      expect(await ranking(2024)).toEqual(["a3:1", "b1:2", "b2:3"]);
+      expect((await undoRedate(r)).status).toBe(409);
+      expect(await allReads()).toEqual(moved);
+
+      // An unranked read too: re-dated with no rank change, then ranked where it landed.
+      const res = await redate({ bookId: "a6", readId: await readOf("a6"), finish: day("2024-06-06") });
+      const { redate: r6 } = await res.json();
+      expect(r6.unranked).toBeNull();
+      expect((await setRank({ readId: await readOf("a6"), rank: 1 })).status).toBe(200);
+      const ranked = await allReads();
+      expect((await undoRedate(r6)).status).toBe(409);
+      expect(await allReads()).toEqual(ranked);
+    });
+  });
+
+  describe("an unranked read, and a refused re-date (AC-4)", () => {
+    const ranks = async () => (await allReads()).map((r) => `${r.id}:${r.year_rank}`);
+
+    it("an unranked read re-dated into 2024 changes no year_rank in either year", async () => {
+      const was = await ranks();
+      const res = await redate({ bookId: "a6", readId: await readOf("a6"), finish: day("2024-06-06") });
+      expect(res.status).toBe(200);
+      expect((await res.json()).redate.unranked).toBeNull();
+      expect(await ranks()).toEqual(was);
+      const { change } = await (await correct({ bookId: "a6", finish: day("2023-02-02") })).json();
+      expect(change.unranked).toBeNull();
+      expect(await ranks()).toEqual(was);
+    });
+
+    it("a start after its finish is refused, 400, and no rank or date changes", async () => {
+      const was = await allReads();
+      const body = { bookId: "a3", start: day("2025-02-01"), finish: day("2024-06-01") };
+      expect((await redate({ ...body, readId: await readOf("a3") })).status).toBe(400);
+      expect(await allReads()).toEqual(was);
+      expect((await correct(body)).status).toBe(400);
+      expect(await allReads()).toEqual(was);
+    });
+
+    it("the rank change is the re-date's own transaction: a rank write that fails takes the new date back with it", async () => {
+      // A test-only trigger refuses any year_rank change, so the re-date's rank write fails after its date write.
+      await sql.unsafe(`
+        CREATE FUNCTION test_refuse_rank() RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN
+          IF NEW.year_rank IS DISTINCT FROM OLD.year_rank THEN RAISE EXCEPTION 'rank write refused (test)'; END IF;
+          RETURN NEW;
+        END $$;
+        CREATE TRIGGER test_refuse_rank BEFORE UPDATE ON read_events FOR EACH ROW EXECUTE FUNCTION test_refuse_rank();`);
+      try {
+        // Drizzle wraps the database error; the trigger's message is its cause.
+        const REFUSED = { cause: expect.objectContaining({ message: 'rank write refused (test)' }) };
+        const was = await allReads();
+        const into2024 = { on: "2024-05-05", precision: "exact" } as const;
+        await expect(writes.redateBookRead(USER, { bookId: "a3", readId: await readOf("a3"), finish: into2024 }))
+          .rejects.toMatchObject(REFUSED);
+        expect(await allReads()).toEqual(was);
+        expect(await finishOf("a3")).toBe("2025-03-10");
+        await expect(writes.saveBookStatus(USER, { bookId: "a3", status: "read", finish: into2024 }))
+          .rejects.toMatchObject(REFUSED);
+        expect(await allReads()).toEqual(was);
+        expect(await finishOf("a3")).toBe("2025-03-10");
+      } finally {
+        await sql.unsafe("DROP TRIGGER IF EXISTS test_refuse_rank ON read_events; DROP FUNCTION IF EXISTS test_refuse_rank()");
+      }
+    });
+  });
+
+  describe("the undo payload through the routes (AC-5)", () => {
+    type Row = { readId: number; rank: number | null };
+
+    it("All reads: a malformed rank change is 400 and writes nothing; the answer's own undoes", async () => {
+      const r = await moveA3(day("2024-05-05"));
+      const a3 = await readOf("a3");
+      const u = r.unranked;
+      expect(u.before).toContainEqual({ readId: a3, rank: 3 });
+      expect(u.after).toContainEqual({ readId: a3, rank: null });
+      const after = await allReads();
+      const forged = [
+        "2025",
+        { ...u, year: "2025" },
+        { ...u, before: u.before.filter((x: Row) => x.readId !== a3), after: u.after.filter((x: Row) => x.readId !== a3) },
+        { ...u, after: u.after.map((x: Row) => (x.readId === a3 ? { readId: a3, rank: 1 } : x)) },
+        { ...u, after: u.after.slice(1) },
+        { ...u, left: [...u.left, a3] },
+        { ...u, before: [...u.before, { readId: -1, rank: 1 }], after: [...u.after, { readId: -1, rank: 1 }] },
+        { ...u, left: "all" },
+      ];
+      for (const unranked of forged) {
+        expect((await undoRedate({ ...r, unranked })).status).toBe(400);
+        expect(await allReads()).toEqual(after);
+      }
+      // A rank change on the read in progress, which has none to lose.
+      expect((await undoRedate({ ...r, readId: null, unranked: u })).status).toBe(400);
+      expect(await allReads()).toEqual(after);
+
+      expect((await undoRedate(r)).status).toBe(200);
+      expect(await ranking(2025)).toEqual(BEFORE_2025);
+    });
+
+    it("a Finished correction: a malformed rank change is 400 and writes nothing; the answer's own undoes", async () => {
+      const change = await correctA3(day("2024-05-05"));
+      const u = change.unranked;
+      const after = await allReads();
+      for (const unranked of [{ ...u, year: 2025.5 }, { ...u, before: u.after }, 7]) {
+        expect((await undoCorrect({ ...change, unranked })).status).toBe(400);
+        expect(await allReads()).toEqual(after);
+      }
+      // A rank change on a write that re-dated no read is forged.
+      expect((await undoCorrect({ ...change, edited: null, unranked: u })).status).toBe(400);
+      expect(await allReads()).toEqual(after);
+
+      expect((await undoCorrect(change)).status).toBe(200);
+      expect(await ranking(2025)).toEqual(BEFORE_2025);
+    });
+  });
+
+  describe("a re-date and a rank write of the same book's year at once (AC-6)", () => {
+    /** Every year's ranks run 1…N with no gap and no tie. */
+    async function contiguous() {
+      for (const year of [2024, 2025]) {
+        const got = (await ranking(year)).map((r) => Number(r.split(":")[1]));
+        expect(got).toEqual(got.map((_, i) => i + 1));
+      }
+    }
+
+    it("both complete, ten times over, and every year's ranks stay contiguous", async () => {
+      const a3 = await readOf("a3");
+      const a5 = await readOf("a5");
+      for (let i = 0; i < 10; i++) {
+        const on = i % 2 === 0 ? "2024-05-05" : "2025-03-10";
+        await Promise.all([
+          writes.redateBookRead(USER, { bookId: "a3", readId: a3, finish: { on, precision: "exact" } }),
+          writes.rankRead(USER, { readId: a3 }, 1),
+          writes.rankRead(USER, { readId: a5 }, 2),
+        ]);
+        await contiguous();
+      }
+    });
+
+    it("a re-date takes the ranking lock before the book's row lock, as rankRead does", async () => {
+      const holder = postgres(testUrl, { max: 1, prepare: false, onnotice: () => {} });
+      const key = `ledger:rank:${USER}`;
+      try {
+        await holder`SELECT pg_advisory_lock(hashtext(${key}))`;
+        const pending = writes.redateBookRead(USER, {
+          bookId: "a3", readId: await readOf("a3"), finish: { on: "2024-05-05", precision: "exact" },
+        });
+        // The re-date waits on the ranking lock...
+        let waiting = 0;
+        for (let i = 0; i < 50 && waiting === 0; i++) {
+          // This database's only: another checkout's suite may be waiting on the same test server.
+          [{ n: waiting }] = await sql`SELECT count(*)::int AS n FROM pg_locks WHERE locktype = 'advisory' AND NOT granted
+                                       AND database = (SELECT oid FROM pg_database WHERE datname = current_database())`;
+          if (waiting === 0) await new Promise((r) => setTimeout(r, 100));
+        }
+        expect(waiting).toBe(1);
+        // ...holding no lock on the book's row: another writer takes it at once.
+        await sql.begin(async (tx) => {
+          await tx`SELECT id FROM books WHERE id = 'a3' FOR NO KEY UPDATE NOWAIT`;
+        });
+        await holder`SELECT pg_advisory_unlock(hashtext(${key}))`;
+        expect(await pending).not.toBeNull();
+        expect(await ranking(2025)).toEqual(CLOSED_2025);
+        await contiguous();
+      } finally {
+        await holder.end();
+      }
+    });
   });
 });

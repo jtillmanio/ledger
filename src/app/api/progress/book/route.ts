@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import {
-  BOOK_STATUSES, IN_PROGRESS, RefusedStatus, SETTABLE_STATUSES, isAutoKind, saveBookStatus, undoBookStatus,
+  BOOK_STATUSES, IN_PROGRESS, RefusedStatus, SETTABLE_STATUSES, isAutoKind, isRankExit, saveBookStatus, undoBookStatus,
   type BookStatusChange, type NoteChange,
 } from "@/db/writes";
 import { finishOffer } from "@/db/queries";
@@ -92,7 +92,9 @@ export async function POST(req: Request) {
 }
 
 /** A status change's undo: `{ change }` as the POST answered it. 409 when the
- * book's reading log has moved on since, and nothing is changed. With `note`, a
+ * book's reading log has moved on since, and nothing is changed. A *Finished*
+ * correction that took a ranked read out of its year (`change.unranked`, task
+ * 3.4c) puts that year's ranks back, and is a 409 once they have moved since. With `note`, a
  * note write's answer for the same book (the DNF's reason, task 5.5), the note
  * before comes back in the same transaction, and a note changed since is a 409 too. */
 export async function DELETE(req: Request) {
@@ -141,7 +143,9 @@ function validPlanRow(p: unknown): boolean {
 
 function validChange(c: unknown): c is BookStatusChange {
   if (typeof c !== "object" || c === null) return false;
-  const { bookId, status, prior, appended, edited, backfilled, follows, unqueued, unplanned } = c as Record<string, unknown>;
+  const {
+    bookId, status, prior, appended, edited, backfilled, unranked, follows, unqueued, unplanned,
+  } = c as Record<string, unknown>;
   // The plan rows a park took the book out of (task 5.15); missing from a change answered before 5.15.
   if (unplanned !== undefined && !(Array.isArray(unplanned) && unplanned.every(validPlanRow))) return false;
   if (Array.isArray(unplanned) && unplanned.length > 0 && status !== "parked") return false;
@@ -166,6 +170,10 @@ function validChange(c: unknown): c is BookStatusChange {
     if (typeof edited !== "object" || appended !== null) return false;
     const e = edited as Record<string, unknown>;
     if (!isId(e.id) || !isFinish(asFinish(e)) || !isFinish(asStart(e))) return false;
+  }
+  // The old year's ranks a re-date out of it changed (task 3.4c): only a write that re-dated a read; missing before 3.4c.
+  if (unranked !== undefined && unranked !== null) {
+    if (edited === null || !isRankExit(unranked, (edited as Record<string, unknown>).id as number)) return false;
   }
   return true;
 }
