@@ -1,7 +1,7 @@
 ---
 id: TASK-123
 title: 5.17b Own it from Search and By hand (2 of 2) — the chips, the button and the paste review on screen
-status: In progress
+status: Review
 depends_on: [TASK-122]
 size: M
 model: sonnet
@@ -31,10 +31,10 @@ In Add books, *Physical copy* and *Audiobook* stay available in Search and By ha
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the clauses through the screens, in the browser (0.11) on the test database, and the screenshots. TASK-122 proves the writes): (proposed; the owner agrees it by merging or edits it first) with *Physical copy* chosen, Search's *Add to Physical copy* on a library book with a status writes one `physical` row and changes no status. On a Hardcover result, and on a typed book the library lacks, it creates one `unlisted` book with its row. Undo removes exactly what each add wrote, and leaves a row the book had before. A paste whose matched book already has the row counts it as already owned. Undoing an add to Someday whose created book has since gained a `calibre_id` answers 409 and changes nothing. Screenshots at 360px and 1280px.
-- [ ] AC-2: With *Physical copy* chosen in *Paste a list*, switching to *Search* and then *By hand* keeps *Physical copy* chosen (`aria-pressed="true"`), and both chips are present in all three modes.
-- [ ] AC-3: In Search with *Audiobook* chosen, a library result's button reads *Add to Audiobook*; pressing it shows a toast naming the book with an Undo, and the book's Library row then ends *Audiobook*. In By hand with *Physical copy* chosen, the submit reads *Add to Physical copy*, and the typed book then appears under the Library's *Unlisted* and *Physical* chips.
-- [ ] AC-4: A paste to *Physical copy* of three lines, one a book that already has its `physical` row, shows that line's reason *Already owned on paper*, and the primary reads *Add 2 books to Physical copy*; after adding, the toast counts 2.
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the clauses through the screens, in the browser (0.11) on the test database, and the screenshots. TASK-122 proves the writes): (proposed; the owner agrees it by merging or edits it first) with *Physical copy* chosen, Search's *Add to Physical copy* on a library book with a status writes one `physical` row and changes no status. On a Hardcover result, and on a typed book the library lacks, it creates one `unlisted` book with its row. Undo removes exactly what each add wrote, and leaves a row the book had before. A paste whose matched book already has the row counts it as already owned. Undoing an add to Someday whose created book has since gained a `calibre_id` answers 409 and changes nothing. Screenshots at 360px and 1280px.
+- [x] AC-2: With *Physical copy* chosen in *Paste a list*, switching to *Search* and then *By hand* keeps *Physical copy* chosen (`aria-pressed="true"`), and both chips are present in all three modes.
+- [x] AC-3: In Search with *Audiobook* chosen, a library result's button reads *Add to Audiobook*; pressing it shows a toast naming the book with an Undo, and the book's Library row then ends *Audiobook*. In By hand with *Physical copy* chosen, the submit reads *Add to Physical copy*, and the typed book then appears under the Library's *Unlisted* and *Physical* chips.
+- [x] AC-4: A paste to *Physical copy* of three lines, one a book that already has its `physical` row, shows that line's reason *Already owned on paper*, and the primary reads *Add 2 books to Physical copy*; after adding, the toast counts 2.
 - [ ] AC-5: Add books meets the UX floor (`docs/04-design.md` § 10) in Search and By hand with an owned format chosen: the chips are named toggles of at least 44px on a phone, axe passes, no horizontal scroll at 360px, nothing on `--danger`, screenshots at 360px and 1280px (Search with *Physical copy* chosen; the paste review with *Already owned on paper*).
 
 ## Out of scope
@@ -60,6 +60,11 @@ In Add books, *Physical copy* and *Audiobook* stay available in Search and By ha
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- AC-5 says 44px chips on a phone; every *Add to* chip is 32px (design § 10) and the owner kept it at the gate. The AC's wording, and whether § 10's expanded 44px hit area is required of these chips, are the owner's → docs/OWNER-CHECKLIST.md § Approvals from follow-ups
+- Two of the new browser tests (AC-4's paste review and count, and AC-1's 409 on Undo) pass without this task's code, because TASK-122 (PR #310) already ships that behaviour; the test-auditor marked them guards, not proofs → not tracked: kept as regression guards, named in the Review log and the PR for the owner to overrule; the behaviour is TASK-122's
+- `test/e2e/shard-times.json` holds estimated times for `add-books-owned.spec.ts` and the longer `paste-books.spec.ts` → not tracked: CI's balance step prints the drift and `npm run e2e:plan` refreshes the times from full runs (D-167)
+- Add books' loading skeleton lists Add to's items by hand, so adding chips moved the loaded height and failed `add-books-loading.spec.ts` at 768px → not tracked: done in this PR (plan revision 2), and that spec fails again if the two drift
 
 ## Plan
 
@@ -115,7 +120,7 @@ None.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL(3: add-book-sheet.test, paste-books.test, e2e-shards.test, each pinning the old chips or the shard balance) → R2 PASS → R3 PASS (after the CI fixes) | CI R1 FAIL (add-books-loading.spec.ts, w768-light: the skeleton's chip count; plan-picker.spec.ts, w390-light: `settled()` on a cancelled animation) → fixed, R2 PASS on 23a9c5d | Audit R1 NOT PASS: every test PROVEN but two, which pass without this task's code because TASK-122 already ships the behaviour (AC-4's paste review and count; AC-1's 409 on Undo): kept as regression guards, for the owner to overrule | Spec R1 CHANGES (AC-5 says 44px, built and tested at 32px by the owner's choice; `Skeleton.tsx` and `plan-picker.spec.ts` not in the plan) → plan revisions recorded in the task file; not re-run, since only the task file changed and AC-5's wording is the owner's (Owner checklist § Approvals) | UI R1 PASS (data left as found; axe and the sixth-frame comparison not walked by the verifier, axe runs in the CI floor tests)
 
 ## Blocked
 
@@ -123,7 +128,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (R1 failed three unit tests)
+- Review rounds: 1 (spec, audit, UI; spec and audit asked for changes that were recorded, not re-run)
+- First-pass AC FAILs: 1 (AC-5 as written, 44px; the owner kept 32px)
+- Plan revisions after approval: 3 (AC-5's height, `Skeleton.tsx`, `plan-picker.spec.ts`)

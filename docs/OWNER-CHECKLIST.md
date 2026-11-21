@@ -311,6 +311,12 @@ Planning-doc edits and candidate decisions waiting for your yes
 session, and that session or the next `/track-follow-ups` run makes the change
 and notes where it went.
 
+- [ ] Amend TASK-123's AC-5 (from TASK-123, 5.17b, PR #313; owner, 2026-11-20, kept 32px at
+      the gate): "the chips are named toggles of at least 44px on a phone" becomes "at least
+      32px tall on a phone (design § 10, small buttons), 24px elsewhere". The build and its
+      floor test already hold 32px, as every *Add to* chip does (`.addto .chip`). Also say whether
+      § 10's "hit area expanded to 44px" is required of these chips: none of the *Add to* chips
+      has one today, and the floor test doesn't check it.
 - [ ] Reword the 5.15 row of `docs/03-data-model.md` § 4 (from TASK-127, 5.15,
       PR #304, D-166): `parked_on` is "written by `saveBookStatus` on entering
       Parked and cleared on leaving it", and now an add that unparks a Parked

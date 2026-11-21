@@ -5020,7 +5020,7 @@ it is converted.
     reload. Pasting three lines to *Physical copy*, two matched and one new,
     writes three rows and one `unlisted` book, and Undo removes all of it.
     Screenshots at 360px and 1280px.
-- ☐ 5.17b **Own it from Search and By hand** · S. *From TASK-094 (5.17,
+- ☑ 5.17b **Own it from Search and By hand** · S. *From TASK-094 (5.17,
   PR #268):* the owner chose, at its plan gate, to give *Physical copy* and
   *Audiobook* to *Paste a list* only and to bring them to the other two add
   modes here. Depends on 5.17.
