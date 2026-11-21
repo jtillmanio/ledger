@@ -327,7 +327,7 @@ describe("opened from a shelf (task 5.1)", () => {
   });
 });
 
-// Task 5.17 (3 of 3, AC-5): *Physical copy* and *Audiobook*, Paste a list's alone.
+// Task 5.17 (3 of 3, AC-5): *Physical copy* and *Audiobook*; task 5.17b brings them to Search and By hand.
 describe("Physical copy and Audiobook (task 5.17)", () => {
   const chip = (name: string) => [...container.querySelectorAll<HTMLButtonElement>(".addto .chip")]
     .find((b) => b.textContent === name);
@@ -335,10 +335,11 @@ describe("Physical copy and Audiobook (task 5.17)", () => {
     .find((b) => b.textContent === name)!;
   const renderPage = () => act(() => root.render(<UndoProvider><AddBooks initial={{ kind: "someday" }} /></UndoProvider>));
 
-  it("offers them in Add to only while Paste a list is chosen, as named, pressed chips", async () => {
+  it("offers them in Add to in every mode, as named, pressed chips, and keeps the choice when the mode changes", async () => {
     renderPage();
-    expect(chip("Physical copy")).toBeUndefined();
-    expect(chip("Audiobook")).toBeUndefined();
+    // Search, the opening mode, has them (task 5.17b).
+    expect(chip("Physical copy")!.getAttribute("aria-pressed")).toBe("false");
+    expect(chip("Audiobook")!.getAttribute("aria-pressed")).toBe("false");
     await click(mode("Paste a list"));
     expect(chip("Physical copy")!.getAttribute("aria-pressed")).toBe("false");
     expect(chip("Audiobook")!.getAttribute("aria-pressed")).toBe("false");
@@ -346,10 +347,12 @@ describe("Physical copy and Audiobook (task 5.17)", () => {
     await click(chip("Physical copy")!);
     expect(chip("Physical copy")!.getAttribute("aria-pressed")).toBe("true");
     expect(chip("Someday")!.getAttribute("aria-pressed")).toBe("false");
-    // By hand never offers them: Add to goes back to Someday.
-    await click(mode("By hand"));
-    expect(chip("Physical copy")).toBeUndefined();
-    expect(chip("Someday")!.getAttribute("aria-pressed")).toBe("true");
+    // Search and By hand keep the choice (task 5.17b): Add to does not go back to Someday.
+    for (const next of ["By hand", "Search", "Paste a list"]) {
+      await click(mode(next));
+      expect(chip("Physical copy")!.getAttribute("aria-pressed")).toBe("true");
+      expect(chip("Someday")!.getAttribute("aria-pressed")).toBe("false");
+    }
   });
 
   it("names the format on the confirm, sends it, and lands on the Library's Owned filter", async () => {
@@ -507,10 +510,25 @@ describe("the mockup's add frame (task 1.4e, AC-5)", () => {
     const frame = html.slice(start, html.indexOf("</section>", start));
     expect(frame).toContain('aria-pressed="true" tabindex="0" data-on>Physical copy</span>');
     expect(frame).toContain('aria-pressed="false" tabindex="0">Audiobook</span>');
-    expect(frame).toContain("Add 3 books to Physical copy");
+    // The review marks a book that has the copy already and counts only the two it will write (task 5.17b).
+    expect(frame).toContain("Add 2 books to Physical copy");
+    expect(frame).toContain("Already owned on paper.");
     const row = readFileSync("design/mockups-index.md", "utf8").split("\n").find((l) => l.startsWith("| `add` |"))!;
     expect(row).toContain("*Physical copy*");
     expect(row).toContain("*Audiobook*");
     expect(row).toContain("task 5.17");
+  });
+
+  it("draws Search with Physical copy chosen and a result's Add to Physical copy, and the index says so (task 5.17b, AC-5)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const html = readFileSync("design/mockups.html", "utf8");
+    const start = html.indexOf('<section class="screen" data-id="add">');
+    const frame = html.slice(start, html.indexOf("</section>", start));
+    expect(frame).toContain('<button class="btn sm">Add to Physical copy</button>');
+    // Every frame's Add to row offers both formats now, not Paste a list's alone: six frames.
+    expect(frame.split('tabindex="0">Audiobook</span>').length - 1 + frame.split('tabindex="0" data-on>Audiobook</span>').length - 1).toBe(6);
+    const row = readFileSync("design/mockups-index.md", "utf8").split("\n").find((l) => l.startsWith("| `add` |"))!;
+    expect(row).toContain("task 5.17b");
+    expect(row).toContain("*Already owned on paper.*");
   });
 });

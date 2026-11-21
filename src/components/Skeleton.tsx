@@ -267,8 +267,8 @@ export function AddBooksSheetSkeleton() {
       <div aria-hidden="true">
         <span className="sk" style={{ width: "14rem", maxWidth: "100%", height: "2.125rem", marginTop: ".75rem", borderRadius: "var(--r-md)" }} />
         <div className="addto">
-          {["2.75rem", "5.25rem", "4.5rem", "7.5rem", "4.25rem"].map((w, i) => (
-            <span key={w} className="sk sk-chip" style={{ width: w, height: i === 0 ? ".8125rem" : "2rem" }} />
+          {["2.75rem", "5.25rem", "4.5rem", "7.5rem", "4.25rem", "5.75rem", "6.5rem", "5.25rem"].map((w, i) => (
+            <span key={i} className="sk sk-chip" style={{ width: w, height: i === 0 ? ".8125rem" : "2rem" }} />
           ))}
         </div>
         <span className="sk sk-title" style={{ width: "6rem", margin: "1rem 0 .375rem" }} />

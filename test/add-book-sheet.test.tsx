@@ -154,6 +154,7 @@ describe("Add to (AC-3)", () => {
     expect(chips().map((c) => [c.textContent, c.getAttribute("aria-pressed"), c.getAttribute("aria-disabled")])).toEqual([
       ["Someday", "true", null], ["On deck", "false", null], ["Year or quarter…", "false", null], ["Shelf…", "false", null],
       ["Coming out", "false", null], // task 5.7
+      ["Physical copy", "false", null], ["Audiobook", "false", null], // task 5.17b: in every mode
     ]);
     expect(chip("On deck").hasAttribute("aria-describedby")).toBe(false);
     expect(chip("Year or quarter…").hasAttribute("aria-describedby")).toBe(false);

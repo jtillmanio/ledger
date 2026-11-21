@@ -21,7 +21,7 @@ export const MAX_POSITION = 100_000;
 /**
  * Where the screen says an add is going: Someday, On deck (task 1.7), a year or a quarter (task 2.3,
  * one `period` value: `2027` or `2027-Q3`), a shelf by id and name, a format you own
- * (*Physical copy*, *Audiobook*: *Paste a list* only, task 5.17), *Coming out* (task 5.7: Search and By hand
+ * (*Physical copy*, *Audiobook*: every mode, tasks 5.17 and 5.17b), *Coming out* (task 5.7: Search and By hand
  * only), whose date the screen holds beside the target and sends with it, or a shelf the add
  * will make, by the name typed for it (*New shelf…*, task 5.1).
  */
@@ -41,8 +41,10 @@ export const shelfLabel = (name: string) => name.normalize("NFKC").trim().replac
 
 /** The owned destinations' names (task 5.17): the Library's *Owned* filter calls them *Physical* and *Audiobook*. */
 export const OWNED_NAMES: Record<OwnedFormat, string> = { physical: "Physical copy", audio: "Audiobook" };
-/** The formats *Paste a list* offers, in Add to's order (writes.ts's OWNED_FORMATS, which the browser can't import). */
+/** The formats Add to offers, in its order (writes.ts's OWNED_FORMATS, which the browser can't import). */
 export const OWNED_CHOICES = Object.keys(OWNED_NAMES) as OwnedFormat[];
+/** What the toast says of a book that has the format already, so the add wrote nothing (task 5.17b). */
+export const OWNED_HAVE: Record<OwnedFormat, string> = { physical: "already owned on paper", audio: "already own the audiobook" };
 
 /** *Someday*, *On deck*, *Q3 2027*, *Cosmere*, *Physical copy*: the target's name on the screen. A new shelf not named yet is *a new shelf*. */
 export const targetName = (t: Target) => (t.kind === "someday" ? "Someday" : t.kind === "on_deck" ? "On deck"

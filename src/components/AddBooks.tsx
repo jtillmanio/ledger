@@ -13,7 +13,7 @@ import Sheet, { useSheetClose } from "@/components/Sheet";
 import { useUndo } from "@/components/Undo";
 import type { AddBookResult, AddedEntry, Destination, HandItem } from "@/db/writes";
 import {
-  COMING_OUT, destinationOf, OWNED_CHOICES, OWNED_NAMES, shelfLabel, targetName, undoAdd, type Target,
+  COMING_OUT, destinationOf, OWNED_CHOICES, OWNED_HAVE, OWNED_NAMES, shelfLabel, targetName, undoAdd, type Target,
 } from "@/lib/book-add";
 import { MAX_FIELD } from "@/lib/book-parse";
 import { useQueueListen } from "@/lib/listen-queue";
@@ -168,12 +168,12 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
   }
 
   /**
-   * A format you own is *Paste a list*'s alone (task 5.17; Search and By hand are 5.17b), and *Coming out*
-   * Search's and By hand's (task 5.7): leaving for the other side goes back to Someday.
+   * A format you own is Add to's in every mode (task 5.17 for *Paste a list*, 5.17b for Search and By hand), so
+   * switching keeps it. *Coming out* is Search's and By hand's alone (task 5.7): leaving for *Paste a list*
+   * goes back to Someday.
    */
   function switchTo(next: Mode) {
     setMode(next);
-    if (next !== "paste" && target.kind === "owned") choose({ kind: "someday" });
     if (next === "paste" && target.kind === "release") choose({ kind: "someday" });
   }
 
@@ -225,8 +225,9 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
     const where = targetName(goes);
     if (created.length + added.length === 0) {
       // A book with a release keeps it, and one with a status isn't wanted: either way nothing was written (task 5.7).
+      // A format you own it in already is said as that (task 5.17b), not as the book's status: it has its copy.
       const kept = goes.kind === "shelf" || (goes.kind === "release" && status === null) ? `already on ${where}`
-        : STATUS[status ?? ""] ?? "kept as it was";
+        : goes.kind === "owned" ? OWNED_HAVE[goes.format] : STATUS[status ?? ""] ?? "kept as it was";
       notify("Already in your library", `${title} · ${kept}${fromNote}`);
       return;
     }
@@ -400,8 +401,8 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
           <button type="button" className="chip" aria-pressed={target.kind === "release"}
             onClick={() => choose({ kind: "release" })}>{COMING_OUT}</button>
         )}
-        {/* What you own (task 5.17, D-132): a paste marks each book, creating a new one Unlisted. */}
-        {mode === "paste" && OWNED_CHOICES.map((format) => (
+        {/* What you own (task 5.17, 5.17b, D-132), in every mode: the add marks each book, creating a new one Unlisted. */}
+        {OWNED_CHOICES.map((format) => (
           <button key={format} type="button" className="chip"
             aria-pressed={target.kind === "owned" && target.format === format}
             onClick={() => choose({ kind: "owned", format })}>{OWNED_NAMES[format]}</button>
