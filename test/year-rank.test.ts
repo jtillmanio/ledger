@@ -631,6 +631,33 @@ describe("re-dating a ranked read (roadmap 3.4c check, TASK-121)", () => {
       expect((await correct(body)).status).toBe(400);
       expect(await allReads()).toEqual(was);
     });
+
+    it("the rank change is the re-date's own transaction: a rank write that fails takes the new date back with it", async () => {
+      // A test-only trigger refuses any year_rank change, so the re-date's rank write fails after its date write.
+      await sql.unsafe(`
+        CREATE FUNCTION test_refuse_rank() RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN
+          IF NEW.year_rank IS DISTINCT FROM OLD.year_rank THEN RAISE EXCEPTION 'rank write refused (test)'; END IF;
+          RETURN NEW;
+        END $$;
+        CREATE TRIGGER test_refuse_rank BEFORE UPDATE ON read_events FOR EACH ROW EXECUTE FUNCTION test_refuse_rank();`);
+      try {
+        // Drizzle wraps the database error; the trigger's message is its cause.
+        const REFUSED = { cause: expect.objectContaining({ message: 'rank write refused (test)' }) };
+        const was = await allReads();
+        const into2024 = { on: "2024-05-05", precision: "exact" } as const;
+        await expect(writes.redateBookRead(USER, { bookId: "a3", readId: await readOf("a3"), finish: into2024 }))
+          .rejects.toMatchObject(REFUSED);
+        expect(await allReads()).toEqual(was);
+        expect(await finishOf("a3")).toBe("2025-03-10");
+        await expect(writes.saveBookStatus(USER, { bookId: "a3", status: "read", finish: into2024 }))
+          .rejects.toMatchObject(REFUSED);
+        expect(await allReads()).toEqual(was);
+        expect(await finishOf("a3")).toBe("2025-03-10");
+      } finally {
+        await sql.unsafe("DROP TRIGGER IF EXISTS test_refuse_rank ON read_events; DROP FUNCTION IF EXISTS test_refuse_rank()");
+      }
+    });
   });
 
   describe("the undo payload through the routes (AC-5)", () => {
@@ -716,7 +743,9 @@ describe("re-dating a ranked read (roadmap 3.4c check, TASK-121)", () => {
         // The re-date waits on the ranking lock...
         let waiting = 0;
         for (let i = 0; i < 50 && waiting === 0; i++) {
-          [{ n: waiting }] = await sql`SELECT count(*)::int AS n FROM pg_locks WHERE locktype = 'advisory' AND NOT granted`;
+          // This database's only: another checkout's suite may be waiting on the same test server.
+          [{ n: waiting }] = await sql`SELECT count(*)::int AS n FROM pg_locks WHERE locktype = 'advisory' AND NOT granted
+                                       AND database = (SELECT oid FROM pg_database WHERE datname = current_database())`;
           if (waiting === 0) await new Promise((r) => setTimeout(r, 100));
         }
         expect(waiting).toBe(1);
