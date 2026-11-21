@@ -4535,7 +4535,7 @@ it is converted.
     `shelves` row and one `shelf_books` row; Undo leaves neither; a name
     already in use writes nothing and says why.
 
-- ☐ 5.1b **Take a book off a shelf** · M. *From TASK-119 (3.5b, part 2):*
+- ☑ 5.1b **Take a book off a shelf** · M. *From TASK-119 (3.5b, part 2):*
   the book sheet's *Shelves Edit* needs to take a book off a shelf, and no
   write does that today: 5.1 built create, add, reorder, a note and a
   description (`src/db/writes.ts`), never removal (owner, 2026-11-18). Depends

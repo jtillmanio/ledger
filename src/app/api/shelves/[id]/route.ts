@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { MAX_ID } from "@/lib/book-add";
 import {
-  moveOnShelf, saveShelfDescription, saveShelfNote, undoCreateShelf, undoShelfDescription, undoShelfMove, undoShelfNote,
-  type ShelfDescriptionChange, type ShelfMove, type ShelfNoteChange,
+  moveOnShelf, saveShelfDescription, saveShelfNote, takeOffShelf, undoCreateShelf, undoShelfDescription, undoShelfMove,
+  undoShelfNote, undoTakeOffShelf, type ShelfDescriptionChange, type ShelfMove, type ShelfNoteChange, type ShelfRemoval,
 } from "@/db/writes";
 
 export const runtime = "nodejs";
@@ -25,6 +25,10 @@ const MAX_BOOKS = 5_000;
  *   another shelf keeps its own note.
  * - PATCH `{ bookId, to }`: move the book to place `to` among the shelf's live
  *   books; the change carries the whole order before and after.
+ * - PATCH `{ bookId, remove: true }`: *Remove from shelf* (task 5.1b): the
+ *   book's row goes and the rest close up; the change carries its note and the
+ *   whole order before and after. The book stays in your library, on any other
+ *   shelf and in your plan.
  * - PATCH `{ undo: change }`: one of those writes' undo.
  * - DELETE: *+ New shelf*'s undo; refused (409) once the shelf has a book, a
  *   description or a follow.
@@ -40,21 +44,23 @@ export async function PATCH(req: Request, { params }: Params) {
   const body = await req.json().catch(() => null);
   const ask = shelfId ? parse(body, shelfId) : undefined;
   if (!shelfId || !ask) {
-    return bad("the body is one of { description }, { bookId, note }, { bookId, to } or { undo: change }, "
+    return bad("the body is one of { description }, { bookId, note }, { bookId, to }, { bookId, remove: true } or { undo: change }, "
       + `a note or description at most ${MAX_TEXT} characters and to a position, 1 or more`);
   }
 
   if (ask.kind === "undo") {
     const undone = ask.change.kind === "move" ? await undoShelfMove(userId, ask.change.move)
       : ask.change.kind === "note" ? await undoShelfNote(userId, ask.change.note)
-        : await undoShelfDescription(userId, ask.change.description);
+        : ask.change.kind === "remove" ? await undoTakeOffShelf(userId, ask.change.removal)
+          : await undoShelfDescription(userId, ask.change.description);
     if (undone === null) return notFound("no such shelf");
     if (!undone) return NextResponse.json({ error: "Something changed on that shelf since. Nothing was undone." }, { status: 409 });
     return NextResponse.json({ ok: true });
   }
   const change = ask.kind === "description" ? await saveShelfDescription(userId, shelfId, ask.text)
     : ask.kind === "note" ? await saveShelfNote(userId, shelfId, ask.bookId, ask.text)
-      : await moveOnShelf(userId, shelfId, ask.bookId, ask.to);
+      : ask.kind === "remove" ? await takeOffShelf(userId, shelfId, ask.bookId)
+        : await moveOnShelf(userId, shelfId, ask.bookId, ask.to);
   if (!change) return notFound(ask.kind === "description" ? "no such shelf" : "no such book on that shelf");
   return NextResponse.json({ ok: true, change });
 }
@@ -76,11 +82,13 @@ type Ask =
   | { kind: "description"; text: string }
   | { kind: "note"; bookId: string; text: string }
   | { kind: "move"; bookId: string; to: number }
+  | { kind: "remove"; bookId: string }
   | { kind: "undo"; change: Undo };
 
 type Undo =
   | { kind: "move"; move: ShelfMove }
   | { kind: "note"; note: ShelfNoteChange }
+  | { kind: "remove"; removal: ShelfRemoval }
   | { kind: "description"; description: ShelfDescriptionChange };
 
 const isId = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= MAX_ID;
@@ -88,6 +96,10 @@ const isText = (v: unknown): v is string => typeof v === "string" && v.length <=
 /** A text a change says is stored: NULL, or what a write stores (trimmed, so never empty; at most MAX_TEXT). */
 const isStored = (v: unknown): v is string | null => v === null || (isText(v) && v !== "");
 const isOrder = (v: unknown): v is string[] => Array.isArray(v) && v.length > 0 && v.length <= MAX_BOOKS && v.every(isId);
+/** A removal's order: `before` names each row once, the book among them, and `after` is `before` without it (empty when it was the only one). */
+const isRemoval = (bookId: string, before: string[], after: unknown): after is string[] =>
+  Array.isArray(after) && new Set(before).size === before.length && before.includes(bookId)
+  && after.length === before.length - 1 && before.filter((id) => id !== bookId).every((id, i) => id === after[i]);
 /** The object's keys are exactly these. */
 const keys = (o: Record<string, unknown>, ...names: string[]) =>
   Object.keys(o).length === names.length && names.every((k) => k in o);
@@ -102,6 +114,7 @@ function parse(body: unknown, shelfId: string): Ask | undefined {
     return isId(b.bookId) && Number.isInteger(b.to) && (b.to as number) >= 1
       ? { kind: "move", bookId: b.bookId, to: b.to as number } : undefined;
   }
+  if (keys(b, "bookId", "remove")) return isId(b.bookId) && b.remove === true ? { kind: "remove", bookId: b.bookId } : undefined;
   if (keys(b, "undo")) {
     const change = parseUndo(b.undo, shelfId);
     return change && { kind: "undo", change };
@@ -117,6 +130,10 @@ function parseUndo(raw: unknown, shelfId: string): Undo | undefined {
   if (keys(c, "shelfId", "bookId", "before", "after")) {
     return isId(c.bookId) && isOrder(c.before) && isOrder(c.after)
       ? { kind: "move", move: { shelfId, bookId: c.bookId, before: c.before, after: c.after } } : undefined;
+  }
+  if (keys(c, "shelfId", "bookId", "note", "before", "after")) {
+    return isId(c.bookId) && isStored(c.note) && isOrder(c.before) && isRemoval(c.bookId, c.before, c.after)
+      ? { kind: "remove", removal: { shelfId, bookId: c.bookId, note: c.note, before: c.before, after: c.after } } : undefined;
   }
   if (keys(c, "shelfId", "bookId", "prior", "note")) {
     return isId(c.bookId) && isStored(c.prior) && isStored(c.note)

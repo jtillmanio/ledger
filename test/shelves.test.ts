@@ -303,6 +303,165 @@ describe("a shelf's order (AC-4)", () => {
   });
 });
 
+describe("taking a book off a shelf (task 5.1b, TASK-124)", () => {
+  // Dark Tower holds five: dt1–dt5. dt3 has a note here, is To read, planned in 2027-Q1, and also on Favourites.
+  beforeEach(async () => {
+    await sql`INSERT INTO shelf_books (shelf_id, book_id, ordinal) VALUES ('dark-tower', 'dt5', 5), ('favourites', 'dt3', 2)`;
+    await sql`UPDATE shelf_books SET note = 'Jake comes back' WHERE shelf_id = 'dark-tower' AND book_id = 'dt3'`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'dt3', 'to_read'), (${USER}, 'dt1', 'read')`;
+    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${USER}, 'dt3', '2027-Q1', 1)`;
+  });
+
+  /** One shelf's rows in order, as `book:ordinal`. */
+  async function on(shelf: string) {
+    return (await rows()).filter((r) => r.startsWith(`${shelf}:`)).map((r) => r.slice(shelf.length + 1));
+  }
+
+  /** What taking a book off must never touch: the book, its status, its plan rows and every other shelf. */
+  async function untouched() {
+    return {
+      books: await sql`SELECT id, title, author_id, deleted_at FROM books ORDER BY id`,
+      status: await sql`SELECT user_id, book_id, status FROM book_status ORDER BY user_id, book_id`,
+      plan: await sql`SELECT user_id, book_id, period, ordinal FROM reading_plan ORDER BY book_id`,
+      others: await sql`SELECT shelf_id, book_id, ordinal, note FROM shelf_books WHERE shelf_id <> 'dark-tower' ORDER BY shelf_id, ordinal`,
+    };
+  }
+
+  /** The shelf's counts as the list and `shelf_progress` give them. */
+  async function counts(shelf: string) {
+    const [p] = await sql<{ books_listed: string; books_read: string }[]>`
+      SELECT books_listed, books_read FROM shelf_progress WHERE shelf_id = ${shelf}`;
+    const listed = (await q.shelfList(USER)).find((s) => s.id === shelf)!;
+    return { listed: Number(p.books_listed), read: Number(p.books_read), total: listed.total, next: listed.next.map((b) => b.id) };
+  }
+
+  it("the third of five comes off: its one row goes, 1–4 stay contiguous, and its Undo puts it back at 3 with its note (AC-1)", async () => {
+    const before = await untouched();
+    const res = await patch("dark-tower", { bookId: "dt3", remove: true });
+    expect(res.status).toBe(200);
+    const { change } = await res.json();
+    expect(change).toEqual({
+      shelfId: "dark-tower", bookId: "dt3", note: "Jake comes back",
+      before: ["dt1", "dt2", "dt3", "dt4", "dt5"], after: ["dt1", "dt2", "dt4", "dt5"],
+    });
+    expect(await on("dark-tower")).toEqual(["dt1:1", "dt2:2", "dt4:3", "dt5:4"]);
+    expect(await untouched()).toEqual(before);
+
+    expect((await patch("dark-tower", { undo: change })).status).toBe(200);
+    expect(await on("dark-tower")).toEqual(["dt1:1", "dt2:2", "dt3:3", "dt4:4", "dt5:5"]);
+    expect((await notes())["dark-tower:dt3"]).toBe("Jake comes back");
+    expect(await untouched()).toEqual(before);
+  });
+
+  it("an Undo after the shelf has been reordered since answers 409 and changes nothing (AC-1)", async () => {
+    const { change } = await (await patch("dark-tower", { bookId: "dt3", remove: true })).json();
+    await patch("dark-tower", { bookId: "dt5", to: 1 });
+    const before = await snapshot();
+    expect((await patch("dark-tower", { undo: change })).status).toBe(409);
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it("an Undo after another book has joined or left since answers 409 and changes nothing (AC-1)", async () => {
+    const { change } = await (await patch("dark-tower", { bookId: "dt3", remove: true })).json();
+    await patch("dark-tower", { bookId: "dt5", remove: true });
+    const before = await snapshot();
+    expect((await patch("dark-tower", { undo: change })).status).toBe(409);
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it("a book soft-deleted since can't come back: its Undo is a 409 and changes nothing", async () => {
+    const { change } = await (await patch("dark-tower", { bookId: "dt3", remove: true })).json();
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 'dt3'`;
+    const before = await snapshot();
+    expect((await patch("dark-tower", { undo: change })).status).toBe(409);
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it("a soft-deleted book's row keeps its place while another comes off, and the Undo puts every row back", async () => {
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 'dt2'`;
+    const removal = await w.takeOffShelf(USER, "dark-tower", "dt4");
+    expect(removal).toMatchObject({ after: ["dt1", "dt2", "dt3", "dt5"] });
+    expect(await on("dark-tower")).toEqual(["dt1:1", "dt2:2", "dt3:3", "dt5:4"]);
+    expect(await w.undoTakeOffShelf(USER, removal!)).toBe(true);
+    expect(await on("dark-tower")).toEqual(["dt1:1", "dt2:2", "dt3:3", "dt4:4", "dt5:5"]);
+  });
+
+  it.each([
+    ["a book not on the shelf", "dark-tower", "dt6"],
+    ["a book that doesn't exist", "dark-tower", "nobody"],
+    ["a shelf that doesn't exist", "nowhere", "dt1"],
+    ["another reader's shelf", "theirs", "dune"],
+    ["a titles shelf", "films", "dt1"],
+  ])("taking off %s answers 404 and writes nothing (AC-2)", async (_name, shelf, bookId) => {
+    const before = await snapshot();
+    expect((await patch(shelf, { bookId, remove: true })).status).toBe(404);
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it("a soft-deleted book can't be taken off: 404, and its row stays (AC-2)", async () => {
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 'dt2'`;
+    const before = await snapshot();
+    expect((await patch("dark-tower", { bookId: "dt2", remove: true })).status).toBe(404);
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it("an Undo on a shelf that isn't yours answers 404 and writes nothing (AC-2)", async () => {
+    const change = { shelfId: "theirs", bookId: "dune", note: null, before: ["dune"], after: [] };
+    const before = await snapshot();
+    expect((await patch("theirs", { undo: change })).status).toBe(404);
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it.each([
+    ["a remove with no book", { remove: true }],
+    ["a remove that isn't true", { bookId: "dt3", remove: false }],
+    ["a remove that isn't a boolean", { bookId: "dt3", remove: "yes" }],
+    ["a remove with a note beside it", { bookId: "dt3", remove: true, note: "x" }],
+    ["a remove with a move beside it", { bookId: "dt3", remove: true, to: 1 }],
+    ["an undo whose before isn't after with the book",
+      { undo: { shelfId: "dark-tower", bookId: "dt3", note: null, before: ["dt1", "dt2"], after: ["dt1", "dt2"] } }],
+    ["an undo whose before names the book twice",
+      { undo: { shelfId: "dark-tower", bookId: "dt3", note: null, before: ["dt3", "dt1", "dt3"], after: ["dt1", "dt3"] } }],
+    ["an undo whose note is empty (a write never stores one)",
+      { undo: { shelfId: "dark-tower", bookId: "dt3", note: "", before: ["dt1", "dt3"], after: ["dt1"] } }],
+  ])("PATCH answers 400 for %s and writes nothing (AC-2)", async (_name, body) => {
+    const before = await snapshot();
+    const res = await patch("dark-tower", body);
+    expect(res.status).toBe(400);
+    // The refusal names the remove body, so it comes from a route that knows it.
+    expect((await res.json()).error).toContain("{ bookId, remove: true }");
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it("taking off a shelf's only book leaves the shelf there with none, and its Undo puts it back at 1 (AC-3)", async () => {
+    await sql`DELETE FROM shelf_books WHERE shelf_id = 'favourites' AND book_id = 'dt3'`;
+    const { change } = await (await patch("favourites", { bookId: "dt1", remove: true })).json();
+    expect(change).toMatchObject({ before: ["dt1"], after: [] });
+    expect(await on("favourites")).toEqual([]);
+    expect(await shelfIds()).toContain("favourites");
+    expect(await q.shelfDetail(USER, "favourites")).toMatchObject({ id: "favourites", total: 0, books: [] });
+
+    expect((await patch("favourites", { undo: change })).status).toBe(200);
+    expect(await on("favourites")).toEqual(["dt1:1"]);
+  });
+
+  it("a book taken off leaves the shelf's counts and its next three unread, and its Undo counts it again (AC-4)", async () => {
+    const before = await counts("dark-tower");
+    expect(before).toEqual({ listed: 5, read: 1, total: 5, next: ["dt2", "dt3", "dt4"] });
+
+    const { change } = await (await patch("dark-tower", { bookId: "dt3", remove: true })).json();
+    expect(await counts("dark-tower")).toEqual({ listed: 4, read: 1, total: 4, next: ["dt2", "dt4", "dt5"] });
+
+    // A read book off: the read count drops too.
+    const read = await w.takeOffShelf(USER, "dark-tower", "dt1");
+    expect(await counts("dark-tower")).toEqual({ listed: 3, read: 0, total: 3, next: ["dt2", "dt4", "dt5"] });
+    expect(await w.undoTakeOffShelf(USER, read!)).toBe(true);
+
+    expect((await patch("dark-tower", { undo: change })).status).toBe(200);
+    expect(await counts("dark-tower")).toEqual(before);
+  });
+});
+
 describe("the shelf queries (AC-5)", () => {
   // Shelf order: read, soft-deleted, DNF, then four unread (one Unlisted, one Reading).
   beforeEach(async () => {

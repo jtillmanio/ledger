@@ -21,8 +21,9 @@ const UNREAD_DONE = new Set(["read", "dnf"]);
  * *Follow…* sheet draws it (2.2c), and *+ Add to shelf*, which opens Add books
  * with this shelf chosen (`/books/add?shelf=<id>`, task 1.4c). Then its books in
  * shelf order, each with its note under it, edited in place, and the reorder
- * controls (`ShelfBooks`). A shelf with no books is an empty slate whose one
- * action is *+ Add to shelf*. A shelf that is missing, another reader's or a
+ * controls (`ShelfBooks`), whose ⋯ takes a book off (task 5.1b). A shelf with
+ * no books is an empty slate whose one action is *+ Add to shelf*, drawn by
+ * `ShelfBooks` so taking the last book off lands on it. A shelf that is missing, another reader's or a
  * titles shelf is a 404 (`shelfDetail` answers null).
  */
 export default async function ShelfPage({ params }: Params) {
@@ -61,13 +62,11 @@ export default async function ShelfPage({ params }: Params) {
         {shelf.books.length > 0 && <Link prefetch={false} className="btn shelf-add" href={add}>+ Add to shelf</Link>}
       </div>
       <div className="shelf-main shelf-books">
-        {shelf.books.length > 0 ? (
-          <ShelfBooks shelfId={shelf.id} shelfName={shelf.name} books={shelf.books} />
-        ) : (
+        <ShelfBooks shelfId={shelf.id} shelfName={shelf.name} books={shelf.books} empty={
           <EmptySlate title="Nothing on this shelf yet" href={add} label="+ Add to shelf">
             Search your library or Hardcover, paste a list, or type a book in by hand. It lands at the end of the shelf.
           </EmptySlate>
-        )}
+        } />
       </div>
     </main>
   );

@@ -258,6 +258,79 @@ test("Undo straight after Move to top restores the original order on screen and 
   await expect.poll(() => stored(FIVE.id)).toEqual(FIVE.books.map((b) => b.id));
 });
 
+// Task 5.1b (TASK-124): the ⋯'s *Remove from shelf*, its toast and Undo, and where focus goes.
+const moreFor = (page: Page, title: string) => page.getByRole("button", { name: `More for ${title}` });
+
+test("Remove from shelf, by keyboard: the third book comes off with an Undo toast, focus goes to the next row's ⋯, and Undo puts it back third with its note (task 5.1b AC-1, AC-5)", ONCE, async ({ page }) => {
+  await withSql((sql) => sql`UPDATE shelf_books SET note = 'Read after Two' WHERE shelf_id = ${FIVE.id} AND book_id = ${B3.id}`);
+  await open(page, `/books/shelves/${FIVE.id}`);
+  const more = moreFor(page, B3.title);
+  await hydrated(more);
+  await more.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("menuitem", { name: "Move to top" })).toBeFocused();
+  await page.keyboard.press("End");
+  const item = page.getByRole("menuitem", { name: "Remove from shelf" });
+  await expect(item).toBeFocused();
+  // No loss, so not red: the book stays in the library, on its other shelves and in the plan.
+  const danger = await tokenColour(page, "--danger");
+  expect(await item.evaluate((el) => getComputedStyle(el).color)).not.toBe(danger);
+  await expect(item).not.toHaveClass(/danger/);
+  await page.keyboard.press("Enter");
+
+  const after = [B1, B2, B4, B5];
+  await expect(bookRows(page).locator(".qtitle")).toHaveText(after.map((b) => b.title));
+  await expect(page.locator(".toast")).toContainText(`Removed ${B3.title} from ${FIVE.name}`);
+  await expect(moreFor(page, B4.title)).toBeFocused();
+  await expect.poll(() => stored(FIVE.id)).toEqual(after.map((b) => b.id));
+  // The book itself stays: in the library, and on the other shelf that holds it.
+  expect(await withSql(async (sql) => (await sql`SELECT deleted_at FROM books WHERE id = ${B3.id}`)[0].deleted_at)).toBeNull();
+  expect(await stored(DONE.id)).toEqual([B1.id, B3.id]);
+
+  await page.locator(".toast").getByRole("button", { name: "Undo" }).click();
+  await expect(bookRows(page).locator(".qtitle")).toHaveText(FIVE.books.map((b) => b.title));
+  await expect(moreFor(page, B3.title)).toBeFocused();
+  await expect.poll(() => stored(FIVE.id)).toEqual(FIVE.books.map((b) => b.id));
+  expect(await noteOf(FIVE.id, B3.id)).toBe("Read after Two");
+  await expect(bookRows(page).nth(2)).toContainText("Read after Two");
+});
+
+test("taking a shelf's only book off leaves its empty state, focused; Undo brings the book back and focuses it (task 5.1b AC-3, AC-5)", ONCE, async ({ page }) => {
+  await withSql((sql) => sql`DELETE FROM shelf_books WHERE shelf_id = ${BARE.id} AND book_id = ${B2.id}`);
+  await open(page, `/books/shelves/${BARE.id}`);
+  const more = moreFor(page, B6.title);
+  await hydrated(more);
+  await more.click();
+  await page.getByRole("menuitem", { name: "Remove from shelf" }).click();
+
+  await expect(page.locator(".slate")).toContainText("Nothing on this shelf yet");
+  await expect(page.locator(".reorder-empty")).toBeFocused();
+  await expect(bookRows(page)).toHaveCount(0);
+  await expect.poll(() => stored(BARE.id)).toEqual([]);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(BARE.name);
+
+  await page.locator(".toast").getByRole("button", { name: "Undo" }).click();
+  await expect(bookRows(page).locator(".qtitle")).toHaveText([B6.title]);
+  await expect(moreFor(page, B6.title)).toBeFocused();
+  await expect.poll(() => stored(BARE.id)).toEqual([B6.id]);
+});
+
+test("Remove from shelf: the floor with its toast shown (axe, contrast, nothing red, 24px targets); screenshots (task 5.1b AC-1, AC-5)", FLOOR, async ({ page }, info) => {
+  await open(page, `/books/shelves/${FIVE.id}`);
+  const more = moreFor(page, B3.title);
+  await hydrated(more);
+  await more.click();
+  await page.getByRole("menuitem", { name: "Remove from shelf" }).click();
+  const toast = page.locator(".toast");
+  await expect(toast).toContainText(`Removed ${B3.title} from ${FIVE.name}`);
+  // Hover holds the toast past its 8 seconds, for the checks and the screenshot.
+  await toast.hover();
+  await expect(bookRows(page)).toHaveCount(4);
+  await floor(page);
+  await expect(toast).toBeVisible();
+  await screenshot(page, info, "shelf-removed");
+});
+
 test("Shelves is current in the nav on the list and on a shelf's page; + Add to shelf opens Add books with that shelf chosen (AC-4)", FLOOR, async ({ page }) => {
   for (const url of ["/books/shelves", `/books/shelves/${FIVE.id}`]) {
     await open(page, url);
