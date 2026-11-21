@@ -1,7 +1,7 @@
 ---
 id: TASK-123
 title: 5.17b Own it from Search and By hand (2 of 2) — the chips, the button and the paste review on screen
-status: Review
+status: Done
 depends_on: [TASK-122]
 size: M
 model: sonnet
