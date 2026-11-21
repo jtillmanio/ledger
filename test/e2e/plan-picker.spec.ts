@@ -151,7 +151,9 @@ const chip = (sheet: Locator, name: string | number) => sheet.getByRole("button"
 const primary = (sheet: Locator) => sheet.locator(".pp .btnrow .btn:not(.sec)");
 
 /** Waits out the chips' colour transitions, so a contrast measurement sees the colours they settle on. */
-const settled = (page: Page) => page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+// A cancelled animation (a chip's colour transition, when the picker re-renders it as its data arrives) is over too:
+// `finished` rejects for it, and that is not a failure here.
+const settled = (page: Page) => page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
 
 /** Picks `year` then `quarter` ("Q3", or "No quarter yet"). */
 async function pick(sheet: Locator, year: number, quarter?: string) {
