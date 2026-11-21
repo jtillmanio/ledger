@@ -136,7 +136,12 @@ nesting; deeper is a tree nobody needs.
 `titles`, with `shelf_books` and `shelf_titles` each carrying a real foreign
 key. An earlier draft used one table with nullable `book_id`/`run_id` columns and
 a `num_nonnulls` check; that was removed because a polymorphic foreign key
-cannot be enforced by the database.
+cannot be enforced by the database. Taking a book off a shelf (task 5.1b,
+TASK-124) deletes its `shelf_books` row and closes the gap, so the shelf stays
+1…N: a placement is the owner's opinion, not a catalog row, as `owned_copies`
+and a plan row are, so it is not soft-deleted (D-168). The book, its status, its plan
+and its place on any other shelf are untouched, and the undo puts the row back
+with its note while the shelf's order is as the removal left it.
 
 **2.6 Editions are separate from issues.** The `Master` tab tracks what you own
 in print — 178 trades and omnibuses with `Collected` and `Read` flags that don't

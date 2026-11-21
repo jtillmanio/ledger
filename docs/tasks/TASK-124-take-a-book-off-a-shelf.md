@@ -1,7 +1,7 @@
 ---
 id: TASK-124
 title: 5.1b Take a book off a shelf
-status: In progress
+status: Review
 depends_on: [TASK-095, TASK-096]
 size: M
 model: opus
@@ -32,11 +32,11 @@ From a shelf's page you can take a book off the shelf, with an Undo. The book st
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): (proposed; the owner agrees it by merging or edits it first) on the test database, taking the third of five books off a shelf deletes its one `shelf_books` row and leaves the shelf's ordinals 1–4 contiguous; its Undo puts the row back at 3 with its note and the others back where they were; the book, its status, its plan and its place on another shelf are unchanged throughout; an Undo after the shelf has been reordered since answers 409 and changes nothing. In the browser (0.11), the shelf page's `⋯` *Remove from shelf* takes it off with an Undo toast; axe passes; screenshots at 360px and 1280px.
-- [ ] AC-2: Taking off a book that isn't on the shelf answers 404 and writes nothing; one on a shelf that doesn't exist answers 404; a malformed body is 400. A soft-deleted book can't be taken off (404), as 5.1's other writes treat it.
-- [ ] AC-3: Taking off the only book leaves the shelf with no books (its empty state renders), and the shelf itself still exists; its Undo puts the book back at 1.
-- [ ] AC-4: After taking a book off, the Shelves list's *next three unread* for that shelf and its `read / total` no longer count it (`shelf_progress` on the test database), and after Undo they count it again.
-- [ ] AC-5: The shelf's page meets the UX floor (`docs/04-design.md` § 10): *Remove from shelf* is a named menu item reachable by keyboard, focus goes to the next row (or the empty state) after removal and back to the restored row after Undo, nothing on `--danger` (removal is not an error), axe, screenshots at 360px and 1280px with the toast shown.
+- [x] AC-1 (roadmap **Check:**, verbatim): (proposed; the owner agrees it by merging or edits it first) on the test database, taking the third of five books off a shelf deletes its one `shelf_books` row and leaves the shelf's ordinals 1–4 contiguous; its Undo puts the row back at 3 with its note and the others back where they were; the book, its status, its plan and its place on another shelf are unchanged throughout; an Undo after the shelf has been reordered since answers 409 and changes nothing. In the browser (0.11), the shelf page's `⋯` *Remove from shelf* takes it off with an Undo toast; axe passes; screenshots at 360px and 1280px.
+- [x] AC-2: Taking off a book that isn't on the shelf answers 404 and writes nothing; one on a shelf that doesn't exist answers 404; a malformed body is 400. A soft-deleted book can't be taken off (404), as 5.1's other writes treat it.
+- [x] AC-3: Taking off the only book leaves the shelf with no books (its empty state renders), and the shelf itself still exists; its Undo puts the book back at 1.
+- [x] AC-4: After taking a book off, the Shelves list's *next three unread* for that shelf and its `read / total` no longer count it (`shelf_progress` on the test database), and after Undo they count it again.
+- [x] AC-5: The shelf's page meets the UX floor (`docs/04-design.md` § 10): *Remove from shelf* is a named menu item reachable by keyboard, focus goes to the next row (or the empty state) after removal and back to the restored row after Undo, nothing on `--danger` (removal is not an error), axe, screenshots at 360px and 1280px with the toast shown.
 
 ## Out of scope
 
@@ -64,8 +64,11 @@ From a shelf's page you can take a book off the shelf, with an Undo. The book st
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Candidate decision: a shelf placement is deleted, not soft-deleted; Hard rule 4 covers catalog rows, and `shelf_books` is the owner's opinion like `owned_copies` and a plan row (approved at plan; the decision itself is proposed at close-out)
-- `docs/03-data-model.md` § 2.5e: one line saying taking a book off deletes its `shelf_books` row and closes the gap (approved at plan; the edit is shown at close-out)
+- Candidate decision: a shelf placement is deleted, not soft-deleted; Hard rule 4 covers catalog rows, and `shelf_books` is the owner's opinion like `owned_copies` and a plan row → docs/review/decisions.md § D-168 (approved at close-out); its doc update → docs/03-data-model.md § 2.5e (approved at plan)
+- schema-reviewer: the removal's undo trusts the client's `bookId`, note and `before`, so a forged payload could put any live book of yours on your own shelf → not tracked: the same trust model as the move and note undos, in a single-user app (accepted at review)
+- schema-reviewer: no test re-adds the book to the shelf before its Undo → not tracked: the order check refuses it as a 409, as "an Undo after another book has joined or left since" proves
+- ui-verifier: the row menu's items are 36px high on a phone, under the 44px the floor asks of primary phone controls → not tracked: `Menu`'s existing style, the same on every `⋯` (Up next, Listen next, the shelf's moves), not this task's; over the 24px floor
+- ui-verifier: a shelf row's `⋯` is named *More for {title}* without the mockup's *position n of N* → not tracked: as built by 5.1 (TASK-096), unchanged here; the new mockup frame draws it as built
 
 ## Plan
 
@@ -105,13 +108,16 @@ Approved 2026-11-20 at 7900912.
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS (touched specs in w390-light: 39) | CI R1 PASS (7a123ee) | Spec R1 APPROVE | Schema R1 APPROVE | Audit R1 CHANGES (8 PATCH-400 cases NON-DISCRIMINATING) → fixed (b8c1573) → Audit R2 PASS | Verify R2 PASS | CI R2 PASS (b8c1573) | UI R1 NOT RUN (dev DB had no shelves) → UI R2 PASS (throwaway shelves through the app, left as found)
+- Spec and schema reviewers not re-run after b8c1573: it changed only one assertion in test/shelves.test.ts (D-97)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1 (spec, schema); audit 2; UI 2 (the first not run)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0

@@ -493,7 +493,7 @@ with the task that first reads it.
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
 | ✅ | 5.1 → TASK-095, TASK-096, TASK-097 | Shelves (books only): create, add items, reorder | M | _Pulled ahead of 1.26 (D-139)_ | — |
-|  | 5.1b → TASK-124 | Take a book off a shelf | M | _Owner, 2026-11-18 (for TASK-119, 3.5b's Shelves Edit); Check proposed_ | 5.1 |
+| ✅ | 5.1b → TASK-124 | Take a book off a shelf | M | _Owner, 2026-11-18 (for TASK-119, 3.5b's Shelves Edit); Check proposed_ | 5.1 |
 | ✅ | 5.5 → TASK-098 | DNF with a reason field | S | _Pulled ahead of 1.26 (D-139); builds the closing card 5.4 reuses_ | — |
 | ✅ | 5.7 → TASK-099, TASK-100 | Books coming out | M |  | 1.4c, 1.8 |
 |  | 5.9 → TASK-101, TASK-102, TASK-125 | Series page from `series_progress` | M |  | — |
