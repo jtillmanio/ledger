@@ -1,7 +1,7 @@
 ---
 id: TASK-124
 title: 5.1b Take a book off a shelf
-status: Review
+status: Done
 depends_on: [TASK-095, TASK-096]
 size: M
 model: opus
