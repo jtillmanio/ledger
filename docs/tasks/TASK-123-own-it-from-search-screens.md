@@ -85,6 +85,15 @@ What is already in: every result's button and By hand's submit read `addTo(targe
 - `test/e2e/add-books-owned.spec.ts` (**new**, not in Files likely touched): Search and By hand, AC-1–AC-3, AC-5; kept apart from `book-search.spec.ts`, whose later tests depend on its Piranesi state
 - `test/e2e/paste-books.spec.ts`: AC-4, the paste review's screenshots
 - No change: `BookSearch.tsx`, `ByHand.tsx`, `PasteBooks.tsx`
+- `src/components/Skeleton.tsx` (**added after approval**, revision 2): Add books' loading skeleton draws Add to's items; the real row now has eight, so at 768px the loaded sheet came out a row shorter and `add-books-loading.spec.ts` measured a 22px jump. The skeleton draws eight.
+- `test/e2e/plan-picker.spec.ts` (**added after approval**, revision 3): its `settled()` rejected when the plan picker cancelled a year chip's colour transition. The test failed in CI and locally only with the owned chips in Search (reverting the chips' condition made it pass, 2026-11-20): they shift the timing of the picker's data arriving. A cancelled animation is over, so `settled()` ignores the rejection.
+- `test/e2e/shard-times.json`: estimates for the new spec and the longer paste spec, so the committed plan stays balanced until a full CI run's times replace them (`npm run e2e:plan`).
+
+### Plan revisions after approval
+
+1. **AC-5's 44px (owner, 2026-11-20, asked in the session).** Every Add to chip is 32px on a phone (`.addto .chip`, `src/app/globals.css`; `docs/04-design.md` § 10: 32px small buttons, 24px floor, 44px for the thumb bar, icon buttons and sheet close). The owner chose to keep 32px, so the floor test asserts 32px on a phone and 24px elsewhere. AC-5's text is the owner's to amend; it is listed under Follow-ups.
+2. The skeleton (above).
+3. `plan-picker.spec.ts` (above).
 
 ### Test strategy
 
