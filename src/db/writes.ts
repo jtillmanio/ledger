@@ -2842,6 +2842,8 @@ export async function undoCreateShelf(userId: string, shelfId: string): Promise<
   });
 }
 
+const placementRow = (shelfId: string, bookId: string) => and(eq(shelfBooks.shelfId, shelfId), eq(shelfBooks.bookId, bookId));
+
 /** A move on a shelf: its whole order before and after (removed books' rows too), which its undo puts back. */
 export type ShelfMove = { shelfId: string; bookId: string; before: string[]; after: string[] };
 
@@ -2905,6 +2907,54 @@ export async function undoShelfMove(userId: string, move: ShelfMove): Promise<bo
   });
 }
 
+/**
+ * A book taken off a shelf (task 5.1b, TASK-124): its note, and the shelf's
+ * whole order before and after (removed books' rows too), which its undo puts back.
+ */
+export type ShelfRemoval = { shelfId: string; bookId: string; note: string | null; before: string[]; after: string[] };
+
+/**
+ * *Remove from shelf* (task 5.1b, TASK-124): the book's `shelf_books` row is
+ * deleted and the rows after it close up, so the shelf stays 1…N. A
+ * placement is the owner's opinion, not a catalog row (as `owned_copies` and
+ * a plan row), so it goes rather than being soft-deleted; the book, its
+ * status, its plan and its place on any other shelf are untouched. Null,
+ * writing nothing, when the shelf isn't one of your book shelves or the book
+ * isn't a live book on it.
+ */
+export async function takeOffShelf(userId: string, shelfId: string, bookId: string): Promise<ShelfRemoval | null> {
+  return db.transaction(async (tx) => {
+    if (!(await lockShelf(tx, userId, shelfId))) return null;
+    const row = await placementNote(tx, shelfId, bookId);
+    if (!row) return null;
+    const before = await shelfOrder(tx, shelfId);
+    const after = before.filter((id) => id !== bookId);
+    await tx.delete(shelfBooks).where(placementRow(shelfId, bookId));
+    if (after.length > 0) await setShelfOrder(tx, shelfId, after);
+    return { shelfId, bookId, note: row.note, before, after };
+  });
+}
+
+/**
+ * A removal's undo: the row comes back with its note at its old place, and
+ * every other row where it was, while the shelf is still in the order the
+ * removal left and the book is still live. Null when the shelf isn't one of
+ * yours; false, changing nothing, when anything has moved, joined or left since.
+ */
+export async function undoTakeOffShelf(userId: string, removal: ShelfRemoval): Promise<boolean | null> {
+  const { shelfId, bookId, note, before, after } = removal;
+  return db.transaction(async (tx) => {
+    if (!(await lockShelf(tx, userId, shelfId))) return null;
+    const now = await shelfOrder(tx, shelfId);
+    if (now.length !== after.length || !now.every((id, i) => id === after[i])) return false;
+    const [live] = await tx.select({ id: books.id }).from(books).where(and(eq(books.id, bookId), isNull(books.deletedAt)));
+    if (!live) return false;
+    await tx.insert(shelfBooks).values({ shelfId, bookId, ordinal: now.length + 1, note });
+    await setShelfOrder(tx, shelfId, before);
+    return true;
+  });
+}
+
 /** A note write on a shelf, as `saveShelfNote` made it: the note before and the note written. */
 export type ShelfNoteChange = { shelfId: string; bookId: string; prior: string | null; note: string | null };
 
@@ -2915,8 +2965,6 @@ async function placementNote(tx: Tx, shelfId: string, bookId: string) {
     .where(and(eq(shelfBooks.shelfId, shelfId), eq(shelfBooks.bookId, bookId)));
   return row ?? null;
 }
-
-const placementRow = (shelfId: string, bookId: string) => and(eq(shelfBooks.shelfId, shelfId), eq(shelfBooks.bookId, bookId));
 
 /**
  * Why a book is on a shelf (task 5.1): trimmed, and an empty note clears it

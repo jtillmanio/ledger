@@ -8,6 +8,8 @@ import { useUndo } from "@/components/Undo";
 /** How long a touch holds the handle before the row lifts. */
 const LONG_PRESS_MS = 500;
 const FINE = "(hover:hover) and (pointer:fine)";
+/** `focusNext`'s mark for the empty state. */
+const EMPTY = Symbol("empty");
 
 type Lift = { id: string; from: number };
 
@@ -39,7 +41,12 @@ export const REORDER_HELP = "Space lifts a row, arrows move it, Space drops it, 
  * may answer its own undo (and the toast's detail): Top books (task 3.4b) moves
  * an unranked read in, which has no old rank a second move could go back to.
  * Otherwise the undo moves the row back to the ordinal it came from.
- * `remove` is optional: `run` writes the removal and answers its inverse.
+ * `remove` is optional: `run` writes the removal and answers its inverse. Its
+ * item is red (`danger`) unless the caller says a removal is no loss (a shelf's
+ * *Remove from shelf*, task 5.1b, keeps the book). After a removal focus goes
+ * to the next row's ⋯ (the one before when it was last, else `empty`), and
+ * after its Undo to the restored row's ⋯ (the UX floor, design § 10).
+ * `empty`, when given, is drawn in place of the list once it has no rows.
  * `renderBody` draws what sits between the handle and the menu. `place` names a
  * row's place in its handle (*position 2 of 5*, or Top books' *rank 2*), and
  * `marker` draws a divider or a heading at the top of the row at an index,
@@ -48,11 +55,15 @@ export const REORDER_HELP = "Space lifts a row, arrows move it, Space drops it, 
  */
 export default function ReorderList<R extends ReorderRow>({
   rows, move: write, remove: removal, renderBody, scopeLabel = "", label, helpId = "dnd-help",
-  help = REORDER_HELP, helpHidden = false, place, marker,
+  help = REORDER_HELP, helpHidden = false, place, marker, empty,
 }: {
   rows: R[];
   move: (id: string, toOrdinal: number) => Promise<void | MoveResult>;
-  remove?: { label: string; toast: (title: string) => string; run: (id: string) => Promise<() => Promise<void>> };
+  remove?: {
+    label: string; toast: (title: string) => string; run: (id: string) => Promise<() => Promise<void>>;
+    /** Draw the item red; true unless the removal loses nothing (default true). */
+    danger?: boolean;
+  };
   renderBody: (row: R, index: number) => React.ReactNode;
   /** Appended to each handle's name: ` in Q1 2027`. */
   scopeLabel?: string;
@@ -67,6 +78,8 @@ export default function ReorderList<R extends ReorderRow>({
   place?: (row: R, index: number, n: number) => string;
   /** A divider or a heading drawn at the top of the row at `index`; null for none. */
   marker?: (index: number) => React.ReactNode;
+  /** Drawn in place of the list when it has no rows (a removal took the last), and focused then. */
+  empty?: React.ReactNode;
 }) {
   const router = useRouter();
   const undo = useUndo();
@@ -76,6 +89,9 @@ export default function ReorderList<R extends ReorderRow>({
   const [said, setSaid] = useState("");
   const handles = useRef(new Map<string, HTMLButtonElement>());
   const press = useRef<{ id: string; timer?: ReturnType<typeof setTimeout>; x: number; y: number } | null>(null);
+  // Where focus goes once the order on screen changes: a row's ⋯, or the empty state.
+  const focusNext = useRef<string | typeof EMPTY | null>(null);
+  const emptyEl = useRef<HTMLDivElement>(null);
 
   // A refresh after a write brings the server's order; take it unless a row is in the air.
   const [seen, setSeen] = useState(rows);
@@ -89,6 +105,15 @@ export default function ReorderList<R extends ReorderRow>({
   useLayoutEffect(() => {
     if (lift) handles.current.get(lift.id)?.focus();
   }, [lift, order]);
+
+  // After a removal or its Undo, before the browser paints.
+  useLayoutEffect(() => {
+    const target = focusNext.current;
+    if (target === null) return;
+    focusNext.current = null;
+    if (target === EMPTY) emptyEl.current?.focus();
+    else handles.current.get(target)?.closest("li")?.querySelector<HTMLElement>(".rowmenu-btn")?.focus();
+  }, [order]);
 
   const n = order.length;
   const placeOf = (r: R, i: number) => (place ? place(r, i, n) : `position ${i + 1} of ${n}`);
@@ -143,6 +168,8 @@ export default function ReorderList<R extends ReorderRow>({
     if (!removal) return;
     const before = order;
     const name = title(id);
+    const i = at(id, before);
+    focusNext.current = before[i + 1]?.id ?? before[i - 1]?.id ?? EMPTY;
     setOrder(before.filter((r) => r.id !== id));
     try {
       const inverse = await removal.run(id);
@@ -150,12 +177,14 @@ export default function ReorderList<R extends ReorderRow>({
         label: removal.toast(name),
         undo: async () => {
           await inverse();
+          focusNext.current = id;
           setOrder(before);
           router.refresh();
         },
       });
       router.refresh();
     } catch {
+      focusNext.current = id;
       setOrder(before);
       undo.fail({ label: `Couldn't remove ${name}.`, retry: () => void remove(id) });
     }
@@ -278,8 +307,17 @@ export default function ReorderList<R extends ReorderRow>({
       { label: "Move up", onSelect: () => move(r.id, i - 1) },
     ] : []),
     ...(i < n - 1 ? [{ label: "Move down", onSelect: () => move(r.id, i + 1) }] : []),
-    ...(removal ? [{ label: removal.label, danger: true, onSelect: () => void remove(r.id) }] : []),
+    ...(removal ? [{ label: removal.label, danger: removal.danger ?? true, onSelect: () => void remove(r.id) }] : []),
   ];
+
+  if (order.length === 0 && empty !== undefined) {
+    return (
+      <>
+        <div ref={emptyEl} tabIndex={-1} className="reorder-empty">{empty}</div>
+        <p id={liveId} className="sr-only" aria-live="assertive">{said}</p>
+      </>
+    );
+  }
 
   return (
     <>

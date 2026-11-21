@@ -1,14 +1,14 @@
 ---
 id: TASK-124
 title: 5.1b Take a book off a shelf
-status: Ready
+status: In progress
 depends_on: [TASK-095, TASK-096]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 7900912
 ---
 
 # TASK-124 — 5.1b Take a book off a shelf
@@ -64,9 +64,42 @@ From a shelf's page you can take a book off the shelf, with an Undo. The book st
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Candidate decision: a shelf placement is deleted, not soft-deleted; Hard rule 4 covers catalog rows, and `shelf_books` is the owner's opinion like `owned_copies` and a plan row (approved at plan; the decision itself is proposed at close-out)
+- `docs/03-data-model.md` § 2.5e: one line saying taking a book off deletes its `shelf_books` row and closes the gap (approved at plan; the edit is shown at close-out)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-20 at 7900912.
+
+**Hard rule 4.** Taking a book off deletes its `shelf_books` row (no `deleted_at`): a placement is the owner's opinion, not a catalog row, as `owned_copies` and a plan row. No schema change.
+
+**Route.** `PATCH /api/shelves/{id}` `{ bookId, remove: true }` answers `{ change: { shelfId, bookId, note, before, after } }`; `{ undo: change }` takes it back (the key set tells it from a move's). `DELETE` stays *+ New shelf*'s undo.
+
+**Steps**
+
+1. `src/db/writes.ts`: `takeOffShelf(userId, shelfId, bookId)`: lock the shelf; null (404) unless the book is a live book on it (a soft-deleted one included); read the order, delete the row, renumber the rest 1…N. `undoTakeOffShelf(userId, removal)`: null when the shelf isn't yours; false (409), changing nothing, unless the shelf is exactly in the order the removal left (`after`) and the book is still live; else reinsert the row with its note and set the order back to `before`.
+2. `src/app/api/shelves/[id]/route.ts`: parse `{ bookId, remove: true }` and the removal's undo (`after` may be empty; a `before` that isn't `after` with the book is 400); the 400 message names the new body.
+3. `src/components/ReorderList.tsx`: `remove.danger?: boolean` (default true, so Up next and Listen next stay red); after a removal focus goes to the next row's `⋯` (the previous row's when it was last, the empty state when none is left), and after its Undo to the restored row's `⋯` (Up next and Listen next gain this too); an optional `empty` slot drawn, in a `tabIndex=-1` wrapper, when no rows are left.
+4. `src/components/ShelfBooks.tsx`: *Remove from shelf* (`danger: false`), toast *Removed {title} from {shelf}*, its Undo the change sent back; passes `empty`.
+5. `src/app/books/shelves/[id]/page.tsx`: always renders `ShelfBooks`, with the `EmptySlate` as its `empty`, so the list stays mounted when the last book goes and its Undo can bring it back and focus it.
+6. `design/mockups.html` § `shelves`: a new phone frame: the `⋯` open on *Wizard and Glass* with *Move to top · Move up · Move down · Remove from shelf* (not red), then the rows closed up with the toast and Undo; a notes bullet. `design/mockups-index.md` § `shelves` says so.
+
+**Files**
+
+- `src/db/writes.ts`, `src/app/api/shelves/[id]/route.ts`, `src/components/ShelfBooks.tsx`, `design/mockups.html`, `design/mockups-index.md`, `test/shelves.test.ts`, `test/e2e/shelves.spec.ts`: as listed in the task.
+- `src/components/ReorderList.tsx` (**not listed**): the non-red *Remove*, the focus after a removal and its Undo, the empty slot (AC-5).
+- `src/app/books/shelves/[id]/page.tsx` (**not listed**): the empty state moves into `ShelfBooks`'s slot (AC-3, AC-5).
+- `src/app/globals.css` is not needed.
+
+**Test strategy**
+
+- AC-1 (data), `test/shelves.test.ts` *taking a book off a shelf (5.1b)*: five books, a note on the third, the third also on Favourites with a status and a plan row: one row gone, ordinals 1–4; book, status, plan and Favourites unchanged; Undo back at 3 with its note; Undo after a reorder 409 and nothing changed.
+- AC-2: same file: 404 for a book not on the shelf, a soft-deleted book, a missing, another reader's or a titles shelf; 400 for malformed bodies and an inconsistent undo; a snapshot shows nothing written.
+- AC-3: same file: Favourites' only book off; the shelf remains with no books (`shelfDetail` books `[]`); Undo puts it back at 1.
+- AC-4: same file: `shelf_progress` and `shelfList`'s `next`, `read`, `total` before, after, after Undo.
+- AC-1 (browser) and AC-5, `test/e2e/shelves.spec.ts`: an `ONCE` test by keyboard: `⋯` → *Remove from shelf*, rows close up, toast, database; the item not `--danger`; focus on the next row's `⋯`; Undo puts it third with focus on its `⋯`. A one-book shelf: focus to the empty state, and back after Undo. A `@floor` test: the floor (axe, contrast, nothing red) with the toast shown, screenshots (360px and 1280px among the widths).
+
+**Size.** Nine files, over the eight-file line: kept whole as the task's Context argues (the route is a thin branch, the UI one menu item; the owner approved it whole).
 
 ## Review log
 

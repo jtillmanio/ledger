@@ -41,18 +41,35 @@ type Row = ReorderRow & ShelfRow;
  * change back, so the whole order before it returns. Under each book, the note
  * that says why it is on this shelf, edited in place (`InlineText`); the same
  * book on another shelf keeps its own.
+ *
+ * The ⋯ also has *Remove from shelf* (task 5.1b, TASK-124): the book comes off
+ * this shelf only, so the item isn't red (no loss: it stays in your library,
+ * on its other shelves and in your plan), and its Undo puts it back where it
+ * was with its note. `empty` is the shelf's empty state, drawn here so the last
+ * book's Undo has a list to come back to.
  */
-export default function ShelfBooks({ shelfId, shelfName, books }: { shelfId: string; shelfName: string; books: ShelfRow[] }) {
+export default function ShelfBooks({ shelfId, shelfName, books, empty }: {
+  shelfId: string; shelfName: string; books: ShelfRow[]; empty: React.ReactNode;
+}) {
   async function move(id: string, to: number): Promise<MoveResult> {
     return shelfWrite(shelfId, { bookId: id, to });
   }
 
   const note = (bookId: string): TextSave => (text) => shelfWrite(shelfId, { bookId, note: text });
 
+  const remove = {
+    label: "Remove from shelf",
+    danger: false,
+    toast: (title: string) => `Removed ${title} from ${shelfName}`,
+    run: async (bookId: string) => (await shelfWrite(shelfId, { bookId, remove: true })).undo,
+  };
+
   return (
     <ReorderList<Row>
       rows={books.map((b, i) => ({ ...b, ordinal: i + 1 }))}
       move={move}
+      remove={remove}
+      empty={empty}
       label={`Books on ${shelfName}`}
       renderBody={(r) => (
         <>
