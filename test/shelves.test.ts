@@ -426,7 +426,10 @@ describe("taking a book off a shelf (task 5.1b, TASK-124)", () => {
       { undo: { shelfId: "dark-tower", bookId: "dt3", note: "", before: ["dt1", "dt3"], after: ["dt1"] } }],
   ])("PATCH answers 400 for %s and writes nothing (AC-2)", async (_name, body) => {
     const before = await snapshot();
-    expect((await patch("dark-tower", body)).status).toBe(400);
+    const res = await patch("dark-tower", body);
+    expect(res.status).toBe(400);
+    // The refusal names the remove body, so it comes from a route that knows it.
+    expect((await res.json()).error).toContain("{ bookId, remove: true }");
     expect(await snapshot()).toEqual(before);
   });
 
