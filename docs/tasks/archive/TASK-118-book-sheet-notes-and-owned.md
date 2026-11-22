@@ -103,6 +103,7 @@ _Filled by /implement-task. One line per round._
 - Specs before verify (w390-light) FAIL(1: *Paper* 32px at 360, `.opts .opt` later in the file) → fixed | Verify R1 PASS | CI R1 PASS (53769ee, every project)
 - Spec R1 APPROVE (3 minor: plan wording, record skeleton 2 → 3 rows, *Edit* 44px unasserted → all fixed) | Verify R2 PASS | CI R2 PASS (ebbe91b)
 - Audit R1 PASS (4 new tests fail on 4c360fb, pass on head; library-owned guard passes on both) | UI R1 PASS (6 widths; dev database left as found) | schema-reviewer not run: no data-layer change
+- Drift R2 (owner, before merge) update first (behind 1; main changed src/db/writes.ts, #315) → rebased, no conflicts | Verify R3 PASS (test/eslint-ignores.test.ts timed out under load at 23s, passed alone in 1.5s; touched specs 23/23) | CI R3 below
 
 ## Blocked
 
