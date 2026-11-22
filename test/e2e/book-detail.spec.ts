@@ -504,6 +504,8 @@ test("the note editor and the owned toggles meet the UX floor at 360 and 1280px,
       const owned = recordRow(sheet(page), page, "Owned");
       const edit = notes.getByRole("button", { name: `Edit the note on ${NOTE.title}`, exact: true });
       await hydrated(edit);
+      const opener = (await edit.boundingBox())!;
+      expect(Math.min(opener.width, opener.height), `Edit ${at}`).toBeGreaterThanOrEqual(width < 768 ? 44 : 24);
       await edit.click();
       const field = notes.getByRole("textbox", { name: `Note on ${NOTE.title}`, exact: true });
       await expect(field, at).toBeFocused();

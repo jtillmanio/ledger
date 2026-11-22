@@ -68,7 +68,8 @@ export function BookDetailSkeleton({ as }: { as: "sheet" | "page" }) {
       <H className="s">Details</H>
       <div className="group" aria-hidden="true">{rows(4)}</div>
       <H className="s">Your record</H>
-      <div className="group" aria-hidden="true">{rows(2)}</div>
+      {/* Status, Owned and Notes: the rows a loaded record always draws (task 3.5b). */}
+      <div className="group" aria-hidden="true">{rows(3)}</div>
       <H className="s">Reading history</H>
       <div className="group" aria-hidden="true">{rows(1)}</div>
     </div>
