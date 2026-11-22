@@ -1,7 +1,7 @@
 ---
 id: TASK-121
 title: 3.4c A re-dated read leaves its old year's ranking
-status: In progress
+status: Review
 depends_on: [TASK-077]
 size: M
 model: opus
@@ -34,12 +34,12 @@ When you move a ranked read to another year, or take its date away, the year it 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm test`: re-dating the read ranked 3 of five in 2025 into 2024 leaves 2025 ranked 1–4 contiguous, the read unranked in 2024 and 2024's ranks unchanged; re-dating it to no date does the same with no year; one undo of either restores 2025's five ranks and the read's date; re-dating it to another day of 2025 keeps it at 3.
-- [ ] AC-2: The same three outcomes hold when the re-date is a *Finished* correction through `saveBookStatus` (*Read* on the book already read, with a finish in 2024, with no date, and on another 2025 day), and its one undo through `undoBookStatus` restores the date and 2025's five ranks.
-- [ ] AC-3: Given a re-date out of 2025 followed by a rank write to 2025 (another read moved), the re-date's undo is refused (409 from the route; `false` from the write), and the database is unchanged by the refused undo: 2025's ranks, the read's date and its `year_rank` are as the rank write left them.
-- [ ] AC-4: An unranked read re-dated into another year changes no `year_rank` in either year. The read's rank change happens in the re-date's transaction: if the re-date is refused (a start after its finish), no rank changes.
-- [ ] AC-5: `POST /api/progress/book/read` and `/api/progress/book` answer an undo payload that carries the rank change, and their `DELETE`/undo accepts it; a payload with a malformed rank change is 400 and writes nothing.
-- [ ] AC-6: A re-date and a rank write to the same book's year, run concurrently (two connections), both complete or one waits: neither deadlocks, and the year's ranks are contiguous after both.
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm test`: re-dating the read ranked 3 of five in 2025 into 2024 leaves 2025 ranked 1–4 contiguous, the read unranked in 2024 and 2024's ranks unchanged; re-dating it to no date does the same with no year; one undo of either restores 2025's five ranks and the read's date; re-dating it to another day of 2025 keeps it at 3.
+- [x] AC-2: The same three outcomes hold when the re-date is a *Finished* correction through `saveBookStatus` (*Read* on the book already read, with a finish in 2024, with no date, and on another 2025 day), and its one undo through `undoBookStatus` restores the date and 2025's five ranks.
+- [x] AC-3: Given a re-date out of 2025 followed by a rank write to 2025 (another read moved), the re-date's undo is refused (409 from the route; `false` from the write), and the database is unchanged by the refused undo: 2025's ranks, the read's date and its `year_rank` are as the rank write left them.
+- [x] AC-4: An unranked read re-dated into another year changes no `year_rank` in either year. The read's rank change happens in the re-date's transaction: if the re-date is refused (a start after its finish), no rank changes.
+- [x] AC-5: `POST /api/progress/book/read` and `/api/progress/book` answer an undo payload that carries the rank change, and their `DELETE`/undo accepts it; a payload with a malformed rank change is 400 and writes nothing.
+- [x] AC-6: A re-date and a rank write to the same book's year, run concurrently (two connections), both complete or one waits: neither deadlocks, and the year's ranks are contiguous after both.
 
 ## Out of scope
 
@@ -63,6 +63,13 @@ When you move a ranked read to another year, or take its date away, the year it 
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- The rules file said a year's ranks are written only through `rankRead`; a re-date across years writes them too now, under the ranking lock first (approved at close-out) → .claude/rules/schema.md § A book is its title and author (*A rank belongs to a read*)
+- The data model's ranking paragraph didn't say a re-date leaves its old year (approved at close-out) → docs/03-data-model.md § 2.16 (*A year's book ranking has the same shape*)
+- Candidate decision: a ranked read re-dated across years leaves its old year in the re-date's transaction, and the ranking lock comes before the book's in every rank-moving write (approved at close-out) → docs/review/decisions.md § D-169
+- The Claude PR review workflow failed twice on PR #315 in under a second at no cost (`result is_error:true`), as an expired token or a spent allowance fails; not a required check → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- Schema review (minor): an undo payload's `before` ranks aren't checked for shape, only the live year against `after` and `left` → not tracked: the same trust model as `undoRank`'s (single user, behind the passcode), and a strict shape check would refuse a genuine undo of a re-date that healed an older gap
+- Schema review (minor): removing a book takes no ranking lock, so a removal committing between an undo's `asLeft` check and its writes could leave a gap → not tracked: a limit `undoRank` has had since 3.4b, a window of milliseconds for one user; a removal committed before the check makes the undo refuse
 
 ## Plan
 
@@ -96,7 +103,7 @@ Approved by the owner, 2026-11-21 (with step 4's cross-year refusal, and `ledger
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | CI R1 PASS (the Claude PR review job failed: its token, not the code) | Spec R1 APPROVE | Schema R1 APPROVE (2 minor → follow-ups) | Audit R1 CHANGES (AC-4 atomicity UNPROVEN) → test added | Verify R2 PASS | Audit R2 PASS | Spec R2 APPROVE (the test diff only; schema not re-run, its files untouched) | CI R2 PASS | Drift R1 update first (behind 1; both changed src/db/writes.ts, PR #314) → rebased | Verify R3 PASS | Close-out check APPROVE
 
 ## Blocked
 
@@ -104,7 +111,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (R3 after the drift rebase)
+- Review rounds: 2 (spec 2, schema 1, audit 2)
+- First-pass AC FAILs: 0 (AC-4 UNPROVEN at audit R1: a test gap, not a failure)
+- Plan revisions after approval: 0

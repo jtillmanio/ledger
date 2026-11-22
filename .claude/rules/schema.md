@@ -82,7 +82,11 @@ Release, test isolation) and the Hard rules a reviewer checks.
   several books, no read or two is reported in `unresolved.csv`, never
   dropped. **A rank belongs to a read** (`read_events.year_rank`, D-101): a
   year's ranks are contiguous from 1 over its ranked reads, written only
-  through `rankRead` in `src/db/writes.ts`; a read with no date has none. A To-Read tab for 2028 or later is speculative and loads
+  through the rank helpers in `src/db/writes.ts`: `rankRead`, and a re-date
+  that moves a ranked read to another year or to no date, which takes it out
+  of its old year in the re-date's transaction (`leaveYear`, task 3.4c,
+  D-169). Every write that can move a rank takes the per-user ranking lock
+  first, then the book's (`inTx`); a read with no date has none. A To-Read tab for 2028 or later is speculative and loads
   nothing (`SPECULATIVE_FROM`, owner 2026-10-19): no book, status or plan row;
   `seed/workbook_plans.csv` lists its titles and is not loaded. A placeholder
   title (`Untitled`, `Untitled 2`, `TBA`, `TBD`; `PLACEHOLDER_RE`, owner

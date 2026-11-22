@@ -303,6 +303,12 @@ tick them.
       § `Coming Out` ("Loaded as `releases`") isn't true yet. `keep` on a row
       loads the book and its release on the next extract (from TASK-099, 5.7,
       PR #285).
+- [ ] Check the **Claude PR review** workflow's token and usage. On PR #315 it
+      failed twice (once rerun) after under a second with no cost
+      (`result is_error:true`, `modelUsage: {}`), the way an expired
+      `CLAUDE_CODE_OAUTH_TOKEN` or a spent allowance fails. PR #313's first run
+      failed the same way; other PRs' runs passed. It isn't a required check,
+      so nothing is blocked (from TASK-121, 3.4c, PR #315).
 
 ## Approvals from follow-ups
 
