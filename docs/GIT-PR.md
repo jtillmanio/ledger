@@ -71,8 +71,16 @@ After pushing, on GitHub:
   measured deploy, three of each, spent about 22 s of the Vercel account's
   4 h a month of Active CPU. The owner runs it by hand with
   `gh workflow run lighthouse.yml --ref <branch>` (that branch head's preview,
-  reported on its PR), `-f url=<deployment>` or `-f dry_run=true` (plan only);
-  Claude never flips the switch or dispatches a run unasked. It fails on a route handler requested during a load or prefetch,
+  reported on its PR), `-f url=<deployment>` or `-f dry_run=true` (plan only;
+  it prints what an automatic run would decide);
+  Claude never flips the switch or dispatches a run unasked. An automatic run
+  waits 5 minutes after the preview deploys and measures only if its commit is
+  still the PR's head, so a burst of pushes gets one measurement and the gate
+  reads the last push's run; and once the UTC month's automatic measured runs
+  reach the repo variable `LIGHTHOUSE_MONTHLY_CAP` (default 100 when unset) it
+  stops and its PR comment says the cap was reached: then the gate needs a hand
+  run (task 0.14b). A hand run is exempt from both: it neither waits nor is
+  capped. It fails on a route handler requested during a load or prefetch,
   bytes or requests over `scripts/perf/budget.json`, CLS of 0.1 or more, or an
   accessibility score under the recorded one. A new top-level screen adds its
   route to `scripts/perf/routes.mjs` and its budget in the same PR.

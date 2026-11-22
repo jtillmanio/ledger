@@ -36,7 +36,20 @@ name: Lighthouse
 #                                                  reported on its PR as if it
 #                                                  had just deployed
 #   ... -f url=<deployment URL>                    any deployment, summary only
-#   ... -f dry_run=true                            plan only: loads no page
+#   ... -f dry_run=true                            plan only: loads no page, and
+#                                                  prints what an automatic run
+#                                                  would decide (wait and cap)
+#
+# Debounce and cap (task 0.14b). An automatic run (a real deployment_status)
+# waits 5 minutes in plan, then measures only if its commit is still the PR's
+# head; otherwise it logs why and loads nothing, and the newer push's run
+# answers. It also stops once the UTC calendar month's automatic measured runs
+# (runs whose measure job reached a runner) reach the repo variable
+# LIGHTHOUSE_MONTHLY_CAP, default 100 when unset, and says so in the PR comment:
+#   gh variable set LIGHTHOUSE_MONTHLY_CAP --body <n>   (0: no automatic run measures)
+# A count GitHub can't give means not measuring. A hand run is exempt from
+# both: it neither waits nor is capped, and it is not counted.
+#
 # GitHub runs a deployment's workflow from that deployment's commit, so a
 # branch cut before the switch still measures on its own until it is rebased;
 # while one is open, keep the workflow disabled (gh workflow disable
@@ -70,11 +83,15 @@ jobs:
       (vars.LIGHTHOUSE_MODE == 'on' &&
        github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Preview')
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # An automatic run waits 5 minutes in here before it decides (task 0.14b).
+    timeout-minutes: 12
     permissions:
       contents: read
       deployments: read
-      pull-requests: read
+      # Counts this month's automatic measured runs against the cap (0.14b).
+      actions: read
+      # The cap's skip says so in the PR's one Lighthouse comment (0.14b).
+      pull-requests: write
     outputs:
       url: ${{ steps.plan.outputs.url }}
       group: ${{ steps.plan.outputs.group }}
@@ -115,6 +132,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ github.event.deployment.sha || github.sha }}
           EVENT_NAME: ${{ steps.preview.outputs.url && 'deployment_status' || github.event_name }}
+          # The trigger before the replay: only a real deployment_status waits
+          # and is capped; a hand run is exempt from both (task 0.14b).
+          REAL_EVENT_NAME: ${{ github.event_name }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          LIGHTHOUSE_MONTHLY_CAP: ${{ vars.LIGHTHOUSE_MONTHLY_CAP }}
           DEPLOY_ENVIRONMENT: ${{ steps.preview.outputs.url && 'Preview' || github.event.deployment.environment }}
           DEPLOY_STATE: ${{ steps.preview.outputs.url && 'success' || github.event.deployment_status.state }}
           DEPLOY_URL: ${{ steps.preview.outputs.url || github.event.deployment_status.environment_url }}
@@ -128,7 +150,7 @@ jobs:
           URL: ${{ steps.plan.outputs.url }}
           GROUP: ${{ steps.plan.outputs.group }}
         run: |
-          echo "Dry run: would measure $URL ($GROUP). No page was loaded."
+          echo "Dry run: a hand run would measure $URL ($GROUP). No page was loaded."
 
   measure:
     needs: plan

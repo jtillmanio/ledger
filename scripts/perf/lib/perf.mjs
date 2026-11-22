@@ -347,6 +347,94 @@ export function unchangedApp(files) {
   return `it changes only backups, docs, design, tests, CI or Claude config (${files.length} file(s)), so the preview serves main's app`;
 }
 
+/**
+ * Task 0.14b: how long an automatic run waits after its preview deploys before
+ * it decides. A burst of pushes to one PR then measures only the last of them:
+ * the others are no longer the PR's head when their wait ends (`notHead`). A
+ * hand run never waits.
+ */
+export const DEBOUNCE_SECONDS = 300;
+
+/**
+ * Automatic measured runs a UTC month when LIGHTHOUSE_MONTHLY_CAP is unset:
+ * about 12 minutes of Vercel Active CPU at 0.14's 7 s or less a run, a twentieth
+ * of the Hobby plan's 4 h (37 minutes even at the 22 s a run cost before 0.14).
+ */
+export const DEFAULT_MONTHLY_CAP = 100;
+
+const short = (sha) => String(sha ?? "").slice(0, 7);
+
+/** Why a commit is not measured after the wait, or null while it is still the PR's head. */
+export function notHead({ number, sha, head }) {
+  return head && head !== sha ? `Not measuring #${number}: ${short(sha)} is no longer the head (${short(head)} is)` : null;
+}
+
+/** The repo variable LIGHTHOUSE_MONTHLY_CAP as a number: blank is the default, 0 stops every automatic run. */
+export function monthlyCap(value) {
+  if (value == null || String(value).trim() === "") return DEFAULT_MONTHLY_CAP;
+  const n = Number(String(value).trim());
+  if (!Number.isInteger(n) || n < 0) {
+    throw new Error(`LIGHTHOUSE_MONTHLY_CAP must be a whole number of 0 or more, not ${value}`);
+  }
+  return n;
+}
+
+/** The start of `now`'s calendar month in UTC, as GitHub's `created` filter takes it. */
+export function monthStart(now) {
+  return `${now.toISOString().slice(0, 7)}-01T00:00:00Z`;
+}
+
+/** The first day of the next UTC month after `since` (a monthStart), as YYYY-MM-DD. */
+function nextMonth(since) {
+  const d = new Date(since);
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)).toISOString().slice(0, 10);
+}
+
+/**
+ * The workflow runs that may be this month's automatic measured runs: a real
+ * deployment_status (a hand run is workflow_dispatch, even when it replays
+ * one), created since the month began, not this run, each once (the runs come
+ * from one query per status).
+ */
+export function automaticCandidates(runs, { since, exclude }) {
+  const seen = new Set();
+  return runs.filter((r) => {
+    if (r.event !== "deployment_status" || r.created_at < since || String(r.id) === String(exclude) || seen.has(r.id)) return false;
+    seen.add(r.id);
+    return true;
+  });
+}
+
+/**
+ * Whether a run measured: one of its measure jobs reached a runner. A skipped
+ * one (the plan gave no URL) and one cancelled while queued (a newer push) have
+ * no steps and loaded no page.
+ */
+export function measureRan(jobs) {
+  return jobs.some((j) => /^measure\b/.test(j.name) && j.conclusion !== "skipped" && (j.steps ?? []).length > 0);
+}
+
+/** Why an automatic run is not measured because the month's cap is reached, or null under it. */
+export function capReached({ count, cap, since }) {
+  if (count < cap) return null;
+  return `${count} automatic measured run${count === 1 ? "" : "s"} since ${since.slice(0, 10)} (UTC) ` +
+    `reached the cap of ${cap} (LIGHTHOUSE_MONTHLY_CAP)`;
+}
+
+/** The PR comment (the one the job keeps, by MARKER) when the cap stopped an automatic run. */
+export function renderCapComment({ sha, count, cap, since, branch }) {
+  return [
+    MARKER,
+    "### Lighthouse — not measured: the monthly cap is reached",
+    "",
+    `\`${short(sha)}\` was not measured: ${capReached({ count, cap, since }) ?? `${count} of ${cap}`}. ` +
+      `Automatic runs measure again from ${nextMonth(since)}, so they can't push the Vercel account past its ` +
+      "Active CPU allowance (task 0.14b).",
+    "",
+    `A hand run still measures: \`gh workflow run lighthouse.yml --ref ${branch ?? "<branch>"}\`.`,
+  ].join("\n");
+}
+
 /** The rt_session pair (`rt_session=…`) from a login response's Set-Cookie headers, or null. */
 export function sessionCookie(setCookies) {
   return setCookies.map((c) => c.split(";")[0].trim()).find((c) => c.startsWith("rt_session=") && c.length > 11) ?? null;

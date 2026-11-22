@@ -1,14 +1,14 @@
 ---
 id: TASK-113
 title: 0.14b Automatic runs are debounced and capped
-status: Ready
+status: In progress
 depends_on: [TASK-112]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 75c88db
 ---
 
 # TASK-113 — 0.14b Automatic runs are debounced and capped
@@ -59,9 +59,32 @@ With `LIGHTHOUSE_MODE` on, a burst of pushes to one PR gets one measurement, not
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Candidate decision: an automatic run waits 300 s and measures only the PR's head; the cap defaults to 100 automatic measured runs a UTC month, counted from the Actions runs and jobs API; a count that can't be read means not measured (approved at plan)
+- `baselineRun` takes the newest green run on the last merged PR's head, and a plan-only run (cap-skipped, a dry run, an unchanged app) is green with no metrics, so the comparison loses its baseline: pick a run whose `report` job ran (approved at plan, new roadmap item)
+
 ## Plan
 
 _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+
+Approved 2026-11-22 (owner: "approve plan, go with recommendations").
+
+**Answers to the plan-gate questions.**
+- *The wait*: in `plan()` itself (`report.mjs`), 300 s (`DEBOUNCE_SECONDS`), only when the real trigger is `deployment_status`; then the PR is looked up (so a PR opened just after the push is found) and its `head.sha` compared with the deployment's commit. No concurrency group on `plan`: GitHub's `deployment_status` payload names no PR to key it on, and the measure/report groups stay as they are. Actions minutes are free on a public repo. While a run waits, the PR shows the Lighthouse `plan` check running for about 5 minutes; a superseded run ends green with the log line `Not measuring #<n>: <A> is no longer the head (<B> is)` and writes no comment (the newer run answers). `plan`'s timeout goes 5 → 12 minutes.
+- *Counting the month*: the UTC calendar month (`monthStart`). `plan()` lists `lighthouse.yml` runs with `event=deployment_status`, `created>=<month start>`, one query per status that can have measured (`success`, `failure`, `cancelled`, `in_progress`; skipped runs, which every status Vercel sends while the switch is off makes, are never fetched), leaves out this run, and asks the jobs API of each, newest first, whether a `measure` job reached a runner (`measureRan`: not skipped, has steps). It stops at the cap. Needs `actions: read` on `plan`. Default when `LIGHTHOUSE_MONTHLY_CAP` is unset or blank: 100 (about 12 min of Active CPU at 0.14's ≤ 7 s a run, 5% of the 4 h; 37 min even at the old 22 s). A value that isn't a whole number fails the job. A count that can't be read means not measuring (D-158: a paused account is worse than an unmeasured PR).
+- *Hand run vs automatic*: `REAL_EVENT_NAME: ${{ github.event_name }}` passed beside the replayed `EVENT_NAME`. A hand run (`workflow_dispatch`) neither waits nor is capped.
+- *The skip message*: the cap skip writes the one PR comment (`MARKER`, edited in place, `renderCapComment`); `plan` gets `pull-requests: write` for it (as `report` has). The head skip only logs.
+- *Dry run*: `DRY_RUN: ${{ inputs.dry_run }}`; plan prints what an automatic run would decide (the wait, whether the commit is the PR's head now, the month's count against the cap), waits for nothing and writes no comment; measure and report stay skipped.
+
+**Steps.**
+1. `scripts/perf/lib/perf.mjs`: `DEBOUNCE_SECONDS`, `DEFAULT_MONTHLY_CAP`, `monthlyCap(value)`, `monthStart(now)`, `notHead({ number, sha, head })`, `automaticCandidates(runs, { since, exclude })`, `measureRan(jobs)`, `capReached({ count, cap, since })`, `renderCapComment({ sha, count, cap, since, branch })`; types in `perf.d.mts`.
+2. `scripts/perf/report.mjs` `plan()`: the wait, the head check, the count and the cap, the cap comment, the dry run's report.
+3. `.github/workflows/lighthouse.yml`: `plan`'s permissions, timeout and env; the header.
+4. `test/perf.test.ts`: fixtures for every helper, and source pins on the workflow and `plan()`.
+5. `docs/COMMANDS.md`, `docs/GIT-PR.md`: the wait, the cap variable and its default, a hand run exempt from both.
+
+**Files.** `scripts/perf/lib/perf.mjs`, `scripts/perf/lib/perf.d.mts` (not in the likely list: the types beside it), `scripts/perf/report.mjs`, `.github/workflows/lighthouse.yml`, `test/perf.test.ts`, `docs/COMMANDS.md`, `docs/GIT-PR.md`. 7 files, no schema or UI.
+
+**Tests.** AC-2: `notHead` (moved → the message; same → null) and a pin that `plan()` checks it before `output("url"`. AC-3: `capReached` at 2 of 2 → reason with count and cap; `renderCapComment` starts with `MARKER` and gives count and cap; `monthlyCap("")`/`undefined` → `DEFAULT_MONTHLY_CAP`, matching the number in `docs/COMMANDS.md`; `automaticCandidates` leaves out hand runs, last month's runs and this run; `measureRan` counts a measure job that ran, not a skipped or never-started one; a pin that `plan()` applies wait and cap only when `REAL_EVENT_NAME` is `deployment_status`. AC-1: those plus the workflow pins (`REAL_EVENT_NAME: ${{ github.event_name }}`, `DRY_RUN`, `actions: read`) and the existing "switch" pins unchanged. AC-4: by review, plus a pin that the three docs name `LIGHTHOUSE_MONTHLY_CAP`. Manual: the owner's `dry_run` hand run.
 
 ## Review log
 
