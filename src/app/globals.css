@@ -745,8 +745,22 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .detail-listen .btn{margin-left:auto;min-height:44px}
 .detail-control{flex:1 1 14rem;min-width:0}
 .detail-control .status-group{margin-top:.5rem}
-.detail-notes{display:block}
+/* Above .frow's flex, later in the file: the label over the note, as the mockup draws it (task 3.5b). */
+.detail .frow.detail-notes{display:block}
 .detail-notes .lede{margin:.3125rem 0 0;white-space:pre-line}
+/* Task 3.5b: what you own, its line then the two toggles at the row's end (wrapping under it when narrow);
+   the note edited in place, its *Edit* under the note and its field and buttons in the row. Grey throughout:
+   nothing here is --danger, and a failure is the neutral grey × line. */
+.detail-owned{flex-wrap:wrap}
+.detail-owned .owned-toggles{margin:0 0 0 auto}
+.book-note-edit{margin-top:.5rem}
+.book-note-field{margin-top:.375rem}
+.book-note-actions{margin-top:.5rem}
+.book-note-actions .btn{flex:0 0 auto}
+@media (max-width:767px){
+  /* Above .opts .opt's 32px, which comes later in the file. */
+  .opts.owned-toggles .opt,.book-note-edit,.book-note-actions .btn{min-height:44px}
+}
 .detail-history-head{display:flex;align-items:baseline;gap:.5rem}
 .detail-history-head .detail-reads{margin-left:auto}
 .detail-history{list-style:none;margin:0;padding:0}

@@ -1,14 +1,14 @@
 ---
 id: TASK-118
 title: 3.5b The book sheet's own writes (1 of 3) — notes and what you own
-status: Ready
+status: In progress
 depends_on: [TASK-079]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 4c360fb
 ---
 
 # TASK-118 — 3.5b The book sheet's own writes (1 of 3) — notes and what you own
@@ -64,7 +64,33 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+_Approved by the owner at the plan gate (2026-11-22, "approve plan, go with recommendations"). Model: the task says `sonnet`; the owner asked for Opus._
+
+**Choices for the plan gate.** The owned toggles sit on the *Owned* row as two `aria-pressed` buttons, not in a `⋯` (one tap, their state visible). The note edits in place: *Edit* (or *Add a note*) opens a labelled field under the note, with *Save* and *Cancel*. A book with no status row: `bookDetail` reads it as To read (`COALESCE`), so the sheet can't tell it apart; the editor is offered and a save shows the route's refusal, keeps the text and writes nothing (AC-2's second branch; no query change).
+
+**Steps**
+1. Redraw `design/mockups.html` § `bookdetail` (phone and desktop frames): *Owned* row with *Paper* and *Audiobook* toggles after its text, *Notes* row with *Edit*; a dated `.notes` line saying what was added and how the open editor looks; `design/mockups-index.md` § `bookdetail` says so.
+2. New `src/components/OwnedToggles.tsx` (client): `OwnedCopy`, `COPY`, `postOwned`, `held` and `toggle` lifted out of `BookRowMenu` into `useOwnedToggle(bookId, owned, title)` → `{ have, toggle, COPY }`, the same write, toast, Undo, failure toast and refresh; and `<OwnedToggles>`, the sheet's two buttons, named *I own it on paper* / *I own the audiobook* (visible *Paper* / *Audiobook*), `aria-pressed`. No ebook toggle.
+3. `src/components/BookRowMenu.tsx` uses the hook; its items, copy and behaviour unchanged (AC-4).
+4. New `src/components/BookNote.tsx` (client): the note as text (`.lede`), *Edit* / *Add a note*; open: a labelled `<textarea>` (*Note on <title>* to a screen reader, *Notes* visible), *Save* (*Saving…*, *Retry*) and *Cancel*, ClosingCard's Save pattern (unchanged text closes, writing nothing). Save POSTs `/api/progress/book/note`, shows the new note at once, `router.refresh()`, pushes a toast (*Note saved* / *Note cleared*) whose Undo DELETEs the change and puts the old note back on the sheet; focus returns to *Edit*. A failure (the route's refusal or a network error) says so under the field with a grey ×, keeps the text and the field open.
+5. `src/components/BookDetail.tsx`: *Owned* row always drawn (text as now, then `<OwnedToggles>`); *Notes* row always drawn with `<BookNote>`.
+6. `src/app/globals.css`: the note editor and the toggles from tokens; 44px targets on a phone; nothing on `--danger`.
+7. `test/e2e/book-detail.spec.ts`: the tests below.
+
+**Files**: `design/mockups.html`, `design/mockups-index.md` (not in *Files likely touched*: the `ui.redrawFiles` index line), `src/components/OwnedToggles.tsx` (new), `src/components/BookRowMenu.tsx`, `src/components/BookNote.tsx` (new), `src/components/BookDetail.tsx`, `src/app/globals.css`, `test/e2e/book-detail.spec.ts`.
+
+**Test strategy**
+- AC-1 (note, owned clauses) and AC-2: `book-detail.spec.ts` *saving a note from the sheet writes book_status.notes once, shows it without a reload, and Undo puts the old note back* (one POST counted, DB read before and after); *a book with no status row: the save shows the route's refusal, keeps the text and writes nothing*.
+- AC-1 (owned) and AC-3: *each owned toggle writes exactly one owned_copies row, the Owned row says so, and Undo deletes it*; *turning off a format deletes only that row, and Undo writes it back*; no button named for the ebook.
+- AC-4: `library-owned.spec.ts` unchanged and green; `BookRowMenu` imports `useOwnedToggle` (one shared toggle; spec-reviewer reads the diff).
+- AC-5: *the note editor and the toggles meet the UX floor*: names, 44px on a phone, a failed save (route stubbed to 500) says so and keeps the text, focus back on *Edit* after save and on the toggle after its toast, axe, contrast, nothing resolving to `--danger`, screenshots at 360 and 1280px with the editor open.
+- Unchanged: `test/book-detail.test.tsx` (the *Owned* `.v` and *Notes* `.lede` it pins stay), the note and owned route tests.
+
+**Risks**: the existing sheet tests' layout (the *Owned* and *Notes* rows now always drawn); `router.refresh()` re-rendering the intercepted sheet (BookStatus already relies on it).
+
+**Size check**: 8 files, no schema; UI only.
+
+**Follow-ups**: none found at the plan gate.
 
 ## Review log
 

@@ -6827,8 +6827,11 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
         <div class="frow"><span class="k">Planned for</span><span class="v">2027 Q1</span><button class="btn sec sm">Move</button></div>
 <div class="frow"><span class="k">Listen next</span><button class="btn sec sm" style="margin-left:auto">Queue to listen</button></div>
         <div class="frow"><span class="k">Shelves</span><span class="v" style="font-weight:400;font-size:.8125rem">Cosmere</span><button class="btn sec sm">Edit</button></div>
+        <div class="frow" style="flex-wrap:wrap"><span class="k">Owned</span><span class="v" style="font-weight:400;font-size:.8125rem">Physical &middot; Ebook</span>
+          <div class="opts" role="group" aria-label="What you own of The Way of Kings" style="margin:0 0 0 auto"><b role="button" aria-pressed="true" aria-label="I own it on paper" tabindex="0" data-on>Paper</b><b role="button" aria-pressed="false" aria-label="I own the audiobook" tabindex="0">Audiobook</b></div></div>
         <div class="frow" style="display:block"><span class="k" style="width:auto">Notes</span>
-          <p class="lede" style="margin:.3125rem 0 0">Been putting this off for years. Start after Q4 clears.</p></div>
+          <p class="lede" style="margin:.3125rem 0 0">Been putting this off for years. Start after Q4 clears.</p>
+          <button class="btn sec sm" style="margin-top:.5rem">Edit<span class="sr-only"> the note on The Way of Kings</span></button></div>
       </div>
 
       <h3 class="s">Reading history</h3>
@@ -6913,8 +6916,11 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
         <div class="frow"><span class="k">Planned for</span><span class="v">2027 Q1</span><button class="btn sec sm">Move</button></div>
 <div class="frow"><span class="k">Listen next</span><button class="btn sec sm" style="margin-left:auto">Queue to listen</button></div>
         <div class="frow"><span class="k">Shelves</span><span class="v" style="font-weight:400;font-size:.8125rem">Cosmere</span><button class="btn sec sm">Edit</button></div>
+        <div class="frow" style="flex-wrap:wrap"><span class="k">Owned</span><span class="v" style="font-weight:400;font-size:.8125rem">Physical &middot; Ebook</span>
+          <div class="opts" role="group" aria-label="What you own of The Way of Kings" style="margin:0 0 0 auto"><b role="button" aria-pressed="true" aria-label="I own it on paper" tabindex="0" data-on>Paper</b><b role="button" aria-pressed="false" aria-label="I own the audiobook" tabindex="0">Audiobook</b></div></div>
         <div class="frow" style="display:block"><span class="k" style="width:auto">Notes</span>
-          <p class="lede" style="margin:.3125rem 0 0">Been putting this off for years. Start after Q4 clears.</p></div>
+          <p class="lede" style="margin:.3125rem 0 0">Been putting this off for years. Start after Q4 clears.</p>
+          <button class="btn sec sm" style="margin-top:.5rem">Edit<span class="sr-only"> the note on The Way of Kings</span></button></div>
       </div>
 
       <h3 class="s">Reading history</h3>
@@ -6925,7 +6931,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
 </div></div></div>
 
 <div class="notes">
-<p><span class="chg">Nov 2026, task 5.14 (F-59):</span> <i>Your record</i> gains <b>Listen next</b>, under <i>Planned for</i>, with <b>Queue to listen</b>: the Library row&rsquo;s verb, the same toast and Undo; absent while the book is <i>Listening</i> or <i>Parked</i>. It doesn&rsquo;t say whether or where the book is queued yet: that is the sheet&rsquo;s own writes (3.5b).</p><h3>Book detail — a sheet, not a hover</h3>
+<p><span class="chg">Nov 2026, task 3.5b (TASK-118):</span> <i>Your record</i> gains an <b>Owned</b> line, always drawn: what you own as the Library row ends (<i>Physical &middot; Audiobook &middot; Ebook</i>, as they apply), then two toggles, <b>Paper</b> and <b>Audiobook</b>, named <i>I own it on paper</i> and <i>I own the audiobook</i>: the row menu&rsquo;s own write, a toast and Undo each. The ebook is Calibre&rsquo;s and has no toggle. <b>Notes</b> edit in place: <b>Edit</b> under the note (<b>Add a note</b> when there is none) opens a field named <i>Note on &lt;title&gt;</i>, filled with the note, with <b>Save</b> and <b>Cancel</b>, both grey; <i>Save</i> shows the note at once with a toast (<i>Note saved</i>) whose Undo puts the old one back. A save that fails keeps the field and the text and says why under it with a grey &times;, never red; a book with no status row is refused so. Toggles and buttons are 44px on the phone.</p><p><span class="chg">Nov 2026, task 5.14 (F-59):</span> <i>Your record</i> gains <b>Listen next</b>, under <i>Planned for</i>, with <b>Queue to listen</b>: the Library row&rsquo;s verb, the same toast and Undo; absent while the book is <i>Listening</i> or <i>Parked</i>. It doesn&rsquo;t say whether or where the book is queued yet: that is the sheet&rsquo;s own writes (3.5b).</p><h3>Book detail — a sheet, not a hover</h3>
   <p><span class="chg">Your question answered:</span> a hover popup is the wrong shape here. A sheet over the list is the right one.</p>
   <ul>
     <li><b>Desktop:</b> On desktop the same intercepted route renders as a centred dialogue over the dimmed list rather than a bottom sheet. A right-hand panel was considered — it keeps the list usable — but it makes the detail permanently narrow, and the detail is the thing you came for.</li>
