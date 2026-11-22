@@ -479,7 +479,10 @@ on every write (`rankRead`), with no unique constraint because the year is
 derived (`extract(year FROM finished_on)`, D-21) and never stored. A rank on
 the read, not the book, lets a book read in two years rank in each; a read
 with no date (2.17's `none`) has no year and no rank. The top ten is the
-first ten, read off the order, never stored apart.
+first ten, read off the order, never stored apart. A ranked read re-dated into
+another year, or to no date, leaves its old year's ranking in the re-date's
+own transaction (task 3.4c, D-169): the year closes up and the read waits
+unranked in its new year, so a re-date never leaves a gap or a tie.
 
 **Table count:** 33 in `src/db/schema.ts` today (migrations through `0014`, which added `run_queue`); the proposed tables are in §4.
 

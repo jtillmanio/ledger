@@ -3731,7 +3731,7 @@ then every other book read that year, with none collapsed; an unranked read
 shows under *Not ranked yet*; a read with no date shows under *No year*; and the
 Library renders no year chip. The up → down → up migration test passes.
 
-### ☐ 3.4c A re-dated read leaves its old year's ranking · S
+### ☑ 3.4c A re-dated read leaves its old year's ranking · S
 From TASK-077 (3.4b, PR #260), approved at its plan gate (owner, 2026-11-14).
 Depends on 3.4b. A ranked read re-dated into another year, or to no date
 (`redateBookRead`, a *Finished* correction through `saveBookStatus`, *All
