@@ -527,6 +527,9 @@ describe("automatic runs wait, measure only the PR's head, and stop at a monthly
     expect(cap).toBeGreaterThan(head);
     expect(url).toBeGreaterThan(cap);
     expect(planBody).toMatch(/renderCapComment\(/);
+    // Past the cap an automatic run comments and stops: it never goes on to the URL.
+    const capped = planBody.slice(planBody.indexOf("if (reached) {"), planBody.indexOf("} else if (count != null)"));
+    expect(capped).toMatch(/if \(!dryRun\) \{[\s\S]*writeComment\([\s\S]*\n {8}return;\n {6}\}\n {4}$/);
   });
 
   it("a dry run reports what an automatic run would decide: the wait, the head and the month's count", () => {
