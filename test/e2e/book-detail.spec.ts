@@ -8,12 +8,19 @@
 // close, the page behind inert but the undo toast, a drag that dismisses past
 // a third and springs back short of it, opacity alone under reduced motion,
 // axe, contrast, and screenshots at 360, 834 and 1280px, light and dark.
+// Task 3.5b, 1 of 3 (TASK-118): the sheet's own writes. Saving a note writes
+// book_status.notes once and its Undo puts the old note back; a book with no
+// status row is refused and nothing is written (AC-1, AC-2); each owned toggle
+// writes or deletes exactly one owned_copies row and its Undo reverses it, and
+// the ebook has none (AC-1, AC-3); and the editor and toggles meet the UX floor (AC-5).
 // The books are made here, under E2E ids the rest of the suite doesn't use, and
 // removed after the last test.
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
-import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
+import {
+  computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
+} from "./helpers";
 
 const ONCE = { tag: "@at-w390-light" };
 
@@ -33,7 +40,11 @@ const FILLER = Array.from({ length: 45 }, (_, i) => {
 const FEATURE = { id: "e2e-bd-feature", title: `${PREFIX} Feature` };
 const PLAIN = { id: "e2e-bd-plain", title: `${PREFIX} Plain` };
 const GONE = { id: "e2e-bd-gone", title: `${PREFIX} Gone` };
-const IDS = [...FILLER, FEATURE, PLAIN, GONE].map((b) => b.id);
+// The sheet's own writes (task 3.5b), under a title the Library search above doesn't match.
+const NOTE = { id: "e2e-bsw-note", title: "E2E Bsw Note" };
+const BARE = { id: "e2e-bsw-bare", title: "E2E Bsw Bare" };
+const OWN = { id: "e2e-bsw-own", title: "E2E Bsw Own" };
+const IDS = [...FILLER, FEATURE, PLAIN, GONE, NOTE, BARE, OWN].map((b) => b.id);
 
 async function withSql<T>(work: (sql: TestSql) => Promise<T>): Promise<T> {
   const sql = testSql();
@@ -55,6 +66,10 @@ test.beforeAll(async () => {
                       ${"A world of stone and storms.\n\nA second paragraph."}, ${["Epic fantasy", "Magic"]})`;
     await sql`INSERT INTO books (id, title, published_year, page_count) VALUES (${PLAIN.id}, ${PLAIN.title}, 1999, 300)`;
     await sql`INSERT INTO books (id, title, deleted_at) VALUES (${GONE.id}, ${GONE.title}, now())`;
+    // A Calibre id below zero: no Calibre book the test database may hold has one.
+    for (const b of [NOTE, BARE]) await sql`INSERT INTO books (id, title) VALUES (${b.id}, ${b.title})`;
+    await sql`INSERT INTO books (id, title, calibre_id) VALUES (${OWN.id}, ${OWN.title}, -9311)`;
+    for (const b of [NOTE, OWN]) await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${b.id}, 'to_read')`;
     await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
               VALUES (${E2E_USER}, ${FEATURE.id}, 'read', '2025-03-17', 'exact')`;
     for (const [start, finish, format] of [
@@ -340,4 +355,200 @@ test("the sheet at 360, 834 and 1280px, light and dark: geometry, contrast, axe 
       await screenshot(page, info, `book-page-${width}-${colorScheme}`);
     }
   }
+});
+
+// --- Task 3.5b, 1 of 3 (TASK-118): the sheet's own writes ------------------------------------------------
+
+const toast = (page: Page) => page.locator(".toast");
+/** A row of *Your record* by its label, in the sheet or on the full page. */
+const recordRow = (scope: Page | Locator, page: Page, k: string) =>
+  scope.locator(".detail-record .frow").filter({ has: page.locator(".k", { hasText: new RegExp(`^${k}$`) }) });
+const storedNote = (bookId: string) =>
+  withSql((sql) => sql<{ notes: string | null }[]>`SELECT notes FROM book_status WHERE user_id = ${E2E_USER} AND book_id = ${bookId}`)
+    .then((rows) => rows.map((r) => ({ notes: r.notes })));
+const ownedRows = (bookId: string) =>
+  withSql((sql) => sql<{ format: string }[]>`SELECT format FROM owned_copies WHERE book_id = ${bookId} ORDER BY format`)
+    .then((rows) => rows.map((r) => r.format));
+const setNote = (bookId: string, note: string | null) =>
+  withSql((sql) => sql`UPDATE book_status SET notes = ${note} WHERE user_id = ${E2E_USER} AND book_id = ${bookId}`);
+
+/** Its sheet, from a Library search for it alone. */
+async function openOwn(page: Page, b: { title: string }) {
+  await page.goto(`/books/list?q=${encodeURIComponent(b.title)}`);
+  await openFrom(page, b.title);
+}
+
+test("saving a note from the sheet writes book_status.notes once, shows it without a reload, and Undo puts the old note back (AC-1, AC-2)", async ({ page }) => {
+  await setNote(NOTE.id, "old");
+  const posts: unknown[] = [];
+  page.on("request", (req) => {
+    if (req.method() === "POST" && new URL(req.url()).pathname === "/api/progress/book/note") posts.push(req.postDataJSON());
+  });
+  await openOwn(page, NOTE);
+  // A full page load would drop this.
+  await page.evaluate(() => { (window as unknown as { stayed: boolean }).stayed = true; });
+
+  const notes = recordRow(sheet(page), page, "Notes");
+  await expect(notes.locator(".lede")).toHaveText("old");
+  const edit = notes.getByRole("button", { name: `Edit the note on ${NOTE.title}`, exact: true });
+  await hydrated(edit);
+  await edit.click();
+  const field = notes.getByRole("textbox", { name: `Note on ${NOTE.title}`, exact: true });
+  await expect(field).toBeFocused();
+  await expect(field).toHaveValue("old");
+  await field.fill("new");
+  await notes.getByRole("button", { name: "Save", exact: true }).click();
+
+  await expect(notes.locator(".lede")).toHaveText("new");
+  await expect(field).toHaveCount(0);
+  await expect(edit).toBeFocused();
+  await expect(toast(page).locator(".toast-label")).toHaveText("Note saved");
+  await expect(toast(page)).toContainText(NOTE.title);
+  expect(await storedNote(NOTE.id)).toEqual([{ notes: "new" }]);
+  expect(posts).toEqual([{ bookId: NOTE.id, note: "new" }]);
+
+  await toast(page).getByRole("button", { name: "Undo" }).click();
+  await expect(notes.locator(".lede")).toHaveText("old");
+  await expect.poll(() => storedNote(NOTE.id)).toEqual([{ notes: "old" }]);
+  // Focus is handed back to the control the toast came from.
+  await expect(edit).toBeFocused();
+  // One write: the Undo is a DELETE, not a second save.
+  expect(posts).toHaveLength(1);
+  expect(await page.evaluate(() => (window as unknown as { stayed?: boolean }).stayed)).toBe(true);
+});
+
+test("a book with no status row: saving its note shows the route's refusal, keeps the text and writes nothing (AC-2)", async ({ page }) => {
+  // The full page draws the same BookDetail; a book with no status row is in no Library list to open from.
+  await page.goto(`/book/${BARE.id}`);
+  const notes = recordRow(page, page, "Notes");
+  await expect(notes.locator(".lede")).toHaveCount(0);
+  const add = notes.getByRole("button", { name: `Add a note on ${BARE.title}`, exact: true });
+  await hydrated(add);
+  await add.click();
+  const field = notes.getByRole("textbox", { name: `Note on ${BARE.title}`, exact: true });
+  await field.fill("kept");
+  await notes.getByRole("button", { name: "Save", exact: true }).click();
+
+  await expect(notes.getByRole("alert")).toHaveText("× The note didn't save: put the book on your list before writing a note.");
+  await expect(field).toHaveValue("kept");
+  await expect(field).toHaveAccessibleDescription(/didn't save/);
+  await expect(notes.getByRole("button", { name: "Retry", exact: true })).toBeVisible();
+  await expect(toast(page)).toHaveCount(0);
+  expect(await storedNote(BARE.id)).toEqual([]);
+});
+
+test("each owned toggle on the sheet writes or deletes exactly one owned_copies row, the Owned line says so, and Undo reverses it; the ebook has no toggle (AC-1, AC-3)", async ({ page }) => {
+  await withSql((sql) => sql`DELETE FROM owned_copies WHERE book_id = ${OWN.id}`);
+  await openOwn(page, OWN);
+  const owned = recordRow(sheet(page), page, "Owned");
+  const line = owned.locator(".v");
+  // The ebook is Calibre's (D-90): named on the line, never a toggle.
+  await expect(line).toHaveText("Ebook");
+  await expect(owned.getByRole("button")).toHaveCount(2);
+  await expect(sheet(page).getByRole("button", { name: /ebook/i })).toHaveCount(0);
+
+  for (const [format, name, word, said] of [
+    ["physical", "I own it on paper", "Physical", "You own it on paper"],
+    ["audio", "I own the audiobook", "Audiobook", "You own the audiobook"],
+  ] as const) {
+    const button = owned.getByRole("button", { name, exact: true });
+    await hydrated(button);
+    await expect(button).toHaveAttribute("aria-pressed", "false");
+    await button.click();
+    await expect(button).toHaveAttribute("aria-pressed", "true");
+    await expect(line).toHaveText(`${word} · Ebook`);
+    await expect(toast(page).locator(".toast-label")).toHaveText(said);
+    await expect(toast(page)).toContainText(OWN.title);
+    expect(await ownedRows(OWN.id)).toEqual([format]);
+
+    await toast(page).getByRole("button", { name: "Undo" }).click();
+    await expect(button).toHaveAttribute("aria-pressed", "false");
+    await expect(button).toBeFocused();
+    await expect(line).toHaveText("Ebook");
+    await expect.poll(() => ownedRows(OWN.id)).toEqual([]);
+  }
+
+  // Turning off a format the book had deletes only that row, and its Undo writes it back.
+  await withSql((sql) => sql`INSERT INTO owned_copies (book_id, format) VALUES (${OWN.id}, 'physical'), (${OWN.id}, 'audio')`);
+  await openOwn(page, OWN);
+  const again = recordRow(sheet(page), page, "Owned");
+  const paper = again.getByRole("button", { name: "I own it on paper", exact: true });
+  await hydrated(paper);
+  await expect(paper).toHaveAttribute("aria-pressed", "true");
+  await paper.click();
+  await expect(paper).toHaveAttribute("aria-pressed", "false");
+  await expect(again.locator(".v")).toHaveText("Audiobook · Ebook");
+  await expect(toast(page).locator(".toast-label")).toHaveText("You don't own it on paper");
+  expect(await ownedRows(OWN.id)).toEqual(["audio"]);
+  await toast(page).getByRole("button", { name: "Undo" }).click();
+  await expect(paper).toHaveAttribute("aria-pressed", "true");
+  await expect(again.locator(".v")).toHaveText("Physical · Audiobook · Ebook");
+  await expect.poll(() => ownedRows(OWN.id)).toEqual(["audio", "physical"]);
+
+  // Leave the book as found.
+  await withSql((sql) => sql`DELETE FROM owned_copies WHERE book_id = ${OWN.id}`);
+});
+
+test("the note editor and the owned toggles meet the UX floor at 360 and 1280px, light and dark: names, 44px, a failed save kept, axe, contrast, no --danger, screenshots (AC-5)", ONCE, async ({ page }, info) => {
+  await setNote(NOTE.id, "old");
+  // Every note save fails as a dropped connection would.
+  await page.route("**/api/progress/book/note", (route) =>
+    route.request().method() === "POST" ? route.fulfill({ status: 500, body: "{}" }) : route.continue());
+  for (const [width, height] of [[360, 780], [1280, 800]] as const) {
+    for (const colorScheme of ["light", "dark"] as const) {
+      const at = `${width}px ${colorScheme}`;
+      await page.setViewportSize({ width, height });
+      await page.emulateMedia({ colorScheme });
+      await openOwn(page, NOTE);
+      const notes = recordRow(sheet(page), page, "Notes");
+      const owned = recordRow(sheet(page), page, "Owned");
+      const edit = notes.getByRole("button", { name: `Edit the note on ${NOTE.title}`, exact: true });
+      await hydrated(edit);
+      const opener = (await edit.boundingBox())!;
+      expect(Math.min(opener.width, opener.height), `Edit ${at}`).toBeGreaterThanOrEqual(width < 768 ? 44 : 24);
+      await edit.click();
+      const field = notes.getByRole("textbox", { name: `Note on ${NOTE.title}`, exact: true });
+      await expect(field, at).toBeFocused();
+      await screenshot(page, info, `book-sheet-note-${width}-${colorScheme}`);
+
+      // A failed save says so, keeps the text typed and the field open, and writes nothing.
+      await field.fill("typed");
+      await notes.getByRole("button", { name: "Save", exact: true }).click();
+      await expect(notes.getByRole("alert"), at).toHaveText("× The note didn't save. Check your connection and try again.");
+      await expect(field, at).toHaveValue("typed");
+      const retry = notes.getByRole("button", { name: "Retry", exact: true });
+      await expect(retry, at).toBeVisible();
+
+      // Named controls, 44px on a phone and never under 24px, none of them on --danger.
+      const controls = [retry, notes.getByRole("button", { name: "Cancel", exact: true }),
+        owned.getByRole("button", { name: "I own it on paper", exact: true }),
+        owned.getByRole("button", { name: "I own the audiobook", exact: true })];
+      for (const c of controls) {
+        const box = (await c.boundingBox())!;
+        const name = `${await c.innerText()} ${at}`;
+        expect(box.height, name).toBeGreaterThanOrEqual(width < 768 ? 44 : 24);
+        expect(box.width, name).toBeGreaterThanOrEqual(width < 768 ? 44 : 24);
+        const style = await computedStyle(c, ["background-color", "color", "border-color"]);
+        for (const token of ["--danger", "--danger-soft"]) {
+          expect(Object.values(style), `${name} against ${token}`).not.toContain(await tokenColour(page, token));
+        }
+      }
+      const reason = await computedStyle(notes.getByRole("alert"), ["color"]);
+      expect(reason.color, at).not.toBe(await tokenColour(page, "--danger"));
+
+      await expectNoHorizontalScroll(page);
+      await expectNoAxeViolations(page, AXE, '[role="dialog"]');
+      expect(await contrastFailures(page), at).toEqual([]);
+      await screenshot(page, info, `book-sheet-note-failed-${width}-${colorScheme}`);
+
+      // Esc closes the field, writing nothing, and puts focus back on *Edit*; a second Esc closes the sheet.
+      await page.keyboard.press("Escape");
+      await expect(field, at).toHaveCount(0);
+      await expect(edit, at).toBeFocused();
+      await expect(sheet(page), at).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(sheet(page), at).toBeHidden();
+    }
+  }
+  expect(await storedNote(NOTE.id)).toEqual([{ notes: "old" }]);
 });

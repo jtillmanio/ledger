@@ -1,7 +1,9 @@
+import BookNote from "@/components/BookNote";
 import BookStatus from "@/components/BookStatus";
 import { Bar } from "@/components/Skeleton";
 import { bookInitials } from "@/components/Cover";
 import { Headphones } from "@/components/nav/Icons";
+import OwnedToggles from "@/components/OwnedToggles";
 import QueueListen from "@/components/QueueListen";
 import ReadAgain from "@/components/ReadAgain";
 import { SheetHeading } from "@/components/RouteSheet";
@@ -66,7 +68,8 @@ export function BookDetailSkeleton({ as }: { as: "sheet" | "page" }) {
       <H className="s">Details</H>
       <div className="group" aria-hidden="true">{rows(4)}</div>
       <H className="s">Your record</H>
-      <div className="group" aria-hidden="true">{rows(2)}</div>
+      {/* Status, Owned and Notes: the rows a loaded record always draws (task 3.5b). */}
+      <div className="group" aria-hidden="true">{rows(3)}</div>
       <H className="s">Reading history</H>
       <div className="group" aria-hidden="true">{rows(1)}</div>
     </div>
@@ -95,10 +98,12 @@ function Paragraphs({ text }: { text: string }) {
  *   doesn't have is left out, never a `—`.
  * - **Your record**: the Library's own status control, open (`BookStatus`,
  *   one write path, design § 13 *What this changes* 2), whose date line is the
- *   start beside the finish; where it sits in your plan, its shelves, what you
- *   own and your notes, as text (their editors are a later item); and *Listen
- *   next*, whose *Queue to listen* puts the book at the queue's end (task 5.14;
- *   not while Listening or Parked). Where it is queued is 3.5b's to show.
+ *   start beside the finish; where it sits in your plan and its shelves, as
+ *   text (*Move* and *Edit* are TASK-119's); *Listen next*, whose *Queue to
+ *   listen* puts the book at the queue's end (task 5.14; not while Listening or
+ *   Parked); what you own, its line and the row menu's two toggles
+ *   (`OwnedToggles`, one write path with the Library's `⋯`, task 3.5b); and
+ *   your note, edited in place (`BookNote`, task 3.5b).
  * - **Reading history**: every read newest first, each with its start, finish,
  *   days taken and its rank in its year; a listen carries the headphones glyph.
  *   A read book offers *Read again*.
@@ -180,10 +185,14 @@ export default function BookDetail({ book: b, as }: { book: Book; as: "sheet" | 
         {b.shelves.length > 0 && (
           <div className="frow"><span className="k">Shelves</span><span className="v plain">{b.shelves.join(", ")}</span></div>
         )}
-        {owned && <div className="frow"><span className="k">Owned</span><span className="v plain">{owned}</span></div>}
-        {b.notes && (
-          <div className="frow detail-notes"><span className="k">Notes</span><p className="lede">{b.notes}</p></div>
-        )}
+        {/* What you own (task 3.5b): the line as the Library row ends, then the row menu's two toggles; no ebook toggle. */}
+        <div className="frow detail-owned">
+          <span className="k">Owned</span>
+          {owned && <span className="v plain">{owned}</span>}
+          <OwnedToggles bookId={b.id} title={b.title} owned={b.owned} />
+        </div>
+        {/* The note (task 3.5b), edited in place with an Undo. */}
+        <div className="frow detail-notes"><span className="k">Notes</span><BookNote bookId={b.id} title={b.title} note={b.notes} /></div>
       </div>
 
       <div className="detail-history-head">
