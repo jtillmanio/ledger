@@ -1009,11 +1009,14 @@ export type BookDetail = {
   finished_on: string | null; finished_on_precision: Precision;
   started_on: string | null; started_on_precision: Precision;
   notes: string | null;
-  /** Where a to-read book sits (`to_read_level`, D-37): its level and period; null unless to read. A book
-   * with no status row is to read with a null level, which is Someday: `placeTag` draws it so. */
+  /** Where a to-read book sits (`to_read_level`, D-37): its level and period. A book with no status row is
+   * to read with a null level, which is Someday: `placeTag` draws it so. Any other book has its earliest plan
+   * row's (`plan_period`, by `to_read_level`'s rule), or null with none (task 3.5b: *Planned for*, no *Move*). */
   plan_level: ToReadLevel | null; plan_period: string | null;
   /** The book shelves it is on, by name. */
   shelves: string[];
+  /** The same shelves' ids, in the same order: which are on in *Shelves Edit* (task 3.5b). */
+  shelf_ids: string[];
   /** What you own of it (task 5.17, D-132), as `listBooks` says it. */
   owned: OwnedKind[];
   /** Its reads by eye and its listens, from `book_reads` (task 1.23). */
@@ -1042,11 +1045,15 @@ export async function bookDetail(userId: string, bookId: string): Promise<BookDe
            COALESCE(CASE WHEN st.status = 'read' THEN lr.started_on_precision ELSE st.started_on_precision END, 'none')
              AS started_on_precision,
            st.notes,
-           tl.level AS plan_level, tl.period AS plan_period,
+           COALESCE(tl.level, op.level) AS plan_level, COALESCE(tl.period, op.period) AS plan_period,
            COALESCE((SELECT array_agg(sh.name ORDER BY lower(sh.name), sh.id)
                      FROM shelf_books sb
                      JOIN shelves sh ON sh.id = sb.shelf_id AND sh.kind = 'books' AND sh.user_id = ${userId}
                      WHERE sb.book_id = b.id), '{}') AS shelves,
+           COALESCE((SELECT array_agg(sh.id ORDER BY lower(sh.name), sh.id)
+                     FROM shelf_books sb
+                     JOIN shelves sh ON sh.id = sb.shelf_id AND sh.kind = 'books' AND sh.user_id = ${userId}
+                     WHERE sb.book_id = b.id), '{}') AS shelf_ids,
            array_remove(ARRAY[CASE WHEN EXISTS (SELECT 1 FROM owned_copies oc WHERE oc.book_id = b.id AND oc.format = 'physical')
                                    THEN 'physical' END,
                               CASE WHEN EXISTS (SELECT 1 FROM owned_copies oc WHERE oc.book_id = b.id AND oc.format = 'audio')
@@ -1080,6 +1087,14 @@ export async function bookDetail(userId: string, bookId: string): Promise<BookDe
     LEFT JOIN book_universes u ON u.id = b.universe_id
     LEFT JOIN book_status st   ON st.book_id = b.id AND st.user_id = ${userId}
     LEFT JOIN to_read_level tl ON tl.book_id = b.id AND tl.user_id = ${userId}
+    -- A book that isn't to read keeps the plan rows it had (it counts while reading, D-112): the earliest,
+    -- by to_read_level's rule, for *Planned for* without *Move* (task 3.5b).
+    LEFT JOIN LATERAL (
+      SELECT pp.level, pp.period FROM plan_period pp
+      WHERE pp.user_id = ${userId} AND pp.book_id = b.id
+      ORDER BY pp.level = 'on_deck', pp.year, pp.quarter NULLS LAST
+      LIMIT 1
+    ) op ON COALESCE(st.status, 'to_read') <> 'to_read'
     -- A Read book's latest read: the start shown (task 1.17), as listBooks reads it.
     LEFT JOIN LATERAL (
       SELECT e.started_on, e.started_on_precision

@@ -1,4 +1,5 @@
 import BookNote from "@/components/BookNote";
+import { PlanMove, ShelvesEdit } from "@/components/BookSheetActions";
 import BookStatus from "@/components/BookStatus";
 import { Bar } from "@/components/Skeleton";
 import { bookInitials } from "@/components/Cover";
@@ -35,10 +36,13 @@ export function wordsValue(b: Pick<Book, "word_count" | "word_count_source">): s
   return `${b.word_count_source === "estimated" ? "~" : ""}${b.word_count.toLocaleString("en-US")}`;
 }
 
-/** Where a book sits in your plan, as its hero badge and its *Planned for* row say it; null unless to read. */
+/**
+ * Where a book sits in your plan, as its *Planned for* row says it: a to-read book is always somewhere,
+ * Someday included; any other book only where a plan row it kept puts it, else null (task 3.5b, AC-3).
+ */
 function planWords(b: Book): string | null {
-  if (b.status !== "to_read") return null;
-  return placeTag({ status: b.status, level: b.plan_level, period: b.plan_period, calibre: false });
+  if (b.status !== "to_read" && !b.plan_period) return null;
+  return placeTag({ status: "to_read", level: b.plan_level, period: b.plan_period, calibre: false });
 }
 
 /**
@@ -68,8 +72,8 @@ export function BookDetailSkeleton({ as }: { as: "sheet" | "page" }) {
       <H className="s">Details</H>
       <div className="group" aria-hidden="true">{rows(4)}</div>
       <H className="s">Your record</H>
-      {/* Status, Owned and Notes: the rows a loaded record always draws (task 3.5b). */}
-      <div className="group" aria-hidden="true">{rows(3)}</div>
+      {/* Status, Shelves, Owned and Notes: the rows a loaded record always draws (task 3.5b). */}
+      <div className="group" aria-hidden="true">{rows(4)}</div>
       <H className="s">Reading history</H>
       <div className="group" aria-hidden="true">{rows(1)}</div>
     </div>
@@ -98,8 +102,10 @@ function Paragraphs({ text }: { text: string }) {
  *   doesn't have is left out, never a `—`.
  * - **Your record**: the Library's own status control, open (`BookStatus`,
  *   one write path, design § 13 *What this changes* 2), whose date line is the
- *   start beside the finish; where it sits in your plan and its shelves, as
- *   text (*Move* and *Edit* are TASK-119's); *Listen next*, whose *Queue to
+ *   start beside the finish; where it sits in your plan, with *Move* for a
+ *   to-read book (a book that isn't to read shows it only with a plan row),
+ *   and its shelves, with *Edit*, each opening its sheet in place of this one
+ *   (`BookSheetActions`, D-34, task 3.5b); *Listen next*, whose *Queue to
  *   listen* puts the book at the queue's end (task 5.14; not while Listening or
  *   Parked); what you own, its line and the row menu's two toggles
  *   (`OwnedToggles`, one write path with the Library's `⋯`, task 3.5b); and
@@ -112,6 +118,8 @@ export default function BookDetail({ book: b, as }: { book: Book; as: "sheet" | 
   const H = as === "sheet" ? "h3" : "h2";
   const place = bookPlace(b);
   const plan = planWords(b);
+  // The hero's badge is a to-read book's place; *Move* is for a to-read book only (2.3's picker refuses any other).
+  const toRead = b.status === "to_read";
   const words = wordsValue(b);
   const history = historyLine(b);
   const glyph = listenGlyph(b.status, b.listens > 0);
@@ -134,9 +142,9 @@ export default function BookDetail({ book: b, as }: { book: Book; as: "sheet" | 
           {(place || b.published_year) && (
             <p className="detail-place">{[place, b.published_year].filter(Boolean).join(" · ")}</p>
           )}
-          {(plan || b.genre || glyph) && (
+          {((toRead && plan) || b.genre || glyph) && (
             <p className="detail-tags">
-              {plan && <span className="bdg rg">{b.plan_level === "quarter" || b.plan_level === "year" ? `planned · ${plan}` : plan}</span>}
+              {toRead && plan && <span className="bdg rg">{b.plan_level === "quarter" || b.plan_level === "year" ? `planned · ${plan}` : plan}</span>}
               {b.genre && <span className="tag">{b.genre}</span>}
               {glyph && <Headphones label={glyph} />}
             </p>
@@ -178,13 +186,21 @@ export default function BookDetail({ book: b, as }: { book: Book; as: "sheet" | 
               {...(b.listens > 0 && { listened: true })} />
           </div>
         </div>
-        {plan && <div className="frow"><span className="k">Planned for</span><span className="v">{plan}</span></div>}
+        {plan && (
+          <div className="frow detail-plan">
+            <span className="k">Planned for</span><span className="v">{plan}</span>
+            {toRead && <PlanMove bookId={b.id} title={b.title} />}
+          </div>
+        )}
         {queueable(b.status) && (
           <div className="frow detail-listen"><span className="k">{LISTEN_NEXT}</span><QueueListen bookId={b.id} title={b.title} /></div>
         )}
-        {b.shelves.length > 0 && (
-          <div className="frow"><span className="k">Shelves</span><span className="v plain">{b.shelves.join(", ")}</span></div>
-        )}
+        {/* Always drawn, so a book on no shelf can be put on one (task 3.5b). */}
+        <div className="frow detail-shelves">
+          <span className="k">Shelves</span>
+          {b.shelves.length > 0 && <span className="v plain">{b.shelves.join(", ")}</span>}
+          <ShelvesEdit bookId={b.id} title={b.title} on={b.shelf_ids} />
+        </div>
         {/* What you own (task 3.5b): the line as the Library row ends, then the row menu's two toggles; no ebook toggle. */}
         <div className="frow detail-owned">
           <span className="k">Owned</span>

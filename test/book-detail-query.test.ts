@@ -70,8 +70,20 @@ describe("bookDetail (AC-3, AC-4)", () => {
       series_position: 1, genre: "Epic Fantasy", summary: "Roshar is a world of stone.", subjects: ["Epic fantasy", "Magic"],
       page_count: 1007, word_count: 387000, word_count_source: "stated", published_year: 2010,
       status: "to_read", notes: "Start after Q4.", plan_level: "quarter", plan_period: "2027-Q1",
-      shelves: ["Comfort", "cosmere"], owned: ["physical", "ebook"], reads: 0, listens: 0, history: [],
+      shelves: ["Comfort", "cosmere"], shelf_ids: ["sh1", "sh2"], owned: ["physical", "ebook"], reads: 0, listens: 0, history: [],
     });
+  });
+
+  it("answers the plan row a book kept once it isn't to read, the earliest, and none without one (task 3.5b, AC-3)", async () => {
+    for (const id of ["reading", "planless", "dnf"]) await book(id);
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES
+              (${USER}, 'reading', 'reading'), (${USER}, 'planless', 'read'), (${USER}, 'dnf', 'dnf')`;
+    // Two rows: the quarter before a later bare year, as to_read_level orders them.
+    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES
+              (${USER}, 'reading', '2028', NULL), (${USER}, 'reading', '2027-Q2', 1), (${USER}, 'dnf', 'on_deck', NULL)`;
+    expect(await q.bookDetail(USER, "reading")).toMatchObject({ status: "reading", plan_level: "quarter", plan_period: "2027-Q2" });
+    expect(await q.bookDetail(USER, "dnf")).toMatchObject({ status: "dnf", plan_level: "on_deck", plan_period: "on_deck" });
+    expect(await q.bookDetail(USER, "planless")).toMatchObject({ status: "read", plan_level: null, plan_period: null });
   });
 
   it("lists every read newest first, with its dates, days taken and rank, a listen counted apart", async () => {
@@ -112,7 +124,7 @@ describe("bookDetail (AC-3, AC-4)", () => {
   it("answers a book with no status as to read, with nothing on record", async () => {
     await book("bare");
     expect(await q.bookDetail(USER, "bare")).toMatchObject({
-      status: "to_read", notes: null, plan_level: null, shelves: [], owned: [], history: [], summary: null, subjects: null,
+      status: "to_read", notes: null, plan_level: null, shelves: [], shelf_ids: [], owned: [], history: [], summary: null, subjects: null,
     });
   });
 
@@ -126,7 +138,7 @@ describe("bookDetail (AC-3, AC-4)", () => {
     await sql`INSERT INTO shelves (id, name, user_id, kind) VALUES ('theirs', 'Theirs', 'other-user', 'books')`;
     await sql`INSERT INTO shelf_books (shelf_id, book_id, ordinal) VALUES ('theirs', 'shared', 1)`;
     expect(await q.bookDetail(USER, "shared")).toMatchObject({
-      status: "to_read", notes: null, finished_on: null, reads: 0, listens: 0, history: [], shelves: [],
+      status: "to_read", notes: null, finished_on: null, reads: 0, listens: 0, history: [], shelves: [], shelf_ids: [],
     });
   });
 

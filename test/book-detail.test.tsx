@@ -32,7 +32,7 @@ function book(over: Partial<Book> = {}): Book {
     page_count: 1007, word_count: 387000, word_count_source: "stated", published_year: 2010, cover_url: null,
     pending: false, status: "to_read", finished_on: null, finished_on_precision: "none",
     started_on: null, started_on_precision: "none", notes: null, plan_level: null, plan_period: null,
-    shelves: [], owned: [], reads: 0, listens: 0, history: [], ...over,
+    shelves: [], shelf_ids: [], owned: [], reads: 0, listens: 0, history: [], ...over,
   };
 }
 
@@ -211,6 +211,29 @@ describe("one layout, two chromes", () => {
     expect(text(row("Shelves")!.querySelector(".v"))).toBe("Comfort, Cosmere");
     expect(text(row("Owned")!.querySelector(".v"))).toBe("Physical · Ebook");
     expect(text(row("Notes")!.querySelector(".lede"))).toBe("Start after Q4 clears.");
+  });
+
+  it("offers Move for a to-read book; one that isn't shows Planned for only with a plan row, no Move, no badge; Shelves always has Edit (task 3.5b)", () => {
+    const rows = (b: Book) => {
+      const doc = render(b, "sheet");
+      const row = (k: string) => [...doc.querySelectorAll(".detail-record .frow")].find((r) => text(r.querySelector(".k")) === k);
+      return { doc, plan: row("Planned for"), shelves: row("Shelves") };
+    };
+    const toRead = rows(book({ plan_level: "year", plan_period: "2027" }));
+    expect(text(toRead.plan!.querySelector("button"))).toBe("Move The Way of Kings in your plan");
+    // Someday is a place too: a to-read book with no plan row can be moved.
+    expect(rows(book()).plan!.querySelector("button")).not.toBeNull();
+
+    const reading = rows(book({ status: "reading", plan_level: "year", plan_period: "2027" }));
+    expect(text(reading.plan!.querySelector(".v"))).toBe("2027");
+    expect(reading.plan!.querySelector("button")).toBeNull();
+    expect(reading.doc.querySelector(".detail-tags .bdg")).toBeNull();
+    expect(rows(book({ status: "read" })).plan).toBeUndefined();
+
+    // On no shelf: the row is still drawn, with nothing but *Edit*.
+    const bare = rows(book());
+    expect(bare.shelves!.querySelector(".v")).toBeNull();
+    expect(text(bare.shelves!.querySelector("button"))).toBe("Edit the shelves for The Way of Kings");
   });
 
   it("offers Queue to listen under Listen next, named for the book, but not while Listening or Parked (task 5.14)", () => {
