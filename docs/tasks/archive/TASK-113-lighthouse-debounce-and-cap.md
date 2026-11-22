@@ -1,7 +1,7 @@
 ---
 id: TASK-113
 title: 0.14b Automatic runs are debounced and capped
-status: Review
+status: Done
 depends_on: [TASK-112]
 size: M
 model: opus
