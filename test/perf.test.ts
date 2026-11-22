@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   aggregateRoute, apiPath, automaticCandidates, baselinePr, baselineRun, capReached, DEBOUNCE_SECONDS, DEFAULT_MONTHLY_CAP,
-  filesWithSecrets, findComment, gateProblems, lighthouseArgs, MARKER, measurable, measureRan, measureRuns, median, mergeMetrics,
+  filesWithSecrets, findComment, gateProblems, gates, lighthouseArgs, MARKER, measurable, measureRan, measureRuns, median, mergeMetrics,
   monthlyCap, monthStart, notHead, renderCapComment, renderComment, scrubLhr, sessionCookie, summariseLhr, unbudgeted,
   unchangedApp, type LoadSummary, type MeasuredRoute, type RouteBudget,
 } from "../scripts/perf/lib/perf.mjs";
@@ -501,8 +501,22 @@ describe("automatic runs wait, measure only the PR's head, and stop at a monthly
     expect(yml.split("\n").filter((l) => !l.trimStart().startsWith("#")).join("\n")).not.toMatch(/variable set|LIGHTHOUSE_MODE --body/);
   });
 
-  it("plan() waits, checks the head and the cap only for a real deployment_status, before it hands out a URL", () => {
-    expect(planBody).toMatch(/env\.REAL_EVENT_NAME === "deployment_status"/);
+  it("a hand run neither waits nor is capped; only a real deployment_status is, and a dry run only decides", () => {
+    // A hand run on a branch reaches plan() as a replayed deployment_status;
+    // its real trigger is still workflow_dispatch.
+    expect(gates({ realEventName: "workflow_dispatch", dryRun: false })).toEqual({ wait: false, decide: false, act: false });
+    expect(gates({ realEventName: "deployment_status", dryRun: false })).toEqual({ wait: true, decide: true, act: true });
+    expect(gates({ realEventName: "workflow_dispatch", dryRun: true })).toEqual({ wait: false, decide: true, act: false });
+    expect(gates({ realEventName: undefined, dryRun: false })).toEqual({ wait: false, decide: false, act: false });
+  });
+
+  it("plan() waits, checks the head and the cap only as gates() says, before it hands out a URL", () => {
+    expect(planBody).toMatch(/gates\(\{ realEventName: env\.REAL_EVENT_NAME, dryRun: env\.DRY_RUN === "true" \}\)/);
+    expect(planBody).toMatch(/if \(gate\.wait\) \{\n\s+console\.log\(`Waiting/);
+    const decide = planBody.indexOf("if (gate.decide) {");
+    expect(decide).toBeGreaterThan(-1);
+    // The head check and the cap sit inside that block.
+    expect(planBody.indexOf("notHead(")).toBeGreaterThan(decide);
     const waits = planBody.indexOf("DEBOUNCE_SECONDS * 1000");
     const head = planBody.indexOf("notHead(");
     const cap = planBody.indexOf("capReached(");
@@ -518,6 +532,9 @@ describe("automatic runs wait, measure only the PR's head, and stop at a monthly
   it("a dry run reports what an automatic run would decide: the wait, the head and the month's count", () => {
     expect(planBody).toMatch(/env\.DRY_RUN === "true"/);
     expect(planBody).toMatch(/Dry run: an automatic run would wait \$\{DEBOUNCE_SECONDS\} s/);
+    expect(planBody).toMatch(/\$\{count\} of \$\{cap\} automatic measured runs since/);
+    // Printed, not obeyed: a dry run's skip never returns before its Dry run step.
+    expect(planBody).toMatch(/if \(!dryRun\) return;/);
   });
 
   it("is documented where the owner reads it: the cap, its default, the wait, and a hand run exempt", () => {

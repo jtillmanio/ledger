@@ -14,7 +14,7 @@ import { appendFileSync, existsSync, readdirSync, readFileSync, statSync, writeF
 import { join } from "node:path";
 import {
   aggregateRoute, automaticCandidates, baselinePr, baselineRun, capReached, DEBOUNCE_SECONDS, filesWithSecrets, findComment,
-  gateProblems, measurable, measureRan, mergeMetrics, monthlyCap, monthStart, notHead, renderCapComment, renderComment,
+  gateProblems, gates, measurable, measureRan, mergeMetrics, monthlyCap, monthStart, notHead, renderCapComment, renderComment,
   unbudgeted, unchangedApp,
 } from "./lib/perf.mjs";
 import { ROUTES } from "./routes.mjs";
@@ -110,9 +110,9 @@ async function plan() {
   // deployment_status (EVENT_NAME), but GitHub still names its real trigger
   // workflow_dispatch: it neither waits nor is capped. A dry run prints what an
   // automatic run would decide, without the wait and without a comment.
-  const automatic = env.REAL_EVENT_NAME === "deployment_status";
-  const dryRun = env.DRY_RUN === "true";
-  if (automatic) {
+  const gate = gates({ realEventName: env.REAL_EVENT_NAME, dryRun: env.DRY_RUN === "true" });
+  const dryRun = !gate.act; // inside gate.decide, a run that doesn't act is a dry run
+  if (gate.wait) {
     console.log(`Waiting ${DEBOUNCE_SECONDS} s: a newer push to the PR in that time is measured instead of this one.`);
     await new Promise((resolve) => setTimeout(resolve, DEBOUNCE_SECONDS * 1000));
   }
@@ -126,7 +126,7 @@ async function plan() {
     console.log(`Not measuring #${pr.number}: ${unchanged}.`);
     return;
   }
-  if (automatic || dryRun) {
+  if (gate.decide) {
     const say = (line) => console.log(dryRun ? `  ${line}` : line);
     if (dryRun) console.log(`Dry run: an automatic run would wait ${DEBOUNCE_SECONDS} s, then decide on what GitHub says now:`);
     const moved = pr ? notHead({ number: pr.number, sha: env.SHA, head: pr.head?.sha }) : null;

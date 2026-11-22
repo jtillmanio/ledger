@@ -362,6 +362,19 @@ export const DEBOUNCE_SECONDS = 300;
  */
 export const DEFAULT_MONTHLY_CAP = 100;
 
+/**
+ * Which of 0.14b's rules a run applies, from its real trigger (GitHub's
+ * event_name, not a hand run's replayed deployment_status). An automatic run
+ * waits, then decides and acts on the head check and the cap. A hand run does
+ * neither; a dry run (always a hand run) decides as an automatic run would,
+ * without waiting, only to print it.
+ *   { wait, decide, act }: act false means a skip is printed, not obeyed.
+ */
+export function gates({ realEventName, dryRun }) {
+  const automatic = realEventName === "deployment_status";
+  return { wait: automatic, decide: automatic || Boolean(dryRun), act: automatic && !dryRun };
+}
+
 const short = (sha) => String(sha ?? "").slice(0, 7);
 
 /** Why a commit is not measured after the wait, or null while it is still the PR's head. */

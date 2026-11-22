@@ -86,6 +86,7 @@ export function measurable(args: {
 }): { url: string } | { skip: string } | { problem: string };
 export const DEBOUNCE_SECONDS: number;
 export const DEFAULT_MONTHLY_CAP: number;
+export function gates(args: { realEventName: string | undefined; dryRun?: boolean }): { wait: boolean; decide: boolean; act: boolean };
 export function notHead(args: { number: number; sha: string; head: string | null | undefined }): string | null;
 export function monthlyCap(value: string | null | undefined): number;
 export function monthStart(now: Date): string;
