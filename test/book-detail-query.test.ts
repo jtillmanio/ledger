@@ -78,9 +78,13 @@ describe("bookDetail (AC-3, AC-4)", () => {
     for (const id of ["reading", "planless", "dnf"]) await book(id);
     await sql`INSERT INTO book_status (user_id, book_id, status) VALUES
               (${USER}, 'reading', 'reading'), (${USER}, 'planless', 'read'), (${USER}, 'dnf', 'dnf')`;
-    // Two rows: the quarter before a later bare year, as to_read_level orders them.
+    // Three rows: a quarter before its own bare year and a later one, as to_read_level orders them.
     await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES
-              (${USER}, 'reading', '2028', NULL), (${USER}, 'reading', '2027-Q2', 1), (${USER}, 'dnf', 'on_deck', NULL)`;
+              (${USER}, 'reading', '2028', NULL), (${USER}, 'reading', '2027', NULL), (${USER}, 'reading', '2027-Q2', 1),
+              (${USER}, 'dnf', 'on_deck', NULL)`;
+    // Another reader's plan row for the read book is not this user's.
+    await sql`INSERT INTO users (id, name) VALUES ('other-user', 'Other')`;
+    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES ('other-user', 'planless', '2027-Q1', 1)`;
     expect(await q.bookDetail(USER, "reading")).toMatchObject({ status: "reading", plan_level: "quarter", plan_period: "2027-Q2" });
     expect(await q.bookDetail(USER, "dnf")).toMatchObject({ status: "dnf", plan_level: "on_deck", plan_period: "on_deck" });
     expect(await q.bookDetail(USER, "planless")).toMatchObject({ status: "read", plan_level: null, plan_period: null });

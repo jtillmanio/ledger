@@ -754,6 +754,27 @@ test("Shelves Edit replaces the sheet with every shelf on or off; each toggle wr
   await stockShelves();
 });
 
+test("Shelves Edit with no shelves says so and links to Shelves; a failed load says so in grey (AC-4, AC-5)", async ({ page }) => {
+  let answer: "none" | "fail" = "none";
+  await page.route("**/api/shelves", (route) => route.request().method() !== "GET" ? route.continue()
+    : answer === "none" ? route.fulfill({ json: { shelves: [] } }) : route.fulfill({ status: 500, json: {} }));
+  await openOwn(page, SHELVED);
+  const edit = recordRow(sheet(page), page, "Shelves").getByRole("button", { name: `Edit the shelves for ${SHELVED.title}`, exact: true });
+  await hydrated(edit);
+  await edit.click();
+  await expect(sheet(page).locator(".book-shelves-empty")).toContainText("No shelves yet");
+  await expect(sheet(page).getByRole("link", { name: "Shelves", exact: true })).toHaveAttribute("href", "/books/shelves");
+  await expect(sheet(page).getByRole("group", { name: `Shelves for ${SHELVED.title}` })).toHaveCount(0);
+
+  answer = "fail";
+  await page.keyboard.press("Escape");
+  await expect(edit).toBeFocused();
+  await edit.click();
+  const alert = sheet(page).getByRole("alert");
+  await expect(alert).toHaveText("× Couldn't load your shelves. Go back and try again.");
+  expect((await computedStyle(alert, ["color"])).color).not.toBe(await tokenColour(page, "--danger"));
+});
+
 test("Move and Shelves meet the UX floor at 360 and 1280px, light and dark: focus in and back, a 44px back control, axe, contrast, no --danger, no slide under reduced motion, screenshots (AC-5)", ONCE, async ({ page }, info) => {
   await planMove();
   await stockShelves();

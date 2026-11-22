@@ -118,7 +118,8 @@ export default function BookShelves({ bookId, title, on: drawn }: { bookId: stri
     return (
       <div className="empty book-shelves-empty">
         <b>No shelves yet</b>
-        Make one on <Link href="/books/shelves">Shelves</Link>, then put this book on it here.
+        {/* `replace`: the pane's own history entry gives way to Shelves, so Back from there needs no extra press. */}
+        Make one on <Link href="/books/shelves" replace>Shelves</Link>, then put this book on it here.
       </div>
     );
   }
