@@ -307,7 +307,7 @@ icon) and `/robots.txt` answer 200 with no redirect to `/login`. Vercel
 Observability shows no `/_not-found` invocation during the run, and the run's
 Active CPU is a third or less of a 3-run measurement.
 
-### ☐ 0.14b Automatic runs are debounced and capped · M
+### ☑ 0.14b Automatic runs are debounced and capped · M
 Owner, 2026-11-17 (D-158). Pushes in quick succession each get measured, and a
 busy month has no ceiling (37 measured deploys on 2026-11-10). Hand runs are
 the owner's decision and always measure.
@@ -354,6 +354,25 @@ of the branch's preview with `LIGHTHOUSE_MODE` on, not copied from another
 route. `test/perf.test.ts` fails when any `page.tsx` under `src/app/`, at any
 depth, is neither measured by a route nor listed as unmeasured with a reason.
 Nothing in this entry turns `LIGHTHOUSE_MODE` on.
+
+---
+
+### ☐ 0.14d A plan-only run is never main's baseline · S
+From TASK-113 (0.14b, PR #317). The report compares a PR with main's last run:
+`baselineRun` in `scripts/perf/lib/perf.mjs` takes the newest green
+`lighthouse.yml` run on the last merged PR's head. Since 0.14b, more runs end
+green without measuring: a commit past the monthly cap, a dry run, and (as
+before) an unchanged app. When the newest green run on that head is one of
+them, `report` finds no `lighthouse-metrics` artifact and the comment says
+there is no baseline, though an earlier run on the same head measured.
+
+- **The baseline is a run whose `report` job ran**, read from the run's jobs
+  (the `report` job concluded success), not just the run's conclusion.
+
+**Check:** `test/perf.test.ts` feeds `baselineRun` a merged PR's head with an
+older green run whose `report` job ran and a newer green run whose `measure`
+and `report` jobs were skipped, and it returns the older one; with only the
+skipped one, it returns null.
 
 ---
 

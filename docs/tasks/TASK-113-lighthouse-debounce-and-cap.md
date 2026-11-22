@@ -1,7 +1,7 @@
 ---
 id: TASK-113
 title: 0.14b Automatic runs are debounced and capped
-status: In progress
+status: Review
 depends_on: [TASK-112]
 size: M
 model: opus
@@ -30,10 +30,10 @@ With `LIGHTHOUSE_MODE` on, a burst of pushes to one PR gets one measurement, not
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): tests pin both rules: a commit that is no longer the PR's head after the wait is not measured, and with a cap of N the next automatic run that month is skipped, with a PR comment giving the reason. A `dry_run` hand run on the PR prints what an automatic run would decide (wait and cap) and loads no page. Nothing turns `LIGHTHOUSE_MODE` on.
-- [ ] AC-2: Given an automatic run for commit A when the PR's head is B after the wait, `plan` outputs no URL and logs `Not measuring #<n>: <A> is no longer the head (<B> is)`. Given A is still the head, it measures. Both are tested on a pure function in `scripts/perf/lib/perf.mjs`, fed fixtures.
-- [ ] AC-3: Given `LIGHTHOUSE_MONTHLY_CAP=2` and two automatic measured runs already this UTC month, a third automatic run outputs no URL and its PR comment says the cap was reached, with the count and the cap. A hand run in the same state measures. When the variable is unset, the default named in `docs/COMMANDS.md` applies. Tested on fixtures.
-- [ ] AC-4: `docs/COMMANDS.md`, `docs/GIT-PR.md` and the `lighthouse.yml` header document the wait, the cap variable and its default, and that a hand run is exempt from both.
+- [x] AC-1 (roadmap **Check:**, verbatim): tests pin both rules: a commit that is no longer the PR's head after the wait is not measured, and with a cap of N the next automatic run that month is skipped, with a PR comment giving the reason. A `dry_run` hand run on the PR prints what an automatic run would decide (wait and cap) and loads no page. Nothing turns `LIGHTHOUSE_MODE` on.
+- [x] AC-2: Given an automatic run for commit A when the PR's head is B after the wait, `plan` outputs no URL and logs `Not measuring #<n>: <A> is no longer the head (<B> is)`. Given A is still the head, it measures. Both are tested on a pure function in `scripts/perf/lib/perf.mjs`, fed fixtures.
+- [x] AC-3: Given `LIGHTHOUSE_MONTHLY_CAP=2` and two automatic measured runs already this UTC month, a third automatic run outputs no URL and its PR comment says the cap was reached, with the count and the cap. A hand run in the same state measures. When the variable is unset, the default named in `docs/COMMANDS.md` applies. Tested on fixtures.
+- [x] AC-4: `docs/COMMANDS.md`, `docs/GIT-PR.md` and the `lighthouse.yml` header document the wait, the cap variable and its default, and that a hand run is exempt from both.
 
 ## Out of scope
 
@@ -59,8 +59,11 @@ With `LIGHTHOUSE_MODE` on, a burst of pushes to one PR gets one measurement, not
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Candidate decision: an automatic run waits 300 s and measures only the PR's head; the cap defaults to 100 automatic measured runs a UTC month, counted from the Actions runs and jobs API; a count that can't be read means not measured (approved at plan)
-- `baselineRun` takes the newest green run on the last merged PR's head, and a plan-only run (cap-skipped, a dry run, an unchanged app) is green with no metrics, so the comparison loses its baseline: pick a run whose `report` job ran (approved at plan, new roadmap item)
+- Decision: an automatic run waits 300 s and measures only the PR's head; the cap defaults to 100 automatic measured runs a UTC month, counted from the Actions runs and jobs API; a count that can't be read means not measured; a hand run is exempt (approved at plan) → docs/review/decisions.md § D-170
+- `baselineRun` takes the newest green run on the last merged PR's head, and a plan-only run (cap-skipped, a dry run, an unchanged app) is green with no metrics, so the comparison loses its baseline: pick a run whose `report` job ran (approved at plan) → docs/05-roadmap.md § 0.14d (new; its **Check:** is a proposal), with its row in docs/06-tasklist.md beside 0.14b and in F-04's coverage row
+- Spec review note: counting near the cap costs about one API request per candidate run; a rate limit falls into "can't count, not measuring" → docs/review/decisions.md § D-170 (recorded as accepted)
+- Spec review note: a cap skip replaces the PR's last measured numbers in the one comment, as planned → not tracked: accepted as planned (the next measured run rewrites it)
+- Spec review note: an automatic run whose commit no open PR names skips the head check and goes on to the cap, as before 0.14b → not tracked: accepted as is (no PR to compare a head with)
 
 ## Plan
 
@@ -86,9 +89,13 @@ Approved 2026-11-22 (owner: "approve plan, go with recommendations").
 
 **Tests.** AC-2: `notHead` (moved → the message; same → null) and a pin that `plan()` checks it before `output("url"`. AC-3: `capReached` at 2 of 2 → reason with count and cap; `renderCapComment` starts with `MARKER` and gives count and cap; `monthlyCap("")`/`undefined` → `DEFAULT_MONTHLY_CAP`, matching the number in `docs/COMMANDS.md`; `automaticCandidates` leaves out hand runs, last month's runs and this run; `measureRan` counts a measure job that ran, not a skipped or never-started one; a pin that `plan()` applies wait and cap only when `REAL_EVENT_NAME` is `deployment_status`. AC-1: those plus the workflow pins (`REAL_EVENT_NAME: ${{ github.event_name }}`, `DRY_RUN`, `actions: read`) and the existing "switch" pins unchanged. AC-4: by review, plus a pin that the three docs name `LIGHTHOUSE_MONTHLY_CAP`. Manual: the owner's `dry_run` hand run.
 
+**Revision 1 (after the test audit, R1).** The choice of which runs wait and decide moved into a pure `gates({ realEventName, dryRun })` in `perf.mjs`, tested on fixtures (a hand run neither waits nor decides; a real `deployment_status` does both; a dry run decides without acting); `plan()` is pinned to `gate.wait` / `gate.decide`, and to the `return` that ends the cap's skip. Same files.
+
 ## Review log
 
 _Filled by /implement-task. One line per round._
+
+- Verify R1 PASS (`7ec6a60`; perf.test.ts 13 new tests failed first, then 66/66) | CI R1 PASS (run 45028141638: tests, e2e full 10/10, Vercel) | Spec R1 APPROVE (3 non-blocking notes, placed in Follow-ups) | Claude PR review: no issues | Audit R1 CHANGES (AC-3 hand run UNPROVEN: a source-string pin) → `gates()` on fixtures | Verify R2 PASS (`32941e9`) | Audit R2 PASS (mutations killed; one gap: the cap skip's `return` unpinned) → pinned, checked by removing it (fails) | Verify R3 PASS | Spec R2 APPROVE (the fixes' diff and the close-out follow-ups check)
 
 ## Blocked
 
@@ -96,7 +103,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (one per head: the change, the audit fix, the cap-return pin)
+- Review rounds: 2 (spec APPROVE ×2; audit CHANGES → PASS)
+- First-pass AC FAILs: 0 (one UNPROVEN test: AC-3's hand run)
+- Plan revisions after approval: 1 (`gates()`, from the audit)
