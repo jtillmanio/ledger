@@ -13,9 +13,9 @@
 import { appendFileSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  aggregateRoute, automaticCandidates, baselinePr, baselineRun, capReached, DEBOUNCE_SECONDS, filesWithSecrets, findComment,
-  gateProblems, gates, measurable, measureRan, mergeMetrics, monthlyCap, monthStart, notHead, renderCapComment, renderComment,
-  unbudgeted, unchangedApp,
+  aggregateRoute, automaticCandidates, baselinePr, baselineRun, capMarked, capMarkerName, capReached, countMeasured,
+  DEBOUNCE_SECONDS, filesWithSecrets, findComment, gateProblems, gates, measurable, mergeMetrics, monthlyCap, monthStart,
+  notHead, renderCapComment, renderComment, unbudgeted, unchangedApp,
 } from "./lib/perf.mjs";
 import { ROUTES } from "./routes.mjs";
 
@@ -65,11 +65,20 @@ async function writeComment(number, body) {
 
 /**
  * This UTC month's automatic measured runs, newest first, counted no further
- * than the cap. Only the statuses a measured run can have are listed: the
- * skipped runs every status Vercel sends makes while the switch is off are
- * never fetched, and only the remaining runs' jobs are read (task 0.14b).
+ * than the cap: { count, marker, marked }. A month whose cap already stopped a
+ * run left an artifact named `marker`, and then nothing is counted (marked).
+ * Otherwise only the statuses a measured run can have are listed (the skipped
+ * runs every status Vercel sends makes while the switch is off are never
+ * fetched), and the remaining runs' jobs are read ten at a time (task 0.14b).
  */
 async function measuredThisMonth(since, cap) {
+  const marker = capMarkerName({ since, cap });
+  try {
+    const { artifacts } = await github(`actions/artifacts?name=${encodeURIComponent(marker)}&per_page=10`);
+    if (capMarked(artifacts, marker)) return { count: cap, marker, marked: true };
+  } catch (err) {
+    console.log(`Could not look for the artifact ${marker}, so counting: ${err.message}`);
+  }
   const runs = [];
   for (const status of ["in_progress", "success", "failure", "cancelled"]) {
     for (let page = 1; page <= 10; page++) {
@@ -79,15 +88,11 @@ async function measuredThisMonth(since, cap) {
       if (batch.length < 100) break;
     }
   }
-  const newest = automaticCandidates(runs, { since, exclude: env.GITHUB_RUN_ID })
-    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
-  let count = 0;
-  for (const run of newest) {
-    if (count >= cap) break;
-    const { jobs } = await github(`actions/runs/${run.id}/jobs?filter=latest&per_page=100`);
-    if (measureRan(jobs)) count++;
-  }
-  return count;
+  const count = await countMeasured(automaticCandidates(runs, { since, exclude: env.GITHUB_RUN_ID }), {
+    cap,
+    jobsFor: async (run) => (await github(`actions/runs/${run.id}/jobs?filter=latest&per_page=100`)).jobs,
+  });
+  return { count, marker, marked: false };
 }
 
 async function plan() {
@@ -140,17 +145,25 @@ async function plan() {
     const cap = monthlyCap(env.LIGHTHOUSE_MONTHLY_CAP);
     const since = monthStart(new Date());
     let count = null;
+    let counted = null;
     try {
-      count = await measuredThisMonth(since, cap);
+      counted = await measuredThisMonth(since, cap);
+      count = counted.count;
     } catch (err) {
       // D-158: a paused Vercel account is worse than an unmeasured PR.
       say(`::warning::Could not count this month's automatic runs against the cap, so not measuring: ${err.message}`);
       if (!dryRun) return;
     }
+    if (counted?.marked) say(`The cap stopped an automatic run this month already (artifact ${counted.marker}), so nothing was counted.`);
     const reached = count == null ? null : capReached({ count, cap, since });
     if (reached) {
       say(`Not measuring${pr ? ` #${pr.number}` : ""}: ${reached}.`);
       if (!dryRun) {
+        // The month's later automatic runs find this and skip the count.
+        if (!counted.marked && env.RUNNER_TEMP) {
+          writeFileSync(join(env.RUNNER_TEMP, "lighthouse-cap.txt"), `${reached}\n`);
+          output("cap_marker", counted.marker);
+        }
         if (pr) {
           const body = renderCapComment({ sha: env.SHA, count, cap, since, branch: pr.head?.ref });
           console.log(`plan: ${await writeComment(pr.number, body)} the comment on #${pr.number}`);
@@ -163,7 +176,7 @@ async function plan() {
     // A dry run goes on: its own Dry run step says what a hand run would measure.
   }
   const group = pr ? `pr-${pr.number}` : `run-${env.GITHUB_RUN_ID}`;
-  console.log(`Measuring ${result.url}${pr ? ` for #${pr.number}` : ""}: ${ROUTES.map((r) => r.id).join(", ")}`);
+  console.log(`${env.DRY_RUN === "true" ? "A hand run would measure" : "Measuring"} ${result.url}${pr ? ` for #${pr.number}` : ""}: ${ROUTES.map((r) => r.id).join(", ")}`);
   output("url", result.url);
   output("group", group);
   output("routes", JSON.stringify(ROUTES.map((r) => r.id)));

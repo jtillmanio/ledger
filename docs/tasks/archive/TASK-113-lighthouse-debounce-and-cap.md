@@ -91,11 +91,13 @@ Approved 2026-11-22 (owner: "approve plan, go with recommendations").
 
 **Revision 1 (after the test audit, R1).** The choice of which runs wait and decide moved into a pure `gates({ realEventName, dryRun })` in `perf.mjs`, tested on fixtures (a hand run neither waits nor decides; a real `deployment_status` does both; a dry run decides without acting); `plan()` is pinned to `gate.wait` / `gate.decide`, and to the `return` that ends the cap's skip. Same files.
 
+**Revision 2 (after the owner's dry run, run 45112285873, accepted 2026-11-22).** The dry run's `plan` took 3 min 19 s: the count read 197 runs' jobs one at a time, and a month at the cap would recount on every run, about 200 API requests each. The owner approved three changes: `countMeasured` reads the jobs ten at a time (`COUNT_CONCURRENCY`) and stops at the cap; the first run the cap stops leaves an artifact (`capMarkerName`, uploaded by a new step in the `plan` job, 31 days), which later runs that month find with one request and skip the count; a dry run's last line reads "A hand run would measure …". Same files, plus D-170 and `docs/COMMANDS.md` (also: a head Vercel skipped needs `-f url=`).
+
 ## Review log
 
 _Filled by /implement-task. One line per round._
 
-- Verify R1 PASS (`7ec6a60`; perf.test.ts 13 new tests failed first, then 66/66) | CI R1 PASS (run 45028141638: tests, e2e full 10/10, Vercel) | Spec R1 APPROVE (3 non-blocking notes, placed in Follow-ups) | Claude PR review: no issues | Audit R1 CHANGES (AC-3 hand run UNPROVEN: a source-string pin) → `gates()` on fixtures | Verify R2 PASS (`32941e9`) | Audit R2 PASS (mutations killed; one gap: the cap skip's `return` unpinned) → pinned, checked by removing it (fails) | Verify R3 PASS | Spec R2 APPROVE (the fixes' diff and the close-out follow-ups check)
+- Verify R1 PASS (`7ec6a60`; perf.test.ts 13 new tests failed first, then 66/66) | CI R1 PASS (run 45028141638: tests, e2e full 10/10, Vercel) | Spec R1 APPROVE (3 non-blocking notes, placed in Follow-ups) | Claude PR review: no issues | Audit R1 CHANGES (AC-3 hand run UNPROVEN: a source-string pin) → `gates()` on fixtures | Verify R2 PASS (`32941e9`) | Audit R2 PASS (mutations killed; one gap: the cap skip's `return` unpinned) → pinned, checked by removing it (fails) | Verify R3 PASS | Spec R2 APPROVE (the fixes' diff and the close-out follow-ups check) | Owner dry run (run 45112285873): passed, but `plan` 3 min 19 s → revision 2 | Verify R4 PASS
 
 ## Blocked
 
@@ -103,7 +105,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds: 3 (one per head: the change, the audit fix, the cap-return pin)
+- Verify rounds: 4 (one per head: the change, the audit fix, the cap-return pin, revision 2)
 - Review rounds: 2 (spec APPROVE ×2; audit CHANGES → PASS)
 - First-pass AC FAILs: 0 (one UNPROVEN test: AC-3's hand run)
-- Plan revisions after approval: 1 (`gates()`, from the audit)
+- Plan revisions after approval: 2 (`gates()`, from the audit; the faster count and the cap marker, from the owner's dry run)

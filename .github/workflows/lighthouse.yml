@@ -47,8 +47,10 @@ name: Lighthouse
 # (runs whose measure job reached a runner) reach the repo variable
 # LIGHTHOUSE_MONTHLY_CAP, default 100 when unset, and says so in the PR comment:
 #   gh variable set LIGHTHOUSE_MONTHLY_CAP --body <n>   (0: no automatic run measures)
-# A count GitHub can't give means not measuring. A hand run is exempt from
-# both: it neither waits nor is capped, and it is not counted.
+# A count GitHub can't give means not measuring. The first run the cap stops
+# leaves an artifact, lighthouse-cap-reached-<YYYY-MM>-<cap>, and the month's
+# later runs find it and don't count again. A hand run is exempt from both: it
+# neither waits nor is capped, and it is not counted.
 #
 # GitHub runs a deployment's workflow from that deployment's commit, so a
 # branch cut before the switch still measures on its own until it is rebased;
@@ -144,6 +146,17 @@ jobs:
           ALLOW_PRODUCTION: ${{ inputs.allow_production }}
           PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
         run: node scripts/perf/report.mjs plan
+      # When the cap stops an automatic run, the month's later runs find this
+      # artifact and skip the count (0.14b). Its name carries the month and
+      # the cap; 31 days outlast the month it was written in.
+      - name: Mark the month's cap reached
+        if: steps.plan.outputs.cap_marker
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.plan.outputs.cap_marker }}
+          path: ${{ runner.temp }}/lighthouse-cap.txt
+          retention-days: 31
+          if-no-files-found: error
       - name: Dry run
         if: inputs.dry_run && steps.plan.outputs.url
         env:

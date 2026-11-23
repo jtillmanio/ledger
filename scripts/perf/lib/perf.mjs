@@ -448,6 +448,43 @@ export function renderCapComment({ sha, count, cap, since, branch }) {
   ].join("\n");
 }
 
+/**
+ * How many runs' jobs the cap count reads at once. One at a time, a month of
+ * about 200 automatic runs took 3 min 19 s (run 45112285873); ten at a time
+ * keeps it to seconds, well inside GitHub's limit on concurrent requests.
+ */
+export const COUNT_CONCURRENCY = 10;
+
+/**
+ * The automatic measured runs among `runs` (automaticCandidates), newest first,
+ * counted no further than the cap: reads `jobsFor(run)` `concurrency` runs at
+ * a time and stops after the batch that reaches the cap. A read that fails
+ * fails the count, which means not measuring (D-158).
+ */
+export async function countMeasured(runs, { cap, jobsFor, concurrency = COUNT_CONCURRENCY }) {
+  const newest = [...runs].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  let count = 0;
+  for (let i = 0; i < newest.length && count < cap; i += concurrency) {
+    const batch = await Promise.all(newest.slice(i, i + concurrency).map((run) => jobsFor(run)));
+    count += batch.filter((jobs) => measureRan(jobs)).length;
+  }
+  return Math.min(count, cap);
+}
+
+/**
+ * The artifact an automatic run leaves when the month's cap stops it, so the
+ * month's later runs find it and skip the count. It names the month and the
+ * cap: raising or lowering LIGHTHOUSE_MONTHLY_CAP counts again.
+ */
+export function capMarkerName({ since, cap }) {
+  return `lighthouse-cap-reached-${since.slice(0, 7)}-${cap}`;
+}
+
+/** Whether the artifacts API lists an unexpired marker of that name. */
+export function capMarked(artifacts, name) {
+  return (artifacts ?? []).some((a) => a.name === name && !a.expired);
+}
+
 /** The rt_session pair (`rt_session=…`) from a login response's Set-Cookie headers, or null. */
 export function sessionCookie(setCookies) {
   return setCookies.map((c) => c.split(";")[0].trim()).find((c) => c.startsWith("rt_session=") && c.length > 11) ?? null;

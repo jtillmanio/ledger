@@ -97,6 +97,17 @@ export function automaticCandidates<T extends { id: number | string; event: stri
 export function measureRan(jobs: { name: string; status?: string; conclusion: string | null; steps?: unknown[] }[]): boolean;
 export function capReached(args: { count: number; cap: number; since: string }): string | null;
 export function renderCapComment(args: { sha: string; count: number; cap: number; since: string; branch?: string }): string;
+export const COUNT_CONCURRENCY: number;
+export function countMeasured<T extends { created_at: string }>(
+  runs: T[],
+  args: {
+    cap: number;
+    jobsFor: (run: T) => Promise<{ name: string; status?: string; conclusion: string | null; steps?: unknown[] }[]>;
+    concurrency?: number;
+  },
+): Promise<number>;
+export function capMarkerName(args: { since: string; cap: number }): string;
+export function capMarked(artifacts: { name: string; expired?: boolean }[] | null | undefined, name: string): boolean;
 export function sessionCookie(setCookies: string[]): string | null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function scrubLhr(lhr: any, secrets: (string | undefined)[]): any;
