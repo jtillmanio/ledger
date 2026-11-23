@@ -283,7 +283,7 @@ describe("prAreas: the paths a PR changed select the areas its browser suite run
     expect(areas(["src/app/comics/(dash)/page.tsx", "src/components/IssueRow.tsx", "test/e2e/queue.spec.ts"])).toEqual(["comics"]);
     expect(areas(["src/app/api/runs/[runId]/route.ts", "src/app/api/queue/route.ts", "src/app/api/metron/search/route.ts"])).toEqual(["comics"]);
     expect(areas(["src/app/books/shelves/page.tsx", "src/components/ShelfList.tsx", "test/e2e/shelves.spec.ts"])).toEqual(["books"]);
-    expect(areas(["src/app/book/[id]/page.tsx", "src/app/@modal/(.)book/[id]/page.tsx", "src/app/api/shelves/route.ts"])).toEqual(["books"]);
+    expect(areas(["src/app/book/[id]/page.tsx", "src/app/@modal/(.)book/[id]/page.tsx", "src/app/api/plan/route.ts"])).toEqual(["books"]);
     expect(areas(["src/app/watch/page.tsx"])).toEqual(["watch"]);
   });
 
@@ -326,7 +326,8 @@ describe("prAreas: the paths a PR changed select the areas its browser suite run
   });
 
   it("an unmapped path selects every area: the map fails toward all, never toward none", () => {
-    for (const path of ["scripts/e2e.mjs", "drizzle/0042_new.sql", "design/mockups.html", "src/app/inbox/page.tsx", "src/app/settings/page.tsx", "src/app/layout.tsx", "test/db.ts", "test/e2e/shard-times.json"]) {
+    // api/books and api/shelves serve Add books, Paste and New shelf, which shared specs check.
+    for (const path of ["src/app/api/books/bulk/route.ts", "src/app/api/books/search/route.ts", "src/app/api/shelves/route.ts", "scripts/e2e.mjs", "drizzle/0042_new.sql", "design/mockups.html", "src/app/inbox/page.tsx", "src/app/settings/page.tsx", "src/app/layout.tsx", "test/db.ts", "test/e2e/shard-times.json"]) {
       const r = prAreas([path], SPECS);
       expect(r.areas, path).toBeNull();
       expect(r.why, path).toEqual([{ area: null, path, rule: "unmapped" }]);

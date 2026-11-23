@@ -88,13 +88,17 @@ export function greenFullRunToReuse(runs, { jobsOf, isAncestor, changedSince }, 
 // never toward none. Every PR runs the critical set at the core projects as
 // well (areaPlan and areaFilter in e2e.mjs).
 
-/** A medium's routes, first match wins. */
+/**
+ * A medium's routes, first match wins. Not `api/books/` or `api/shelves/`:
+ * Add books, Paste and New shelf, which shared specs check, call them, so
+ * they stay unmapped and select every area.
+ */
 const MEDIUM_ROUTES = [
   [/^src\/app\/comics\//, "comics", "a comics route"],
   [/^src\/app\/api\/(?:runs|queue|metron)\//, "comics", "a comics API route"],
   [/^src\/app\/(?:books|book|parked|settings\/calibre)\//, "books", "a books route"],
   [/^src\/app\/@modal\/\(\.\)book\//, "books", "a books route"],
-  [/^src\/app\/api\/(?:books|calibre|follows|listen-queue|parked|plan|shelves)\//, "books", "a books API route"],
+  [/^src\/app\/api\/(?:calibre|follows|listen-queue|parked|plan)\//, "books", "a books API route"],
   [/^src\/app\/watch\//, "watch", "a watch route"],
 ];
 
