@@ -309,6 +309,15 @@ tick them.
       `CLAUDE_CODE_OAUTH_TOKEN` or a spent allowance fails. PR #313's first run
       failed the same way; other PRs' runs passed. It isn't a required check,
       so nothing is blocked (from TASK-121, 3.4c, PR #315).
+- [ ] Let the **ui-verifier** sign in under auto mode. In TASK-119's walk
+      (PR #318) the permission classifier refused its read of `APP_PASSCODE`
+      from the worktree's `.env` ("Unauthorized Access"), even after you
+      approved it in the session, because a subagent can't see that
+      approval. The walk ran only once the main session signed in and handed
+      it a session token. A permission rule for that one read (for example
+      `PowerShell(Select-String -Path *\.env -Pattern ^APP_PASSCODE=*)` in
+      `.claude/settings.local.json`), or a sign-in helper the agent may run,
+      would let the next walk start on its own (from TASK-119, 3.5b, PR #318).
 
 ## Approvals from follow-ups
 

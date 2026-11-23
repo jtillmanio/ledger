@@ -3693,6 +3693,28 @@ deletes exactly one `owned_copies` row and its Undo reverses it; that opening
 *Move* from the sheet leaves exactly one sheet in the DOM; and that a book row on
 each books dashboard opens `/book/{id}` as a sheet.
 
+### ☐ 3.5c The book sheet follows its own writes · S
+*From TASK-119 (3.5b, part 2, PR #318).* Two things the sheet's writes leave
+behind, each found at a plan gate or in a UI walk:
+
+- **The rows follow a status change without a reload.** After *Listening* is
+  chosen on the sheet's status control, *Planned for*, its *Move* and *Listen
+  next*'s *Queue to listen* stay on screen until a reload hides them (TASK-107's
+  UI walk, 2026-11-19; TASK-119's, 2026-11-22). The rows should follow the
+  status the control just wrote.
+- **Where the book sits in Listen next** (from TASK-107, 5.14, PR #298; left
+  out of TASK-119 at its plan gate): the *Listen next* line says *#2 in Listen
+  next* for a queued book, with a *Remove* (`DELETE /api/listen-queue`) and its
+  Undo, instead of offering *Queue to listen* again. `booksListenNext` has the
+  order.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) in the
+browser (0.11), choosing *Listening* on a to-read book's sheet hides *Planned
+for*, *Move* and *Queue to listen* without a reload, and its Undo brings them
+back; a book second in Listen next shows *#2 in Listen next* on its sheet, and
+*Remove* deletes its one `listen_queue` row, closing the gap, with an Undo that
+puts it back at 2; axe passes; screenshots at 360px and 1280px.
+
 ### ☑ 3.4 Book ratings and top-books reorder · S
 Rating, notes, and the top-books rank reorder. **Status and finish date moved to
 1.5** (R1-03) — they are a daily-use flow and could not wait for Phase 3.

@@ -1,7 +1,7 @@
 ---
 id: TASK-119
 title: 3.5b The book sheet's own writes (2 of 3) — Move and Shelves, a sheet from the sheet
-status: In progress
+status: Review
 depends_on: [TASK-118, TASK-124]
 size: M
 model: opus
@@ -31,11 +31,11 @@ From a book's sheet you can move it in your plan and change which shelves hold i
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves *Move* leaving exactly one sheet: TASK-118 proves the note and the owned toggles, TASK-120 the dashboards' rows): test that saving a note from the sheet writes `book_status.notes` once and its Undo puts the old note back; that each owned toggle writes or deletes exactly one `owned_copies` row and its Undo reverses it; that opening *Move* from the sheet leaves exactly one sheet in the DOM; and that a book row on each books dashboard opens `/book/{id}` as a sheet.
-- [ ] AC-2: Given a to-read book planned for a quarter, opened as a sheet from the Library, when *Move* is pressed, then exactly one `[role=dialog]` sheet is in the DOM, it carries a back control naming the book, and confirming a move to another quarter moves the book (its `reading_plan.period` changes) with an Undo; afterwards the book's sheet shows the new *Planned for*. Back from the picker shows the book's sheet again, and Back once more returns to the Library at its scroll position.
-- [ ] AC-3: A book that isn't to-read shows *Planned for* only when it has a plan row, and no *Move*.
-- [ ] AC-4: Given a book on shelf A and not on shelf B, *Shelves Edit* opens one sheet in place of the book's (one `[role=dialog]` in the DOM) listing every shelf with A on and B off. Turning B on writes one `shelf_books` row for B at its end; turning A off deletes A's row through TASK-124's write, closing A's gap. Each has an Undo that reverses exactly that write (B loses only its row; A gets its row back at its old place with its note). Back returns to the book's sheet, whose *Shelves* row then names the shelves as they now are.
-- [ ] AC-5: The book sheet, and each sheet opened from it, meets the UX floor (`docs/04-design.md` § 10): focus moves into the new sheet and returns to *Move* or *Edit* on Back, the back control is a named button of at least 44px on a phone, axe, nothing on `--danger`, reduced motion swaps without a slide, screenshots at 360px and 1280px of each sheet.
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves *Move* leaving exactly one sheet: TASK-118 proves the note and the owned toggles, TASK-120 the dashboards' rows): test that saving a note from the sheet writes `book_status.notes` once and its Undo puts the old note back; that each owned toggle writes or deletes exactly one `owned_copies` row and its Undo reverses it; that opening *Move* from the sheet leaves exactly one sheet in the DOM; and that a book row on each books dashboard opens `/book/{id}` as a sheet.
+- [x] AC-2: Given a to-read book planned for a quarter, opened as a sheet from the Library, when *Move* is pressed, then exactly one `[role=dialog]` sheet is in the DOM, it carries a back control naming the book, and confirming a move to another quarter moves the book (its `reading_plan.period` changes) with an Undo; afterwards the book's sheet shows the new *Planned for*. Back from the picker shows the book's sheet again, and Back once more returns to the Library at its scroll position.
+- [x] AC-3: A book that isn't to-read shows *Planned for* only when it has a plan row, and no *Move*.
+- [x] AC-4: Given a book on shelf A and not on shelf B, *Shelves Edit* opens one sheet in place of the book's (one `[role=dialog]` in the DOM) listing every shelf with A on and B off. Turning B on writes one `shelf_books` row for B at its end; turning A off deletes A's row through TASK-124's write, closing A's gap. Each has an Undo that reverses exactly that write (B loses only its row; A gets its row back at its old place with its note). Back returns to the book's sheet, whose *Shelves* row then names the shelves as they now are.
+- [x] AC-5: The book sheet, and each sheet opened from it, meets the UX floor (`docs/04-design.md` § 10): focus moves into the new sheet and returns to *Move* or *Edit* on Back, the back control is a named button of at least 44px on a phone, axe, nothing on `--danger`, reduced motion swaps without a slide, screenshots at 360px and 1280px of each sheet.
 
 ## Out of scope
 
@@ -63,8 +63,13 @@ From a book's sheet you can move it in your plan and change which shelves hold i
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- *#2 in Listen next* and its *Remove* on the sheet (from TASK-107): left out (approved at plan)
-- The sheet's rows not following its own status change (from TASK-107): checked in the UI walk; placed at close-out if it still happens (approved at plan)
+- *#2 in Listen next* and its *Remove* on the sheet (from TASK-107): left out (approved at plan). Placed with the status-change item below as one new roadmap item, not beside 5.14 as the plan said: both are the sheet following its own writes → docs/05-roadmap.md § 3.5c (new; its row in docs/06-tasklist.md § M14)
+- The sheet's rows don't follow its own status change: after *Listening*, *Planned for*, *Move* and *Queue to listen* stay until a reload (from TASK-107; still so in this task's UI walk, 2026-11-22) → docs/05-roadmap.md § 3.5c (new; its row in docs/06-tasklist.md § M14)
+- D-34 says a sheet from a sheet "is a route push". This task meets its intent with a pane and a same-URL history entry (spec-reviewer R1; approved at close-out) → docs/review/decisions.md § D-171
+- The ui-verifier couldn't sign in under auto mode: the classifier refused its `APP_PASSCODE` read even after the owner approved it in the session. The walk ran on a session token the main session minted (UI R1) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- The UI walk set *The Dry* (development database) to *Listening* and back to *To read* by choosing it, not with Undo, which probably left a start date of 2026-11-22 on it (a status round trip keeps the start) → not tracked: development database, disposable (CLAUDE.md); reported in the PR so the owner can clear it if they care
+- AC-3's "with a plan row" half wasn't walked by hand: no book in the development database is reading or read with a plan row (UI R1) → not tracked: proven by `test/e2e/book-detail.spec.ts` *a book that isn't to read…* and `test/book-detail-query.test.ts` *answers the plan row a book kept…*
+- Leaving the pane through a link (the empty state's *Shelves*) would have left its history entry behind (spec-reviewer R1) → not tracked: done in this PR (the link replaces the entry)
 
 ## Plan
 
@@ -101,7 +106,7 @@ On the full page (`/book/{id}`, no sheet under it), *Move* and *Edit* open a cli
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | CI R1 PASS (62985cf, every project) | Spec R1 APPROVE (3 notes: D-34 wording → D-171; the shelves pane's empty and failed states untested → tested; a link out of the pane left its history entry → `replace`) | Schema R1 APPROVE (minor: another reader's plan row and a quarter beside its own year → tested) | Verify R2 PASS | CI R2 PASS (0bb0c68) | Audit R1 PASS (every new test fails on 75c88db) | UI R1 NOT RUN (sign-in refused: the classifier denied the passcode read) → owner approved; R2 NOT RUN (still refused; file:// blocked) → R3 PASS at all six widths on a session the main session minted, 0 console errors, data left as found but for *The Dry*'s start date (Follow-ups) | Spec and schema not re-run after R1's fixes: tests and a `replace` on one link only | Close-out check R1 CHANGES (3.5c's task-list row; the D-171 bullet's approval mark) → fixed | Drift R1 update first (behind 1; decisions.md conflicted with #317's D-170) → rebased, D-171 after D-170 | Verify R3 FAIL (test/books-dashboard.test.ts: a 5 s timeout under the full run's load; 51/51 alone, no file of this branch) → Verify R4 PASS
 
 ## Blocked
 
@@ -109,7 +114,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 4 (R3 a timeout under load)
+- Review rounds: 1 (spec, schema), 3 (UI: two sign-in refusals, then PASS)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (the shelves link's `replace` and the added tests answer review notes)
