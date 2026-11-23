@@ -1896,6 +1896,17 @@ rail shows can be acted on, and what the owner records from the first day
 has a place. Only 2.1b, 3.5 and the read-only pages (5.9, 5.11, 5.12, 4.3,
 Phase 6) stay after the switch.
 
+*Amended 2026-11-23 (D-172): nine more entries before the switch.* The owner
+pulled ahead the entries converted to tasks that day: the Calibre sync's
+year-only date and near spellings (4.4b, 4.6), Parked through every undo
+(5.18), Open Library removed (6.19), the preview's growth gate and the
+browser suite by area (0.13, 0.15), and where the book sits redesigned
+(6.21). They come with the two entries those build on: 0.14c (every page
+measured, which 0.13's ceilings start from) and 6.23 (the design review
+whose drawing 6.21 builds). 0.13 and 0.14c finish only with
+`LIGHTHOUSE_MODE` on (D-158), and 6.23 is the owner's session in Claude
+Design, so the switch now waits on both.
+
 **Depends on:** 1.25; the open Phase 1 entries the books need (1.14c, 1.17b)
 and 1.29, so the comics can still be refreshed after the switch; 2.11a and
 1.11 (done); and every open entry `docs/cutover-parity.md` names for
@@ -1907,7 +1918,12 @@ the owner pulled ahead (D-132); and the entries the owner pulled ahead on
 2.8, 2.10 and 2.10b (editing and planning the year), 3.4b (ranking as you
 finish), 4.2, 4.5 and 4.5b (Hardcover backfill and Calibre's genres), and
 5.5, 5.14 and 5.15 (DNF with a reason, the listen queue, Parked); and 1.31
-(the Owner checklist settled, owner 2026-11-14).
+(the Owner checklist settled, owner 2026-11-14); and the entries the owner
+pulled ahead on 2026-11-23 (D-172): 0.13 and 0.15 (the preview's growth gate,
+the browser suite by area), with 0.14c, which 0.13 builds on; 4.4b and 4.6
+(the Calibre sync's year-only date, a near spelling decided on the page); 5.18
+(Parked through every undo); 6.19 (Open Library removed); and 6.21 (where the
+book sits, redesigned), with 6.23, whose drawing it starts from.
 
 **Check:** the owner, after the switch: `npm run rebuild -- -EnvFile .env.live`
 and `.\etl\load.ps1 seed-final -EnvFile .env.live` both refuse, naming
@@ -4452,6 +4468,43 @@ entry listing each change. A second run changes nothing on either side and
 logs that nothing changed. A missing `#owned` column is named and skipped. In
 the browser (0.11), the *Calibre* page lists the run, and the dashboard's line
 shows when the last run is 8 days old and not when it is 6.
+
+### ☐ 4.4b A year-only Calibre date isn't rewritten every sync · S
+*From TASK-082 and TASK-083 (4.4, PR #267, PR #270; the schema review), carried
+until now only in TASK-061's Context. Owner, 2026-11-23. The Check is a
+proposal: agreed when merged, or edit it first.*
+When the owner's date-read column shows a year alone (a display format with
+no `M`), `etl/calibre.py`'s `read_date` sends the year, and the route's
+`calibreRead` (`src/db/calibre-sync.ts`) makes it July 1st, `approximate`
+(data model 2.17). The write-back compares days (`out("#date_read", …)`), so
+a Ledger finish on any other day of that year differs. The command writes it
+into Calibre at noon Eastern, the next run reads the column back as the year,
+and the sync writes it again: every run lists the book under *Went out to
+Calibre* and calls `calibredb` for it. This doesn't matter while
+`CALIBRE_SYNC_READS` is off, which holds the reads back. The owner turns it on
+at the books cutover (1.26), so this lands before the switch.
+
+- **Compare at the precision Calibre's value has.** When Calibre's date came
+  as a year alone, the write-back compares years: a Ledger finish in that year
+  is the same and nothing goes out; one in another year, or no finish, goes out
+  as it does today, the Ledger's day. A column that shows the day compares days,
+  as now. A column that shows the month and year already carries the stored day
+  (`read_date` keeps it, `approximate`), so it compares days too.
+- **A new book is unchanged.** A book new to the Ledger still takes a year-only
+  read as July 1st, `approximate`, as extract loads one (data model 2.17).
+- **Not chosen:** the command sending a year-only column's stored day. That
+  fixes the comparison too, but a new book would then take an arbitrary stored
+  day as its finish, where extract and data model 2.17 give July 1st.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) `npm
+test` on the test database, with no column skipped: a Calibre record whose
+date read is the year `2024` and a Ledger book finished 2024-03-14 (`exact`)
+returns no `#date_read` write and logs none under what went out, and a second
+run over the same records writes nothing either; the same record with the
+Ledger finish on 2023-11-02 returns one `#date_read` write, `2023-11-02`; a
+day-precise Calibre date of 2024-07-01 against the Ledger's 2024-03-14 returns
+one write, as today; a book new to the Ledger from the year-only record has one
+read finished 2024-07-01, `approximate`.
 
 ### ☑ 4.5 Calibre's genres on every screen · M
 *Pulled ahead of 1.26 by the owner (D-139).*
