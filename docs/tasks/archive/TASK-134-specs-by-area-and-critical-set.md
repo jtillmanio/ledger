@@ -1,7 +1,7 @@
 ---
 id: TASK-134
 title: 0.15 The browser suite runs by area (1 of 3) — every spec has an area, and a critical set
-status: Review
+status: Done
 depends_on: []
 size: M
 model: opus
