@@ -1,3 +1,4 @@
+// Throwaway (task 0.15, AC-5): a comics-only change to measure an area run. Never merged.
 import Link from "next/link";
 import { DashboardVerbs, HeaderVerbs, ThumbBar, type BarConfig } from "@/components/ThumbBar";
 import QueueButton from "@/components/QueueButton";
