@@ -328,7 +328,7 @@ Nothing turns `LIGHTHOUSE_MODE` on.
 
 ---
 
-### ☐ 0.14c Every page is measured · M
+### ☑ 0.14c Every page is measured · M
 Owner, 2026-11-17. Since Lighthouse was switched off (D-158), 5.1 drew
 `/books/shelves` and a shelf's page and 5.7 drew `/books/releases`, and none of
 them has a route in `scripts/perf/routes.mjs` or a budget. Five older pages
@@ -339,9 +339,9 @@ everything under it passes), which is how all eight got past it.
 
 - **Every page gets a route and a budget**, each with a tap from a screen that
   links to it.
-- **Budgets are measured, not guessed.** Each comes from the branch's preview
-  measured with `LIGHTHOUSE_MODE` on, so this entry finishes only after the
-  owner turns the switch back on (after 0.14b).
+- **Budgets are measured, not guessed.** Each comes from a measured run of the
+  branch's preview: with the switch still off, one hand run (D-158), which the
+  owner allowed on 2026-11-23 so the entry needn't wait for the switch.
 - **The guard checks every depth.** A page that is deliberately not measured
   is listed with its reason.
 - **Nothing here turns `LIGHTHOUSE_MODE` on.**
@@ -350,8 +350,8 @@ everything under it passes), which is how all eight got past it.
 for each of `/books/releases`, `/books/shelves`, a shelf's page, `/books/add`,
 `/books/top`, a book's page, a run's *Add* and `/settings/calibre`, each with a
 tap from a screen that links to it, and each budget comes from a measured run
-of the branch's preview with `LIGHTHOUSE_MODE` on, not copied from another
-route. `test/perf.test.ts` fails when any `page.tsx` under `src/app/`, at any
+of the branch's preview (a hand run while `LIGHTHOUSE_MODE` is off; owner,
+2026-11-23), not copied from another route. `test/perf.test.ts` fails when any `page.tsx` under `src/app/`, at any
 depth, is neither measured by a route nor listed as unmeasured with a reason.
 Nothing in this entry turns `LIGHTHOUSE_MODE` on.
 
@@ -373,6 +373,30 @@ there is no baseline, though an earlier run on the same head measured.
 older green run whose `report` job ran and a newer green run whose `measure`
 and `report` jobs were skipped, and it returns the older one; with only the
 skipped one, it returns null.
+
+---
+
+### ☐ 0.14e Series, author and universe pages are measured · S
+From TASK-114 (0.14c, PR #319). 0.14c's guard found four pages beyond the
+eight it measured: `/books/series` (5.9), a series' page `/books/series/[id]`
+(5.9), an author's page `/books/authors/[id]` and a universe's page
+`/books/universes/[id]` (5.11). 0.14c lists them as unmeasured, each with
+this item as its reason, in `test/perf.test.ts`'s `UNMEASURED`.
+
+- **Each gets a route and a budget**, as 0.14c's did: a tap from a screen that
+  links to it (*Series* in the books medium's nav; a series row; an author's
+  or a universe's name), and a path resolved at run time (`resolve`) where the
+  id is the owner's data.
+- **Budgets are measured, not guessed**: from a measured run of the branch's
+  preview (automatic with the switch on, or a hand run), plus about 5%. Nothing
+  here turns the switch on.
+
+**Check:** `scripts/perf/routes.mjs` and `scripts/perf/budget.json` have a route
+for each of `/books/series`, a series' page, an author's page and a universe's
+page, each with a tap from a screen that links to it and a budget from a
+measured run of the branch's preview (automatic or by hand); the four are
+gone from `UNMEASURED` in `test/perf.test.ts`, which still passes on the real
+`src/app`, and the PR's Lighthouse comment shows a tap time for each.
 
 ---
 

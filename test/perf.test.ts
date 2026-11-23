@@ -1,14 +1,15 @@
 // Task 0.10: what fails the Lighthouse job on a preview and what the PR comment
 // says, fed fixtures instead of a real Lighthouse run. No network, no database.
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   aggregateRoute, apiPath, automaticCandidates, baselinePr, baselineRun, capMarked, capMarkerName, capReached, COUNT_CONCURRENCY,
   countMeasured, DEBOUNCE_SECONDS, DEFAULT_MONTHLY_CAP,
-  filesWithSecrets, findComment, gateProblems, gates, lighthouseArgs, MARKER, measurable, measureRan, measureRuns, median, mergeMetrics,
-  monthlyCap, monthStart, notHead, renderCapComment, renderComment, scrubLhr, sessionCookie, summariseLhr, unbudgeted,
-  unchangedApp, type LoadSummary, type MeasuredRoute, type RouteBudget,
+  filesWithSecrets, findComment, gateProblems, gates, lighthouseArgs, listPages, MARKER, measurable, measureRan, measureRuns, median,
+  mergeMetrics, monthlyCap, monthStart, notHead, pagePattern, renderCapComment, renderComment, resolvedPath, scrubLhr, sessionCookie,
+  samePage, summariseLhr, unbudgeted, unchangedApp, unmeasuredPages, type LoadSummary, type MeasuredRoute, type RouteBudget,
 } from "../scripts/perf/lib/perf.mjs";
 import { ROUTES } from "../scripts/perf/routes.mjs";
 
@@ -89,11 +90,32 @@ describe("one pass per route (task 0.14)", () => {
     const src = readFileSync("scripts/perf/measure.mjs", "utf8");
     expect(src).toMatch(/\nconst RUNS = measureRuns\(env\);\n/);
     expect(src).not.toMatch(/env\.RUNS/);
-    const loads = src.slice(src.indexOf("for (const route of routes)"));
+    // `let`: a route whose path is resolved at run time is rebound to that path (task 0.14c).
+    const loads = src.slice(src.indexOf("for (let route of routes)"));
+    expect(loads.length).toBeGreaterThan(1);
     expect(loads).toMatch(/for \(let n = 1; n <= RUNS; n\+\+\) loads\.push\(lighthouse\(route, n\)\)/);
     const taps = src.slice(src.indexOf("async function taps("), src.indexOf("const browser ="));
     expect(taps).toMatch(/for \(let n = 1; n <= RUNS; n\+\+\)/);
     expect(src).toMatch(/runs: RUNS/); // metrics.json says how many
+  });
+
+  it("measure.mjs resolves a route's path before measuring it, logs the path it chose, and measures that path (task 0.14c)", () => {
+    const src = readFileSync("scripts/perf/measure.mjs", "utf8");
+    const loop = src.slice(src.indexOf("for (let route of routes)"), src.indexOf("} finally {", src.indexOf("for (let route of routes)")));
+    const at = (re: RegExp) => loop.search(re);
+    // Resolved first; a failure is recorded as a failed load and tap (gateProblems: not measured), never skipped.
+    expect(at(/const target = await resolveRoute\(browser, route\);/)).toBeGreaterThan(-1);
+    expect(loop).toMatch(/loads: \[\{ error: target\.error \}\], taps: \[\{ error: target\.error \}\]/);
+    // The log line AC-4 asks for, then the route rebound to the path chosen, before Lighthouse and the tap see it.
+    expect(loop).toMatch(/if \(route\.resolve\) console\.log\(`measure: \$\{route\.id\} resolved \$\{route\.path\} to \$\{target\.path\}`\);/);
+    const rebind = at(/route = \{ \.\.\.route, path: target\.path \};/);
+    expect(rebind).toBeGreaterThan(at(/resolved \$\{route\.path\} to/));
+    expect(at(/loads\.push\(lighthouse\(route, n\)\)/)).toBeGreaterThan(rebind);
+    expect(at(/await taps\(browser, route\)/)).toBeGreaterThan(rebind);
+    // metrics.json records the measured path, which aggregateRoute's landed-on check compares with.
+    expect(loop).toMatch(/metrics\.routes\[route\.id\] = \{ path: route\.path, loads, \.\.\.tapped \};/);
+    // The tap's paints selector is passed through to the page.
+    expect(src).toMatch(/clientTap\(page, route\.tap\.selector, route\.tap\.paints\)/);
   });
 });
 
@@ -369,6 +391,14 @@ describe("the switch (D-158): a preview is measured on its own only while LIGHTH
     return next === -1 ? jobs.slice(start) : jobs.slice(start, start + 1 + next);
   };
   const ifOf = (name: string) => job(name).match(/\n {4}if: (>-\n(?: {6}.*\n)+|.*\n)/)![1].replace(/\s+/g, " ");
+
+  it("a route that never loaded still uploads the metrics that say why (task 0.14c)", () => {
+    const measure = job("measure");
+    const reports = measure.slice(measure.indexOf("- name: Upload the reports"), measure.indexOf("- name: Upload the metrics"));
+    expect(reports).toMatch(/if-no-files-found: warn/);
+    // The metrics are what the report reads: their absence still fails.
+    expect(measure.slice(measure.indexOf("- name: Upload the metrics"))).toMatch(/if-no-files-found: error/);
+  });
 
   it("gates the deployment trigger on the switch, and leaves a hand run alone", () => {
     const plan = ifOf("plan");
@@ -688,19 +718,157 @@ describe("main's last run", () => {
   });
 });
 
+/**
+ * Every page under src/app that no route measures, by its URL pattern (pagePattern), each with
+ * why (task 0.14c). The guard fails on a page missing from here and from ROUTES, on an empty
+ * reason, on an entry naming no page, and on an entry a route does measure.
+ */
+const UNMEASURED: Record<string, string> = {
+  "/@modal/(.)book/[id]": "the book sheet, an intercept with no URL of its own: the book route's tap opens it from the Library",
+  "/books/series": "drawn by 5.9, outside 0.14c's eight: its route and budget are roadmap 0.14e",
+  "/books/series/[id]": "drawn by 5.9, outside 0.14c's eight: its route and budget are roadmap 0.14e",
+  "/books/authors/[id]": "drawn by 5.11, outside 0.14c's eight: its route and budget are roadmap 0.14e",
+  "/books/universes/[id]": "drawn by 5.11, outside 0.14c's eight: its route and budget are roadmap 0.14e",
+};
+
+
+describe("the page guard (task 0.14c)", () => {
+  /** A throwaway app/ tree holding a page.tsx at each of `pages`. */
+  function fixture(pages: string[]) {
+    const dir = mkdtempSync(join(tmpdir(), "perf-pages-"));
+    for (const p of pages) {
+      mkdirSync(dirname(join(dir, p)), { recursive: true });
+      writeFileSync(join(dir, p), "export default function Page() { return null; }\n");
+    }
+    // A component beside a page is not a page.
+    writeFileSync(join(dir, "layout.tsx"), "");
+    return dir;
+  }
+  const tree = ["books/page.tsx", "books/new-thing/page.tsx"];
+
+  it("reports a nested page no route measures, even when its parent is measured", () => {
+    const pages = listPages(fixture(tree));
+    expect(pages.sort()).toEqual([...tree].sort());
+    expect(unmeasuredPages({ pages, routes: ["/books"], exempt: {} })).toEqual([
+      "/books/new-thing: no route in scripts/perf/routes.mjs measures it, and it is not listed as unmeasured with a reason",
+    ]);
+  });
+
+  it("reports nothing once the page is listed as unmeasured with a reason", () => {
+    const pages = listPages(fixture(tree));
+    expect(unmeasuredPages({ pages, routes: ["/books"], exempt: { "/books/new-thing": "a reason" } })).toEqual([]);
+  });
+
+  it("fails an exemption with an empty reason, one naming no page, and one for a measured page", () => {
+    const pages = listPages(fixture(tree));
+    expect(unmeasuredPages({ pages, routes: ["/books"], exempt: { "/books/new-thing": "  " } })).toEqual([
+      "/books/new-thing: listed as unmeasured with no reason",
+    ]);
+    expect(unmeasuredPages({ pages, routes: ["/books", "/books/new-thing"], exempt: { "/books/gone": "was a page" } })).toEqual([
+      "/books/gone: listed as unmeasured, but no page.tsx has that pattern",
+    ]);
+    expect(unmeasuredPages({ pages, routes: ["/books", "/books/new-thing"], exempt: { "/books/new-thing": "why" } })).toEqual([
+      "/books/new-thing: listed as unmeasured, but a route measures it",
+    ]);
+  });
+
+  it("patterns a page by its URL: groups dropped, slots and intercepts kept", () => {
+    expect(pagePattern("page.tsx")).toBe("/");
+    expect(pagePattern("comics/(dash)/page.tsx")).toBe("/comics");
+    expect(pagePattern("comics/[runId]/add/page.tsx")).toBe("/comics/[runId]/add");
+    expect(pagePattern("@modal/(.)book/[id]/page.tsx")).toBe("/@modal/(.)book/[id]");
+    expect(pagePattern(join("books", "shelves", "[id]", "page.tsx"))).toBe("/books/shelves/[id]");
+  });
+
+  it("gives a path to the one page Next serves it from: static beats dynamic", () => {
+    const pages = ["comics/runs/page.tsx", "comics/[runId]/page.tsx", "comics/[runId]/add/page.tsx"];
+    // /comics/runs is the run list, not a run: the run page stays unmeasured.
+    expect(unmeasuredPages({ pages, routes: ["/comics/runs", "/comics/x/add"], exempt: {} }))
+      .toEqual(["/comics/[runId]: no route in scripts/perf/routes.mjs measures it, and it is not listed as unmeasured with a reason"]);
+    expect(unmeasuredPages({ pages, routes: ["/comics/runs", "/comics/bendis-disassembled", "/comics/x/add"], exempt: {} })).toEqual([]);
+    // A route whose path is a pattern (resolved at run time) measures that pattern.
+    expect(unmeasuredPages({ pages, routes: ["/comics/runs", "/comics/[runId]", "/comics/[runId]/add"], exempt: {} })).toEqual([]);
+  });
+});
+
+describe("resolvedPath (a route whose id is the owner's data, task 0.14c)", () => {
+  const route = { id: "shelf", path: "/books/shelves/[id]", resolve: { from: "/books/shelves", selector: 'a[href^="/books/shelves/"]' } };
+
+  it("takes the first link the page lists", () => {
+    expect(resolvedPath(route, ["/books/shelves/s-2", "/books/shelves/s-9"])).toEqual({ path: "/books/shelves/s-2" });
+    expect(resolvedPath(route, [`${BASE}/books/shelves/s-2?x=1#top`])).toEqual({ path: "/books/shelves/s-2" });
+  });
+
+  it("names the page when it lists nothing, so the route fails as not measured", () => {
+    expect(resolvedPath(route, [])).toEqual({
+      error: `no link matching a[href^="/books/shelves/"] on /books/shelves, so no /books/shelves/[id] to measure`,
+    });
+  });
+
+  it("leaves a route with a fixed path alone", () => {
+    expect(resolvedPath({ id: "books", path: "/books" }, [])).toEqual({ path: "/books" });
+  });
+});
+
+describe("samePage (the tap's page loaded as itself)", () => {
+  it("matches the path, and the query when the tap's page names one", () => {
+    expect(samePage("/books", `${BASE}/books`)).toBe(true);
+    expect(samePage("/books", `${BASE}/comics`)).toBe(false);
+    // The parked review's tap starts on the Library's Parked filter (task 5.15).
+    expect(samePage("/books/list?status=parked", `${BASE}/books/list?status=parked`)).toBe(true);
+    expect(samePage("/books/list?status=parked", `${BASE}/books/list`)).toBe(false);
+    // A page that adds a query of its own is still that page when the tap named none.
+    expect(samePage("/books/list", `${BASE}/books/list?sort=title`)).toBe(true);
+  });
+
+  it("is what measure.mjs checks the tap's page with", () => {
+    const src = readFileSync("scripts/perf/measure.mjs", "utf8");
+    expect(src).toContain("if (!samePage(route.tap.from, page.url())) {");
+    expect(src).not.toContain("at !== route.tap.from");
+  });
+});
+
 describe("the route list (scripts/perf/routes.mjs)", () => {
-  it("has a route for every top-level screen", () => {
-    // src/app/<segment>/ with a page.tsx directly or under a (group): /comics, /books, /login.
-    const hasPage = (dir: string): boolean => readdirSync(dir, { withFileTypes: true }).some((e) =>
-      e.isFile() ? e.name === "page.tsx" : /^\(.+\)$/.test(e.name) && hasPage(join(dir, e.name)));
-    const screens = readdirSync("src/app", { withFileTypes: true })
-      .filter((e) => e.isDirectory() && !["api", "fonts"].includes(e.name) && !/^[([@_]/.test(e.name))
-      .filter((e) => hasPage(join("src/app", e.name)))
-      .map((e) => `/${e.name}`);
-    expect(screens.length).toBeGreaterThan(0);
-    // A screen is measured by a route at it or under it.
-    const measured = ROUTES.map((r) => r.path);
-    expect(screens.filter((s) => !measured.some((p) => p === s || p.startsWith(`${s}/`)))).toEqual([]);
+  it("measures every page in src/app, at any depth, or lists it with a reason (task 0.14c)", () => {
+    const pages = listPages("src/app");
+    // Sanity: the walk reaches the nested pages 0.14c found unmeasured.
+    expect(pages).toContain("books/shelves/[id]/page.tsx");
+    expect(pages).toContain("comics/[runId]/add/page.tsx");
+    expect(unmeasuredPages({ pages, routes: ROUTES.map((r) => r.path), exempt: UNMEASURED })).toEqual([]);
+  });
+
+  it("has a route for each of 0.14c's eight pages, each tapped from a screen that links to it", () => {
+    const by = Object.fromEntries(ROUTES.map((r) => [r.id, r]));
+    const eight = {
+      releases: "/books/releases", shelves: "/books/shelves", shelf: "/books/shelves/[id]", "books-add": "/books/add",
+      top: "/books/top", book: "/book/[id]", "run-add": "/comics/bendis-disassembled/add", calibre: "/settings/calibre",
+    };
+    for (const [id, path] of Object.entries(eight)) {
+      expect(by[id]?.path, id).toBe(path);
+      // The tap starts on another page and clicks a link: the route is reached the way a person reaches it.
+      expect(by[id].tap.from, id).not.toBe(path);
+      expect(by[id].tap.selector, id).toMatch(/^.*a\[href/);
+    }
+    // The two whose ids are the owner's data take the first link on a page that lists them (resolvedPath).
+    expect(by.shelf.resolve).toEqual({ from: "/books/shelves", selector: 'a[href^="/books/shelves/"]' });
+    expect(by.shelf.tap).toMatchObject({ from: "/books/shelves", selector: by.shelf.resolve!.selector });
+    expect(by.book.resolve).toEqual({ from: "/books/list", selector: '.book-row a[href^="/book/"]' });
+    // A Library row opens the book as a sheet over the list, whose h1 stays: the tap waits for the loaded book's
+    // heading. The sheet's skeleton draws a heading too, inside a `.detail` marked aria-busy; the book's isn't. The
+    // sheet's error state draws one in a `.detail` with no data-detail, so a book that fails to load records no time.
+    const paints = '[role="dialog"] .detail[data-detail]:not([aria-busy]) [data-sheet-heading]';
+    expect(by.book.tap).toMatchObject({ from: "/books/list", selector: by.book.resolve!.selector, paints });
+    const detail = readFileSync("src/components/BookDetail.tsx", "utf8");
+    const skeleton = detail.slice(detail.indexOf("export function BookDetailSkeleton"), detail.indexOf("export default"));
+    expect(skeleton).toMatch(/<div className="detail" data-detail=\{as\} aria-busy="true">/);
+    expect(skeleton).toMatch(/<SheetHeading/);
+    expect(detail.slice(detail.indexOf("export default"))).toMatch(/<div className="detail" data-detail=\{as\}>/);
+    expect(readFileSync("src/app/@modal/(.)book/[id]/error.tsx", "utf8")).toMatch(/<div className="detail">\s*<SheetHeading/);
+    expect(by["run-add"].tap).toEqual({ from: "/comics/bendis-disassembled", selector: 'a[href="/comics/bendis-disassembled/add"]' });
+    expect(by.calibre.tap).toEqual({ from: "/settings", selector: 'a[href="/settings/calibre"]' });
+    for (const id of ["releases", "shelves", "books-add", "top"]) {
+      expect(by[id].tap, id).toEqual({ from: "/books", selector: `a[href="${eight[id as keyof typeof eight]}"]` });
+    }
   });
 
   it("follows the 1.8c moves: the dashboard, the run list, and run taps that start from the list", () => {

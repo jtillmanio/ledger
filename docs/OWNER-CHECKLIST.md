@@ -319,6 +319,13 @@ tick them.
       `.claude/settings.local.json`), or a sign-in helper the agent may run,
       would let the next walk start on its own (from TASK-119, 3.5b, PR #318).
 
+- [ ] Make a books shelf on live (Books → Shelves → New shelf, any name)
+      before `LIGHTHOUSE_MODE` goes back on. The `shelf` route measures the
+      first shelf `/books/shelves` lists, and each preview copies live: with no
+      shelf there, every measured run fails `shelf` as not measured and turns
+      the Lighthouse gate red. 0.14c measured it on a shelf made on its own
+      preview (from TASK-114, 0.14c, PR #319).
+
 ## Approvals from follow-ups
 
 Planning-doc edits and candidate decisions waiting for your yes

@@ -15,6 +15,14 @@
     "parked": { "docRscBytes": 24000, "jsBytes": 175400, "requests": 35, "a11y": 100 },
     "inbox": { "docRscBytes": 16000, "jsBytes": 173000, "requests": 31, "a11y": 100 },
     "settings": { "docRscBytes": 16800, "jsBytes": 173000, "requests": 32, "a11y": 100 },
-    "watch": { "docRscBytes": 12500, "jsBytes": 173000, "requests": 28, "a11y": 100 }
+    "watch": { "docRscBytes": 12500, "jsBytes": 173000, "requests": 28, "a11y": 100 },
+    "releases": { "docRscBytes": 8500, "jsBytes": 162900, "requests": 19, "a11y": 100 },
+    "shelves": { "docRscBytes": 8700, "jsBytes": 160100, "requests": 19, "a11y": 100 },
+    "shelf": { "docRscBytes": 9700, "jsBytes": 167100, "requests": 21, "a11y": 100 },
+    "books-add": { "docRscBytes": 9400, "jsBytes": 177300, "requests": 19, "a11y": 100 },
+    "top": { "docRscBytes": 10100, "jsBytes": 164900, "requests": 28, "a11y": 100 },
+    "book": { "docRscBytes": 9400, "jsBytes": 181900, "requests": 25, "a11y": 100 },
+    "run-add": { "docRscBytes": 22300, "jsBytes": 172200, "requests": 18, "a11y": 100 },
+    "calibre": { "docRscBytes": 8300, "jsBytes": 170900, "requests": 21, "a11y": 100 }
   }
 }

@@ -82,8 +82,9 @@ After pushing, on GitHub:
   run (task 0.14b). A hand run is exempt from both: it neither waits nor is
   capped. It fails on a route handler requested during a load or prefetch,
   bytes or requests over `scripts/perf/budget.json`, CLS of 0.1 or more, or an
-  accessibility score under the recorded one. A new top-level screen adds its
-  route to `scripts/perf/routes.mjs` and its budget in the same PR.
+  accessibility score under the recorded one. A new page, at any depth, adds
+  its route to `scripts/perf/routes.mjs` and its budget in the same PR, or is
+  listed as unmeasured with a reason in `test/perf.test.ts` (task 0.14c).
 - **A docs- or tests-only PR has neither gate.** A PR that changes only
   backups, docs, design, tests (`test/`, `vitest.config.ts`,
   `playwright.config.ts`), CI or Claude config (`needsBuild` in

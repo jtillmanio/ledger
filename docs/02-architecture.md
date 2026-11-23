@@ -288,8 +288,9 @@ tables.
     serves it. The numbers are `scripts/perf/budget.json`
     (`test/perf.test.ts` holds this table to it); each is the median
     measured on 0.10's own preview plus 20%, and the accessibility score is the
-    one measured. Raising one needs a reason here. A new top-level screen adds
-    its route to `scripts/perf/routes.mjs` and its row here. Task 0.13 (D-142)
+    one measured. Raising one needs a reason here. A new page, at any depth,
+    adds its route to `scripts/perf/routes.mjs` and its row here, or is listed
+    as unmeasured with a reason in `test/perf.test.ts` (task 0.14c). Task 0.13 (D-142)
     replaces this rule, after 1.30: a preview fails on what its PR adds over
     main's last run, the shared JS is budgeted once, ceilings are the
     measurement plus 25% and rise only by decision, and requests to another
@@ -313,7 +314,33 @@ tables.
     | `/inbox` | 16,000 | 173,000 | 31 | 100 |
     | `/settings` | 16,800 | 173,000 | 32 | 100 |
     | `/watch` | 12,500 | 173,000 | 28 | 100 |
+    | `/books/releases` | 8,500 | 162,900 | 19 | 100 |
+    | `/books/shelves` | 8,700 | 160,100 | 19 | 100 |
+    | `/books/shelves/[id]` | 9,700 | 167,100 | 21 | 100 |
+    | `/books/add` | 9,400 | 177,300 | 19 | 100 |
+    | `/books/top` | 10,100 | 164,900 | 28 | 100 |
+    | `/book/[id]` | 9,400 | 181,900 | 25 | 100 |
+    | `/comics/bendis-disassembled/add` | 22,300 | 172,200 | 18 | 100 |
+    | `/settings/calibre` | 8,300 | 170,900 | 21 | 100 |
     <!-- /perf-budget -->
+
+    Task 0.14c (TASK-114) measures every page, at any depth: `test/perf.test.ts` fails on a `page.tsx`
+    under `src/app` that no route measures and that its unmeasured list (each with a reason) doesn't
+    name. The old check read only top-level folders, so eight nested pages went unmeasured; they are the
+    last eight rows. Each number is a hand run's measurement of PR #319's preview plus about 5%
+    (2026-11-23, `LIGHTHOUSE_MODE` off: the owner allowed a hand run, D-158), one load per route.
+    Live had no shelf, so a shelf's page is a second hand run's, on a shelf made on the preview's own
+    branch; live needs a shelf of its own before the next measured run, or that route fails as not
+    measured. The first run found the book's page asking
+    for `GET /api/progress/book/read` on every load (its status control is drawn open and loaded the
+    reads); since 0.14c the page hands the control its read count, and the reads load only when *All
+    reads* is pressed. A shelf's and a book's ids are the owner's data,
+    so those two routes take the first link on the page that lists them (`/books/shelves`, the Library)
+    and log the path they chose; when live has none, the route fails as not measured. A book's page is
+    measured both ways under one id: the Lighthouse load is the full page (a reload or a shared link),
+    and the tap is the sheet a Library row opens through the `@modal` intercept. Unmeasured, with their
+    reasons in the test: the sheet's own intercept page, and the series, a series', an author's and a
+    universe's pages (5.9, 5.11), which roadmap 0.14e measures.
 
     Task 5.15 (TASK-111) adds `/parked`, the parked review, at `/books/status`'s numbers: a list of book
     rows whose verbs are client buttons and whose plan picker loads only when *Plan…* is pressed. Its tap

@@ -230,7 +230,9 @@ jobs:
           name: lighthouse-reports-${{ matrix.route }}
           path: ${{ runner.temp }}/lighthouse/reports
           retention-days: 14
-          if-no-files-found: error
+          # A route that never loaded (a shelf's page with no shelf, task 0.14c) writes no
+          # report, only metrics.json naming why: upload that rather than fail the job here.
+          if-no-files-found: warn
 
       - name: Upload the metrics
         uses: actions/upload-artifact@v7

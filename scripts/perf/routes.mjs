@@ -2,15 +2,20 @@
 // with the tap that reaches it. .github/workflows/lighthouse.yml measures this
 // list and nothing else, and scripts/perf/budget.json holds one budget per id.
 //
-// A task that adds a top-level screen adds its URL here, and its budget, in the
-// same PR (test/perf.test.ts fails on a top-level page with no route here).
+// A task that adds a page, at any depth, adds its URL here and its budget in
+// the same PR, or lists it as unmeasured with a reason in test/perf.test.ts,
+// which fails on any page.tsx that is neither (task 0.14c).
 //
 //   id       stable name, the key in budget.json and in the PR comment
 //   path     what Lighthouse loads; a run is named by its hand-authored slug,
 //            which a preview's Neon branch (copied from live) always has
 //   signedIn false for a page measured signed out (/login)
 //   tap      where the tap starts and what it taps; `login` types the passcode
-//            and submits instead
+//            and submits instead; `paints` is what the tap waits for when the
+//            page's <h1> doesn't change (a sheet over a list), else a new <h1>
+//   resolve  for a page whose id is the owner's data (a shelf, a book): `path`
+//            is its pattern, and measure.mjs measures the first link
+//            `selector` matches on `from` (resolvedPath), and logs which
 export const ROUTES = [
   { id: "login", path: "/login", signedIn: false, tap: { from: "/login", login: true } },
   // The comics dashboard (task 1.8c); `/` redirects to it or to the medium last touched.
@@ -47,4 +52,38 @@ export const ROUTES = [
   { id: "settings", path: "/settings", signedIn: true, tap: { from: "/comics", selector: 'a[href="/settings"]' } },
   // The watch shell (task 1.8): the nav's link, with the slate and nothing more until 8.x.
   { id: "watch", path: "/watch", signedIn: true, tap: { from: "/comics", selector: 'nav a[href="/watch"]' } },
+  // Task 0.14c: the pages drawn under /books, /book, a run and /settings that the top-level check never saw.
+  // Each books item below is the books medium's nav: the tab row's on a phone, the rail's or the sidebar's
+  // from 768px, so the tap starts on the dashboard, as the Library's does.
+  { id: "releases", path: "/books/releases", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/releases"]' } },
+  { id: "shelves", path: "/books/shelves", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/shelves"]' } },
+  // A shelf's id is yours, not authored: the first shelf /books/shelves lists, which the tap opens too. Live with
+  // no shelf fails the route as not measured (resolvedPath), never skips it.
+  {
+    id: "shelf", path: "/books/shelves/[id]", signedIn: true,
+    resolve: { from: "/books/shelves", selector: 'a[href^="/books/shelves/"]' },
+    tap: { from: "/books/shelves", selector: 'a[href^="/books/shelves/"]' },
+  },
+  { id: "books-add", path: "/books/add", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/add"]' } },
+  { id: "top", path: "/books/top", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/top"]' } },
+  // A book's page: the Library's first book. The Lighthouse load is the full page (a direct load: a reload or a
+  // shared link); the tap is what a tap does, the sheet over the Library through the @modal intercept, which
+  // keeps the Library's <h1>, so it waits for the sheet's heading in the loaded book: the sheet's skeleton draws a
+  // heading too ("Loading book"), inside a `.detail` that is aria-busy, and the loaded one isn't; the sheet's error
+  // state draws one in a `.detail` with no data-detail, so a book that fails to load records no time.
+  {
+    id: "book", path: "/book/[id]", signedIn: true,
+    resolve: { from: "/books/list", selector: '.book-row a[href^="/book/"]' },
+    tap: {
+      from: "/books/list", selector: '.book-row a[href^="/book/"]',
+      paints: '[role="dialog"] .detail[data-detail]:not([aria-busy]) [data-sheet-heading]',
+    },
+  },
+  // A run's Add (task 1.3c), from the run's own *Add issues*; the small run, by its authored slug.
+  {
+    id: "run-add", path: "/comics/bendis-disassembled/add", signedIn: true,
+    tap: { from: "/comics/bendis-disassembled", selector: 'a[href="/comics/bendis-disassembled/add"]' },
+  },
+  // Calibre sync (task 4.4), from Settings' *Calibre* row.
+  { id: "calibre", path: "/settings/calibre", signedIn: true, tap: { from: "/settings", selector: 'a[href="/settings/calibre"]' } },
 ];

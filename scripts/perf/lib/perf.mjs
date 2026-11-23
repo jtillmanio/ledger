@@ -2,6 +2,8 @@
 // a route, what fails the job, what the PR comment shows, which deployment may
 // be measured and which earlier run it is compared with. scripts/perf/*.mjs feed
 // them the real inputs; test/perf.test.ts feeds them fixtures.
+import { readdirSync } from "node:fs";
+import { join, relative, sep } from "node:path";
 import { needsBuild } from "../../lib/release.mjs";
 
 /** Lighthouse mobile's devtools throttling (Slow 4G, 4× CPU), for the tap runner too. */
@@ -531,4 +533,93 @@ export function baselineRun(runs) {
   return runs
     .filter((r) => r.status === "completed" && r.conclusion === "success")
     .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0] ?? null;
+}
+
+// ── Which pages are measured (task 0.14c) ──────────────────────────────────
+// A page under src/app at any depth is measured by a route in routes.mjs or
+// listed as unmeasured with a reason (test/perf.test.ts). The old check looked
+// only at top-level folders, so eight nested pages went unmeasured.
+
+/** Every page.tsx under `dir`, at any depth, as a path relative to it with forward slashes. */
+export function listPages(dir) {
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((e) => e.isFile() && e.name === "page.tsx")
+    .map((e) => relative(dir, join(e.parentPath, e.name)).split(sep).join("/"));
+}
+
+/**
+ * A page file's URL pattern: `comics/(dash)/page.tsx` → `/comics`. A route
+ * group `(x)` adds nothing to the URL; a parallel slot `@x` and an intercept
+ * `(.)x` are kept, so the pattern names them and no real URL ever matches it.
+ */
+export function pagePattern(file) {
+  const segs = file.split(/[\\/]/).slice(0, -1).filter((s) => !/^\([^.)][^)]*\)$/.test(s));
+  return `/${segs.join("/")}`;
+}
+
+const dynamicSeg = (s) => /^\[[^\]]+\]$/.test(s);
+
+/**
+ * The pattern Next serves `path` from: the same number of segments, each
+ * equal or a `[param]`, and of several, the one that is static earliest (a
+ * static segment beats a dynamic one: `/comics/runs` is the run list, not a
+ * run). A path written as a pattern (resolved at run time) matches itself.
+ */
+function servingPattern(path, patterns) {
+  const want = path.split("/").filter(Boolean);
+  const fits = patterns.filter((p) => {
+    const segs = p.split("/").filter(Boolean);
+    return segs.length === want.length && segs.every((s, i) => s === want[i] || dynamicSeg(s));
+  });
+  const rank = (p) => p.split("/").filter(Boolean).map((s) => (dynamicSeg(s) ? "1" : "0")).join("");
+  return fits.sort((a, b) => (rank(a) < rank(b) ? -1 : rank(a) > rank(b) ? 1 : 0))[0] ?? null;
+}
+
+/**
+ * What the page guard fails on, one line each: a page no route measures and
+ * the exemptions don't list, an exemption with no reason, one naming no page,
+ * and one for a page a route does measure.
+ *   pages: listPages(...)   routes: each route's path   exempt: { [pattern]: reason }
+ */
+export function unmeasuredPages({ pages, routes, exempt }) {
+  const patterns = [...new Set(pages.map(pagePattern))];
+  const measured = new Set(routes.map((r) => servingPattern(r, patterns)).filter(Boolean));
+  const problems = [];
+  for (const p of patterns) {
+    if (!measured.has(p) && !(p in exempt)) {
+      problems.push(`${p}: no route in scripts/perf/routes.mjs measures it, and it is not listed as unmeasured with a reason`);
+    }
+  }
+  for (const [p, reason] of Object.entries(exempt)) {
+    if (!patterns.includes(p)) problems.push(`${p}: listed as unmeasured, but no page.tsx has that pattern`);
+    else if (measured.has(p)) problems.push(`${p}: listed as unmeasured, but a route measures it`);
+    else if (!String(reason ?? "").trim()) problems.push(`${p}: listed as unmeasured with no reason`);
+  }
+  return problems;
+}
+
+/**
+ * The path a route measures. Most are fixed; one with `resolve` (its id is the
+ * owner's data, a shelf or a book) takes the first link `resolve.selector`
+ * matches on `resolve.from`, given as `hrefs` in page order. None is an error
+ * naming the page, and the route is then recorded as not measured.
+ */
+export function resolvedPath(route, hrefs) {
+  if (!route.resolve) return { path: route.path };
+  const href = hrefs.find((h) => typeof h === "string" && h.length > 0);
+  if (!href) {
+    return { error: `no link matching ${route.resolve.selector} on ${route.resolve.from}, so no ${route.path} to measure` };
+  }
+  return { path: new URL(href, "http://x").pathname };
+}
+
+/**
+ * Whether the tap's page loaded as itself: `url` has `from`'s path and, when
+ * `from` names one, its query (the parked review's tap starts on
+ * `/books/list?status=parked`, which a path-only check could never match).
+ */
+export function samePage(from, url) {
+  const want = new URL(from, "http://x");
+  const got = new URL(url, "http://x");
+  return got.pathname === want.pathname && (!want.search || got.search === want.search);
 }
