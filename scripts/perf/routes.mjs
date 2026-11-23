@@ -69,13 +69,14 @@ export const ROUTES = [
   // A book's page: the Library's first book. The Lighthouse load is the full page (a direct load: a reload or a
   // shared link); the tap is what a tap does, the sheet over the Library through the @modal intercept, which
   // keeps the Library's <h1>, so it waits for the sheet's heading in the loaded book: the sheet's skeleton draws a
-  // heading too ("Loading book"), inside a `.detail` that is aria-busy, and the loaded one isn't.
+  // heading too ("Loading book"), inside a `.detail` that is aria-busy, and the loaded one isn't; the sheet's error
+  // state draws one in a `.detail` with no data-detail, so a book that fails to load records no time.
   {
     id: "book", path: "/book/[id]", signedIn: true,
     resolve: { from: "/books/list", selector: '.book-row a[href^="/book/"]' },
     tap: {
       from: "/books/list", selector: '.book-row a[href^="/book/"]',
-      paints: '[role="dialog"] .detail:not([aria-busy]) [data-sheet-heading]',
+      paints: '[role="dialog"] .detail[data-detail]:not([aria-busy]) [data-sheet-heading]',
     },
   },
   // A run's Add (task 1.3c), from the run's own *Add issues*; the small run, by its authored slug.

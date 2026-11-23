@@ -98,6 +98,25 @@ describe("one pass per route (task 0.14)", () => {
     expect(taps).toMatch(/for \(let n = 1; n <= RUNS; n\+\+\)/);
     expect(src).toMatch(/runs: RUNS/); // metrics.json says how many
   });
+
+  it("measure.mjs resolves a route's path before measuring it, logs the path it chose, and measures that path (task 0.14c)", () => {
+    const src = readFileSync("scripts/perf/measure.mjs", "utf8");
+    const loop = src.slice(src.indexOf("for (let route of routes)"), src.indexOf("} finally {", src.indexOf("for (let route of routes)")));
+    const at = (re: RegExp) => loop.search(re);
+    // Resolved first; a failure is recorded as a failed load and tap (gateProblems: not measured), never skipped.
+    expect(at(/const target = await resolveRoute\(browser, route\);/)).toBeGreaterThan(-1);
+    expect(loop).toMatch(/loads: \[\{ error: target\.error \}\], taps: \[\{ error: target\.error \}\]/);
+    // The log line AC-4 asks for, then the route rebound to the path chosen, before Lighthouse and the tap see it.
+    expect(loop).toMatch(/if \(route\.resolve\) console\.log\(`measure: \$\{route\.id\} resolved \$\{route\.path\} to \$\{target\.path\}`\);/);
+    const rebind = at(/route = \{ \.\.\.route, path: target\.path \};/);
+    expect(rebind).toBeGreaterThan(at(/resolved \$\{route\.path\} to/));
+    expect(at(/loads\.push\(lighthouse\(route, n\)\)/)).toBeGreaterThan(rebind);
+    expect(at(/await taps\(browser, route\)/)).toBeGreaterThan(rebind);
+    // metrics.json records the measured path, which aggregateRoute's landed-on check compares with.
+    expect(loop).toMatch(/metrics\.routes\[route\.id\] = \{ path: route\.path, loads, \.\.\.tapped \};/);
+    // The tap's paints selector is passed through to the page.
+    expect(src).toMatch(/clientTap\(page, route\.tap\.selector, route\.tap\.paints\)/);
+  });
 });
 
 describe("no prefetch in the Lighthouse load (task 0.14)", () => {
@@ -814,14 +833,16 @@ describe("the route list (scripts/perf/routes.mjs)", () => {
     expect(by.shelf.tap).toMatchObject({ from: "/books/shelves", selector: by.shelf.resolve!.selector });
     expect(by.book.resolve).toEqual({ from: "/books/list", selector: '.book-row a[href^="/book/"]' });
     // A Library row opens the book as a sheet over the list, whose h1 stays: the tap waits for the loaded book's
-    // heading. The sheet's skeleton draws a heading too, inside a `.detail` marked aria-busy; the book's isn't.
-    const paints = '[role="dialog"] .detail:not([aria-busy]) [data-sheet-heading]';
+    // heading. The sheet's skeleton draws a heading too, inside a `.detail` marked aria-busy; the book's isn't. The
+    // sheet's error state draws one in a `.detail` with no data-detail, so a book that fails to load records no time.
+    const paints = '[role="dialog"] .detail[data-detail]:not([aria-busy]) [data-sheet-heading]';
     expect(by.book.tap).toMatchObject({ from: "/books/list", selector: by.book.resolve!.selector, paints });
     const detail = readFileSync("src/components/BookDetail.tsx", "utf8");
     const skeleton = detail.slice(detail.indexOf("export function BookDetailSkeleton"), detail.indexOf("export default"));
     expect(skeleton).toMatch(/<div className="detail" data-detail=\{as\} aria-busy="true">/);
     expect(skeleton).toMatch(/<SheetHeading/);
     expect(detail.slice(detail.indexOf("export default"))).toMatch(/<div className="detail" data-detail=\{as\}>/);
+    expect(readFileSync("src/app/@modal/(.)book/[id]/error.tsx", "utf8")).toMatch(/<div className="detail">\s*<SheetHeading/);
     expect(by["run-add"].tap).toEqual({ from: "/comics/bendis-disassembled", selector: 'a[href="/comics/bendis-disassembled/add"]' });
     expect(by.calibre.tap).toEqual({ from: "/settings", selector: 'a[href="/settings/calibre"]' });
     for (const id of ["releases", "shelves", "books-add", "top"]) {
