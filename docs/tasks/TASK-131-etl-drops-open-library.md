@@ -63,7 +63,8 @@ The ETL no longer reads, writes or loads anything from Open Library: a fresh ext
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- TASK-132: `etl/test_views.sql`'s books column list drops `open_library_id` with the migration; *metadata pending* already marks retired-only books after any load once this merges; the lowercase `open library` review reason stays in `etl/extract.py` (`RETIRED_LOOKUP`), so read the Check's `Open Library` case-sensitively (approved at plan)
+- TASK-132: `etl/test_views.sql`'s books column list drops `open_library_id` with the migration; *metadata pending* already marks retired-only books after any load once this merges, and `Cover` draws the pending box before it reads `cover_url`, so those books' covers hide until TASK-132 lands (schema review); the lowercase `open library` review reason stays in `etl/extract.py` (`RETIRED_LOOKUP`), so read the Check's `Open Library` case-sensitively → docs/tasks/TASK-132-drop-open-library-column-and-cache.md § Context (approved at plan)
+- `retired()` counts any `book_details.csv` source but `hardcover` or `hand` as 1.14's, so a hand-typed row with a misspelled source would lose its count and be dropped by enrich (schema review, MINOR) → not tracked: `book_details.csv`'s sources are `hardcover` or `hand` (`.claude/rules/schema.md`), the committed file has no other, and flagging each retired row would put 2,000 lines in `unresolved.csv`
 
 ## Plan
 
@@ -103,7 +104,9 @@ library` rows, every one decided.
    `test/books-load.test.ts` (new) builds the fixture workbooks with
    `test_extract.py`'s builders, runs `etl/extract.py`, then `load.ps1`
    (Windows) or `load.sh` (Linux, CI) on `TEST_DATABASE_URL` only, as
-   `test/comics-load.test.ts` does.
+   `test/comics-load.test.ts` does. (Revision 1, spec review: 1.18's
+   Calibre header comes from a fourth fixture, `calibre_books_1_18.csv`, so
+   the pre-Hardcover test keeps the real legacy column name.)
 6. Not here: `etl/test_views.sql` asserts the table's live columns
    (`information_schema`), so its list changes with TASK-132's migration;
    `etl/data/book_details.csv` is not rewritten (the next `enrich:books` writes

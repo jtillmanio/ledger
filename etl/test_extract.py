@@ -1226,21 +1226,23 @@ class BookDetails(BookCase):
 
     def test_sidecars_written_before_hardcover_still_load(self):
         """book_details.csv with 1.14's header (no hardcover_id column), and
-        calibre_books.csv with 1.18's column for the retired lookup's series
-        where `hardcover` is now, load until their next runs."""
+        calibre_books.csv with 1.18's header (the retired lookup's series
+        column where `hardcover` is now; the fixture calibre_books_1_18.csv),
+        load until their next runs."""
         header, _ = before_6_19("book_details")
         with self.details.open("w", newline="", encoding="utf-8") as fh:
             w = csv.DictWriter(fh, fieldnames=[c for c in header if c != "hardcover_id"], extrasaction="ignore")
             w.writeheader()
             w.writerow(self.WOK)
         calibre = self.details.parent / "calibre_books.csv"
-        old = [c for c in ex.CALIBRE_BOOKS_COLUMNS]
-        old[old.index("hardcover")] = "lookup_series"
+        old, _ = before_6_19("calibre_books_1_18")
+        lookup = next(c for c in old if c not in ex.CALIBRE_BOOKS_COLUMNS)
+        self.assertEqual(old.index(lookup), ex.CALIBRE_BOOKS_COLUMNS.index("hardcover"))
         with calibre.open("w", newline="", encoding="utf-8") as fh:
             w = csv.DictWriter(fh, fieldnames=old, restval="")
             w.writeheader()
             w.writerow({"title": "The Way of Kings", "author": "Brandon Sanderson", "series": "Stormlight",
-                        "series_index": "1", "lookup_series": "The Stormlight Archive #1", "calibre_id": "7"})
+                        "series_index": "1", lookup: "The Stormlight Archive #1", "calibre_id": "7"})
         import io
         from contextlib import redirect_stdout
         ex.UNRESOLVED.clear()
