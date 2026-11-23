@@ -1,7 +1,7 @@
 ---
 id: TASK-120
 title: 3.5b The book sheet's own writes (3 of 3) — the dashboards' book rows open the sheet
-status: Review
+status: Done
 depends_on: [TASK-079, TASK-116]
 size: M
 model: sonnet
