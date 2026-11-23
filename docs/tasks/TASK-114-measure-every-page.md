@@ -35,7 +35,7 @@ When `LIGHTHOUSE_MODE` goes back on, every page in the app is measured against i
 ## Acceptance criteria
 
 - [ ] AC-1 (roadmap **Check:**, verbatim): `scripts/perf/routes.mjs` and `scripts/perf/budget.json` have a route for each of `/books/releases`, `/books/shelves`, a shelf's page, `/books/add`, `/books/top`, a book's page, a run's *Add* and `/settings/calibre`, each with a tap from a screen that links to it, and each budget comes from a measured run of the branch's preview with `LIGHTHOUSE_MODE` on, not copied from another route. `test/perf.test.ts` fails when any `page.tsx` under `src/app/`, at any depth, is neither measured by a route nor listed as unmeasured with a reason. Nothing in this entry turns `LIGHTHOUSE_MODE` on.
-- [ ] AC-2: Given a fixture `app/` tree with `books/page.tsx` measured and `books/new-thing/page.tsx` not, the guard reports `/books/new-thing`. Given the same page in the exemption list with a reason, it reports nothing. An exemption with an empty reason, or one naming a page that no longer exists, also fails. The guard is a pure function run on fixtures, and the real `src/app` passes it.
+- [x] AC-2: Given a fixture `app/` tree with `books/page.tsx` measured and `books/new-thing/page.tsx` not, the guard reports `/books/new-thing`. Given the same page in the exemption list with a reason, it reports nothing. An exemption with an empty reason, or one naming a page that no longer exists, also fails. The guard is a pure function run on fixtures, and the real `src/app` passes it.
 - [ ] AC-3: Every new route id has a `budget.json` entry and a row in `docs/02-architecture.md` § Performance budget with the same four numbers. The PR's Lighthouse comment from the automatic run with `LIGHTHOUSE_MODE` on lists every new id, and each budget is that run's measurement plus about 5% (§ Performance budget's rule), written in the PR body as measured → budget per id.
 - [ ] AC-4: Each new route's tap, run from its `from` screen, reaches the route's page (the tap run in the PR's Lighthouse comment shows a time for every new id, none `did not finish`). A route whose path is resolved at run time logs the path it chose.
 
@@ -65,7 +65,7 @@ When `LIGHTHOUSE_MODE` goes back on, every page in the app is measured against i
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- `/books/series`, a series' page, an author's page and a universe's page (5.9, 5.11) have no route; 0.14c exempts them, and a new phase-0 roadmap item measures them as 0.14c does (approved at plan)
+- `/books/series`, a series' page, an author's page and a universe's page (5.9, 5.11) have no route; 0.14c exempts them, and a new phase-0 roadmap item measures them as 0.14c does (approved at plan) → docs/05-roadmap.md § 0.14e (new; also its row in docs/06-tasklist.md beside 0.14c, and the F-04 coverage line)
 
 ## Plan
 
@@ -106,9 +106,13 @@ Approved by the owner up front (2026-11-23: "approve plan, go with recommendatio
 
 **Revision 2 (spec review R1).** Step 4's `paints` was wrong: the sheet's skeleton (`loading.tsx`, `BookDetailSkeleton as="sheet"`) draws a `data-sheet-heading` too ("Loading book"), so the tap would have timed the skeleton. It is now `[role="dialog"] .detail:not([aria-busy]) [data-sheet-heading]`: the skeleton's `.detail` is `aria-busy="true"` and the loaded book's isn't, and `test/perf.test.ts` reads `BookDetail.tsx` to hold that. Step 3, corrected: `routes.mjs` and the doc table show a resolved route's pattern, but the PR comment shows the path measured (`measure.mjs` stores it, and the landed-on check compares against it).
 
+**Revision 3 (spec review R2 note, test audit R1).** The book tap's `paints` is `[role="dialog"] .detail[data-detail]:not([aria-busy]) [data-sheet-heading]`: the sheet's error state draws a heading in a `.detail` with no `data-detail`, so a book that fails to load records no time. `test/perf.test.ts` gains a source-anchor test that `measure.mjs` resolves before measuring, logs `resolved … to …` (AC-4), rebinds the route before the Lighthouse load and the tap, and records the measured path.
+
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | CI R1 PASS (95aba84, every project) | Spec R1 CHANGES (book tap timed the sheet's skeleton) → fixed | Verify R2 PASS | Spec R2 APPROVE | CI R2 PASS (6736e2c) | Audit R1 CHANGES (automated ACs PROVEN; budgets owner-gated; optional: assert the resolve log) → test added | Verify R3 PASS | Follow-ups check APPROVE | Drift R1 update first (behind 1: #318 changed globals.css, queries.ts and the sheet markup the book tap reads) → rebased | Verify R4 PASS | CI R3 on the rebased head
+
+**Waiting on the owner (D-158):** `LIGHTHOUSE_MODE` is unset. AC-1's measured budgets, AC-3 and AC-4's tap times need the automatic Lighthouse run on PR #319's preview with the switch on; then each budget is that measurement plus about 5%, `AWAITING_MEASUREMENT` goes, and the PR body gets measured → budget per id. Status stays In progress until then.
 
 ## Blocked
 
@@ -116,7 +120,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 2 (spec), 1 (audit)
+- First-pass AC FAILs: 1 (AC-4: the book tap's `paints` matched the skeleton)
+- Plan revisions after approval: 3

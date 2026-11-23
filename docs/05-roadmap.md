@@ -376,6 +376,29 @@ skipped one, it returns null.
 
 ---
 
+### ☐ 0.14e Series, author and universe pages are measured · S
+From TASK-114 (0.14c, PR #319). 0.14c's guard found four pages beyond the
+eight it measured: `/books/series` (5.9), a series' page `/books/series/[id]`
+(5.9), an author's page `/books/authors/[id]` and a universe's page
+`/books/universes/[id]` (5.11). 0.14c lists them as unmeasured, each with
+this item as its reason, in `test/perf.test.ts`'s `UNMEASURED`.
+
+- **Each gets a route and a budget**, as 0.14c's did: a tap from a screen that
+  links to it (*Series* in the books medium's nav; a series row; an author's
+  or a universe's name), and a path resolved at run time (`resolve`) where the
+  id is the owner's data.
+- **Budgets are measured, not guessed**: from the branch's preview with
+  `LIGHTHOUSE_MODE` on, plus about 5%. Nothing here turns the switch on.
+
+**Check:** `scripts/perf/routes.mjs` and `scripts/perf/budget.json` have a route
+for each of `/books/series`, a series' page, an author's page and a universe's
+page, each with a tap from a screen that links to it and a budget from a
+measured run of the branch's preview with `LIGHTHOUSE_MODE` on; the four are
+gone from `UNMEASURED` in `test/perf.test.ts`, which still passes on the real
+`src/app`, and the PR's Lighthouse comment shows a tap time for each.
+
+---
+
 ### ☐ 0.15 The browser suite runs by area, with a critical set always · L
 Owner, 2026-11-20 (from the shard-time work after TASK-127, PR #304; **amends
 D-80, D-141 and D-161**). Every ready PR runs every project of every spec: main's
