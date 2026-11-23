@@ -1,3 +1,5 @@
+import type { ShardUnit } from "./e2e-shards.mjs";
+
 export const E2E_PORT: number;
 export function e2ePort(env: Record<string, string | undefined>): { port: number; error?: undefined } | { error: string; port?: undefined };
 export const E2E_PASSCODE: string;
@@ -38,6 +40,9 @@ export type AreaPlan = { selected: string[]; critical: string[] };
 export function areaPlan(specs: SpecText[], areas: E2eArea[] | null): AreaPlan | null;
 export function areaFilter(project: string, plan: AreaPlan | null): { files: string[]; grepInvert?: RegExp } | null;
 export function e2eProjects(scope: E2eScope): (E2eProject & { grep: RegExp[] })[];
+export type PlannedProject = E2eProject & { grep: RegExp[]; area: { files: string[]; grepInvert?: RegExp } | null };
+export function plannedProjects(scope: E2eScope, areas: E2eArea[] | null, specs: SpecText[]): PlannedProject[];
+export function plannedUnits(projects: PlannedProject[], specFiles: string[], times: Record<string, number>): ShardUnit[];
 export type E2ePlan =
   | { error: string; scope?: undefined; areas?: undefined; clear?: undefined; serverCommand?: undefined; serverEnv?: undefined; baseUrl?: undefined }
   | { error?: undefined; scope: E2eScope; areas: E2eArea[] | null; clear: string | null; serverCommand: string; serverEnv: Record<string, string>; baseUrl: string };

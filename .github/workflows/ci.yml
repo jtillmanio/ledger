@@ -5,11 +5,18 @@ on:
     # `labeled` so adding e2e:full starts the full browser suite on the same commit.
     types: [opened, synchronize, reopened, labeled]
   push: { branches: [main] }
+  schedule:
+    # The net under the area map (roadmap 0.15, D-173): every night on main
+    # (GitHub runs a schedule on the default branch), every area, every
+    # project. A failure emails the owner, and Release refuses that commit
+    # until the run is green again (it reads the newest `check` on it).
+    - cron: "0 8 * * *"
 
 # A newer push (or the e2e:full label) cancels a PR's older run. Runs on main
-# are never cancelled: Release checks CI on the exact commit it promotes.
+# are never cancelled: Release checks CI on the exact commit it promotes. The
+# nightly run has a group of its own, so it never holds up or cancels one.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Tests only ever see TEST_DATABASE_URL (R3-02). There is deliberately no
@@ -35,6 +42,13 @@ jobs:
   # And how much of the browser suite runs (D-80): a draft PR checks the core
   # projects; a PR that is ready for review (Claude opens its PRs ready, D-145),
   # one labelled e2e:full, and every push to main check every project.
+  #
+  # And which areas (roadmap 0.15, D-173): a PR runs the areas its changed
+  # paths can break (scripts/lib/ci-scope.mjs), plus the critical set at the
+  # core projects; anything shared or unmapped selects every area, and so do a
+  # push to main, the nightly run and the e2e:full label. The log and the
+  # summary name the areas and the paths that chose them. A PR diffs against
+  # the branch it merges into: main, or another PR's branch when stacked.
   scope:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -45,6 +59,8 @@ jobs:
     outputs:
       full: ${{ steps.scope.outputs.full }}
       e2e_scope: ${{ steps.scope.outputs.e2e_scope }}
+      areas: ${{ steps.scope.outputs.areas }}
+      e2e_label: ${{ steps.scope.outputs.e2e_label }}
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0 }
@@ -54,7 +70,7 @@ jobs:
         id: scope
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node scripts/ci-scope.mjs ${{ github.event_name == 'pull_request' && '--base origin/main' || '' }}
+        run: node scripts/ci-scope.mjs ${{ github.event_name == 'pull_request' && format('--base origin/{0}', github.base_ref) || '' }}
 
   tests:
     runs-on: ubuntu-latest
@@ -121,8 +137,12 @@ jobs:
   # balances them by recorded time (test/e2e/shard-times.json), where Playwright's
   # own `--shard` splits by test count and left the slowest shard 30% over the
   # fastest. Each shard names its blob report, so the merged reports don't collide.
+  # E2E_AREAS (0.15) cuts the plan to the chosen areas and the critical set;
+  # empty is every area. The name carries both (`e2e full 3/10` for every
+  # area, `e2e full comics 3/10` for one), which is how a later docs-only push
+  # tells what this run covered (D-145, coveredAreas).
   e2e:
-    name: e2e ${{ needs.scope.outputs.e2e_scope }} ${{ matrix.shard }}/${{ strategy.job-total }}
+    name: e2e ${{ needs.scope.outputs.e2e_label }} ${{ matrix.shard }}/${{ strategy.job-total }}
     needs: scope
     if: needs.scope.outputs.full == 'true'
     runs-on: ubuntu-latest
@@ -134,6 +154,7 @@ jobs:
     env:
       E2E_SERVER: start
       E2E_SCOPE: ${{ needs.scope.outputs.e2e_scope }}
+      E2E_AREAS: ${{ needs.scope.outputs.areas }}
       E2E_SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
       PLAYWRIGHT_BLOB_OUTPUT_NAME: report-${{ matrix.shard }}.zip
     steps:
@@ -258,12 +279,15 @@ jobs:
           path: e2e-times.json
           retention-days: 90
       # How lopsided the shard plan was, priced with this run's own times (D-167).
-      # A note in the summary: never a failure.
+      # A note in the summary: never a failure. The plan is the one this run
+      # made, its areas included (0.15).
       - name: Shard balance
         if: env.FULL_SCOPE == 'true'
         continue-on-error: true
         env:
           SHARDS: 10
+          E2E_SCOPE: ${{ needs.scope.outputs.e2e_scope }}
+          E2E_AREAS: ${{ needs.scope.outputs.areas }}
         run: node scripts/e2e-shards.mjs balance e2e-times.json
       - name: Find main's recorded times
         id: baseline

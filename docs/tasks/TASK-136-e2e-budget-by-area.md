@@ -26,6 +26,7 @@ The browser suite's time budget compares each area a PR ran with `main`'s time f
 - Tests: `test/e2e-budget.test.ts` (it also keeps the matrix size equal to `ci.yml`'s).
 - Decisions: D-161, D-167, and TASK-135's row.
 - *From TASK-134 (0.15, PR #323):* a file planned only for its `@critical` tests (routes, book-search, dnf-reason, shell, at the core projects) counts its whole recorded time in the shard plan, because `shard-times.json` records files, not tests. The area budget overestimates those files: it should price them by their `@critical` tests' own times, or say it doesn't.
+- *From TASK-135 (0.15, PR #327):* CI now gives the budget job `E2E_AREAS` and `E2E_SCOPE` (`needs.scope.outputs.areas`, empty for every area); read them there. An area run's `e2e-times.json` holds only its areas and the critical set, so today's `compareTimes` counts every test main ran outside those areas as removed (a large negative growth and a long "gone" count in the summary): compare per area as planned. Also open: a one-area run still builds on all ten shards for about two minutes of tests (comics-only, PR #328: 2.1 min of suite time, 15.1 job-minutes against main's 57.3), so decide whether an area run takes fewer shards, or record that it doesn't.
 
 ## Acceptance criteria
 

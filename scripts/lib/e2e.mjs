@@ -4,7 +4,7 @@
 // without a browser. Like every test, it reads TEST_DATABASE_URL and nothing
 // else, and never falls back to DATABASE_URL (testdb.mjs).
 import { checkTestUrl } from "./testdb.mjs";
-import { parseShard } from "./e2e-shards.mjs";
+import { parseShard, shardUnits } from "./e2e-shards.mjs";
 
 // The default port. Not 3000, which is the owner's `npm run dev`. A worktree
 // gets its own from scripts/worktree-slot.mjs (E2E_PORT in .env.worktree,
@@ -207,6 +207,23 @@ export function e2eProjects(scope) {
       new RegExp(`@at-${p.name}(?![\\w-])`),
     ],
   }));
+}
+
+/**
+ * The projects a scope and an areas setting run (e2eProjects), each with its
+ * `area` filter (areaFilter; null runs every spec file). `specs` are
+ * `{ file, text }`, read only when `areas` is not null. playwright.config.ts
+ * and `e2e-shards.mjs balance` both plan from it, so the balance prices the
+ * plan an area run made (0.15).
+ */
+export function plannedProjects(scope, areas, specs) {
+  const plan = areaPlan(areas === null ? [] : specs, areas);
+  return e2eProjects(scope).map((p) => ({ ...p, area: areaFilter(p.name, plan) }));
+}
+
+/** Every (project, spec file) unit those projects run, priced by `times` (shardUnits): what the shards split. */
+export function plannedUnits(projects, specFiles, times) {
+  return projects.flatMap((p) => shardUnits([p.name], p.area ? p.area.files : specFiles, times));
 }
 
 /**

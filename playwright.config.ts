@@ -7,8 +7,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { defineConfig, type Project } from "@playwright/test";
 import { loadDotEnv } from "./scripts/lib/testdb.mjs";
-import { areaFilter, areaPlan, e2eProjects, planE2e } from "./scripts/lib/e2e.mjs";
-import { filesByProject, filesMatcher, parseShard, planShards, shardUnits } from "./scripts/lib/e2e-shards.mjs";
+import { planE2e, plannedProjects, plannedUnits } from "./scripts/lib/e2e.mjs";
+import { filesByProject, filesMatcher, parseShard, planShards } from "./scripts/lib/e2e-shards.mjs";
 
 loadDotEnv();
 const plan = planE2e(process.env);
@@ -20,11 +20,11 @@ const specFiles = readdirSync("test/e2e").filter((f) => f.endsWith(".spec.ts"));
 // E2E_AREAS (roadmap 0.15): each project runs the chosen areas' spec files,
 // and a core project the `@critical` tests of the rest too (areaFilter).
 // Unset, `areas` is null and every project runs every spec file.
-const areas = areaPlan(
-  plan.areas === null ? [] : specFiles.map((file) => ({ file, text: readFileSync(`test/e2e/${file}`, "utf8") })),
+const projectsOfScope = plannedProjects(
+  plan.scope,
   plan.areas,
+  plan.areas === null ? [] : specFiles.map((file) => ({ file, text: readFileSync(`test/e2e/${file}`, "utf8") })),
 );
-const projectsOfScope = e2eProjects(plan.scope).map((p) => ({ ...p, area: areaFilter(p.name, areas) }));
 
 // CI's shard n of N (E2E_SHARD, D-167): the spec files each project runs in
 // this shard, from the recorded times in test/e2e/shard-times.json. Every
@@ -33,13 +33,7 @@ const projectsOfScope = e2eProjects(plan.scope).map((p) => ({ ...p, area: areaFi
 const shard = parseShard(process.env.E2E_SHARD);
 const times = shard && !("error" in shard) ? JSON.parse(readFileSync("test/e2e/shard-times.json", "utf8")) : null;
 const mine = shard && !("error" in shard)
-  ? filesByProject(
-      planShards(
-        projectsOfScope.flatMap((p) => shardUnits([p.name], p.area ? p.area.files : specFiles, times)),
-        shard.total,
-      ),
-      shard.current,
-    )
+  ? filesByProject(planShards(plannedUnits(projectsOfScope, specFiles, times), shard.total), shard.current)
   : null;
 
 // The projects, and which tests each runs: scripts/lib/e2e.mjs (E2E_SCOPE,
