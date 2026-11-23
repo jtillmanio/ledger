@@ -1,23 +1,23 @@
 import { requireUserId } from "@/lib/auth";
 import {
-  inboxCount, listBooks, listCounts, OWNED_FILTERS, seriesProgress, TO_READ_LEVELS, type OwnedFilter, type ToReadLevel,
+  inboxCount, listBooks, listCounts, OWNED_FILTERS, TO_READ_LEVELS, type BookRow, type OwnedFilter, type ToReadLevel,
 } from "@/db/queries";
 import Link from "next/link";
 import AddBooksButton from "@/components/AddBooksButton";
 import BookListSearch from "@/components/BookListSearch";
+import BookPlace from "@/components/BookPlace";
 import BookSort from "@/components/BookSort";
 import BookStatus from "@/components/BookStatus";
 import { bookInitials, Pending, RowCover } from "@/components/Cover";
 import SheetLinks from "@/components/SheetLinks";
 import { bookHref } from "@/components/StatusBookRow";
-import { bookDates, bookSub, ownedWords, readSummary } from "@/lib/format";
+import { bookDates, bookSub, ownedWords, readSummary, subParts } from "@/lib/format";
 import { genreChipHref, libraryHref, parseSort } from "@/lib/library-sort";
-import { seriesAllHref, seriesView } from "@/lib/series-list";
 
 export const dynamic = "force-dynamic";
 
 type Search = {
-  status?: string; genre?: string; q?: string; series?: string; level?: string; owned?: string;
+  status?: string; genre?: string; q?: string; level?: string; owned?: string;
   sort?: string; dir?: string;
 };
 
@@ -33,8 +33,9 @@ const OWNED: [OwnedFilter, string][] = [
 
 export default async function Books({ searchParams }: { searchParams: Promise<Search> }) {
   // No `year`: a year's reading is on Top books, so an old ?year= link opens the whole list (task 3.4b, D-122).
+  // No `series` either: an old ?series=all (the foot's *Show all*, gone in task 5.9) opens the list as it is.
   const {
-    status, genre, q, series: seriesParam, level: levelParam, owned: ownedParam, sort: sortParam, dir: dirParam,
+    status, genre, q, level: levelParam, owned: ownedParam, sort: sortParam, dir: dirParam,
   } = await searchParams;
   const userId = await requireUserId();
   // The order is the URL's (task 2.2e): every link below carries it, so a chip never drops it.
@@ -44,15 +45,13 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
   const level = status === "to_read" ? TO_READ_LEVELS.find((l) => l === levelParam) : undefined;
   // What you own (task 5.17, D-132): a value it doesn't know filters nothing, and no link carries it on.
   const owned = OWNED_FILTERS.find((o) => o === ownedParam);
-  const [books, series, { unlisted, parked, genres }, inbox] = await Promise.all([
+  const [books, { unlisted, parked, genres }, inbox] = await Promise.all([
     listBooks(userId, { status, genre, q, level, owned, ...order }),
-    seriesProgress(userId),
     listCounts(userId),
     inboxCount(userId),
   ]);
   // listBooks caps its page; the count is the whole match (R2-06).
   const matched = books[0]?.total ?? 0;
-  const seriesList = seriesView(series, seriesParam);
 
   return (
     <main>
@@ -164,8 +163,10 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
                 </span>
               </span>
               <span className="row-sub">
-                {/* What you own ends it (task 5.17): *Physical · Audiobook · Ebook*, as they apply. */}
-                {[bookSub(b), b.genre, ownedWords(b.owned)].filter(Boolean).join(" · ")}
+                {/* The author, universe and series, each a plain link to its page (task 5.9, TASK-125: the
+                    leanest markup, as the title's), then the genre; what you own ends it (task 5.17). */}
+                <BookPlace parts={subParts(b)} plain />
+                {rowTail(b, bookSub(b) !== "")}
               </span>
               {/* When it was started, finished and how long it took (task 1.17). */}
               {bookDates(b) && <span className="row-dates">{bookDates(b)}</span>}
@@ -185,29 +186,19 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
         ))}
       </SheetLinks>
 
-      <h2>Series <span className="muted small mono">{seriesList.total}</span></h2>
-      <div className="rows">
-        {seriesList.shown.map((s) => (
-          <article key={s.series_id} className="row">
-            <span className="row-head">
-              <span className="row-title">{s.name}</span>
-              <span className="row-meta mono">{s.books_read}/{s.total_books}</span>
-            </span>
-            {s.author && <span className="row-sub">{s.author}</span>}
-            <span className="measure">
-              <span style={{ width: `${Math.round((s.pct ?? 0) * 100)}%` }} />
-            </span>
-          </article>
-        ))}
-      </div>
-      {seriesList.cut && (
-        <p className="muted small mono">
-          {seriesList.shown.length} of {seriesList.total} series ·{" "}
-          <Link prefetch={false} href={seriesAllHref({ status, genre, owned, q, ...order })}>Show all {seriesList.total}</Link>
-        </p>
-      )}
+      {/* Every series has its own list and pages now (task 5.9): the foot says where, in one line, in place of
+          the forty rows it drew (TASK-125: their bytes paid for the rows' series links). */}
+      <p className="list-series-line">
+        <Link prefetch={false} href="/books/series">All series <span aria-hidden="true">→</span></Link>
+      </p>
     </main>
   );
+}
+
+/** The row's sub-line after its place: *· Epic Fantasy · Physical · Ebook*, as they apply; `led` when a place came first. */
+function rowTail(b: { genre: string | null; owned?: BookRow["owned"] }, led: boolean): string {
+  const tail = [b.genre, ownedWords(b.owned)].filter(Boolean).join(" · ");
+  return tail && led ? ` · ${tail}` : tail;
 }
 
 /** The copies the row's `⋯` toggles (task 5.17): paper and audiobook. The ebook is Calibre's, never toggled. */

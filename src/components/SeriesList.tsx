@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { seriesHref } from "@/components/BookPlace";
 import EmptySlate from "@/components/EmptySlate";
 import { fillShare } from "@/components/WhereItSits";
 import type { SeriesSummary } from "@/db/queries";
 
-/** A series' own page (task 5.9): `/books/series/<id>`. */
-export const seriesHref = (id: string) => `/books/series/${encodeURIComponent(id)}`;
+// A series' own page (task 5.9): its address lives with the place line that links to it (TASK-125).
+export { seriesHref };
 
 export const SERIES_LEDE = "Every series you have books in, and the next one to read";
 

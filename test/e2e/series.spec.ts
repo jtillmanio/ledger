@@ -6,6 +6,10 @@
 // rail and the sidebar. The UX floor: axe, contrast, 24px targets, no sideways scroll, nothing red, the
 // empty and error states in place, the loading skeleton at the loaded size, screenshots.
 //
+// Task 5.9, 3 of 3 (TASK-125; F-38, D-134): a series name in a Library row is a link named by the series to its
+// page (the author's to theirs), and so is the book page's Series fact; the Library still meets the floor with
+// them. The dashboard's *where the book sits* links are test/e2e/books-dashboard.spec.ts's.
+//
 // Task 5.9, 2 of 3 (TASK-102; F-38, D-117, D-118, D-127): each row's name links to the series' own page,
 // /books/series/<id>, which lists only that series' books in order with their status, marks the next unread,
 // draws a grey gap row for each position the series states and the library lacks (its *Add* opens Add books with
@@ -445,3 +449,44 @@ test("Not following stores off and series_progress.follow_state reads NULL; its 
 });
 
 test.afterAll(resetFollow);
+
+// ---------------------------------------------------------------------------------------------------------
+// Every series name links to its page (TASK-125): a Library row's, and the book page's Series fact.
+
+const libraryRow = async (page: Page, b: Book) => {
+  await page.goto(`/books/list?q=${encodeURIComponent(b.title)}`);
+  const row = page.locator(".book-row").filter({ has: page.locator(".row-title", { hasText: new RegExp(`^${b.title}$`) }) });
+  await expect(row).toHaveCount(1);
+  return row;
+};
+
+test("a Library row's series name is a link named by the series, to its page; its author links to theirs (AC-1, AC-2, AC-4)", ONCE, async ({ page }) => {
+  const row = await libraryRow(page, GAP.books[0]);
+  const sub = row.locator(".row-sub");
+  await expect(sub).toContainText(`${AUTHOR.name} · ${GAP.name} #1`);
+  await expect(sub.getByRole("link", { name: GAP.name, exact: true })).toHaveAttribute("href", href(GAP.id));
+  await expect(sub.getByRole("link", { name: AUTHOR.name, exact: true })).toHaveAttribute("href", `/books/authors/${AUTHOR.id}`);
+  // The `#1` is outside the link: the link's name is the series' name alone.
+  await expect(sub.getByRole("link")).toHaveCount(2);
+  await sub.getByRole("link", { name: GAP.name, exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`${href(GAP.id)}$`));
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(GAP.name);
+  await expect(bookRows(page).locator(".book-link")).toHaveText(GAP.books.map((b) => b.title));
+});
+
+test("the Library with its row links meets the floor: axe, contrast, 24px targets, nothing red; screenshots (AC-1)", FLOOR, async ({ page }, info) => {
+  const row = await libraryRow(page, GAP.books[0]);
+  // Underlined, so a link in a line of text is told apart by more than colour (axe link-in-text-block).
+  await expect(row.locator(".row-sub a").first()).toHaveCSS("text-decoration-line", "underline");
+  await floor(page);
+  await screenshot(page, info, "library-series-link");
+});
+
+test("the book page's Series fact names the series as a link to its page (AC-3)", ONCE, async ({ page }) => {
+  await page.goto(`/book/${GAP.books[0].id}`);
+  const fact = page.locator(".frow").filter({ has: page.locator(".k", { hasText: /^Series$/ }) });
+  await expect(fact).toHaveText(`Series${GAP.name} #1`);
+  await expect(fact.getByRole("link", { name: GAP.name, exact: true })).toHaveAttribute("href", href(GAP.id));
+  await fact.getByRole("link", { name: GAP.name, exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`${href(GAP.id)}$`));
+});

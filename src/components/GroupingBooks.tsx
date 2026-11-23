@@ -1,19 +1,16 @@
 import Link from "next/link";
+import { authorHref, seriesHref, universeHref, type UniverseOrder } from "@/components/BookPlace";
 import EmptySlate from "@/components/EmptySlate";
 import { FollowControl } from "@/components/FollowOptions";
 import { BookRowItem, positionText, seriesAddHref } from "@/components/SeriesBooks";
-import { seriesHref } from "@/components/SeriesList";
 import { Bar, LoadingMain } from "@/components/Skeleton";
 import { fillShare } from "@/components/WhereItSits";
 import type { Grouping, GroupingBook, GroupingPageData } from "@/db/queries";
 import { bookPlace } from "@/lib/format";
 
-/** How a universe's page lists its books (task 5.11, owner at plan): under their series, or in universe order. */
-export type UniverseOrder = "series" | "flat";
-
-export const authorHref = (id: string) => `/books/authors/${encodeURIComponent(id)}`;
-export const universeHref = (id: string, order: UniverseOrder = "series") =>
-  `/books/universes/${encodeURIComponent(id)}${order === "flat" ? "?order=flat" : ""}`;
+// The pages' addresses live with the place line that links to them (task 5.9, TASK-125), so a client row can
+// build them without loading this page; re-exported for the routes and tests that import them from here.
+export { authorHref, universeHref, type UniverseOrder };
 
 /** The order a `?order=` asks for: `flat`, else by series (a value it doesn't know is the default). */
 export const universeOrder = (raw: string | string[] | undefined): UniverseOrder => (raw === "flat" ? "flat" : "series");
