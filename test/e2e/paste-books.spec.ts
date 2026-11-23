@@ -1,3 +1,4 @@
+// @area: shared
 // Task 1.4e: Paste a list's title and author cells in a real browser (AC-1, AC-6),
 // at every width, light and dark: two pasted columns draw as named Title and
 // Author inputs, a line with no author gets its author typed into its cell (the

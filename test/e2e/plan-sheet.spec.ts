@@ -1,3 +1,4 @@
+// @area: books
 // Task 2.10b, part 2 (TASK-072; F-65, F-68, D-104, D-108, D-7): the planning sheet in a real browser, against the
 // TEST database. /books/plan's *Plan 2027…*, *Plan this quarter…* and *Suggest* open it; it lists the suggestions
 // grouped by why (TASK-071's plan_suggestions), five a group then *More*; *Put in Q2* is 2.3's write, pushes an

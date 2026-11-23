@@ -1,3 +1,4 @@
+// @area: books
 // Tasks 2.2b and 2.10 (F-22, F-23, D-37, D-38, D-135, D-138, M-06, M-07, SG-D11): the plan rail on the real
 // /books/plan, in a real browser with the app's own CSS, fonts and widths. 2.2b proved its four-column items
 // on a staged render, since the page did not exist; they run here on the page (2.10), with the page's own:

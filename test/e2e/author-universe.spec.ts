@@ -1,3 +1,4 @@
+// @area: books
 // Task 5.11 (TASK-103; D-42, D-43, D-117, D-118, D-127): an author's page and a universe's page in a real
 // browser, on the TEST database. Each reads `read / total` from its progress view with a meter filled with
 // --ready, lists its live books (an author's by year, a universe's under their series or in universe order)

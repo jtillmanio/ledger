@@ -1,3 +1,4 @@
+// @area: shared
 // Task 4.3, part 1 of 3 (TASK-085, F-33): a real cover in every row, in a browser. A spine row, a Library row
 // and the next-issue strip each draw one fixed box (28×42, 20×30 in compact), the cover when there is one and a
 // plain placeholder when there is none, so a cover arriving moves no row: no row's height changes, and a 381-row

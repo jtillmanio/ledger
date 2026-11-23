@@ -26,8 +26,19 @@ export const MOTION_TAG: "@motion";
 export const MOTION_PROJECT: "w390-reduced-motion";
 export const TOUCH_TAG: "@touch";
 export const TOUCH_PROJECT: "w390-touch";
+export type E2eArea = "books" | "comics" | "watch" | "music" | "games" | "shared";
+export const AREAS: E2eArea[];
+export function specArea(text: string): { area: E2eArea; error?: undefined } | { error: string; area?: undefined };
+export type SpecText = { file: string; text: string };
+export function areaProblems(specs: SpecText[]): string[];
+export const CRITICAL_TAG: "@critical";
+export function hasCritical(text: string): boolean;
+export function parseAreas(value: string | undefined): { areas: E2eArea[] | null; error?: undefined } | { error: string; areas?: undefined };
+export type AreaPlan = { selected: string[]; critical: string[] };
+export function areaPlan(specs: SpecText[], areas: E2eArea[] | null): AreaPlan | null;
+export function areaFilter(project: string, plan: AreaPlan | null): { files: string[]; grepInvert?: RegExp } | null;
 export function e2eProjects(scope: E2eScope): (E2eProject & { grep: RegExp[] })[];
 export type E2ePlan =
-  | { error: string; scope?: undefined; clear?: undefined; serverCommand?: undefined; serverEnv?: undefined; baseUrl?: undefined }
-  | { error?: undefined; scope: E2eScope; clear: string | null; serverCommand: string; serverEnv: Record<string, string>; baseUrl: string };
+  | { error: string; scope?: undefined; areas?: undefined; clear?: undefined; serverCommand?: undefined; serverEnv?: undefined; baseUrl?: undefined }
+  | { error?: undefined; scope: E2eScope; areas: E2eArea[] | null; clear: string | null; serverCommand: string; serverEnv: Record<string, string>; baseUrl: string };
 export function planE2e(env: Record<string, string | undefined>): E2ePlan;

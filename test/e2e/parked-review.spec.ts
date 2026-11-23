@@ -1,3 +1,4 @@
+// @area: books
 // Task 5.15, part 5 of 5 (TASK-111, F-66, D-105): the parked review in a real browser, on the TEST database.
 // `/parked` lists every parked book, the one parked longest first, each with its age; *Plan…* opens 2.3's
 // picker and a quarter puts the book at its end and off the review, its Undo back to Parked with no plan

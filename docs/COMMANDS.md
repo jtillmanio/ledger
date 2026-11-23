@@ -159,7 +159,13 @@ npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in
                             # and screenshot check the other theme in place. CI's e2e-budget job fails a PR that adds over
                             # 3 min of suite time or passes 6 min a shard (`e2e-growth` label accepts). E2E_SERVER=start
                             # serves an existing `npm run build` with `next start` instead (CI's shards do). E2E_SHARD=n/N
-                            # runs only the spec files shard n of N holds, balanced by recorded time (CI's ten shards, D-167)
+                            # runs only the spec files shard n of N holds, balanced by recorded time (CI's ten shards, D-167).
+                            # Every spec's first line names its one area (0.15): `// @area: books`, comics, watch, music,
+                            # games or shared (the shell, thumb bar, status control, Add books, settings, sheets); a spec
+                            # without one fails e2e-guard. E2E_AREAS=comics (comma-separated; PowerShell:
+                            # `$env:E2E_AREAS="comics"; npm run test:e2e`, then `Remove-Item Env:E2E_AREAS`) runs those
+                            # areas' specs plus the `@critical` tests (sign-in, the dashboards, the add flow, a status
+                            # write and Undo, navigation between media, an error state) at the core projects; unset, all
 npm run test:e2e:full       # the same at every project, 360-1280px light and dark (E2E_SCOPE=full): what CI runs
 npm run e2e:plan -- <e2e-times.json>... [--list <list.json>]
                             # rewrites test/e2e/shard-times.json, the times CI's shard plan balances by, as the mean of the

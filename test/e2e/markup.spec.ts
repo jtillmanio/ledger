@@ -1,3 +1,4 @@
+// @area: shared
 // Task 1.8d: every row and control on a dashboard is real, named markup. A
 // navigable row is <article class="row"><a class="row-link">, the link stretched
 // over the row, with nothing interactive inside the anchor; segmented controls,

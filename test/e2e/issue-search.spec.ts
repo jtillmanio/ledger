@@ -1,3 +1,4 @@
+// @area: comics
 // Task 1.22: Add issues' *Search* as you type, in a real browser, at every
 // width, light and dark (AC-3, AC-4, AC-6). The route asks Metron from the
 // server, where page.route can't see it, so the recorded answers

@@ -1,3 +1,4 @@
+// @area: comics
 // AC-1 of task 0.11: signed in with the test passcode, a seeded run's spine
 // loads at every width, in light and dark, with no sideways scroll. Each UI
 // task adds its own checks beside this one, on the helpers.

@@ -1,3 +1,4 @@
+// @area: books
 // Task 5.17, part 2 of 3 (TASK-093, D-121, D-132, D-152): what you own, in the Library, in a browser.
 // A row's `⋯` carries *I own it on paper* and *I own the audiobook*: each writes one owned_copies row of its
 // format, the sub-line says so without a reload, and the toast's Undo removes the row. The *Owned* chips

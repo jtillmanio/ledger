@@ -1,3 +1,4 @@
+// @area: books
 // Task 2.8 (F-23, D-37, D-7): *Place them* in a real browser, against the TEST database. A year's bare-year
 // lane on Up next is amber with *Place them*, and so is /books/plan's card; the sheet offers the year's books
 // with no quarter one at a time, largest first, each quarter button carrying that quarter's total as

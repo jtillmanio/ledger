@@ -1,3 +1,4 @@
+// @area: books
 // Task 2.10, 2 of 2 (F-23, D-33, D-37; Plan Rail Spec A4.4): the plan page's desktop pointer routes. With a fine
 // pointer at 1280px a block drags to another quarter or the fifth lane, showing a ghost and output.dropdelta's
 // total after before release, and writes through 2.3's move with an Undo; hovering a block names it. With touch

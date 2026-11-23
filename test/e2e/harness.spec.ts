@@ -1,3 +1,4 @@
+// @area: shared
 // The helpers prove themselves (task 0.11): each one is shown to fail on a page
 // built to fail it, and to pass once the page is fixed, so a green run of any
 // later spec means something. The fixtures are loaded with setContent: nothing

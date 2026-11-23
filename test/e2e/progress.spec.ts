@@ -1,3 +1,4 @@
+// @area: shared
 // Task 5.12, 2 of 2 (TASK-105; F-69, D-108, D-109, D-118, D-119): the /progress page in a real browser, on the TEST
 // database. One page beside Inbox with two tabs, *In the middle of · Completed*, and a chip per medium
 // (*All · Books · Comics*). A series followed Reading with 2 of 5 read, a shelf followed Reading with 1 of 3 and a run

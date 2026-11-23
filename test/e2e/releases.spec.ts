@@ -1,3 +1,4 @@
+// @area: books
 // Task 5.7, 1 of 2 (TASK-099; D-35): Coming out in a real browser. A book released yesterday sits under Out now,
 // one due next month under its month, one with any status row (the Unlisted book, a read one) never shows;
 // Got it moves a book to Someday with no reload and one to_read row, Undo puts the row back and leaves no row;

@@ -1,3 +1,4 @@
+// @area: books
 // Task 2.7, part 2 of 2 (TASK-067, F-23, D-37, D-7; mockup `rebalance`; Plan Rail Spec A4.2): the Rebalance
 // sheet and the settled stretch year, in a real browser against the TEST database. An over-full year's plan
 // page carries the amber capacity card; *Rebalance* opens four equal peers, each with its before/after; *Accept*

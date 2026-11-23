@@ -1,12 +1,13 @@
-import { describe, expect, it } from "vitest";
-import { spawnSync } from "node:child_process";
+import { beforeAll, describe, expect, it } from "vitest";
+import { execFile, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { promisify } from "node:util";
 import { checkTestUrl } from "../scripts/lib/testdb.mjs";
 import {
-  DEV_CACHE, E2E_BEHAVIOUR, E2E_CORE, E2E_FEEL, E2E_FLOOR, E2E_HARDCOVER_TOKEN, E2E_PASSCODE, E2E_PORT, E2E_PROJECTS, FEEL_TAG, FLOOR_TAG, MOTION_TAG, TOUCH_TAG,
-  e2eProjects, planE2e,
+  AREAS, CRITICAL_TAG, DEV_CACHE, E2E_BEHAVIOUR, E2E_CORE, E2E_FEEL, E2E_FLOOR, E2E_HARDCOVER_TOKEN, E2E_PASSCODE, E2E_PORT, E2E_PROJECTS, FEEL_TAG, FLOOR_TAG, MOTION_TAG, TOUCH_TAG,
+  areaFilter, areaPlan, areaProblems, e2eProjects, parseAreas, planE2e, specArea,
 } from "../scripts/lib/e2e.mjs";
 import { planTestRun } from "../scripts/lib/test-files.mjs";
 import { ciJob } from "./ci-yml";
@@ -71,6 +72,194 @@ describe("planE2e: the test database, or a refusal with testdb.mjs's own message
     const bad = planE2e({ ...env, E2E_SCOPE: "all" });
     expect(bad.scope).toBeUndefined();
     expect(bad.error).toMatch(/E2E_SCOPE is "all": use core or full/);
+  });
+
+  it("runs every area when E2E_AREAS is unset or empty, the areas it lists otherwise, and refuses a name that is not one (0.15)", () => {
+    const env = { TEST_DATABASE_URL: TEST, DATABASE_URL: LIVE };
+    expect(AREAS).toEqual(["books", "comics", "watch", "music", "games", "shared"]);
+    expect(planE2e(env).areas).toBeNull();
+    expect(planE2e({ ...env, E2E_AREAS: "" }).areas).toBeNull();
+    expect(planE2e({ ...env, E2E_AREAS: "comics" }).areas).toEqual(["comics"]);
+    expect(parseAreas(" comics, shared ,comics")).toEqual({ areas: ["comics", "shared"] });
+    const bad = planE2e({ ...env, E2E_AREAS: "comics,podcasts" });
+    expect(bad.areas).toBeUndefined();
+    expect(bad.error).toMatch(/E2E_AREAS is "comics,podcasts": podcasts is not an area/);
+  });
+});
+
+// Roadmap 0.15: every spec belongs to one area, and a small @critical set runs
+// whatever the areas, at the core projects.
+describe("areas: every spec has exactly one, read from its own text", () => {
+  const specFiles = readdirSync(join(root, "test", "e2e")).filter((f) => f.endsWith(".spec.ts"));
+  const specs = specFiles.map((file) => ({ file, text: readFileSync(join(root, "test", "e2e", file), "utf8") }));
+
+  it("a spec file with no area, two areas or an unknown one fails, naming the file; every real spec has one", () => {
+    const fixtures = [
+      { file: "no-area.spec.ts", text: "// A spec that forgot.\nimport { test } from \"@playwright/test\";\n" },
+      { file: "two-areas.spec.ts", text: "// @area: books, comics\n" },
+      { file: "two-lines.spec.ts", text: "// @area: books\n// What it checks.\n// @area: shared\n" },
+      { file: "odd-area.spec.ts", text: "// @area: podcasts\n" },
+      { file: "empty-area.spec.ts", text: "// @area:\n" },
+      { file: "fine.spec.ts", text: "// @area: watch\n// What it checks.\n" },
+    ];
+    const problems = areaProblems(fixtures);
+    expect(problems).toHaveLength(5);
+    expect(problems[0]).toMatch(/^no-area\.spec\.ts: no area/);
+    expect(problems[1]).toMatch(/^two-areas\.spec\.ts: 2 areas \(books, comics\)/);
+    expect(problems[2]).toMatch(/^two-lines\.spec\.ts: 2 areas \(books, shared\)/);
+    expect(problems[3]).toMatch(/^odd-area\.spec\.ts: "podcasts" is not an area/);
+    expect(problems[4]).toMatch(/^empty-area\.spec\.ts: no area/);
+    expect(specArea(fixtures[5].text)).toEqual({ area: "watch" });
+
+    expect(specs.length).toBeGreaterThan(40);
+    expect(areaProblems(specs)).toEqual([]);
+  });
+
+  it("an area plan selects its areas' files and the other files with a @critical test; unset, it plans nothing", () => {
+    const fixtures = [
+      { file: "a.spec.ts", text: "// @area: comics\n" },
+      { file: "b.spec.ts", text: `// @area: books\ntest("x", { tag: ["@at-w390-light", "${CRITICAL_TAG}"] }, f);\n` },
+      { file: "c.spec.ts", text: "// @area: books\n" },
+      { file: "d.spec.ts", text: "// no area: runs, so a slip never drops a spec\n" },
+    ];
+    expect(areaPlan(fixtures, null)).toBeNull();
+    expect(areaPlan(fixtures, ["comics"])).toEqual({ selected: ["a.spec.ts", "d.spec.ts"], critical: ["b.spec.ts"] });
+    expect(areaPlan(fixtures, ["books"])).toEqual({ selected: ["b.spec.ts", "c.spec.ts", "d.spec.ts"], critical: [] });
+  });
+
+  it("a core project adds the critical files, keeping only their @critical tests; any other project runs the selected files alone", () => {
+    const plan = { selected: ["a.spec.ts"], critical: ["b.spec.ts"] };
+    expect(areaFilter("w390-light", null)).toBeNull();
+    expect(areaFilter("w360-light", plan)).toEqual({ files: ["a.spec.ts"] });
+    expect(areaFilter("w390-dark", plan)!.files).toEqual(["a.spec.ts", "b.spec.ts"]);
+    const invert = areaFilter("w390-light", plan)!.grepInvert!;
+    // Playwright's grep title: the project, the file, the titles, the tags.
+    expect(invert.test("w390-light b.spec.ts the sheet opens @at-w390-light")).toBe(true);
+    expect(invert.test("w390-light b.spec.ts the sheet opens @at-w390-light @critical")).toBe(false);
+    expect(invert.test("w390-light b.spec.ts the sheet opens @critical-ish")).toBe(true);
+    expect(invert.test("w390-light a.spec.ts the sheet opens")).toBe(false);
+    expect(invert.test("w390-light ab.spec.ts the sheet opens")).toBe(false);
+    expect(invert.test("w390-light x/b.spec.ts the sheet opens")).toBe(true);
+    expect(areaFilter("w390-light", { selected: ["a.spec.ts"], critical: [] })).toEqual({ files: ["a.spec.ts"] });
+  });
+});
+
+// What Playwright itself plans: `playwright test --list` loads the config and
+// every spec and reports each (test, project) pair, with no server, browser or
+// database. Each run is a few seconds, so the four start together.
+type Planned = { project: string; file: string; titles: string[]; tags: string[] };
+type Suite = { title: string; file: string; specs?: { title: string; tags: string[]; tests: { projectName: string }[] }[]; suites?: Suite[] };
+const playwrightCli = join(root, "node_modules", "@playwright", "test", "cli.js");
+
+async function playwrightList(env: Record<string, string>): Promise<Planned[]> {
+  const base = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith("E2E_") && k !== "CI")) as Record<string, string>;
+  const { stdout } = await promisify(execFile)(process.execPath, [playwrightCli, "test", "--list", "--reporter=json"], {
+    cwd: root,
+    encoding: "utf8",
+    env: { NODE_ENV: "test", ...base, TEST_DATABASE_URL: TEST, DATABASE_URL: LIVE, ...env },
+    maxBuffer: 256 * 1024 * 1024,
+  });
+  const report = JSON.parse(stdout) as { suites: Suite[]; errors: unknown[] };
+  expect(report.errors).toEqual([]);
+  const out: Planned[] = [];
+  const walk = (s: Suite, titles: string[]) => {
+    for (const spec of s.specs ?? []) {
+      for (const t of spec.tests) out.push({ project: t.projectName, file: s.file, titles: [...titles, spec.title], tags: spec.tags.map((g) => `@${g.replace(/^@/, "")}`) });
+    }
+    for (const c of s.suites ?? []) walk(c, [...titles, c.title]);
+  };
+  for (const s of report.suites) walk(s, []);
+  return out.filter((p) => p.project !== "setup");
+}
+
+describe("the planned list: what Playwright schedules, by area (0.15)", () => {
+  const lists: Record<string, Planned[]> = {};
+  const specFiles = readdirSync(join(root, "test", "e2e")).filter((f) => f.endsWith(".spec.ts"));
+  // The area each spec's header names, read here without the code under test.
+  const areaOf = Object.fromEntries(specFiles.map((f) => [f, /^\/\/ @area: (\w+)$/m.exec(readFileSync(join(root, "test", "e2e", f), "utf8"))?.[1]]));
+  const pair = (p: Planned) => `${p.project} | ${p.file} | ${p.titles.join(" › ")}`;
+  const isCritical = (p: Planned) => p.tags.includes(CRITICAL_TAG);
+
+  beforeAll(async () => {
+    const runs: Record<string, Record<string, string>> = { core: { E2E_SCOPE: "core" }, full: { E2E_SCOPE: "full" }, coreComics: { E2E_SCOPE: "core", E2E_AREAS: "comics" }, fullComics: { E2E_SCOPE: "full", E2E_AREAS: "comics" } };
+    for (const n of [1, 2, 3]) runs[`shard${n}Comics`] = { E2E_SCOPE: "full", E2E_AREAS: "comics", E2E_SHARD: `${n}/3` };
+    const done = await Promise.all(Object.entries(runs).map(async ([k, env]) => [k, await playwrightList(env)] as const));
+    for (const [k, v] of done) lists[k] = v;
+  }, 120_000);
+
+  it("with no areas, Playwright plans exactly what the project rules alone plan, core and full (AC-5)", () => {
+    // Before 0.15 every project ran every spec file with e2eProjects' grep: the same rule, applied here by
+    // hand to every test the full run knows, on Playwright's grep title (project, file, titles, tags).
+    const tests = new Map(lists.full.map((p) => [`${p.file} | ${p.titles.join(" › ")}`, p]));
+    for (const scope of ["core", "full"] as const) {
+      const expected = [...tests.values()].flatMap((t) =>
+        e2eProjects(scope)
+          .filter((proj) => proj.grep.some((g) => g.test([proj.name, t.file, ...t.titles, ...t.tags].join(" "))))
+          .map((proj) => pair({ ...t, project: proj.name })));
+      expect(lists[scope].map(pair).sort(), scope).toEqual(expected.sort());
+    }
+    expect(lists.core.length).toBeGreaterThan(1000);
+  });
+
+  it("with E2E_AREAS=comics Playwright plans every comics spec and every file with a @critical test, and no other books spec (AC-3)", () => {
+    const comics = specFiles.filter((f) => areaOf[f] === "comics");
+    expect(comics.length).toBeGreaterThan(0);
+    const criticalFiles = [...new Set(lists.full.filter(isCritical).map((p) => p.file))];
+    for (const scope of ["core", "full"] as const) {
+      const run = lists[`${scope}Comics`];
+      const files = [...new Set(run.map((p) => p.file))].sort();
+      expect(files, scope).toEqual([...new Set([...comics, ...criticalFiles])].sort());
+      // Each comics spec runs whole, exactly as it does with every area.
+      const ofComics = (l: Planned[]) => l.filter((p) => comics.includes(p.file)).map(pair).sort();
+      expect(ofComics(run), scope).toEqual(ofComics(lists[scope]));
+      // From any other area, only @critical tests, and only at the core projects.
+      const others = run.filter((p) => !comics.includes(p.file));
+      expect(others.length, scope).toBeGreaterThan(0);
+      expect(others.filter((p) => !isCritical(p)).map(pair), scope).toEqual([]);
+      expect(others.filter((p) => !E2E_CORE.includes(p.project)).map(pair), scope).toEqual([]);
+      expect(run.some((p) => areaOf[p.file] === "books"), scope).toBe(true);
+    }
+  });
+
+  it("CI's shards split only what the areas plan: three shards of the comics run hold it exactly, each pair once (D-167)", () => {
+    const sharded = [1, 2, 3].flatMap((n) => lists[`shard${n}Comics`].map(pair));
+    expect(sharded.length).toBe(new Set(sharded).size);
+    expect(sharded.sort()).toEqual(lists.fullComics.map(pair).sort());
+    for (const n of [1, 2, 3]) expect(lists[`shard${n}Comics`].length, `shard ${n}`).toBeGreaterThan(0);
+  });
+
+  it("a @critical test is planned at the core projects only, at both scopes, with areas or without; with comics, each at the same core projects as with all areas (AC-3)", () => {
+    for (const [k, l] of Object.entries(lists)) {
+      expect(l.filter(isCritical).filter((p) => !E2E_CORE.includes(p.project)).map(pair), k).toEqual([]);
+    }
+    const critical = (l: Planned[]) => l.filter(isCritical).map(pair).sort();
+    expect(critical(lists.core).length).toBeGreaterThan(0);
+    expect(critical(lists.full)).toEqual(critical(lists.core));
+    expect(critical(lists.coreComics)).toEqual(critical(lists.core));
+    expect(critical(lists.fullComics)).toEqual(critical(lists.core));
+  });
+
+  it("the critical set covers sign-in, both dashboards, the add flow, a status write and its Undo, navigation between media and an error state, within 5 minutes of recorded core time (AC-4)", () => {
+    const covers: [string, string, RegExp][] = [
+      ["sign-in (the gate; auth.setup.ts signs in before every run)", "routes.spec.ts", /^a garbage session goes to \/login/],
+      ["the books and comics dashboards loading", "routes.spec.ts", /^each route answers with its own screen$/],
+      ["the add flow", "book-search.spec.ts", /^adding one creates one books row/],
+      ["a status write and its Undo", "dnf-reason.spec.ts", /^the toast's Undo after a reason leaves the book reading/],
+      ["navigation between media", "shell.spec.ts", /^the media bar's Watch link goes there$/],
+      ["an error state", "dnf-reason.spec.ts", /^a reason that didn't save says so with Retry/],
+    ];
+    const critical = lists.core.filter(isCritical);
+    for (const [what, file, title] of covers) {
+      expect(critical.some((p) => p.file === file && title.test(p.titles.at(-1)!)), what).toBe(true);
+    }
+    // shard-times.json records a spec file per project, not a test: a file's whole core time is the upper bound.
+    const times = JSON.parse(readFileSync(join(root, "test", "e2e", "shard-times.json"), "utf8")) as Record<string, number>;
+    const files = new Set(critical.map((p) => p.file));
+    const ms = Object.entries(times)
+      .filter(([k]) => E2E_CORE.includes(k.split("|")[0]) && files.has(k.split("|")[1]))
+      .reduce((sum, [, v]) => sum + v, 0);
+    expect(ms).toBeGreaterThan(0);
+    expect(ms).toBeLessThanOrEqual(5 * 60_000);
   });
 });
 
@@ -164,7 +353,7 @@ describe("e2eProjects: which project runs which test", () => {
     expect(runsIn("core", "x @floor @at-w1024-light")).toEqual([]);
   });
 
-  it("every tag in the specs is @floor, @feel, @motion, @touch or names a project, and the specs use @floor, @feel and @motion", () => {
+  it("every tag in the specs is @floor, @feel, @motion, @touch, @critical or names a project, and the specs use @floor, @feel and @motion", () => {
     const names = new Set(E2E_PROJECTS.map((p) => p.name));
     const tags = [
       ...specs.flatMap((f) =>
@@ -175,7 +364,7 @@ describe("e2eProjects: which project runs which test", () => {
         [...m[1].matchAll(/"([^"]+)"/g)].map((t) => ({ f: "helpers.ts", tag: t[1] }))),
     ];
     for (const { f, tag } of tags) {
-      expect(tag === FLOOR_TAG || tag === FEEL_TAG || tag === MOTION_TAG || tag === TOUCH_TAG || (tag.startsWith("@at-") && names.has(tag.slice(4))), `${f}: ${tag}`).toBe(true);
+      expect(tag === FLOOR_TAG || tag === FEEL_TAG || tag === MOTION_TAG || tag === TOUCH_TAG || tag === CRITICAL_TAG || (tag.startsWith("@at-") && names.has(tag.slice(4))), `${f}: ${tag}`).toBe(true);
     }
     const used = specs.map(spec).join("\n");
     expect(used).toMatch(/[(,] ?FLOOR[,)]/);

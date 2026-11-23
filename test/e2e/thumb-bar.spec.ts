@@ -1,3 +1,4 @@
+// @area: shared
 // Task 1.8b: the thumb bar, the mark that answers back, the toast above it, and
 // contrast, in a real browser. Runs at every width, light and dark, and under
 // reduced motion, so the Check's widths and both themes are the projects

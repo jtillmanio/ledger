@@ -1,3 +1,4 @@
+// @area: shared
 // Task 1.8d: a loading screen holds the layout it is about to show. At 360px
 // each skeleton is measured against the loaded geometry, within 2px, and the
 // shimmer stops under prefers-reduced-motion.

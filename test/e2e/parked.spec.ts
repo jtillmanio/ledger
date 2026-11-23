@@ -1,3 +1,4 @@
+// @area: books
 // Task 5.15, part 2 of 4 (TASK-109, F-66, D-105): Parked in a real browser.
 // *Park* sits on a book's status control and its row's `⋯` for a book To read,
 // Reading or Listening, grey as DNF is, never on a Read, DNF or Unlisted one;

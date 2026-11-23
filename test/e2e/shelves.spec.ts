@@ -1,3 +1,4 @@
+// @area: books
 // Task 5.1, 2 of 3 (TASK-096; D-26, D-139, R1-06, R1-07): the Shelves list and a shelf's page in a real
 // browser, on the TEST database. The list row reads `read / total`, its meter fills with --ready, and it
 // names the next three unread in shelf order (design § 14 → Shelves); a shelf with every book read names

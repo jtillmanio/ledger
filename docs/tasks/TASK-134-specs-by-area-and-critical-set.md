@@ -1,14 +1,14 @@
 ---
 id: TASK-134
 title: 0.15 The browser suite runs by area (1 of 3) — every spec has an area, and a critical set
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 7530fd8
 ---
 
 # TASK-134 — 0.15 The browser suite runs by area (1 of 3) — every spec has an area, and a critical set
@@ -73,9 +73,103 @@ Decision row recorded (next free D-n), amending D-80, D-141 and D-161.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- `node scripts/e2e-shards.mjs balance` prices every spec file in every project; once CI sets `E2E_AREAS` it should price the plan the area run made (`areaFilter`) (approved at plan)
+- A file planned only for its `@critical` tests counts its whole recorded time in the shard plan, an overestimate the area budget should know about (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-23 (with the AC-3 reading below).
+
+**How a spec says its area:** one header line, `// @area: <area>`, read from the
+file's text by `scripts/lib/e2e.mjs` (and so by `playwright.config.ts`, and
+later by TASK-135's `ci-scope.mjs`). Not folders: a move rewrites every key in
+`shard-times.json`, every `./helpers` import and every doc and task naming a
+spec path. Not a Playwright tag per describe: many tests sit outside any
+describe, and "exactly one area per file" can't be checked on per-test tags.
+
+**AC-3's reading (owner's choice):** a `@critical` test runs at the core
+projects only, *as its own tags place it* (D-161): it carries no `@floor` or
+`@feel`, and an `@at-` tag on it names a core project (the guard checks both).
+So it never runs outside the core projects at either scope, areas or not, and
+AC-5 holds; it does not gain w390-dark or every core project.
+
+**The areas (48 specs):**
+- comics (4): queue, spine, issue-search, covers-reduced-data.
+- shared (19): shell, thumb-bar, tab-row, routes, settings, status, markup,
+  skeletons, harness, mockup-tablet, start-dates, progress, covers,
+  dashboard-covers, and Add books (add-books-loading, add-books-owned,
+  book-search, paste-books, new-shelf: the entry names Add books shared).
+- books (25): audiobooks, author-universe, book-detail, book-list-search,
+  books-dashboard, calibre-page, dnf-reason, follows, library-genres,
+  library-owned, library-sort, listen-queue, parked-review, parked, place-them,
+  plan-picker, plan-rail-drag, plan-rail, plan-sheet, rebalance, releases,
+  series, shelves, top-books, unlisted.
+
+**The critical set (`@critical`, 6 tests in 4 files):**
+- Sign-in: routes › "a garbage session goes to /login for a page and gets 401
+  from a route handler" (the gate; `auth.setup.ts` signs in through the form
+  before every run, whatever the areas).
+- Books and comics dashboards loading: routes › "each route answers with its own screen".
+- The add flow: book-search › "adding one creates one books row with hardcover_id and its cover; …".
+- A status write and its Undo: dnf-reason › "the toast's Undo after a reason leaves the book reading, …".
+- An error state: dnf-reason › "a reason that didn't save says so with Retry and leaves the DNF; …".
+- Navigation between media: shell › "the media bar's Watch link goes there".
+- Recorded time at the core projects, by whole file (shard-times.json records
+  files, not tests, so this is an upper bound): routes 11 s, book-search 59 s,
+  dnf-reason 8 s and shell 29 s, about 107 s in all, against AC-4's 300 s.
+
+**Steps**
+1. `scripts/lib/e2e.mjs` (+ `.d.mts`): `AREAS`, `CRITICAL_TAG`; `specArea(text)`
+   → the area or an error naming none / two / unknown; `areaProblems(specs)`
+   (messages naming each file); `parseAreas` and `planE2e`'s `areas` from
+   `E2E_AREAS` (comma-separated; unset or empty = every area, `null`; an
+   unknown area refuses); `areaPlan(specs, areas)` → the selected files and the
+   critical-only files, and `areaFilter(project, plan)` → per project the files
+   it runs (every project: the selected areas' files; a core project also the
+   files holding a `@critical` test) and a `grepInvert` that drops the other
+   tests of a critical-only file. A spec with no or a bad area counts as
+   selected (fails toward running). Unset areas → no filter at all.
+2. `playwright.config.ts`: reads each spec's text once, applies `areaFilter`
+   to each project's `testMatch` and `grepInvert`, and builds the shard units
+   per project from that project's own files (`shardUnits` unchanged, so
+   `scripts/lib/e2e-shards.mjs` doesn't change).
+3. Specs: the `// @area:` line at the top of all 48; `@critical` inline
+   (`{ tag: ["@at-w390-light", "@critical"] }`) on the 6 tests.
+4. `test/e2e-guard.test.ts`: the tag test learns `@critical`; AC-2 on inline
+   fixture specs and on every real spec; AC-3, AC-4 and AC-5 on Playwright's
+   own `--list --reporter=json` (no server, no database, about 4 s a run),
+   core and full, areas unset and `comics`.
+5. `docs/COMMANDS.md`: `E2E_AREAS` for a local run.
+6. One-off, in the PR: main's `--list` (saved before any change, core and
+   full) diffed against the branch's, line numbers and the new tag stripped.
+
+**Files**
+- `scripts/lib/e2e.mjs`, `scripts/lib/e2e.d.mts` — areas, the critical tag, `E2E_AREAS`, the plan.
+- `playwright.config.ts` — applies the plan per project and per shard.
+- `test/e2e/*.spec.ts` (48) — the area line; `@critical` on 6 tests in routes, book-search, dnf-reason, shell.
+- `test/e2e-guard.test.ts` — AC-1's guard clause, AC-2 to AC-5.
+- `docs/COMMANDS.md` — the setting.
+- Not touched: `scripts/lib/e2e-shards.mjs`, `test/e2e/shard-times.json`.
+
+**Test strategy**
+- AC-1 (this part's clause) and AC-2: e2e-guard › "a spec file with no area,
+  two areas or an unknown one fails, naming the file; every real spec has one".
+- AC-3: e2e-guard › "with E2E_AREAS=comics Playwright plans every comics spec
+  and every file with a @critical test, and no other books spec", and "a
+  @critical test is planned at core projects only, at both scopes, areas or not".
+- AC-4: e2e-guard › "the critical set covers sign-in, both dashboards, the add
+  flow, a status write and its Undo, navigation between media and an error
+  state, within 5 minutes of recorded core time".
+- AC-5: e2e-guard › "with no areas, Playwright plans exactly what the project
+  rules alone plan, core and full" (the same `(project, test)` pairs), plus the
+  one-off diff against main's saved lists.
+- Unit: `specArea`, `parseAreas`/`planE2e` refusal, `areaFilter` (unset → none).
+
+**Risks:** the `grepInvert` relies on Playwright's grep title holding the file
+name (`<project> <file> … <title> <tags>`, Playwright 1.65 `_grepTitleWithTags`);
+the `--list` tests break loudly if that changes. Spec line numbers shift by one.
+
+**Size:** 53 files, 48 of them one mechanical line; already part 1 of a split.
 
 ## Review log
 

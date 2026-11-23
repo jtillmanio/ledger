@@ -1,3 +1,4 @@
+// @area: books
 // Task 5.5 (D-139, UX-N13): DNF with a reason, in a real browser. Choosing DNF
 // on the status control saves at once and opens the closing card, its field
 // labelled, focused and filled with the book's note; a saved reason is the
@@ -148,7 +149,7 @@ test("Esc closes the card as Skip, focus back on DNF; a Stopped row with no reas
   await expect(row.locator(".row-reason")).toHaveCount(0);
 });
 
-test("the toast's Undo after a reason leaves the book reading, its start kept, its note NULL (AC-1, AC-4)", ONCE, async ({ page }) => {
+test("the toast's Undo after a reason leaves the book reading, its start kept, its note NULL (AC-1, AC-4)", { tag: ["@at-w390-light", "@critical"] }, async ({ page }) => {
   const { field, card } = await stop(page, PLAIN.title);
   await field.fill(REASON);
   await card.getByRole("button", { name: "Save" }).click();
@@ -159,7 +160,7 @@ test("the toast's Undo after a reason leaves the book reading, its start kept, i
   await expect(bookRow(page, PLAIN.title).locator(".status-toggle")).toContainText("reading");
 });
 
-test("a reason that didn't save says so with Retry and leaves the DNF; Retry saves it (AC-4)", ONCE, async ({ page }) => {
+test("a reason that didn't save says so with Retry and leaves the DNF; Retry saves it (AC-4)", { tag: ["@at-w390-light", "@critical"] }, async ({ page }) => {
   const { field, card } = await stop(page, FAIL.title);
   await page.route("**/api/progress/book/note", (route) => route.fulfill({ status: 500, contentType: "application/json", body: "{}" }));
   await field.fill(REASON);

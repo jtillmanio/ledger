@@ -1,3 +1,4 @@
+// @area: shared
 // The mockup's 834px tablet frames follow the feel pass (task 1.8e, STYLE_GUIDE
 // §14.5, Feel Review §10c): a horizontal hero, a five-cover shelf, a horizontal
 // telescope with a three-column ladder, and the side rail stacked below as two

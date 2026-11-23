@@ -1,3 +1,4 @@
+// @area: shared
 // Task 1.8c: the dashboard routes and the `/` redirect, in a real browser. The
 // pages move one level down (`/comics/runs`, `/books/list`), `/` opens the
 // medium last touched, and a stale session goes to sign-in. The checks that
@@ -9,7 +10,7 @@ import { E2E_RUN_ID, E2E_RUN_TITLE, FLOOR, expectNoHorizontalScroll, screenshot 
 // A check with no layout in it: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
 
-test("a garbage session goes to /login for a page and gets 401 from a route handler", ONCE, async ({ browser, baseURL }) => {
+test("a garbage session goes to /login for a page and gets 401 from a route handler", { tag: ["@at-w390-light", "@critical"] }, async ({ browser, baseURL }) => {
   // No stored sign-in: the only credential is a cookie that is present and wrong,
   // which gets past the proxy's presence check and meets the signature check.
   const garbage = { name: "rt_session", value: "garbage", domain: "localhost", path: "/", httpOnly: true, secure: false, sameSite: "Lax" as const, expires: -1 };
@@ -46,7 +47,7 @@ test("signed out, the icon and robots.txt answer 200 with no trip to /login (tas
   }
 });
 
-test("each route answers with its own screen", ONCE, async ({ page }) => {
+test("each route answers with its own screen", { tag: ["@at-w390-light", "@critical"] }, async ({ page }) => {
   const h1 = page.getByRole("heading", { level: 1 });
 
   await page.goto("/comics");

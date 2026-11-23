@@ -1,3 +1,4 @@
+// @area: shared
 // Task 2.2i (D-120): the phone's tab row, in a real browser. Below 768px a row under the media bar
 // lists every enabled screen of the medium you are in, then Inbox and Progress (task 5.12), so no screen needs a typed URL.
 // Every check sets its own viewport and runs once (the w390-light project); the row is built from

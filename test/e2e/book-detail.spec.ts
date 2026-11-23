@@ -1,3 +1,4 @@
+// @area: books
 // Task 3.5, 2 of 3 (TASK-079): the book sheet in a real browser. `/book/[id]`
 // from a list is a sheet over it (an intercepted route): Back closes it with the
 // list's scroll and focus where they were (AC-1, AC-2); a direct load or a

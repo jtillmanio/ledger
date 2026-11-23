@@ -1,3 +1,4 @@
+// @area: shared
 // Task 1.17 (data model 2.18): a book's start and a run's span in a real
 // browser, at every width, light and dark (AC-4, AC-5, AC-6). The master list's
 // rows carry *Started …* and, once read, the finish and the days taken; the

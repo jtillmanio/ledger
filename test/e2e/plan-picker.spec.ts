@@ -1,3 +1,4 @@
+// @area: books
 // Task 2.3, part 2 (F-23, D-37, D-38, D-63, R3-08): the plan picker in a real browser, on a Library row's
 // ⋯ → *Plan for…*, against the TEST database. The sheet lists the next five years then On deck and
 // Someday; a year opens *No quarter yet* and Q1–Q4, each chip carrying its period's current total as

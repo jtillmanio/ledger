@@ -1,3 +1,4 @@
+// @area: shared
 // Task 1.30 (AC-5): Add books' code loads when its sheet opens, not with the
 // page. Until it arrives the sheet draws its loading state at the loaded size
 // (docs/04-design.md § 10: a skeleton is the loaded geometry), so nothing moves

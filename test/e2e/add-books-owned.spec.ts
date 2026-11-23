@@ -1,3 +1,4 @@
+// @area: shared
 // Task 5.17b, part 2 of 2 (TASK-123; D-132, D-152): *Physical copy* and *Audiobook* in Add books' Search and By
 // hand, in a real browser. The two chips are in every mode and keep their choice when you switch (AC-2); a
 // result's button and By hand's submit say *Add to Physical copy* / *Add to Audiobook* (AC-3); each add writes

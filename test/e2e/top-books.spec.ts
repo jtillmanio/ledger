@@ -1,3 +1,4 @@
+// @area: books
 // Task 3.4b, 2 of 3 (TASK-076; D-101, D-122, R2-08): Top books in a real browser. A past year lists its
 // first ten, a divider, then every other book read that year, none collapsed; an unranked read shows
 // under *Not ranked yet*; a read with no date under *No year*; the year is in the URL and survives a
