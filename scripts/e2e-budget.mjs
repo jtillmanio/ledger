@@ -5,13 +5,23 @@
 //   node scripts/e2e-budget.mjs check OUT.json [BASE.json]    the summary; exit 1 when over budget
 //
 // check reads SHARDS (the e2e matrix's size), EVENT (only a pull_request can
-// fail), LABELS (the PR's, as JSON) and BASELINE_RUN; it writes the summary to
+// fail), LABELS (the PR's, as JSON), BASELINE_RUN, and the run's E2E_AREAS and
+// E2E_SCOPE (every area and full when unset, roadmap 0.15): each test's area
+// comes from its spec's `// @area` line in test/e2e, and an area run's shards
+// are planned as playwright.config.ts planned them. It writes the summary to
 // GITHUB_STEP_SUMMARY when set, else to stdout. The rules are in
 // scripts/lib/e2e-budget.mjs.
 import { execFileSync } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { GROWTH_LABEL, budgetProblems, compareTimes, renderSummary, timesFromReport } from "./lib/e2e-budget.mjs";
+import { fileURLToPath } from "node:url";
+import { parseAreas, plannedProjects, plannedUnits, specArea } from "./lib/e2e.mjs";
+import { GROWTH_LABEL, budgetProblems, compareAreas, renderSummary, timesFromReport } from "./lib/e2e-budget.mjs";
+import { planShards } from "./lib/e2e-shards.mjs";
+
+const root = fileURLToPath(new URL("..", import.meta.url));
+const SPEC_DIR = join(root, "test", "e2e");
+const TIMES_FILE = join(SPEC_DIR, "shard-times.json");
 
 const [command, a, b] = process.argv.slice(2);
 const readJson = (file) => JSON.parse(readFileSync(file, "utf8"));
@@ -46,9 +56,20 @@ function baseline(dir) {
 function check(currentFile, baselineFile) {
   const shards = Number(process.env.SHARDS);
   if (!Number.isInteger(shards) || shards < 1) throw new Error(`SHARDS is "${process.env.SHARDS}": the e2e matrix's size, a whole number.`);
+  const { areas, error } = parseAreas(process.env.E2E_AREAS);
+  if (error) throw new Error(error);
   const current = readJson(currentFile).tests;
   const base = baselineFile && existsSync(baselineFile) ? readJson(baselineFile).tests : null;
-  const c = compareTimes(current, base, shards);
+  const files = readdirSync(SPEC_DIR).filter((f) => f.endsWith(".spec.ts"));
+  const specs = files.map((file) => ({ file, text: readFileSync(join(SPEC_DIR, file), "utf8") }));
+  const areaOf = Object.fromEntries(specs.flatMap(({ file, text }) => {
+    const r = specArea(text);
+    return "area" in r ? [[file, r.area]] : [];
+  }));
+  // The shards this run had: its scope and areas, planned from the recorded times (e2e-shards.mjs balance does the same).
+  const plan = areas === null ? null
+    : planShards(plannedUnits(plannedProjects(process.env.E2E_SCOPE || "full", areas, specs), files, readJson(TIMES_FILE)), shards);
+  const c = compareAreas(current, base, shards, { areaOf, areas, plan });
   const problems = budgetProblems(c);
   const labels = JSON.parse(process.env.LABELS || "[]");
   const accepted = labels.includes(GROWTH_LABEL);

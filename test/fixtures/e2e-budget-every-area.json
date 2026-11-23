@@ -1,0 +1,117 @@
+{
+ "_about": "TASK-136 AC-4: e2e-budget's compareTimes and budgetProblems on these times, recorded at 93eb453 before the budget read areas. A run over every area must give the same comparison, and each problem must start with the recorded text.",
+ "areaOf": {
+  "books-shelf.spec.ts": "books",
+  "comics-runs.spec.ts": "comics",
+  "shell.spec.ts": "shared"
+ },
+ "cases": {
+  "within": {
+   "current": {
+    "books-shelf.spec.ts › lists the shelf [w390-light]": 52000,
+    "books-shelf.spec.ts › lists the shelf [w1280-light]": 41000,
+    "comics-runs.spec.ts › opens a run [w390-light]": 49000,
+    "comics-runs.spec.ts › opens a run [w768-light]": 70000,
+    "comics-runs.spec.ts › floor @floor [w360-light]": 20000,
+    "comics-runs.spec.ts › a new check [w390-light]": 35000,
+    "shell.spec.ts › signs in @critical [w390-light]": 12000,
+    "shell.spec.ts › navigates [w390-light]": 25000
+   },
+   "baseline": {
+    "books-shelf.spec.ts › lists the shelf [w390-light]": 40000,
+    "books-shelf.spec.ts › lists the shelf [w1280-light]": 45000,
+    "books-shelf.spec.ts › old sort @critical [w390-light]": 30000,
+    "comics-runs.spec.ts › opens a run [w390-light]": 50000,
+    "comics-runs.spec.ts › opens a run [w768-light]": 55000,
+    "comics-runs.spec.ts › floor @floor [w360-light]": 20000,
+    "shell.spec.ts › signs in @critical [w390-light]": 10000,
+    "shell.spec.ts › navigates [w390-light]": 25000
+   },
+   "shards": 10,
+   "recorded": {
+    "comparison": {
+     "runs": 8,
+     "measured": 304000,
+     "projected": 280000,
+     "perShard": 28000,
+     "shards": 10,
+     "baseline": {
+      "runs": 8,
+      "total": 275000
+     },
+     "addedRuns": 1,
+     "removedRuns": 1,
+     "growth": 5000,
+     "costliest": [
+      {
+       "test": "comics-runs.spec.ts › a new check",
+       "projects": 1,
+       "ms": 35000
+      }
+     ]
+    },
+    "problems": []
+   }
+  },
+  "over": {
+   "current": {
+    "books-shelf.spec.ts › lists the shelf [w390-light]": 40000,
+    "books-shelf.spec.ts › lists the shelf [w1280-light]": 45000,
+    "books-shelf.spec.ts › old sort @critical [w390-light]": 30000,
+    "comics-runs.spec.ts › opens a run [w390-light]": 50000,
+    "comics-runs.spec.ts › opens a run [w768-light]": 55000,
+    "comics-runs.spec.ts › floor @floor [w360-light]": 20000,
+    "shell.spec.ts › signs in @critical [w390-light]": 10000,
+    "shell.spec.ts › navigates [w390-light]": 25000,
+    "books-shelf.spec.ts › a new flow [w390-light]": 90000,
+    "books-shelf.spec.ts › a new flow [w768-light]": 60000,
+    "comics-runs.spec.ts › another flow [w390-light]": 90000,
+    "shell.spec.ts › giant [w390-light]": 600000
+   },
+   "baseline": {
+    "books-shelf.spec.ts › lists the shelf [w390-light]": 40000,
+    "books-shelf.spec.ts › lists the shelf [w1280-light]": 45000,
+    "books-shelf.spec.ts › old sort @critical [w390-light]": 30000,
+    "comics-runs.spec.ts › opens a run [w390-light]": 50000,
+    "comics-runs.spec.ts › opens a run [w768-light]": 55000,
+    "comics-runs.spec.ts › floor @floor [w360-light]": 20000,
+    "shell.spec.ts › signs in @critical [w390-light]": 10000,
+    "shell.spec.ts › navigates [w390-light]": 25000,
+    "shell.spec.ts › giant [w390-light]": 600000
+   },
+   "shards": 2,
+   "recorded": {
+    "comparison": {
+     "runs": 12,
+     "measured": 1115000,
+     "projected": 1115000,
+     "perShard": 557500,
+     "shards": 2,
+     "baseline": {
+      "runs": 9,
+      "total": 875000
+     },
+     "addedRuns": 3,
+     "removedRuns": 0,
+     "growth": 240000,
+     "costliest": [
+      {
+       "test": "books-shelf.spec.ts › a new flow",
+       "projects": 2,
+       "ms": 150000
+      },
+      {
+       "test": "comics-runs.spec.ts › another flow",
+       "projects": 1,
+       "ms": 90000
+      }
+     ]
+    },
+    "problems": [
+     "this PR adds 4.0 min of browser-suite time, over the 3.0 min a PR may add",
+     "the suite would take 9.3 min a shard, over the 6.0 min ceiling"
+    ]
+   }
+  }
+ }
+}

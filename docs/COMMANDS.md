@@ -157,7 +157,8 @@ npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in
                             # assertions read the project's own prefers-reduced-motion uses FLOOR_MOTION or FEEL_MOTION
                             # (`@motion`: also reduced motion), and one that needs the coarse pointer adds `@touch` (D-167). No dark project runs them: contrast, axe's color-contrast
                             # and screenshot check the other theme in place. CI's e2e-budget job fails a PR that adds over
-                            # 3 min of suite time or passes 6 min a shard (`e2e-growth` label accepts). E2E_SERVER=start
+                            # 3 min of suite time or passes 6 min a shard (`e2e-growth` label accepts); a run of some areas is
+                            # judged by those areas, against main's same tests, and by each of its own shards. E2E_SERVER=start
                             # serves an existing `npm run build` with `next start` instead (CI's shards do). E2E_SHARD=n/N
                             # runs only the spec files shard n of N holds, balanced by recorded time (CI's ten shards, D-167).
                             # Every spec's first line names its one area (0.15): `// @area: books`, comics, watch, music,
