@@ -1,0 +1,4 @@
+kind,a,b,a_author,b_author,a_tabs,b_tabs,reason,similarity,keep,decision
+book,Elantris,Elantris (Tenth Anniversary),Brandon Sanderson,Brandon Sanderson,,Open Library,open library,0.55,Elantris (Tenth Anniversary),
+book,Edgedancer Novella,Edgedancer,Brandon Sanderson,Brandon Sanderson,,Open Library,open library,0.58,Edgedancer,merge
+book,Mistborn,Mistborn: The Final Empire,Brandon Sanderson,Brandon Sanderson,,Open Library,open library,0.6,Mistborn,separate

@@ -24,7 +24,7 @@ import calibre as cal  # noqa: E402
 import enrich_books as eb  # noqa: E402
 import extract as ex  # noqa: E402
 from test_enrich_books import FakeHardcover, doc, edition, hc_book, results  # noqa: E402
-from test_extract import build_books, series_tab, tab  # noqa: E402
+from test_extract import before_6_19, build_books, series_tab, tab  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
 
@@ -716,14 +716,12 @@ class Rerun(Case):
         self.assertEqual(names[self.book_by_title("Warbreaker")["author_id"]], "Brandon Sanderson")
 
     def test_a_proposal_against_a_renamed_workbook_book_is_kept(self):
-        """An `open library` merge renamed the workbook's `Edgedancer Novella`
-        to `Edgedancer`; Calibre's `Edgedancers` is proposed against the new
-        spelling, and the row stays until it is decided, holding the book."""
+        """An `open library` merge (1.14's, decided; the fixture's row) renamed
+        the workbook's `Edgedancer Novella` to `Edgedancer`; Calibre's
+        `Edgedancers` is proposed against the new spelling, and the row stays
+        until it is decided, holding the book."""
         self.workbook = build_books([("Edgedancer Novella", "Brandon Sanderson", None, "Fantasy", None)])
-        self.write_review({"kind": "book", "a": "Edgedancer Novella", "b": "Edgedancer",
-                           "a_author": "Brandon Sanderson", "b_author": "Brandon Sanderson",
-                           "b_tabs": "Open Library", "reason": "open library", "keep": "Edgedancer",
-                           "decision": "merge"})
+        self.write_review(next(r for r in before_6_19("book_review")[1] if r["a"] == "Edgedancer Novella"))
         build_library(self.lib, [book("Edgedancers", "Brandon Sanderson"), book("Mistborn", "Brandon Sanderson")])
         self.round()
         self.round()
@@ -871,7 +869,7 @@ class Shape(Case):
             header = next(csv.reader(fh))
         self.assertEqual(header, ["id", "title", "author_id", "series_id", "series_position",
                                   "book_type", "word_count", "word_count_source", "published_year",
-                                  "page_count", "cover_url", "open_library_id", "hardcover_id", "universe_id",
+                                  "page_count", "cover_url", "hardcover_id", "universe_id",
                                   "universe_position", "subseries_id", "subseries_position", "calibre_id"])
 
     def test_the_temp_copy_is_outside_the_repo_and_removed(self):
@@ -1016,7 +1014,7 @@ class Shape(Case):
         self.assertEqual(self.sidecars(), before)
 
     def test_isbns_are_asked_first_many_to_a_request_and_only_the_rest_searched(self):
-        """Task 1.14b AC-5: the series check asks Hardcover, never Open Library
+        """Task 1.14b AC-5: the series check asks Hardcover, and nothing else
         (every real request fails the test), the ISBNs in one request."""
         build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson", series="The Stormlight Archive",
                                       isbn="9780765326355"),
@@ -1095,9 +1093,9 @@ class Groupings(Case):
         beat Calibre's #pages, which fills a book the sidecar gives none."""
         self.details = self.data / "book_details.csv"
         self.write_rows(self.details, [
-            {"title": "The Way of Kings", "author": "Brandon Sanderson", "open_library_id": "", "hardcover_id": "",
+            {"title": "The Way of Kings", "author": "Brandon Sanderson", "hardcover_id": "",
              "page_count": "1007", "cover_url": "", "published_year": "2010", "source": "hand"},
-            {"title": "Mistborn", "author": "Brandon Sanderson", "open_library_id": "", "hardcover_id": "369692",
+            {"title": "Mistborn", "author": "Brandon Sanderson", "hardcover_id": "369692",
              "page_count": "541", "cover_url": "", "published_year": "2006", "source": "hardcover"}])
         build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson", pages=1258),
                                  book("Mistborn", "Brandon Sanderson", pages=700),

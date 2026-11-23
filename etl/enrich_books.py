@@ -13,7 +13,7 @@ by its title and author), asks Hardcover, and writes etl/data/book_details.csv,
 keyed by title and author: Hardcover's book id, two page counts (the book's,
 its default edition's, usually print; and the matched edition's), a cover URL
 and the book's release year. `npm run extract` folds it into books (task 1.14b,
-D-94, replacing 1.14's Open Library, D-44): the page count is the book's, else
+D-94, replacing 1.14's lookup, D-44): the page count is the book's, else
 the edition's, else Calibre's #pages (1.14c, D-130), and the year fills only
 where the workbook has none. The report says how many matched books' page
 counts the next extract changes against seed/books.csv, and how many of those
@@ -41,12 +41,13 @@ A `compilation` never matches, by ISBN or by title, and is never proposed. A
 book with no author is not looked up.
 
 Rules it keeps:
-- Never overwrites a hand value. A row whose source is anything but
-  `hardcover` (or 1.14's `openlibrary`, which every run drops) is never looked
-  up or changed, and a failed lookup never erases a Hardcover row.
-- Undecided `open library` rows in book_review.csv go; decided ones stay. A
-  run that stops early, or takes --limit, keeps the Open Library rows of the
-  books it didn't reach, so a failed run never empties book_details.csv.
+- Never overwrites a hand value. A `hand` row is never looked up or changed,
+  and a failed lookup never erases a Hardcover row. 1.14's rows, from the
+  lookup Hardcover retired (ex.retired()), go as a run reaches their books.
+- Undecided `open library` rows in book_review.csv (ex.RETIRED_LOOKUP) go;
+  decided ones stay. A run that stops early, or takes --limit, keeps 1.14's
+  rows for the books it didn't reach, so a failed run never empties
+  book_details.csv. Each run writes today's header (6.19, TASK-131).
 - No word count from pages (2.1 estimates one), no ISBNs (books has no column).
 - Hardcover's limits (D-94): 60 requests a minute, bursts of 10, 5,000 a day.
   One request a second, waiting for the reset whenever its `RateLimit` header
@@ -87,7 +88,6 @@ MAX_WAIT = 300          # a wait longer than this (the daily limit) stops the ru
 ISBN_BATCH = 100        # ISBNs in one editions request, which is one request however many it lists
 SEARCH_LIMIT = 10       # results per search; the book is near the top when Hardcover has it
 SOURCE = "hardcover"
-OLD_SOURCE = "openlibrary"  # 1.14's rows, which every run replaces (D-94)
 # A near spelling is proposed at this trigram similarity or more, or as a
 # subtitle (ex.subtitled()): the line D-89 drew for Calibre's pairs, above the
 # workbook's own 0.4 (D-92). Below it the pairs were series patterns.
@@ -265,7 +265,7 @@ def find(api: "Hardcover", title: str, author: str, isbn: str = "",
 
 
 def details(title: str, author: str, record: dict) -> dict:
-    return {"title": title, "author": author, "open_library_id": "", "hardcover_id": record["id"],
+    return {"title": title, "author": author, "hardcover_id": record["id"],
             "page_count": record["pages"] or "", "edition_page_count": record["edition_pages"] or "",
             "cover_url": record["cover"] or "",
             "published_year": record["year"] or "", "source": SOURCE}
@@ -494,13 +494,13 @@ def run(args) -> int:
     review = ex.load_book_review(args.book_review)
     out = Path(args.out)
     rows = read_rows(out, DETAIL_COLUMNS)
-    old_rows, _ = rekey([r for r in rows if r["source"] == OLD_SOURCE], review)
-    existing, moved = rekey([r for r in rows if r["source"] != OLD_SOURCE], review)
+    old_rows, _ = rekey([r for r in rows if ex.retired(r)], review)
+    existing, moved = rekey([r for r in rows if not ex.retired(r)], review)
     if moved:
         print(f"rekeyed {moved} rows in {out.name} to accepted spellings"
               + (" (dry run: not written)" if args.dry_run else ""))
     if old_rows:
-        print(f"{len(old_rows)} Open Library rows in {out.name} go as this run reaches their books (D-94)"
+        print(f"{len(old_rows)} rows from 1.14's lookup in {out.name} go as this run reaches their books (D-94)"
               + (" (dry run: not written)" if args.dry_run else ""))
     picked_rows, _ = moved_through(read_rows(Path(args.hardcover_review), REVIEW_COLUMNS), review)
     picks: dict[tuple, set[int]] = {}
@@ -574,22 +574,22 @@ def run(args) -> int:
     for k, row in fresh.items():
         if not is_hand(existing.get(k)):
             existing[k] = row
-    # A run that didn't reach every book keeps those books' Open Library rows
-    # until one does; a complete run leaves none.
+    # A run that didn't reach every book keeps those books' rows from 1.14's
+    # lookup until one does; a complete run leaves none.
     if stopped or args.limit:
         reached = {k for k, s in status.items() if s in LOOKED_UP}
         kept_old = {k: r for k, r in old_rows.items() if k not in reached and k not in existing}
         existing.update(kept_old)
         if kept_old:
-            print(f"  {len(kept_old)} Open Library rows kept for the books this run didn't reach")
+            print(f"  {len(kept_old)} rows from 1.14's lookup kept for the books this run didn't reach")
     rows = sorted(existing.values(), key=lambda r: (ex.key(r["author"]), ex.key(r["title"])))
     write_csv(out, DETAIL_COLUMNS, rows)
     write_hardcover_review(Path(args.hardcover_review), picked_rows, candidates,
                            {k for k, s in status.items() if s in LOOKED_UP})
 
-    # Undecided Open Library proposals go with Open Library (D-94); decided
-    # ones are the owner's and stay.
-    kept = [r for r in review if r["reason"] != ex.OPEN_LIBRARY or r["decision"]]
+    # Undecided proposals from 1.14's lookup go with it (D-94); decided ones
+    # are the owner's and stay.
+    kept = [r for r in review if r["reason"] != ex.RETIRED_LOOKUP or r["decision"]]
     known = {ex.review_sides(r) for r in kept}
     new = []
     for p in proposals:
@@ -599,7 +599,7 @@ def run(args) -> int:
     if new or len(kept) < len(review):
         write_csv(Path(args.book_review), ex.BOOK_REVIEW_COLUMNS, kept + new)
         if len(kept) < len(review):
-            print(f"  {len(review) - len(kept)} undecided Open Library spellings dropped from {args.book_review}")
+            print(f"  {len(review) - len(kept)} undecided spellings from 1.14's lookup dropped from {args.book_review}")
         if new:
             print(f"  {len(new)} Hardcover spellings to review in {args.book_review}: "
                   "`merge` takes Hardcover's, `separate` keeps yours")

@@ -19,6 +19,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).parent))
 import enrich_books as eb  # noqa: E402
 import extract as ex  # noqa: E402
+from test_extract import before_6_19  # noqa: E402
 
 TOKEN = "test-token"
 
@@ -230,7 +231,7 @@ class Fake(unittest.TestCase):
 
 def row(title, hid, pages, cover, year, author="Brandon Sanderson", edition=None):
     """A `hardcover` details row: `pages` the book's count, `edition` the matched edition's (1.14c)."""
-    return {"title": title, "author": author, "open_library_id": "", "hardcover_id": str(hid),
+    return {"title": title, "author": author, "hardcover_id": str(hid),
             "page_count": str(pages), "edition_page_count": str(edition or ""), "cover_url": cover,
             "published_year": str(year), "source": "hardcover"}
 
@@ -284,7 +285,7 @@ class Check(Fake):
         self.assertEqual(eb.decide("Arcanum Unbounded", "Brandon Sanderson", near)[0], "unmatched")
 
     def test_a_hand_row_is_unchanged_and_never_looked_up(self):
-        hand = {"title": "The Way of Kings", "author": "Brandon Sanderson", "open_library_id": "",
+        hand = {"title": "The Way of Kings", "author": "Brandon Sanderson",
                 "hardcover_id": "", "page_count": "1001", "edition_page_count": "", "cover_url": "https://example.org/wok.jpg",
                 "published_year": "2010", "source": "hand"}
         self.write_details([hand])
@@ -419,7 +420,7 @@ COUNT_BOOKS = [("Print First", "11", "9780000000011", "600", "90000", "600", "90
                ("No Count", "13", "9780000000013", "600", "120000", "600", "120000"),
                ("Hand Kept", "14", "9780000000014", "600", "", "600", ""),
                ("By Title", "", "", "", "", "288", "")]
-HAND_KEPT_ROW = {"title": "Hand Kept", "author": WRITER, "open_library_id": "", "hardcover_id": "",
+HAND_KEPT_ROW = {"title": "Hand Kept", "author": WRITER, "hardcover_id": "",
                  "page_count": "900", "edition_page_count": "", "cover_url": "", "published_year": "",
                  "source": "hand"}
 
@@ -613,58 +614,70 @@ class Requests(Fake):
         self.assertEqual(len(self.searched()), 100)
 
 
+# book_details.csv's header since 6.19 (TASK-131), spelled out: the old id
+# column is gone (1.14c added edition_page_count).
+DETAIL_HEADER = ["title", "author", "hardcover_id", "page_count", "edition_page_count", "cover_url",
+                 "published_year", "source"]
+
+
 class Replace(Fake):
-    """AC-4: 1.14's Open Library rows go; hand rows and decisions stay."""
+    """1.14b AC-4, and 6.19 AC-2 (TASK-131): 1.14's rows, from the retired
+    lookup, go as a run reaches their books; hand rows and decisions stay. The
+    sidecar starts as the fixture has it (etl/testdata/before-6.19): the old
+    header, with its id column, and 1.14's rows. A run writes it back without
+    that column."""
 
-    OPEN_LIBRARY = {"kind": "book", "a": "Elantris", "b": "Elantris (Tenth Anniversary)",
-                    "a_author": "Brandon Sanderson", "b_author": "Brandon Sanderson", "a_tabs": "",
-                    "b_tabs": "Open Library", "reason": "open library", "similarity": "0.55",
-                    "keep": "Elantris (Tenth Anniversary)", "decision": ""}
+    def setUp(self):
+        super().setUp()
+        self.header, self.before = before_6_19("book_details")
+        self.write("book_details.csv", self.header, self.before)
 
-    def test_open_library_rows_go_and_hand_and_decided_rows_stay(self):
-        hand = {"title": "Warbreaker", "author": "Brandon Sanderson", "open_library_id": "OL1W",
-                "hardcover_id": "", "page_count": "600", "edition_page_count": "", "cover_url": "", "published_year": "2009",
-                "source": "hand"}
-        self.write_details([
-            {"title": "Mistborn", "author": "Brandon Sanderson", "open_library_id": "OL15358692W",
-             "hardcover_id": "", "page_count": "541", "cover_url": "", "published_year": "2006",
-             "source": "openlibrary"},
-            {"title": "Nothing Like It", "author": "Brandon Sanderson", "open_library_id": "OL9W",
-             "hardcover_id": "", "page_count": "100", "cover_url": "", "published_year": "1999",
-             "source": "openlibrary"},
-            hand])
-        decided = {**self.OPEN_LIBRARY, "a": "Mistborn", "b": "Mistborn: The Final Empire",
-                   "keep": "Mistborn", "decision": "separate"}
-        self.write_review([self.OPEN_LIBRARY, decided])
+    def fixture(self, title) -> dict:
+        """The fixture's row for `title`, as the sidecar holds it now: today's columns only."""
+        r = next(r for r in self.before if r["title"] == title)
+        return {c: r.get(c, "") for c in eb.DETAIL_COLUMNS}
+
+    def review_fixture(self, a) -> dict:
+        return next(r for r in before_6_19("book_review")[1] if r["a"] == a)
+
+    def written_header(self) -> list[str]:
+        with (self.dir / "book_details.csv").open(newline="", encoding="utf-8") as fh:
+            return next(csv.reader(fh))
+
+    def test_retired_rows_go_and_hand_and_decided_rows_stay(self):
+        self.assertTrue(set(self.header) - set(eb.DETAIL_COLUMNS))   # the fixture is the old shape
+        undecided, decided = self.review_fixture("Elantris"), self.review_fixture("Mistborn")
+        self.write_review([undecided, decided])
         self.run_once()
         details = self.details()
-        self.assertNotIn("openlibrary", {r["source"] for r in details.values()})
-        # Hardcover's row replaces Mistborn's; Nothing Like It has none now.
-        self.assertEqual(details["Mistborn"]["source"], "hardcover")
+        # AC-2: today's header, no old id column, and only Hardcover's rows and hand rows.
+        self.assertEqual(self.written_header(), DETAIL_HEADER)
+        self.assertEqual({r["source"] for r in details.values()}, {"hardcover", "hand"})
+        # Hardcover's rows replace Mistborn's and Elantris's; Nothing Like It
+        # has none now, nor does Edgedancer, which no seed book is.
+        self.assertEqual((details["Mistborn"]["source"], details["Elantris"]["source"]), ("hardcover", "hardcover"))
         self.assertNotIn("Nothing Like It", details)
-        self.assertEqual(details["Warbreaker"], hand)
+        self.assertNotIn("Edgedancer", details)
+        self.assertEqual(details["Warbreaker"], self.fixture("Warbreaker"))
         reasons = [(r["a"], r["reason"], r["decision"]) for r in self.review()]
         self.assertIn(("Mistborn", "open library", "separate"), reasons)
         self.assertNotIn(("Elantris", "open library", ""), reasons)
         self.assertEqual([r for r in self.review() if r["a"] == "Mistborn"][0], decided)
 
-    def test_a_stopped_run_keeps_the_open_library_rows_it_didnt_reach(self):
+    def test_a_stopped_run_keeps_the_retired_rows_it_didnt_reach(self):
         """Schema review: a run that stops early never empties the sidecar.
-        It stops at Warbreaker; Mistborn was reached, Nothing Like It wasn't."""
-        ol = {"title": "Nothing Like It", "author": "Brandon Sanderson", "open_library_id": "OL9W",
-              "hardcover_id": "", "page_count": "100", "edition_page_count": "", "cover_url": "",
-              "published_year": "1999",
-              "source": "openlibrary"}
-        self.write_details([{**ol, "title": "Mistborn", "open_library_id": "OL2W"}, ol])
+        Mistborn was reached, Nothing Like It wasn't: its row stays, under
+        today's header."""
         self.hc.fail_at = 3
         self.run_once()
         details = self.details()
+        self.assertEqual(self.written_header(), DETAIL_HEADER)
         self.assertEqual(details["Mistborn"]["source"], "hardcover")
-        self.assertEqual(details["Nothing Like It"], ol)
+        self.assertEqual(details["Nothing Like It"], self.fixture("Nothing Like It"))
         # The run that reaches it leaves none.
         self.hc.fail_at = None
         self.run_once()
-        self.assertNotIn("openlibrary", {r["source"] for r in self.details().values()})
+        self.assertEqual({r["source"] for r in self.details().values()}, {"hardcover", "hand"})
 
     def test_a_failed_lookup_never_erases_a_hardcover_row(self):
         kept = row("Nothing Like It", 77, 100, "", 1999)
@@ -680,7 +693,7 @@ class Replace(Fake):
         rows = self.review()
         rows[0]["decision"] = "merge"
         self.write_review(rows)
-        hand = {"title": "Edgedancer Novella", "author": "Brandon Sanderson", "open_library_id": "",
+        hand = {"title": "Edgedancer Novella", "author": "Brandon Sanderson",
                 "hardcover_id": "", "page_count": "300", "edition_page_count": "", "cover_url": "", "published_year": "",
                 "source": "hand"}
         self.write_details([hand])
