@@ -1,3 +1,4 @@
+// @area: books
 // Task 4.4 part 3 (D-133): the *Calibre* page and the books dashboard's stale-sync line in a real
 // browser. The page lists the sync runs newest first and opens the newest; a run's details show each
 // change by book; *Not in Calibre* lists a book with no Calibre id and Settings links to the page.

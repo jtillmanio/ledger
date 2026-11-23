@@ -1,3 +1,4 @@
+// @area: books
 // Task 2.2c (D-108, D-116): following what you read, in a real browser, at
 // every width, light and dark (AC-1, AC-3, AC-4, AC-5). A Library row's ⋯ has
 // *Follow…*, which opens a sheet headed by the book's title listing its series,

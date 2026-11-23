@@ -1,3 +1,4 @@
+// @area: shared
 // Task 4.3, part 2 of 3 (TASK-086, F-33; D-40, STYLE_GUIDE § 4.2, § 7): covers at the feel pass's sizes on the
 // dashboards, in a browser. The books hero (`--cover-hero`: 112px, 150 from 768, 168 from 1280), *Between books*
 // (the last finish at 72, the offer at 36), the Up next shelves on both dashboards (`--cover-shelf` 112), the

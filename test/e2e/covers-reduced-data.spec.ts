@@ -1,3 +1,4 @@
+// @area: comics
 // Task 4.3, part 3 of 3 (TASK-087, AC-1, AC-3, F-33): the device asks for less data, and the spine, with Show
 // covers on, makes zero image requests and draws its placeholders. `prefers-reduced-data` is emulated; stock
 // Chromium ignores it, even under DevTools emulation (probed 2026-11-16), until the Blink feature is on, so this

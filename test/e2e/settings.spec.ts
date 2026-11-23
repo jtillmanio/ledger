@@ -1,3 +1,4 @@
+// @area: shared
 // Task 2.0 (F-21, R1-05): Settings in a real browser. One `<h1>`; each stepper a
 // named group of real buttons; a press saved once, debounced, and shown again
 // after a reload with the *a year* card to match; the bounds `aria-disabled`

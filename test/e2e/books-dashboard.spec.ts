@@ -1,3 +1,4 @@
+// @area: books
 // Task 2.2 (F-22; D-37, D-40; STYLE_GUIDE §14.1, §14.2, §14.6): the books dashboard in a real
 // browser. The five slots in order, reading, *Between books* with and without a finish, an empty
 // plan, the strip's figure against 2.1's and past capacity in amber, *2026 so far*, the primary

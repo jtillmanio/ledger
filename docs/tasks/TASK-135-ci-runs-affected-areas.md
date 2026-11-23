@@ -29,6 +29,8 @@ A ready PR's browser suite runs only the areas its changed files can break, plus
 - **The decision row** (next free D-n in `docs/review/decisions.md`) amends D-80 (what a PR runs), D-141 (the browser suite runs whole only in CI) and D-161 (the time budget, which TASK-136 changes). `.claude/rules/git.md` § *Test on the branch, before merge* and `docs/GIT-PR.md` say which PRs run what. A PR the owner or Claude judges risky (a refactor with no clear area) gets `e2e:full` before merge.
 - **Not chosen** (the entry): running only the core projects on PRs. It saves about 22% and grows with every medium.
 - Tests: `test/ci-scope.test.ts`, `test/ci-yml.ts` (reads `ci.yml`).
+- *From TASK-134 (0.15, PR #323):* `node scripts/e2e-shards.mjs balance` prices every spec file in every project. Once CI sets `E2E_AREAS`, it should price the plan the area run actually made (`areaFilter` in `scripts/lib/e2e.mjs`), or an area run will always look out of balance.
+- *From TASK-134 (0.15, PR #323), open question for the plan:* `dnf-reason.spec.ts` is a `books` spec but holds 2 of the 6 `@critical` tests, so a comics-only PR runs those two (only them, at the core projects). The Check says such a PR runs "no books spec": say explicitly that a books file's `@critical` tests don't count as a books spec, or move those tests.
 
 ## Acceptance criteria
 

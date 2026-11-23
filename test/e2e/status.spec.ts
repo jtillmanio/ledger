@@ -1,3 +1,4 @@
+// @area: shared
 // Task 1.9: the status screens in a real browser, comics and books. The tab in
 // the URL and the arrow keys, one underline, counts that are the rows, the
 // resume button named for its target, a quarter's keyboard reorder that never

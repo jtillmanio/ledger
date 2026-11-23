@@ -1,3 +1,4 @@
+// @area: books
 // Task 5.9, 1 of 2 (TASK-101; D-26, D-90, R1-06): the Series list in a real browser, on the TEST database. A
 // row reads `read / total`, its meter fills with --ready, and it names the lowest-position unread book; a
 // complete series names none; one with more read than its stated total reads `4 / 3` with a full meter.

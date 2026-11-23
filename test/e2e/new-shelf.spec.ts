@@ -1,3 +1,4 @@
+// @area: shared
 // Task 5.1, 3 of 3 (TASK-097; D-139, R1-07): *New shelf…* in Add books' *Shelf…* picker, in a real
 // browser on the TEST database. The roadmap's **Check (the new-shelf part):** *New shelf…* with a new
 // name writes one `shelves` row and one `shelf_books` row; Undo leaves neither; a name already in use

@@ -1,3 +1,4 @@
+// @area: comics
 // Task 1.10: the comics Up next queue in a real browser. The dashboard's cover
 // shelf (order, Start, no handle, the 1280px edge, ‹ › paging), the queue list
 // behind Reorder (the keyboard sequence, Esc, the row menu, Remove and its

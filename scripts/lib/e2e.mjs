@@ -87,6 +87,102 @@ export const TOUCH_PROJECT = "w390-touch";
 export const FEEL_TAG = "@feel";
 export const E2E_FEEL = ["w360-light", "w390-light", "w412-light", "w768-light", "w1024-light", "w1280-light"];
 
+// Every spec belongs to one area (roadmap 0.15, task 0.15): the part of the
+// app it checks. A medium's area is its own screens; `shared` is the shell,
+// the thumb bar, the status control, Add books, settings, the sheets and every
+// other control more than one medium uses. Watch, music and games have no
+// specs yet: their areas are where 8.8, 9.3 and 10.1 land.
+export const AREAS = ["books", "comics", "watch", "music", "games", "shared"];
+
+// A spec says its area in one line of its own text, `// @area: comics`, so
+// this file, playwright.config.ts and the CI scope read it without loading
+// the spec, and no file moves (shard-times.json keys stay as they are).
+const AREA_LINE = /^\/\/ @area:(.*)$/gm;
+
+/** `{ area }` from a spec's text, or `{ error }`: no area line, more than one area, or one not in AREAS. */
+export function specArea(text) {
+  const names = [...text.matchAll(AREA_LINE)].flatMap((m) => m[1].split(/[\s,]+/).filter(Boolean));
+  if (names.length === 0) return { error: `no area: add a line "// @area: <area>", one of ${AREAS.join(", ")}` };
+  if (names.length > 1) return { error: `${names.length} areas (${names.join(", ")}): a spec belongs to exactly one` };
+  if (!AREAS.includes(names[0])) return { error: `"${names[0]}" is not an area: use one of ${AREAS.join(", ")}` };
+  return { area: names[0] };
+}
+
+/** One message per spec file whose area is missing, doubled or unknown, each naming the file. */
+export function areaProblems(specs) {
+  return specs.flatMap(({ file, text }) => {
+    const r = specArea(text);
+    return "error" in r ? [`${file}: ${r.error}`] : [];
+  });
+}
+
+// `@critical`: the small set that runs whatever the areas, at the core
+// projects: sign-in, each medium's dashboard loading, the add flow, a status
+// write and its Undo, the navigation between media, an error state. A
+// critical test carries no `@floor` or `@feel` and any `@at-` tag on it names
+// a core project, so its own tags (D-161) never send it past E2E_CORE.
+export const CRITICAL_TAG = "@critical";
+
+/** Whether a spec's text tags any test (or describe) `@critical`. */
+export function hasCritical(text) {
+  return text.includes(`"${CRITICAL_TAG}"`);
+}
+
+/**
+ * E2E_AREAS: `{ areas: null }` when unset or empty (every area, as before
+ * 0.15), `{ areas }` for a comma-separated list of AREAS, `{ error }` for a
+ * name that is not one.
+ */
+export function parseAreas(value) {
+  if (value === undefined || value.trim() === "") return { areas: null };
+  const areas = [...new Set(value.split(",").map((a) => a.trim()).filter(Boolean))];
+  const bad = areas.filter((a) => !AREAS.includes(a));
+  if (bad.length > 0) return { error: `E2E_AREAS is "${value}": ${bad.join(", ")} is not an area; use a comma-separated list of ${AREAS.join(", ")}.` };
+  return { areas };
+}
+
+/**
+ * Which spec files an areas setting plans: `selected`, the files of those
+ * areas, and `critical`, the other files that hold a `@critical` test. A spec
+ * with no area, or a bad one, counts as selected: the plan fails toward
+ * running a spec, never toward dropping it (e2e-guard fails it anyway).
+ * null when `areas` is null: no filter.
+ */
+export function areaPlan(specs, areas) {
+  if (areas === null) return null;
+  const selected = [];
+  const critical = [];
+  for (const { file, text } of specs) {
+    const r = specArea(text);
+    if ("error" in r || areas.includes(r.area)) selected.push(file);
+    else if (hasCritical(text)) critical.push(file);
+  }
+  return { selected: selected.sort(), critical: critical.sort() };
+}
+
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * What one project runs under an area plan: `files`, its spec files, and for
+ * a core project with critical-only files a `grepInvert` that drops every test
+ * of those files but the `@critical` ones. Every project runs the selected
+ * files; only a core project adds the critical ones. null for no plan: the
+ * project runs every spec file, as before 0.15.
+ *
+ * The grepInvert reads Playwright's grep title, `<project> <file> <describe…>
+ * <title> <tags…>` (createProjectSuite filters before the project joins the
+ * root, so nothing comes before the project's name), where <file> is the
+ * spec's path under test/e2e.
+ */
+export function areaFilter(project, plan) {
+  if (plan === null) return null;
+  if (!E2E_CORE.includes(project) || plan.critical.length === 0) return { files: plan.selected };
+  return {
+    files: [...plan.selected, ...plan.critical].sort(),
+    grepInvert: new RegExp(`^(?!.*${CRITICAL_TAG}(?![\\w-]))\\S+ (?:[^ ]*[\\\\/])?(?:${plan.critical.map(escapeRegExp).join("|")}) `),
+  };
+}
+
 /**
  * The projects a scope runs, each with the grep that picks its tests. An
  * untagged test runs in E2E_BEHAVIOUR, one tagged `@floor` in E2E_FLOOR, one
@@ -134,6 +230,10 @@ export function e2eProjects(scope) {
  * E2E_PORT picks where the server listens (e2ePort): a worktree's comes from
  * .env.worktree, so two sessions' suites can run at once.
  *
+ * E2E_AREAS picks the areas (parseAreas, roadmap 0.15): their spec files, plus
+ * the `@critical` tests at the core projects (areaPlan, areaFilter). Unset,
+ * every spec file runs, as before.
+ *
  * clear is the folder the wrapper deletes before Playwright starts: DEV_CACHE
  * for a dev server, null for `next start`.
  */
@@ -148,8 +248,11 @@ export function planE2e(env) {
   if (portError) return { error: portError };
   const shard = parseShard(env.E2E_SHARD);
   if (shard && "error" in shard) return { error: shard.error };
+  const { areas, error: areasError } = parseAreas(env.E2E_AREAS);
+  if (areasError) return { error: areasError };
   return {
     scope,
+    areas,
     clear: mode === "dev" ? DEV_CACHE : null,
     serverCommand: `npx next ${mode} --port ${port}`,
     serverEnv: {

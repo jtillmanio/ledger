@@ -1,3 +1,4 @@
+// @area: shared
 // Task 1.8: the app shell in a real browser. A media bar on the phone, a rail on
 // a tablet, a sidebar on desktop, all drawn from one NAV_ITEMS list. The checks
 // that need no layout of the project's own set their viewport and run once
@@ -384,7 +385,7 @@ test.describe("/watch (AC-5)", () => {
     await page.goto("/comics");
   });
 
-  test("the media bar's Watch link goes there", ONCE, async ({ page }) => {
+  test("the media bar's Watch link goes there", { tag: ["@at-w390-light", "@critical"] }, async ({ page }) => {
     await size(page, 390);
     await page.goto("/comics");
     await page.locator('.bar nav[aria-label="Media"] a[href="/watch"]').click();

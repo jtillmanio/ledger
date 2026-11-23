@@ -1,3 +1,4 @@
+// @area: books
 // Task 4.5 (D-98, AC-2, AC-3, AC-6): the Library's genre chips are Calibre's top-level genres, read
 // through book_genre_tree, in a browser. A chip finds a book tagged only with a subgenre of it, the row
 // names that subgenre, and the chips are real named links, 44px on the phone, in one row that scrolls

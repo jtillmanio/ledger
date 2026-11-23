@@ -1,3 +1,4 @@
+// @area: shared
 // Task 1.4f: Add books' *Search* on Hardcover in a real browser (AC-1, AC-6),
 // at every width, light and dark. The route asks Hardcover from the server,
 // where page.route can't see it, so the recorded answers
@@ -181,7 +182,7 @@ test("an ISBN-13 lists one result (AC-1)", ONCE, async ({ page }) => {
   await expect(statusLine(page)).toHaveCount(0);
 });
 
-test("adding one creates one books row with hardcover_id and its cover; adding it again reuses it and says so; the same search again makes no request (AC-1)", ONCE, async ({ page }) => {
+test("adding one creates one books row with hardcover_id and its cover; adding it again reuses it and says so; the same search again makes no request (AC-1)", { tag: ["@at-w390-light", "@critical"] }, async ({ page }) => {
   const before = await withSql(searchRow);
   await search(page, "piranesi");
   const add = page.getByRole("button", { name: "Add to Someday: Piranesi", exact: true });
