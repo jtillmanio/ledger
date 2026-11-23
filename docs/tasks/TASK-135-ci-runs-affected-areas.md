@@ -1,14 +1,14 @@
 ---
 id: TASK-135
 title: 0.15 The browser suite runs by area (2 of 3) — CI runs what a PR's paths can break
-status: Ready
+status: In progress
 depends_on: [TASK-134]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 7e981ea
 ---
 
 # TASK-135 — 0.15 The browser suite runs by area (2 of 3) — CI runs what a PR's paths can break
@@ -75,9 +75,36 @@ Decision row recorded (next free D-n), amending D-80, D-141 and D-161.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- TASK-136 (the budget by area): an area run's `e2e-times` covers only its areas, so the per-area comparison reads `E2E_AREAS`; and a one-area run still builds on all ten shards for a couple of minutes of tests: whether an area run takes fewer shards (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-23 (attended, at the plan gate).
+
+**Steps**
+
+1. **The map** (`scripts/lib/ci-scope.mjs`, `prAreas(files, specAreaOf)`): each changed path selects areas, in order:
+   - docs-only paths (`isDocsOnly`) and unit tests (`test/` outside `test/e2e/`, `etl/test_*.py`) select none;
+   - `test/e2e/<x>.spec.ts` selects its own `// @area` (a shared spec selects `shared` alone); a spec it can't read (deleted) selects every area;
+   - routes: comics `src/app/comics/`, `src/app/api/{runs,queue,metron}/`; books `src/app/{books,book,parked,settings/calibre}/`, `src/app/@modal/(.)book/`, `src/app/api/{books,calibre,follows,listen-queue,parked,plan,shelves}/`; watch `src/app/watch/`;
+   - components: a medium's when only its routes import it. Comics (10): AddIssues, InsertPreview, IssueRow, IssueSearch, NextStrip, QueueBadge, QueueButton, QueueList, QueueShelf, RunChip. Books (40): BetweenBooks, BlockPopover, BookDetail, BookListSearch, BookNote, BookSheetActions, BookShelves, BookSort, CalibreSyncLine, ComingOutLine, FinishBook, GotIt, GroupingBooks, InlineText, ListenNext, OnDeckRow, ParkedDone, ParkedReviewLine, ParkedRow, PlaceThem, PlanQuarter, PlanQuarterRows, PlanRail, PlanSheet, PlanShelf, QuarterStrip, QueueListen, RailDrag, RailStackSheet, ReadAgain, RebalanceSheet, ReleaseDate, RouteSheet, SeriesBooks, SeriesList, SheetLinks, ShelfBooks, ShelfList, TopBooks, YearDecision. Left shared because shared specs test them: AddBooks, AddBooksButton, ByHand, PasteBooks, BookSearch, NewShelf, StartBook. Every other component is shared; a new one defaults to shared;
+   - *(Plan revision 1, owner-approved in Phase 2)* a medium's file that a spec of another area imports directly also selects that spec's area (status.spec.ts, shared, imports the books and comics status loading screens; skeletons.spec.ts imports PlanRail). Unit tests are `test/*.test.ts(x)` only: `test/db.ts` and other helpers are imported by the specs, so they are unmapped;
+   - anything else selects every area: the roadmap's shared list by name (`src/db/`, `src/lib/`, `etl/views.sql`, `globals.css`, `src/proxy.ts`, `package.json`, the lockfile, Next and Playwright config, `test/e2e/helpers.ts`, `.github/`), the rest as unmapped.
+   - Every area also when: not a PR (push to main, the nightly), the `e2e:full` label, no base or a failed diff, or no file selects an area (fails toward all).
+2. **The scope script** (`scripts/ci-scope.mjs`) writes `areas` (empty = every area) and `e2e_label`; its log and `$GITHUB_STEP_SUMMARY` name each area with up to five paths and the rule.
+3. **D-145 reuse (AC-4)**: shards are named `e2e full n/m` (every area, unchanged) or `e2e full <areas> n/m`. `ranEveryProject` becomes `coveredAreas(jobs)`; a docs-only push reuses an earlier run only when it covered every area the head now needs. An area run never counts as a full pass.
+4. **`ci.yml`**: `schedule` nightly at 08:00 UTC (main, every area) in its own concurrency group; `E2E_AREAS` and the label into the e2e job; the scope's base is `origin/${{ github.base_ref }}` (so AC-5's throwaway PR into this branch diffs only its comics file).
+5. **Shard balance** (TASK-134's follow-up): the per-project shard units move from `playwright.config.ts` to a lib function that `e2e-shards.mjs balance` shares, reading `E2E_SCOPE`/`E2E_AREAS`, so balance prices the plan the area run made.
+6. **Docs**: `.claude/rules/git.md` § *Test on the branch*, `docs/GIT-PR.md` (which PRs run what; a risky PR gets `e2e:full`), `.claude/kit.json` ready-gate text (not in "Files likely touched"), D-173 amending D-80, D-141, D-161: `@critical` tests belong to no area (dnf-reason's stay put); shared specs visiting medium screens don't run on a medium-only PR, with main's push, the nightly and `e2e:full` as the net; a failed nightly emails the owner, and Release refuses that head until it is rerun green.
+7. **AC-5**: a throwaway branch off this one changing one comics-screen comment, PR ready with base = this branch; record its run URL, areas and suite time vs main's last full run in this PR's body; the owner closes it.
+
+**Files**: `scripts/lib/ci-scope.mjs`, `scripts/lib/ci-scope.d.mts`, `scripts/ci-scope.mjs`, `.github/workflows/ci.yml`, `scripts/lib/e2e-shards.mjs` (or `e2e.mjs`) + `playwright.config.ts` + `scripts/e2e-shards.mjs` (shared unit plan; not in "Files likely touched"), `test/ci-scope.test.ts`, `test/e2e-shards.test.ts`, `.claude/rules/git.md`, `docs/GIT-PR.md`, `docs/review/decisions.md`, `.claude/kit.json` (gate text).
+
+**Test strategy**: `test/ci-scope.test.ts`: AC-1's map clauses (one per shared root, unmapped, docs-only, vitest-only), AC-2, the event overrides (push, schedule, label), the comics-only plan through `areaPlan`/`areaFilter` on the real specs (no books spec; critical at every core project), AC-4's reuse rule, a guard that each named medium component is imported only by that medium's routes, the script's `areas` output and reasons; ci.yml shape (AC-3 schedule, nightly concurrency, `E2E_AREAS`, the job name, the base). `test/e2e-shards.test.ts`: balance and the config plan the same units for an area run. AC-5 and AC-1's last clause: the throwaway PR (manual).
+
+**Size**: 12 files counting docs; no schema or UI, and 0.15 is already split three ways, so kept whole.
+
+**Risks**: a shared spec on a medium screen is skipped on a medium-only PR (accepted, D-173); the base_ref change also affects stacked PRs (they now diff against their own base, which is the point).
 
 ## Review log
 

@@ -3,10 +3,12 @@
 // COUNTS, so minutes apart). Pure: no browser, no database. The real
 // Playwright listing of every shard is checked by hand when the plan changes
 // (the union of the shards' tests is exactly the unsharded list).
-import { readdirSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { e2eProjects, planE2e } from "../scripts/lib/e2e.mjs";
+import { E2E_CORE, e2eProjects, planE2e, plannedProjects, plannedUnits } from "../scripts/lib/e2e.mjs";
 import {
   DEFAULT_UNIT_MS, averageTimes, filesByProject, filesMatcher, groupTimes, imbalance, parseShard, planShards, shardUnits, unitKey,
 } from "../scripts/lib/e2e-shards.mjs";
@@ -188,5 +190,60 @@ describe("ci.yml gives each shard its own place in the plan", () => {
     expect(job).toContain("node scripts/e2e-shards.mjs balance e2e-times.json");
     expect(job).toContain("SHARDS: ");
     expect(ci).not.toMatch(/e2e-shards\.mjs balance[^\n]*\n[^\n]*exit 1/);
+  });
+
+  it("the balance prices the plan the run made: its scope and its areas (0.15)", () => {
+    const job = ciJob("e2e-budget");
+    const step = job.slice(job.indexOf("name: Shard balance"));
+    expect(step).toContain("E2E_SCOPE: ${{ needs.scope.outputs.e2e_scope }}");
+    expect(step).toContain("E2E_AREAS: ${{ needs.scope.outputs.areas }}");
+  });
+});
+
+// An area run (0.15) shards only its areas' files and the critical set; the
+// balance has to price that plan, or every area run reads as lopsided.
+describe("plannedUnits: the config and the balance plan the same units", () => {
+  const specs = readdirSync("test/e2e")
+    .filter((f) => f.endsWith(".spec.ts"))
+    .map((file) => ({ file, text: readFileSync(`test/e2e/${file}`, "utf8") }));
+  const files = specs.map((s) => s.file);
+  const comics = specs.filter((s) => s.text.includes("// @area: comics")).map((s) => s.file);
+  const critical = specs.filter((s) => s.text.includes('"@critical"')).map((s) => s.file);
+
+  it("an area run's units are its areas' files everywhere and the critical set's at the core projects only", () => {
+    const units = plannedUnits(plannedProjects("full", ["comics"], specs), files, {});
+    expect(comics.length).toBeGreaterThan(0);
+    for (const u of units) {
+      if (comics.includes(u.file)) continue;
+      expect(critical, u.key).toContain(u.file);
+      expect(E2E_CORE, u.key).toContain(u.project);
+    }
+    expect(new Set(units.map((u) => u.file))).toEqual(new Set([...comics, ...critical]));
+  });
+
+  it("every area is every file in every project, as before 0.15", () => {
+    const units = plannedUnits(plannedProjects("full", null, []), files, {});
+    expect(units.length).toBe(e2eProjects("full").length * files.length);
+  });
+
+  it("e2e-shards.mjs balance counts the files the run's areas planned", () => {
+    const dir = mkdtempSync(join(tmpdir(), "e2e-balance-"));
+    try {
+      const timesFile = join(dir, "e2e-times.json");
+      writeFileSync(timesFile, JSON.stringify({ tests: {} }));
+      const run = (areas: string) => {
+        const env: NodeJS.ProcessEnv = { ...process.env, E2E_SCOPE: "full", E2E_AREAS: areas };
+        delete env.GITHUB_STEP_SUMMARY;
+        return spawnSync(process.execPath, ["scripts/e2e-shards.mjs", "balance", timesFile, "--shards", "10"], { encoding: "utf8", env });
+      };
+      const area = run("comics");
+      expect(area.status, area.stderr).toBe(0);
+      expect(area.stdout).toContain(`The plan splits ${new Set([...comics, ...critical]).size} spec files (comics and the critical set) over 10 shards`);
+      const every = run("");
+      expect(every.status, every.stderr).toBe(0);
+      expect(every.stdout).toContain(`The plan splits ${files.length} spec files over 10 shards`);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

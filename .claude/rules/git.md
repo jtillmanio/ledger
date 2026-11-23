@@ -117,9 +117,18 @@ the change. The browser suite, with axe (D-80), runs whole only in CI
 (D-141): locally, `/verify` runs `npm run test:no-e2e` and the specs the
 branch added or changed in one project (`node scripts/test-files.mjs
 <specs>`). CI's `check` on a PR that is ready for review runs every width,
-light and dark (`npm run test:e2e:full`, sharded), and that run is the gate. A
-later push that adds only docs skips it when an earlier run on the branch
-passed every project (D-145). Claude watches it in the background and, when
+light and dark (`npm run test:e2e:full`, sharded), and that run is the gate.
+Which specs it runs follows the PR's paths (D-173, roadmap 0.15): a change
+only under one medium's routes, components and specs runs that medium's
+specs, plus the `@critical` set at the core projects; anything shared or
+unmapped (`src/db/`, `src/lib/`, `etl/views.sql`, a shared component,
+`globals.css`, `package.json`, the Next and Playwright config, `.github/`, …)
+runs every area, and so do every push to `main`, the nightly run on `main`
+and the `e2e:full` label. The scope job's summary names the areas and the
+paths that chose them. A PR the owner or Claude judges risky (a refactor with
+no clear area) gets `e2e:full` before merge. A later push that adds only docs
+skips the suite when an earlier run on the branch passed every area it needs
+(D-145; an area run is never a full pass). Claude watches it in the background and, when
 it fails, fixes the failure on the branch and pushes again, up to
 `workflow.maxCiFixRounds` rounds.
 
