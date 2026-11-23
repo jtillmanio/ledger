@@ -4453,6 +4453,43 @@ logs that nothing changed. A missing `#owned` column is named and skipped. In
 the browser (0.11), the *Calibre* page lists the run, and the dashboard's line
 shows when the last run is 8 days old and not when it is 6.
 
+### ☐ 4.4b A year-only Calibre date isn't rewritten every sync · S
+*From TASK-082 and TASK-083 (4.4, PR #267, PR #270; the schema review), carried
+until now only in TASK-061's Context. Owner, 2026-11-23. The Check is a
+proposal: agreed when merged, or edit it first.*
+When the owner's date-read column shows a year alone (a display format with
+no `M`), `etl/calibre.py`'s `read_date` sends the year, and the route's
+`calibreRead` (`src/db/calibre-sync.ts`) makes it July 1st, `approximate`
+(data model 2.17). The write-back compares days (`out("#date_read", …)`), so
+a Ledger finish on any other day of that year differs. The command writes it
+into Calibre at noon Eastern, the next run reads the column back as the year,
+and the sync writes it again: every run lists the book under *Went out to
+Calibre* and calls `calibredb` for it. This doesn't matter while
+`CALIBRE_SYNC_READS` is off, which holds the reads back. The owner turns it on
+at the books cutover (1.26), so this lands before the switch.
+
+- **Compare at the precision Calibre's value has.** When Calibre's date came
+  as a year alone, the write-back compares years: a Ledger finish in that year
+  is the same and nothing goes out; one in another year, or no finish, goes out
+  as it does today, the Ledger's day. A column that shows the day compares days,
+  as now. A column that shows the month and year already carries the stored day
+  (`read_date` keeps it, `approximate`), so it compares days too.
+- **A new book is unchanged.** A book new to the Ledger still takes a year-only
+  read as July 1st, `approximate`, as extract loads one (data model 2.17).
+- **Not chosen:** the command sending a year-only column's stored day. That
+  fixes the comparison too, but a new book would then take an arbitrary stored
+  day as its finish, where extract and data model 2.17 give July 1st.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) `npm
+test` on the test database, with no column skipped: a Calibre record whose
+date read is the year `2024` and a Ledger book finished 2024-03-14 (`exact`)
+returns no `#date_read` write and logs none under what went out, and a second
+run over the same records writes nothing either; the same record with the
+Ledger finish on 2023-11-02 returns one `#date_read` write, `2023-11-02`; a
+day-precise Calibre date of 2024-07-01 against the Ledger's 2024-03-14 returns
+one write, as today; a book new to the Ledger from the year-only record has one
+read finished 2024-07-01, `approximate`.
+
 ### ☑ 4.5 Calibre's genres on every screen · M
 *Pulled ahead of 1.26 by the owner (D-139).*
 
