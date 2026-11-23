@@ -24,7 +24,7 @@ export default function CoverImage({ url, width, height, className, box, fallbac
   const [broken, setBroken] = useState<string | null>(null);
   if (!allowed || broken === url) return <>{fallback}</>;
   const img = (
-    // A Hardcover, Open Library or Metron CDN thumbnail, drawn as it comes (D-94).
+    // A Hardcover or Metron CDN thumbnail, drawn as it comes (D-94).
     // eslint-disable-next-line @next/next/no-img-element
     <img className={className} src={url} alt="" width={width} height={height} loading="lazy" decoding="async"
       onError={() => setBroken(url)} />

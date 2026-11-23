@@ -175,11 +175,11 @@ tables.
 | F-12 Status screens | `status` | `/comics/status`, `/books/status` | `run_progress`, `run_readiness`, `book_status`, `plan_period` |
 | F-13 Volume map | `settings` | `etl/extract.py`, `/settings/volumes` (3.9) | `volume_rules` |
 | F-14 No cycles | `path` | `etl/extract.py`'s cycle report (2.11a), `/comics/[runId]/path` | `prereqs`, `run_ancestors()` |
-| F-15 Add books | `add`, `blist` | `/books/add`, `/api/books`, `/api/books/bulk`, `/api/books/search` | `books`, `authors`, `book_series`, `open_library_cache` |
+| F-15 Add books | `add`, `blist` | `/books/add`, `/api/books`, `/api/books/bulk`, `/api/books/search` | `books`, `authors`, `book_series`, `hardcover_cache` |
 | F-16 Inbox | `capture` | `/inbox`, `/api/inbox` | `inbox` |
 | F-17 Reading log | `blist` | `/api/progress/book`, `/api/progress/book/read`, `src/lib/finish-date.ts` | `book_status`, `read_events`, `book_reads` |
 | F-18 To-read levels | `blist`, `moveplan` | `/books/list` | `reading_plan`, `plan_period`, `to_read_level` |
-| F-19 Clean book catalog | `blist`, `bookdetail` | `etl/extract.py`, Open Library sidecars (1.14), Calibre (1.18) | `books`, `book_series` |
+| F-19 Clean book catalog | `blist`, `bookdetail` | `etl/extract.py`, Hardcover sidecars (1.14b), Calibre (1.18) | `books`, `book_series` |
 | F-20 Follows | `shelves` | the follow control (1.15), `/books/series` (5.9) | the follow tables (1.15), `series_progress` |
 | F-21 Pace engine | `settings`, `session` | `/settings`, `/session` | `reading_settings`, `sessions` (2.1b), the capacity view (2.1) |
 | F-22 Books dashboard | `bdash`, `planmonth` | `/books` | `plan_period`, capacity |
@@ -375,7 +375,7 @@ tables.
     (23,046 bytes, PR #108) plus 20%. `/books` is measured at `/books/list`,
     since Lighthouse sends the session as a `Cookie` header and a redirect
     drops it; it kept the 48,000 `/books` had until the live ledger gained
-    book covers (task 1.14's Open Library details, loaded 2026-10-27). Seven
+    book covers (task 1.14's Open Library details, loaded 2026-10-27; Hardcover's since D-94, Open Library removed in 6.19). Seven
     covers now load on its first screen, and each costs three requests
     (covers.openlibrary.org redirects through archive.org to an image server):
     PR #145's preview measured 50,248–50,320 bytes and 44 requests in three
@@ -567,7 +567,7 @@ the asset.
 |---|---|---|
 | Issue records, covers, cover dates, story titles, creators, canonical labels | Metron (`metron_id` on `issues`) | 20 req/min, 5,000/day. Dates, covers and labels come from series issue lists (~1,800 requests); titles and credits need one detail request per issue (~8,100) |
 | Comics gap-fill | Comic Vine | 1 req/sec, 200/hour — fallback only |
-| Book bibliographic data, page counts, covers | Hardcover GraphQL (D-94; the load from task 1.14b, *Add books* from 1.4f; Open Library's code stays, unused, until 6.19 removes it). The page count is Hardcover's book-level count, then the matched edition's, then Calibre's `#pages` (D-130, 1.14c) | A personal token; 60 requests a minute, bursts of 10, 5,000 a day. Found by Calibre's ISBN, many to a request, else one title-and-author search; a compilation never matches (D-99) |
+| Book bibliographic data, page counts, covers | Hardcover GraphQL (D-94; the load from task 1.14b, *Add books* from 1.4f; Open Library before it, removed in 6.19). The page count is Hardcover's book-level count, then the matched edition's, then Calibre's `#pages` (D-130, 1.14c) | A personal token; 60 requests a minute, bursts of 10, 5,000 a day. Found by Calibre's ISBN, many to a request, else one title-and-author search; a compilation never matches (D-99) |
 | Series position | Hardcover GraphQL | The same requests: each book's series and position |
 | Word counts | Calibre's Count Pages column (data model 2.19, task 1.18); no API | Take Calibre's as `stated`, over a typed one (D-87; a typed count more than 10% off is reported); keep a typed count where Calibre has none; estimate the rest at `pages x 275` and record which is which in `books.word_count_source` |
 | Book tags, summaries, series cross-check, read dates | Calibre, the owner's library (data model 2.19, D-73) | Read from a copy of `metadata.db`; from 4.4 (D-133), one command also writes the Ledger's read flag, latest finish, status and owned formats back with `calibredb`, run by hand or weekly by Task Scheduler, and from the books cutover the Ledger wins for reads. Calibre is the source of truth for everything else (D-87): its series and index fill over the workbook's, and its reads load as it has them; a Hardcover series that differs is reported, not a gate (1.14b). Tags, comments and ISBN load nothing until their columns are approved (D-88) |
@@ -581,7 +581,7 @@ value. Before cutover it writes the sidecar CSVs in 2.13; after cutover (task
 
 **Add flows are the one place an API is called live** (data model 2.15). TMDB is searched
 live because the catalogue is 1.5M+ titles and there is no watch data to seed
-from. Metron and Hardcover (since 1.4f, D-94; Open Library before it) are
+from. Metron and Hardcover (since 1.4f, D-94; Open Library before it, removed in 6.19) are
 searched live from *Add issues* and *Add books*, when you submit a search, so that the thing you add arrives as a real
 record with its metadata already on it. No page render ever calls an API.
 Responses are cached, and detail pages never re-call.
@@ -619,7 +619,7 @@ the series and issue range" and the app resolves 23 issue records for you.
 | Source | Auth | Limits | Best for |
 |---|---|---|---|
 | **Hardcover** | free account, a personal token, GraphQL | 60 a minute, bursts of 10, 5,000 a day | The spine since D-94: one record per book with its editions under it, the subtitle and series in their own fields, a `compilation` flag, a reader count. ISBNs are looked up many to a request |
-| **Open Library** | none | courtesy limits, send a real User-Agent | Replaced by Hardcover (D-94): noisy titles, and graphic novels and omnibuses mixed in with the works. *Add books* searched it until 1.4f; 6.19 removes it |
+| **Open Library** | none | courtesy limits, send a real User-Agent | Removed (6.19): replaced by Hardcover (D-94) for noisy titles, and graphic novels and omnibuses mixed in with the works. *Add books* searched it until 1.4f |
 | Google Books | key optional | ~1,000/day per project by default, raisable on request | Descriptions and categories; good fallback |
 | ISBNdb | paid | — | Skip |
 | **Calibre** (the owner's library) | none: a local `metadata.db`, read from a copy | none | Word counts from the Count Pages plugin, series and index, tags, comments, ISBN, read dates. roadmap 1.18, D-73 |

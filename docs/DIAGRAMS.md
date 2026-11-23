@@ -427,8 +427,7 @@ flowchart LR
 
     subgraph ext [External · backfill, plus live search from add flows]
         METRON[Metron API<br/>20/min · 5k/day]
-        OL[Open Library]
-        HC[Hardcover GraphQL<br/>backfill only]
+        HC[Hardcover GraphQL]
     end
 
     subgraph gh [GitHub]
@@ -446,11 +445,10 @@ flowchart LR
     REL -. promote .-> vercel
     BAK --> TBL
     METRON -. enrichment script .-> TBL
-    OL -.-> TBL
     HC -.-> TBL
     CRON --> TBL
     API -- "add flow search, on submit" --> METRON
-    API -- "add flow search, on submit" --> OL
+    API -- "add flow search, on submit" --> HC
 ```
 
 ## 6. Bulk-entry validation pipeline
@@ -638,8 +636,7 @@ flowchart LR
     end
     subgraph backfill [Backfill · never on a page render]
         MET[Metron<br/>20/min · 5k/day<br/>also live in Add issues]
-        OL[Open Library<br/>no key<br/>also live in Add books]
-        HC[Hardcover<br/>5k/day]
+        HC[Hardcover<br/>60/min · 5k/day<br/>also live in Add books]
     end
     subgraph live [Live during search]
         TMDB[TMDB<br/>~40-50/sec<br/>attribution required]
@@ -653,8 +650,7 @@ flowchart LR
     MET -. dates · covers · story titles · credits .-> SC[sidecar CSVs<br/>metron or hand]
     SC -- npm run extract --> ISS
     SC -- credits --> CR[(issue_credits · creators)]
-    OL  -. pages · covers · summary · subjects .-> BK[(books)]
-    HC  -. series position .-> BK
+    HC  -. pages · covers · series position .-> BK[(books)]
     TMDB -- overview · genres · cast · poster --> TI[(titles)]
     TMDB -- seasons array, one call --> SE[(seasons)]
     TMDB -- belongs_to_collection --> FR[(franchises)]
@@ -678,7 +674,7 @@ flowchart TD
     S{"Search · Type it"}
     S -- search --> LIB{"in your catalog?"}
     LIB -- yes --> OWN["show as yours<br/>'in 3 runs' · 'on Cosmere'"]
-    LIB -- no, submit --> API["Metron / Open Library<br/>live, server-side, cached"]
+    LIB -- no, submit --> API["Metron / Hardcover<br/>live, server-side, cached"]
     API -- results --> PICK[tap Add = explicit accept]
     API -- nothing / down --> TYPE
     S -- type it --> TYPE["freeform<br/>issues: bulk-entry parser (§6)<br/>books: title + author"]

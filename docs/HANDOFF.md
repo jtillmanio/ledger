@@ -35,7 +35,7 @@ metric-backed language over anything that reads as corporate or AI-generated.
 | **Source** | `Comics (4).xlsx`, migrated | `Books (1).xlsx`, migrated | None — starts empty |
 | **Hierarchy** | Track → run → issue | Series → book | Franchise → title → season |
 | **Hard part** | A 436-edge prerequisite graph, 21 levels deep (a DAG since the audit broke its cycles, D-20; 2.11a) | Word-count capacity planning | Nothing. It's deliberately the light one |
-| **Metadata** | Metron (backfill, and live in Add issues) | Open Library (backfill, and live in Add books), Hardcover (backfill) | TMDB (live search) |
+| **Metadata** | Metron (backfill, and live in Add issues) | Hardcover (backfill, and live in Add books; D-94) | TMDB (live search) |
 
 The watchlist reuses the comics shape one level shallower. **Franchise → title →
 season is track → run → issue without the dependency graph** — same
@@ -107,7 +107,7 @@ book between years is a cut-and-paste across sheets.
 | **Catalog and progress in separate tables** | Every progress table keyed `(user_id, entity_id)` from day one. Adding a second reader is an `INSERT`, not a migration |
 | **One issue row per comic, placed into runs** | `issues` + `run_issues`. The sheet repeated an issue once per run; totals above a run now count it once (task 0.7) |
 | **Read state is per run** | `issue_progress` keys on the placement. Reading an issue in one run leaves it unread in the others, and the spine says where it was read before. Reverses 0.7's read-everywhere (task 0.8, ARCHITECTURE 2.14) |
-| **Add = search or type it, always a real row** | Metron / Open Library searched live from add flows only; freeform always available; catalog row created before the placement, shelf or plan row (ARCHITECTURE 2.15) |
+| **Add = search or type it, always a real row** | Metron / Hardcover searched live from add flows only; freeform always available; catalog row created before the placement, shelf or plan row (ARCHITECTURE 2.15) |
 | **Credits are rows; run credit lines are derived** | `creators` + `issue_credits` in six roles. `runs.writer`/`artists` dropped — the sheet's typed values are not trusted (task 0.7) |
 | **Metadata lives in sidecar CSVs until cutover** | Keyed by label, `metron` or `hand` source, hand never overwritten; labels change only by accepted review. The database is rebuilt from workbook + sidecars (`npm run rebuild`) until `LEDGER_LIVE=true` |
 | **Nothing derived is stored** | Readiness, percentages, rollups, capacity, show progress all live in `etl/views.sql` |
@@ -298,8 +298,7 @@ season-level progress; franchises; shelves; rewatch log.
 |---|---|---|
 | **Metron** | 20/min, 5,000/day per IP | Comics issues, covers, dates, creators. Single-request issue lookup; Comic Vine needs a volume lookup first |
 | Comic Vine | 1/sec, 200/hour | Fallback only |
-| **Open Library** | No key | Book spine, page counts, covers, summary, subjects |
-| Hardcover | 5,000/day, GraphQL | Series position |
+| **Hardcover** | A personal token; 60/min, 5,000/day, GraphQL | Book spine, page counts, covers, series position (D-94; Open Library before it, removed in 6.19) |
 | **TMDB** | ~40–50/sec, free non-commercial, **attribution required** | Films and TV. One API for both, which beat TVmaze (TV-only) and OMDb (thin on TV). `/tv/{id}` returns the whole seasons array in one call; `belongs_to_collection` seeds film franchises |
 
 **The division that matters for comics:** Metron knows `Fantastic Four #570`
@@ -310,10 +309,9 @@ API fills in everything below the issue label.
 **APIs are called live only from add flows.** TMDB is searched live because the
 catalogue is 1.5M+ titles and there's no existing watch data to pre-seed from.
 Responses cache into `titles` and `seasons` on first add, so detail views never
-re-call. Since Sept 2026, Metron (Add issues) and Open Library (Add books) are
-also searched live when the user submits a search, so an added item arrives
-as a real record. No page render calls any API, and Hardcover stays
-backfill-only.
+re-call. Since Sept 2026, Metron (Add issues) and, since 1.4f, Hardcover (Add books,
+D-94) are also searched live when the user submits a search, so an added item
+arrives as a real record. No page render calls any API.
 
 ### AI features (Phase 7)
 
@@ -448,7 +446,7 @@ changed; the other 21 are untouched.
 | Shelves | Books and titles, never runs, never both at once |
 | AI review scope | Run, block, or track via a switch |
 | Read state across runs | **Per run** (Sept 2026). A grey *read in Hickman — FF* note on the spine row, never a green tick. The issue sheet lists every run and its state in each |
-| Adding issues and books | *Search · Type it* on every add surface. Your catalog first, then Metron / Open Library. Always a real row |
+| Adding issues and books | *Search · Type it* on every add surface. Your catalog first, then Metron / Hardcover. Always a real row |
 | In flight / up next / done | One status screen per medium, the same three tabs on all three: `/comics/status`, `/books/status`, `/watch/status` |
 | Comics up next | **An ordered queue of runs** (`run_queue`) — add, reorder, remove, no dates. On the comics dashboard as its next slot, and first in the Up next tab, ahead of ready-but-unqueued runs (ARCHITECTURE 2.16) |
 

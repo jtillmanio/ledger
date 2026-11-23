@@ -27,7 +27,7 @@ variables were not checked from here: compare them by hand with
 | [Anthropic](#anthropic-claude) | Claude Code locally; Claude's PR review and `@claude` in Actions | Your Claude subscription | `CLAUDE_CODE_OAUTH_TOKEN` | Subscription | In use |
 | [Metron](#metron) | Comics metadata backfill; *Add issues* search | metron.cloud account | `METRON_USERNAME` + `METRON_PASSWORD` (or `METRON_API_TOKEN`) | Free: 20 a minute, 5,000 a day | In use |
 | [Hardcover](#hardcover) | Book metadata, replacing Open Library (D-94) | hardcover.app account | `HARDCOVER_API_TOKEN` | Free: 60 a minute, 5,000 a day | In use (ETL, 1.14b; *Add books* search, 1.4f) |
-| [Open Library](#open-library) | Nothing since 1.4f: *Add books* and the ETL ask Hardcover; its code stays until 6.19 | None | None | Free | Retiring in 6.19 |
+| [Open Library](#open-library) | Nothing: *Add books* and the ETL ask Hardcover (D-94) | None | None | Free | Retired (6.19) |
 | [Marvel Fandom wiki](#marvel-fandom-wiki) | Story titles Metron lacks | None | None | Free | In use (ETL only) |
 | [Calibre](#calibre) | Word counts, series, read dates from your ebook library | None: a local app | `CALIBRE_LIBRARY` (a folder path, not a secret); the sync's `CALIBRE_SYNC_URL`, `CALIBRE_SERVER_URL`, `CALIBREDB`, `CALIBRE_SYNC_READS` | Free | In use (ETL; the sync, 4.4) |
 | [Google Sheets](#google-sheets) | `Comics.xlsx` and `Books.xlsx`, the record until cutover | Your Google account | None: exported by hand | Free | Until cutover (1.26) |
@@ -188,13 +188,11 @@ to be changed in both.
 
 ## Open Library
 
-- **No account, no key.** Requests send a `User-Agent` naming the app, one a
-  second.
-- **What uses it today:** nothing. *Add books* asks Hardcover since 1.4f
-  and the ETL since 1.14b; `src/lib/openlibrary.ts`, `open_library_cache` and
-  `etl/.openlibrary-cache.sqlite` are read by nothing now.
-- **Going away:** Hardcover replaces it (D-94). Task 6.19 removes the code, the
-  cache and `books.open_library_id`.
+- **Retired** (task 6.19, D-94). Hardcover replaced it: *Add books* since 1.4f
+  and the ETL since 1.14b. 6.19 removed its client, the `open_library_cache`
+  table and `books.open_library_id`. It had no account and no key, so nothing
+  is stored anywhere to revoke. A leftover `etl/.openlibrary-cache.sqlite` on
+  disk is read by nothing and may be deleted.
 
 ## Marvel Fandom wiki
 

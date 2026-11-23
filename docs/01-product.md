@@ -62,7 +62,7 @@ completion date or progress bar against the whole catalog. Each is in the
 | Users and data volume | One user, single-user schema (D-91; the old `user_id` columns go in 6.18). About 10,138 comic issues in 10,761 placements across 258 runs, 438 prerequisite edges, 1,478 books (2026-09-23 extract) |
 | Offline | None until 6.4 (PWA, queued writes); no cross-device staleness handling (D-9) |
 | Import | `Books.xlsx` through `etl/extract.py` and sidecar CSVs until the books cutover, `Comics.xlsx` until the comics cutover (D-128); the owner's Calibre library, read by extract until the books cutover and synced both ways after (D-73, D-133) |
-| Metadata | Metron, Open Library, Hardcover, TMDB, MusicBrainz, IGDB, on free tiers, and Spotify for the artists you follow (D-103); called from add flows and backfill only, never to render a page |
+| Metadata | Metron, Hardcover, TMDB, MusicBrainz, IGDB, on free tiers, and Spotify for the artists you follow (D-103); called from add flows and backfill only, never to render a page |
 | Stack | Next.js 16, Postgres on Neon, Drizzle, plain CSS ([architecture § Stack](02-architecture.md#2-stack)) |
 | Cadence | One task per Claude Code session, one in flight at a time (`workflow.wipLimit`) |
 
@@ -129,7 +129,7 @@ Priority comes from the milestone that builds it: **MVP** is the books cutover (
 | F-12 | **In flight · Up next · Done** (Every medium) | As the owner, I want one screen per medium showing everything in flight, next and finished | MVP (then Later) | 1.9, 2.2f, 8.8 | `status`, `queue` |
 | F-13 | **The volume map** (Comics) | As the curator, I want a bare series label to resolve to the right volume year, by rules I can edit | MVP (then Next) | 1.12, 3.9 | `settings` |
 | F-14 | **A prerequisite graph without cycles** (Comics) | As the curator, I want the prerequisite graph checked for cycles and edited safely, so readiness means something | MVP (then Next) | 2.11a, 3.3 | `path` |
-| F-15 | **Add books by search, paste or hand** (Books) | As a reader, I want to add a book from Open Library, a pasted list or by hand, straight to where it belongs, with results as I type and each one's source shown | MVP | 1.4, 1.4c, 1.4e, 1.22 | `add`, `blist` |
+| F-15 | **Add books by search, paste or hand** (Books) | As a reader, I want to add a book from Hardcover, a pasted list or by hand, straight to where it belongs, with results as I type and each one's source shown | MVP | 1.4, 1.4c, 1.4e, 1.22 | `add`, `blist` |
 | F-16 | **Quick-capture inbox** (Every medium) | As the owner, I want to jot a title in two seconds with nothing required and resolve it later | MVP | 1.4b | `capture`, `dashextras` |
 | F-17 | **A dated reading log** (Books) | As a reader, I want when I started and finished each read kept, rereads included, in my time zone, asked as it happens and editable on any read | MVP | 1.5, 1.16, 1.17, 1.17b | `blist` |
 | F-18 | **To-read levels** (Books) | As a reader, I want each to-read book at a quarter, a year, On deck or Someday, with my old wishlist promoted into it, and the books I have but haven't listed kept at Unlisted, out of the way | MVP | 1.7, 1.4d, 1.21 | `blist`, `moveplan` |
@@ -147,7 +147,7 @@ Priority comes from the milestone that builds it: **MVP** is the books cutover (
 | F-30 | **Eras and spine v2** (Comics) | As a reader, I want a long run sectioned into eras, with ordinals, release dates and read rows hidden | Next | 3.6, 3.6b, 3.6c | `spine`, `krakoa` |
 | F-31 | **Ratings, notes and DNF** (Every medium) | As a reader, I want to rate and note what I finish, rank my top books, and stop a book without it reading as failure | MVP (3.4, 5.5; D-139), then Later (5.4) | 3.4, 5.4, 5.5 | `top` |
 | F-32 | **Adding at scale** (Comics) | As the curator, I want to add from a whole series' issue list, arrange as I add, and preview an issue before adding it | Next | 3.10, 3.11, 3.12 | `addsearch`, `bulk` |
-| F-33 | **Metadata backfill and covers** (Every medium) | As the owner, I want Metron, Open Library and Hardcover to fill in what sits below each label, with real covers, and Calibre synced both ways (4.4, MVP since D-133) | MVP (4.2, 4.4; D-133, D-139), then Later (4.1, 4.3) | 4.1, 4.2, 4.3, 4.4 | `states` |
+| F-33 | **Metadata backfill and covers** (Every medium) | As the owner, I want Metron and Hardcover to fill in what sits below each label, with real covers, and Calibre synced both ways (4.4, MVP since D-133) | MVP (4.2, 4.4; D-133, D-139), then Later (4.1, 4.3) | 4.1, 4.2, 4.3, 4.4 | `states` |
 | F-34 | **Shelves with context** (Every medium) | As a reader, I want my own ordered lists, with a note on why each item is on them | MVP (5.1, D-139), then Later (8.6) | 5.1, 8.6 | `shelves` |
 | F-35 | **Tracks page** (Comics) | As a reader, I want every track drawn as a row of its blocks | Later | 5.2 | `tracks` |
 | F-36 | **Editions: collected in** (Comics) | As a collector, I want to know which trade collects an issue and which I own and have read | Later | 5.6, 5.10 | — |
@@ -209,7 +209,7 @@ Each MVP feature's roadmap entries carry the exact **Check:**; these are the out
 - **F-12 In flight · Up next · Done.** The same three tabs, in the same order, on comics and books; each reads from views.
 - **F-13 The volume map.** The approved rules load into `volume_rules` and the parser reads them.
 - **F-14 A prerequisite graph without cycles.** Extract lists every cycle for review; a cycle is never loaded silently.
-- **F-15 Add books by search, paste or hand.** An existing book is reused and says so; *By hand* works when Open Library fails.
+- **F-15 Add books by search, paste or hand.** An existing book is reused and says so; *By hand* works when Hardcover fails.
 - **F-16 Quick-capture inbox.** A note saves with only its text; resolving it opens the add flow its kind names.
 - **F-17 A dated reading log.** A reread appends a `read_events` row; a date is stored with its precision; dates are Eastern.
 - **F-18 To-read levels.** One `period` column; a year is what its quarters roll up to; Someday is derived.
@@ -753,10 +753,10 @@ way, a record is created in the database before anything points at it.
 | Adding | Search | Type it | Creates |
 |---|---|---|---|
 | Issues to a run | Your catalog, then **Metron** — cover, volume year and cover date on each result, so an ambiguous `Captain America #1` is resolved by looking at it | One label per line, ranges allowed, through the bulk-entry validator (roadmap 1.3) | `issues` if the label is new, then a `run_issues` placement |
-| A book to a to-read level (a quarter or year, On deck, Someday) or a shelf | Your library, then **Open Library** — pages, year, cover, estimated words | Title and author, the rest optional; or paste a list (roadmap 1.4) | `books` (plus `authors` / `book_series`), then `shelf_books`, `book_status` or `reading_plan` |
+| A book to a to-read level (a quarter or year, On deck, Someday) or a shelf | Your library, then **Hardcover** (task 1.4f, D-94) — pages, year, cover, estimated words | Title and author, the rest optional; or paste a list (roadmap 1.4) | `books` (plus `authors` / `book_series`), then `shelf_books`, `book_status` or `reading_plan` |
 
 Existing rows are always reused and shown as yours ("in 3 runs", "on
-Cosmere"). This makes Metron and Open Library **live during add** as well as
+Cosmere"). This makes Metron and Hardcover **live during add** as well as
 backfill sources. No page render calls them, and a search runs only when you
 submit it. A freeform record starts thin and backfill fills it in later,
 without touching what you typed.
@@ -851,7 +851,7 @@ headphones glyph can tell them apart (D-85).
 had only estimates and manual lookups). The Count Pages plugin's counts load
 as `stated`. Calibre is the source of truth for a book's data and its reads,
 because the owner edits nothing else (D-87, amending D-73's API check and read
-review): its series fill over the workbook's, an Open Library series that
+review): its series fill over the workbook's, a Hardcover series that
 differs is reported, and every disagreement is listed: in `calibre_changes.csv` where Calibre simply won, in `unresolved.csv` where the owner must act (D-93).
 Calibre's reads load where the workbook's may not (D-41), because they are
 typed fields rather than tabs that parse badly.
