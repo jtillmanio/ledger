@@ -106,10 +106,25 @@ After pushing, on GitHub:
   stops and its PR comment says the cap was reached: then the gate needs a hand
   run (task 0.14b). A hand run is exempt from both: it neither waits nor is
   capped. It fails on a route handler requested during a load or prefetch,
-  bytes or requests over `scripts/perf/budget.json`, CLS of 0.1 or more, or an
-  accessibility score under the recorded one. A new page, at any depth, adds
-  its route to `scripts/perf/routes.mjs` and its budget in the same PR, or is
-  listed as unmeasured with a reason in `test/perf.test.ts` (task 0.14c).
+  growth over main's last measured run past D-142's limits (JS by more than
+  3,000 bytes, document + RSC by more than 10% and 1,500 bytes, requests by
+  more than 3; task 0.13), bytes or requests over the ceilings in
+  `scripts/perf/budget.json`, CLS of 0.1 or more, or an accessibility score
+  under the recorded one. A new page, at any depth, adds its route to
+  `scripts/perf/routes.mjs` and its budget in the same PR, or is listed as
+  unmeasured with a reason in `test/perf.test.ts` (task 0.14c).
+- **Perf growth** (task 0.13, D-142). When the Lighthouse comment lists growth
+  that fails the job and the growth is the point of the PR (a feature that
+  needs the code, not an accident to trim first), the PR body gets a
+  **Perf growth** section: each route and number the comment names, and why
+  the growth is worth it. Only the owner adds the `perf-growth` label that
+  accepts it: Claude asks for it there, and Claude never adds the label, even
+  to turn its own PR green. Adding or removing
+  the label re-runs the head's last report on the numbers it already measured
+  (the `rejudge` job): no new push, no page loaded, nothing counted against
+  `LIGHTHOUSE_MONTHLY_CAP`. A PR whose growth the label accepted needs nothing
+  else; a ceiling it passes is raised only with a decision (D-n), never in the
+  feature's PR.
 - **A docs- or tests-only PR has neither gate.** A PR that changes only
   backups, docs, design, tests (`test/`, `vitest.config.ts`,
   `playwright.config.ts`), CI or Claude config (`needsBuild` in

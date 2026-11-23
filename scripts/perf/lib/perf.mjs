@@ -57,7 +57,7 @@ export const MARKER = "<!-- ledger-lighthouse -->";
 /** What budget.json holds per route, with how the comment names it. */
 export const BUDGETED = [
   { key: "docRscBytes", label: "document + RSC", unit: "bytes" },
-  { key: "jsBytes", label: "JS", unit: "bytes" },
+  { key: "jsBytes", label: "JS of its own", unit: "bytes" },
   { key: "requests", label: "requests", unit: "count" },
 ];
 
@@ -90,10 +90,30 @@ export function apiPath(url) {
 
 const round = (v) => (typeof v === "number" && Number.isFinite(v) ? Math.round(v) : null);
 
+function originOf(url) {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+function pathOf(url) {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return String(url);
+  }
+}
+
 /**
  * The numbers one Lighthouse report gives for its route; nothing of the page
  * itself. A blocked RSC request never left the browser, so it is not counted;
- * a route handler it asked for still is (apiRequests).
+ * a route handler it asked for still is (apiRequests). Only the page's own
+ * origin counts toward `requests` (task 0.13, D-142): requests to another
+ * origin (Open Library covers and their redirects) are the data, not the code,
+ * so they are reported as `otherOriginRequests` and budgeted nowhere.
+ * `scripts` is each of the page's own scripts by path, the shared JS's input.
  */
 export function summariseLhr(lhr) {
   const logged = (lhr.audits?.["network-requests"]?.details?.items ?? []).filter((q) => !isPreviewToolbar(q.url));
@@ -102,6 +122,13 @@ export function summariseLhr(lhr) {
   const audit = (k) => lhr.audits?.[k]?.numericValue;
   const doc = items.find((q) => q.resourceType === "Document");
   const bytes = (keep) => items.filter(keep).reduce((sum, q) => sum + (q.transferSize ?? 0), 0);
+  const home = originOf(lhr.finalDisplayedUrl) ?? originOf(doc?.url);
+  const own = items.filter((q) => !home || originOf(q.url) === home);
+  const scripts = {};
+  for (const q of own.filter((x) => x.resourceType === "Script")) {
+    const p = pathOf(q.url);
+    scripts[p] = (scripts[p] ?? 0) + (q.transferSize ?? 0);
+  }
   const a11y = lhr.categories?.accessibility?.score;
   let landedOn = null;
   try {
@@ -119,7 +146,9 @@ export function summariseLhr(lhr) {
     // The document carries the first RSC payload inline; prefetches fetch more.
     docRscBytes: bytes((q) => q.resourceType === "Document" || /text\/x-component/.test(q.mimeType ?? "")),
     jsBytes: bytes((q) => q.resourceType === "Script"),
-    requests: items.length,
+    requests: own.length,
+    otherOriginRequests: items.length - own.length,
+    scripts,
     apiRequests: logged.map((q) => apiPath(q.url)).filter(Boolean),
     // RSC requests the block let through: none, while it works (task 0.14).
     rscSent: items.filter(isRsc).length,
@@ -143,8 +172,12 @@ export function median(values) {
 export function aggregateRoute(measured) {
   const loads = measured.loads.filter((l) => !l.error);
   const taps = measured.taps.filter((t) => !t.error);
-  const keys = [...TIMINGS.map((t) => t.key), "cls", "a11y", ...BUDGETED.map((b) => b.key)];
+  const keys = [...TIMINGS.map((t) => t.key), "cls", "a11y", ...BUDGETED.map((b) => b.key), "otherOriginRequests"];
   const med = Object.fromEntries(keys.map((k) => [k, median(loads.map((l) => l[k]))]));
+  // Each script by path, the median of the loads that fetched it (task 0.13).
+  // A metrics.json from before 0.13 has none: the route then has no shared JS.
+  const paths = [...new Set(loads.flatMap((l) => Object.keys(l.scripts ?? {})))];
+  const scripts = Object.fromEntries(paths.map((p) => [p, median(loads.map((l) => l.scripts?.[p]))]));
   // The first hit is the first run, or nothing when that run failed: the
   // second run is warm and must not be reported as the first.
   const firstLoad = measured.loads[0]?.error ? null : measured.loads[0] ?? null;
@@ -156,23 +189,70 @@ export function aggregateRoute(measured) {
     landedOn: [...new Set(loads.map((l) => l.landedOn))],
     first: firstLoad,
     median: med,
+    scripts,
     tap: { first: firstTap, median: median(taps.map((t) => t.ms)), rscBytes: median(taps.map((t) => t.rscBytes)) },
     apiRequests: [...new Set([...loads.flatMap((l) => l.apiRequests), ...(measured.tapApiRequests ?? [])])],
     rscSent: loads.reduce((n, l) => n + (l.rscSent ?? 0), 0),
   };
 }
 
+// ── The shared JS (task 0.13, D-142) ───────────────────────────────────────
+// Every route loads the same framework and layout chunks, about 140 KB of each
+// route's JS. Budgeted once, a shell change edits one number, not every row.
+
+/** A route that measured and landed where it should, so its numbers count. */
+const measuredRoute = (r) => r.runs > 0 && r.landedOn.every((p) => p === r.path);
+
+/**
+ * The scripts every measured route loaded, by path, sorted: the shared JS.
+ * A route with no script list (a metrics.json from before 0.13) is left out.
+ */
+export function sharedScripts(routes) {
+  const lists = Object.values(routes).filter((r) => measuredRoute(r) && Object.keys(r.scripts ?? {}).length)
+    .map((r) => Object.keys(r.scripts));
+  if (!lists.length) return [];
+  return lists.reduce((acc, l) => acc.filter((p) => l.includes(p))).sort();
+}
+
+/** The bytes a route spent on the shared scripts. */
+export function sharedJs(route, shared) {
+  return shared.reduce((sum, p) => sum + (route.scripts?.[p] ?? 0), 0);
+}
+
+/** A route's own JS: all of its JS but the shared scripts. */
+export function ownJs(route, shared) {
+  const js = route.median?.jsBytes;
+  return js == null ? null : js - sharedJs(route, shared);
+}
+
+/** The shared JS as one number: the most any route spent on it (the same files, so nearly equal). */
+function sharedJsBytes(routes, shared) {
+  const all = Object.values(routes).filter(measuredRoute).map((r) => sharedJs(r, shared));
+  return all.length && shared.length ? Math.max(...all) : null;
+}
+
+const bytesText = (x) => `${Math.round(x).toLocaleString("en-US")} bytes`;
+const scriptsText = (n) => `the ${n} script${n === 1 ? "" : "s"} every route loads`;
+
 /**
  * Everything that fails the job, each naming its route — only what holds still
  * between runs: a route handler requested, bytes or requests over budget, CLS of
  * 0.1 or more, accessibility under its recorded score, or a route that was not
- * measured at all (signed out, or every run failed).
+ * measured at all (signed out, or every run failed). Since 0.13 a route's JS
+ * budget is its own JS, and the shared JS is gated once against `sharedBudget`.
  *   routes: { [id]: aggregateRoute(...) }
  *   budget: budget.json's `routes`: { [id]: { docRscBytes, jsBytes, requests, a11y } }
+ *   sharedBudget: budget.json's `shared`: { jsBytes }
  */
-export function gateProblems(routes, budget, expected = []) {
+export function gateProblems(routes, budget, expected = [], sharedBudget = null) {
+  const shared = sharedScripts(routes);
+  const sharedNow = sharedJsBytes(routes, shared);
   // Each route is measured by its own job; one that died wrote no metrics.
   const problems = expected.filter((id) => !routes[id]).map((id) => `${id}: not measured (its job wrote no metrics)`);
+  if (typeof sharedBudget?.jsBytes === "number" && sharedNow != null && sharedNow > sharedBudget.jsBytes) {
+    problems.push(`shared JS: ${bytesText(sharedNow)} (${scriptsText(shared.length)}) is over the budget of ` +
+      `${bytesText(sharedBudget.jsBytes)} (docs/02-architecture.md, Performance budget)`);
+  }
   for (const [id, r] of Object.entries(routes)) {
     for (const path of r.apiRequests) {
       problems.push(`${id}: requested the route handler ${path} during a page load or prefetch ` +
@@ -194,9 +274,9 @@ export function gateProblems(routes, budget, expected = []) {
     }
     const b = budget[id] ?? {};
     for (const { key, label, unit } of BUDGETED) {
-      const v = r.median[key];
+      const v = key === "jsBytes" ? ownJs(r, shared) : r.median[key];
       if (typeof b[key] === "number" && v != null && v > b[key]) {
-        const n = (x) => (unit === "bytes" ? `${x.toLocaleString("en-US")} bytes` : String(Math.round(x)));
+        const n = (x) => (unit === "bytes" ? bytesText(x) : String(Math.round(x)));
         problems.push(`${id}: ${label} ${n(v)} is over the budget of ${n(b[key])} ` +
           "(docs/02-architecture.md, Performance budget)");
       }
@@ -217,6 +297,104 @@ export function unbudgeted(routes, budget) {
     [...BUDGETED.map((b) => b.key), "a11y"].some((k) => typeof budget[id]?.[k] !== "number"));
 }
 
+// ── Growth over main (task 0.13, D-142) ────────────────────────────────────
+
+/** The label the owner adds to accept a PR's growth. Claude asks for it and never adds it. */
+export const GROWTH_LABEL = "perf-growth";
+
+/**
+ * D-142's limits on what one PR may add over main's last measured run: JS by
+ * more than 3,000 bytes, document + RSC by more than 10% and more than 1,500
+ * bytes (both), requests by more than 3.
+ */
+export const GROWTH = { jsBytes: 3000, docRscBytes: { bytes: 1500, share: 0.1 }, requests: 3 };
+
+/** Routes measured in both runs, the growth gate's to compare. */
+function compared(routes, baseline) {
+  return Object.entries(routes).filter(([id, r]) => measuredRoute(r) && baseline?.routes?.[id]?.runs > 0);
+}
+
+/** Routes this run measured that the baseline has no number for: the comment names them, unchecked. */
+export function growthUnchecked(routes, baseline) {
+  if (!baseline) return [];
+  return Object.entries(routes).filter(([id, r]) => measuredRoute(r) && !(baseline.routes?.[id]?.runs > 0)).map(([id]) => id);
+}
+
+/**
+ * Growth over the baseline past D-142's limits, one line per route and number,
+ * naming the route, the growth and the baseline's PR. No baseline: nothing (the
+ * comment says it was not checked).
+ *   routes: { [id]: aggregateRoute(...) }   baseline: { pr, routes: { [id]: aggregateRoute(...) } } | null
+ */
+export function growthProblems(routes, baseline) {
+  const out = [];
+  const tail = "; the `perf-growth` label accepts it";
+  for (const [id, r] of compared(routes, baseline)) {
+    const was = baseline.routes[id].median;
+    const grew = (k) => (r.median[k] != null && was[k] != null ? r.median[k] - was[k] : null);
+    const from = (k, unit) => `PR #${baseline.pr}: ${was[k].toLocaleString("en-US")} → ${r.median[k].toLocaleString("en-US")}${unit}`;
+    const js = grew("jsBytes");
+    if (js != null && js > GROWTH.jsBytes) {
+      out.push(`${id}: JS grew by ${bytesText(js)} over main's last run (${from("jsBytes", " bytes")})${tail}`);
+    }
+    const doc = grew("docRscBytes");
+    if (doc != null && doc > GROWTH.docRscBytes.bytes && was.docRscBytes > 0 && doc / was.docRscBytes > GROWTH.docRscBytes.share) {
+      const pct = Math.round((doc / was.docRscBytes) * 100);
+      out.push(`${id}: document + RSC grew by ${bytesText(doc)} (${pct}%) over main's last run (${from("docRscBytes", " bytes")})${tail}`);
+    }
+    const req = grew("requests");
+    if (req != null && req > GROWTH.requests) {
+      out.push(`${id}: requests grew by ${req} over main's last run (${from("requests", "")})${tail}`);
+    }
+  }
+  return out;
+}
+
+/**
+ * What fails the job and what the label accepted: the gate's problems always
+ * fail; growth fails unless one of the PR's labels is `perf-growth`, and is
+ * then listed as accepted.
+ */
+export function judge({ gate, growth, labels }) {
+  const accepted = (labels ?? []).some((l) => (typeof l === "string" ? l : l?.name) === GROWTH_LABEL);
+  return accepted ? { problems: [...gate], accepted: [...growth] } : { problems: [...gate, ...growth], accepted: [] };
+}
+
+/**
+ * New ceilings from one run (task 0.13): each the measurement plus 25%, but
+ * never less than the measurement plus what one PR may grow (GROWTH: a route
+ * with 1 KB of its own JS would otherwise have 250 bytes of room under a
+ * 3,000-byte limit; owner, plan gate 2026-11-23). Bytes are rounded up to the
+ * next 100, requests to a whole number; accessibility is the score measured.
+ * `lines` is "measured → ceiling" per id, for the PR body.
+ */
+export function ceilingsFrom(routes) {
+  const shared = sharedScripts(routes);
+  const up = (v, step) => Math.max(0, Math.ceil(v / step - 1e-9) * step);
+  const ceil = (v, grow, step) => up(Math.max(v * 1.25, v + grow), step);
+  const n = (v) => v.toLocaleString("en-US");
+  const sharedNow = sharedJsBytes(routes, shared) ?? 0;
+  const sharedCeil = ceil(sharedNow, GROWTH.jsBytes, 100);
+  const out = { shared: { jsBytes: sharedCeil }, routes: {}, lines: [`shared JS: ${n(sharedNow)} → ${n(sharedCeil)}`] };
+  for (const [id, r] of Object.entries(routes)) {
+    if (!measuredRoute(r)) {
+      out.lines.push(`${id}: not measured, so no ceiling`);
+      continue;
+    }
+    const doc = r.median.docRscBytes;
+    const own = ownJs(r, shared);
+    const req = r.median.requests;
+    const c = {
+      docRscBytes: ceil(doc, GROWTH.docRscBytes.bytes, 100), jsBytes: ceil(own, GROWTH.jsBytes, 100),
+      requests: ceil(req, GROWTH.requests, 1), a11y: r.median.a11y,
+    };
+    out.routes[id] = c;
+    out.lines.push(`${id}: document + RSC ${n(doc)} → ${n(c.docRscBytes)} · JS of its own ${n(own)} → ${n(c.jsBytes)} · ` +
+      `requests ${n(req)} → ${c.requests}`);
+  }
+  return out;
+}
+
 export function fmt(v, unit) {
   if (v == null) return "–";
   if (unit === "bytes") return `${(v / 1024).toFixed(1)} KB`;
@@ -228,9 +406,11 @@ export function fmt(v, unit) {
  * The PR comment and job summary.
  *   current:  { url, sha, lighthouse, chrome, routes: { [id]: aggregateRoute(...) } }
  *   baseline: the same shape from main's last run, plus { pr, at }, or null
- *   budget, problems: as for gateProblems
+ *   budget, problems: as for gateProblems (problems includes growth the label didn't accept)
+ *   shared:   budget.json's `shared`, or null
+ *   growth:   judge(...)'s result: its `accepted` is listed as accepted growth
  */
-export function renderComment({ current, baseline, budget, problems, missingBudget = [] }) {
+export function renderComment({ current, baseline, budget, problems, missingBudget = [], shared = null, growth = null }) {
   const ms = (v) => fmt(v, "ms");
   // One run per route since task 0.14: its first hit is its only number.
   const one = (current.runs ?? 3) === 1;
@@ -248,21 +428,41 @@ export function renderComment({ current, baseline, budget, problems, missingBudg
     "",
   ];
   if (problems.length) lines.push("**Fails the job:**", "", ...problems.map((p) => `- ${p}`), "");
+  if (growth?.accepted?.length) {
+    lines.push(`**Accepted growth** (the \`${GROWTH_LABEL}\` label):`, "", ...growth.accepted.map((p) => `- ${p}`), "");
+  }
+  if (!baseline) {
+    lines.push("Growth over main: not checked: no baseline (no measured run of a recent merged PR is still kept; " +
+      "the numbers last 90 days).", "");
+  } else {
+    const unchecked = growthUnchecked(current.routes, baseline);
+    if (unchecked.length) {
+      lines.push(`Growth over main: not checked for ${unchecked.map((id) => `\`${id}\``).join(", ")}: ` +
+        `PR #${baseline.pr}'s run has no number for ${unchecked.length > 1 ? "them" : "it"}.`, "");
+    }
+  }
   if (missingBudget.length) {
     lines.push(`**No budget recorded** for ${missingBudget.map((id) => `\`${id}\``).join(", ")}: ` +
       "add it to scripts/perf/budget.json and architecture § Operational posture, *Performance budget*.", "");
   }
+  const sharedList = sharedScripts(current.routes);
+  const sharedNow = sharedJsBytes(current.routes, sharedList);
+  lines.push(`**Gated** (${one ? "" : "median, "}against budget)`, "");
+  if (sharedNow != null) {
+    lines.push(`Shared JS (${scriptsText(sharedList.length)}): ${fmt(sharedNow, "bytes")} / ` +
+      `${typeof shared?.jsBytes === "number" ? fmt(shared.jsBytes, "bytes") : "–"}`, "");
+  }
   lines.push(
-    `**Gated** (${one ? "" : "median, "}against budget)`, "",
-    "| Route | Document + RSC | JS | Requests | CLS | Accessibility |",
+    "| Route | Document + RSC | JS of its own | Requests | CLS | Accessibility |",
     "|---|---|---|---|---|---|",
   );
   for (const [id, r] of Object.entries(current.routes)) {
     const b = budget[id] ?? {};
-    const cell = (key, unit) => `${fmt(r.median[key], unit)} / ${typeof b[key] === "number" ? fmt(b[key], unit) : "–"}`;
-    lines.push(`| \`${r.path}\` | ${cell("docRscBytes", "bytes")} | ${cell("jsBytes", "bytes")} | ` +
-      `${cell("requests", "count")} | ${r.median.cls == null ? "–" : r.median.cls.toFixed(3)} | ` +
-      `${r.median.a11y ?? "–"} / ${b.a11y ?? "–"} |`);
+    const cell = (v, key, unit) => `${fmt(v, unit)} / ${typeof b[key] === "number" ? fmt(b[key], unit) : "–"}`;
+    const elsewhere = r.median.otherOriginRequests ? ` (+${fmt(r.median.otherOriginRequests, "count")} to other origins, not budgeted)` : "";
+    lines.push(`| \`${r.path}\` | ${cell(r.median.docRscBytes, "docRscBytes", "bytes")} | ` +
+      `${cell(ownJs(r, sharedList), "jsBytes", "bytes")} | ${cell(r.median.requests, "requests", "count")}${elsewhere} | ` +
+      `${r.median.cls == null ? "–" : r.median.cls.toFixed(3)} | ${r.median.a11y ?? "–"} / ${b.a11y ?? "–"} |`);
   }
   lines.push(
     "", `**Reported, never gated**${one ? "" : " (first hit / median)"}`, "",
@@ -279,7 +479,7 @@ export function renderComment({ current, baseline, budget, problems, missingBudg
   if (failed.length) lines.push("", `**Runs that did not finish** (left out of the ${one ? "numbers" : "medians"} above):`, "", ...failed);
   lines.push("", baseline
     ? `Compared with main's last run: PR #${baseline.pr}'s preview, ${String(baseline.at).slice(0, 10)}.`
-    : "No baseline: no run of the last merged PR is still kept (artifacts last 14 days).",
+    : "No baseline: no measured run of a recent merged PR is still kept (its numbers last 90 days).",
   `A preview's Neon branch is cold or warm by chance, so ${one ? "timings are" : "the first hit is"} reported, never gated. ` +
     "Reports are this run's artifacts.");
   return lines.join("\n");
@@ -517,22 +717,56 @@ export function filesWithSecrets(files, secrets) {
   return files.filter(({ text }) => live.some((s) => text.includes(s))).map((f) => f.name);
 }
 
+/** Whether a run's `report` job concluded `conclusions` (a job that ran). */
+const reportJob = (jobs, conclusions) => (jobs ?? []).find((j) => j.name === "report" && conclusions.includes(j.conclusion));
+
+const newestFirst = (runs) => [...runs].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+
 /**
- * main's last run: the newest merged pull request other than this one. PRs are
- * squash-merged and main builds no preview, so the last merged PR's preview is
- * the nearest thing to main that was measured.
+ * The newest green run of this workflow whose `report` job concluded success,
+ * from runs given with their `jobs` (0.14d): a green run that measured nothing
+ * (a plan-only skip, a commit past the cap, a dry run) left no numbers.
  */
-export function baselinePr(pulls, currentPrs = []) {
-  return pulls
-    .filter((p) => p.merged_at && !currentPrs.includes(p.number))
-    .sort((a, b) => (a.merged_at < b.merged_at ? 1 : -1))[0] ?? null;
+export function baselineRun(runs) {
+  return newestFirst(runs.filter((r) => r.status === "completed" && r.conclusion === "success"))
+    .find((r) => reportJob(r.jobs, ["success"])) ?? null;
 }
 
-/** The newest green run of this workflow on that PR's head commit, or null. */
-export function baselineRun(runs) {
-  return runs
-    .filter((r) => r.status === "completed" && r.conclusion === "success")
-    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0] ?? null;
+/**
+ * main's last measured run (tasks 0.13, 0.14d). PRs are squash-merged and main
+ * builds no preview, so a merged PR's preview is the nearest thing to main that
+ * was measured: the newest merged PR, other than this one, with a baselineRun
+ * among its runs on its branch up to its
+ * merge, on any commit (a task PR's head is a docs-only close-out that Vercel
+ * never builds, so its head has no run). A PR with none (docs-only, or never
+ * measured) is passed over for the one before it.
+ *   runsFor(pr) → its branch's runs   jobsFor(run) → that run's jobs
+ *   → { pr, run } | null
+ */
+export async function findBaseline({ pulls, currentPrs = [], runsFor, jobsFor, limit = 10 }) {
+  const merged = pulls.filter((p) => p.merged_at && !currentPrs.includes(p.number))
+    .sort((a, b) => (a.merged_at < b.merged_at ? 1 : -1)).slice(0, limit);
+  for (const pr of merged) {
+    const green = (await runsFor(pr))
+      .filter((r) => r.status === "completed" && r.conclusion === "success" && r.created_at <= pr.merged_at);
+    const run = baselineRun(await Promise.all(green.map(async (r) => ({ ...r, jobs: await jobsFor(r) }))));
+    if (run) return { pr, run };
+  }
+  return null;
+}
+
+/**
+ * The run whose `report` job the label re-runs (task 0.13): the head commit's
+ * newest finished run whose report ran, pass or fail. A run still going reads
+ * the labels itself when its report gets there.
+ *   → { run: id, job: id } | null
+ */
+export function rejudgeTarget(runs) {
+  for (const r of newestFirst(runs.filter((x) => x.status === "completed"))) {
+    const job = reportJob(r.jobs, ["success", "failure"]);
+    if (job) return { run: r.id, job: job.id };
+  }
+  return null;
 }
 
 // ── Which pages are measured (task 0.14c) ──────────────────────────────────

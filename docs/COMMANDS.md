@@ -42,6 +42,10 @@ gh workflow run lighthouse.yml --ref <branch>  # measure that branch head's prev
                             # prints what an automatic run would decide: the wait, the head, the month's count).
                             # A head Vercel skipped (docs, tests or config only) has no preview: pass -f url=.
                             # While the workflow is disabled (D-158), `gh workflow enable lighthouse.yml` first
+gh run download <run> -n lighthouse-metrics -D <dir>  # a measured run's numbers (kept 90 days, task 0.13), then:
+node scripts/perf/report.mjs ceilings <dir>/metrics.json  # each ceiling: the measurement + 25%, at least + one PR's
+                            # growth limit, bytes up to 100; prints measured → ceiling per id. `--write` puts them
+                            # in scripts/perf/budget.json; raising a ceiling needs a decision (D-n, D-142)
 npx tsc --noEmit            # typecheck
 node scripts/tsc-brief.mjs  # the same typecheck, first 10 errors only (the post-edit hook's verify.fast)
 npm run db:generate         # after editing src/db/schema.ts

@@ -1,14 +1,14 @@
 ---
 id: TASK-133
 title: 0.13 Gate a preview on what its PR adds, not on a ceiling it must raise
-status: Ready
+status: In progress
 depends_on: [TASK-114]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 7b745ff
 ---
 
 # TASK-133 — 0.13 Gate a preview on what its PR adds, not on a ceiling it must raise
@@ -73,9 +73,34 @@ entry's own PR, and `lighthouse-metrics` is kept 90 days.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- 0.14d is absorbed by this task (owner, plan gate 2026-11-23): its Check is met by step 4's `baselineRun`, so it is ticked at close-out with this task's items (approved at plan).
+- Owner steps the Check needs, for the Owner checklist: enable the Lighthouse workflow (`disabled_manually` since D-158), create the `perf-growth` label, start the two measured runs on this PR and the throwaway branch's run (approved at plan).
+- `test/reading-log.test.tsx` › "drawn open with its read count (the book page, task 0.14c), no read loads until All reads is pressed" failed once in the full `test:no-e2e` run (`list()` null at line 691) and passed 3 of 3 alone: a flake under load, in code this task doesn't touch (0.14c's).
+- Candidate decision: a ceiling is the measurement plus 25%, never less than the measurement plus one PR's growth limit (amends D-142's "plus 25%"; owner chose it at revision 1). Proposed at close-out.
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved at the plan gate, 2026-11-23. The owner folded the baseline fix into this task (0.14d absorbed) and kept it whole.
+
+**Finding behind step 4.** `baselineRun` reads only the last merged PR's *head* commit, which is nearly always a docs-only close-out with no preview (PR #319's hand runs were on `e49dc0f` and `cd5f93c`, its head is `3b7f908`), so the growth gate would find no baseline on almost every PR.
+
+**Steps**
+
+1. `summariseLhr` records `scripts` (each same-origin script's path → bytes) and `otherOriginRequests`; `requests` counts only the document's own origin. Both reach `metrics.json` through `measure.mjs` unchanged.
+2. Shared JS: `sharedScripts(routes)` is the scripts every measured route loaded; `sharedJs` / `ownJs` split each route's JS. `budget.json` holds `shared.jsBytes` once and each route's own `jsBytes`; `gateProblems` checks both.
+3. Growth gate: `growthProblems(current, baseline)` with D-142's limits (JS > 3,000 bytes; document + RSC > 10% and > 1,500 bytes; requests > 3), each naming the route, the growth and the baseline's PR. `report()` reads the PR's live labels: with `perf-growth` the growth is listed as accepted in the comment, not a problem. No baseline: skipped, and the comment says so. A route the baseline lacks is skipped by name.
+4. Baseline (0.14d, widened): `baselineRun(runs)` takes runs with their jobs and returns the newest whose `report` job concluded success; `findBaseline` walks the merged PRs newest first, reading each one's runs on its branch up to its merge, past PRs with no such run.
+5. Label re-report: `pull_request: [labeled, unlabeled]` for `perf-growth` runs a `rejudge` job (`report.mjs rejudge`, `actions: write`) that re-runs only the `report` job of the head commit's newest run whose `report` ran (`rejudgeTarget`). Same run, no new load, not counted against the cap. The report job's metrics upload runs on attempt 1 only.
+6. `lighthouse-metrics` kept 90 days; the per-route artifacts stay 14.
+7. `report.mjs ceilings <metrics.json> [--write]` prints (or writes) `budget.json` from a run (`ceilingsFrom`): the larger of measurement × 1.25 and measurement + D-142's growth limit (JS 3,000, document + RSC 1,500, requests 3), bytes up to the next 100, requests up to a whole number, accessibility as measured. Applied from this PR's own preview; until then `budget.json` holds the same rule applied to PR #319's 2026-11-23 hand run (run 45184508856), the latest measurement. *(Revision 1, owner 2026-11-23: on #319's reports a route's own JS is 0–25.5 KB, so a strict +25% left `/login` 0 bytes and `/comics/runs` 292 of room, under the 3,000 one PR may grow.)*
+8. Docs: § Performance budget keeps the table, the growth limits, how a ceiling is raised (a decision, D-n) and the rules still in force; every paragraph after the table moves verbatim to `docs/perf-budget-history.md`, linked. `budget.json` `$comment`; `docs/GIT-PR.md` **Perf growth**; `docs/COMMANDS.md` the `ceilings` command.
+9. Measured runs, started by the owner (D-158): a hand run on this branch → apply `ceilings` → push → a second run passes. After merge: the throwaway branch's 5 KB import, then the label.
+
+**Files**: `scripts/perf/lib/perf.mjs`, `scripts/perf/lib/perf.d.mts` (types; not in Files likely touched), `scripts/perf/report.mjs`, `scripts/perf/budget.json`, `.github/workflows/lighthouse.yml`, `test/perf.test.ts`, `docs/02-architecture.md`, `docs/perf-budget-history.md` (new), `docs/GIT-PR.md`, `docs/COMMANDS.md` (not listed: the new command).
+
+**Test strategy** (`test/perf.test.ts`): AC-1 fixture clauses (3,001 / 3,000 bytes, the label, no baseline, other origin, shared JS once, the table); AC-2's four document + RSC cases and requests 4 / 3; `baselineRun` per 0.14d's Check, `findBaseline` walking back; `rejudgeTarget` and the workflow's label trigger; AC-5's retentions read from `lighthouse.yml`. AC-1's throwaway branch and AC-3's measurement are manual (owner's runs).
+
+**Risks**: Turbopack re-splitting a shared chunk moves its bytes into every route's own JS (growth still names the real change; 25% headroom). The workflow is disabled and the label doesn't exist yet: both are the owner's.
 
 ## Review log
 

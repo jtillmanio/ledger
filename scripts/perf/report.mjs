@@ -6,16 +6,24 @@
 //                                           routes, one job each; the PR whose older runs this cancels
 //   node scripts/perf/report.mjs guard DIR  fail if any file in DIR holds a secret; names files, never values
 //   node scripts/perf/report.mjs merge DIR  the per-route jobs' metrics.json files under DIR, as one
-//   node scripts/perf/report.mjs baseline   main's last run: the newest merged PR's green run
-//   node scripts/perf/report.mjs report     job summary, the one PR comment, then the gate
+//   node scripts/perf/report.mjs baseline   main's last measured run: the newest merged PR with a run whose
+//                                           report job passed, on any of its commits (tasks 0.13, 0.14d)
+//   node scripts/perf/report.mjs report     job summary, the one PR comment, then the gate: the ceilings,
+//                                           and growth over the baseline unless the PR has the perf-growth label
+//   node scripts/perf/report.mjs rejudge    on the perf-growth label: re-run the head's last report job, so the
+//                                           job judges the same numbers again with no new load (task 0.13)
+//   node scripts/perf/report.mjs ceilings FILE [--write]
+//                                           budget.json's ceilings from a run's metrics.json: each measurement
+//                                           plus 25%, at least plus one PR's growth limit; --write puts them
+//                                           in budget.json (task 0.13)
 //
 // Uses only Node and the GitHub REST API; no dependency from scripts/perf/package.json.
 import { appendFileSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  aggregateRoute, automaticCandidates, baselinePr, baselineRun, capMarked, capMarkerName, capReached, countMeasured,
-  DEBOUNCE_SECONDS, filesWithSecrets, findComment, gateProblems, gates, measurable, mergeMetrics, monthlyCap, monthStart,
-  notHead, renderCapComment, renderComment, unbudgeted, unchangedApp,
+  aggregateRoute, automaticCandidates, capMarked, capMarkerName, capReached, ceilingsFrom, countMeasured,
+  DEBOUNCE_SECONDS, filesWithSecrets, findBaseline, findComment, gateProblems, gates, growthProblems, judge, measurable,
+  mergeMetrics, monthlyCap, monthStart, notHead, rejudgeTarget, renderCapComment, renderComment, unbudgeted, unchangedApp,
 } from "./lib/perf.mjs";
 import { ROUTES } from "./routes.mjs";
 
@@ -28,7 +36,14 @@ async function github(path, init = {}) {
     headers: { Authorization: `Bearer ${env.GH_TOKEN}`, Accept: "application/vnd.github+json", "Content-Type": "application/json" },
   });
   if (!res.ok) throw new Error(`GitHub ${init.method ?? "GET"} ${path}: ${res.status} ${await res.text()}`);
-  return res.json();
+  // A re-run request answers 201 with no body.
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+/** A run's jobs, the latest attempt of each. */
+async function jobsOf(run) {
+  return (await github(`actions/runs/${run.id}/jobs?filter=latest&per_page=100`)).jobs;
 }
 
 /** The open pull requests whose head is this commit. */
@@ -90,7 +105,7 @@ async function measuredThisMonth(since, cap) {
   }
   const count = await countMeasured(automaticCandidates(runs, { since, exclude: env.GITHUB_RUN_ID }), {
     cap,
-    jobsFor: async (run) => (await github(`actions/runs/${run.id}/jobs?filter=latest&per_page=100`)).jobs,
+    jobsFor: jobsOf,
   });
   return { count, marker, marked: false };
 }
@@ -211,14 +226,57 @@ function guard(dir) {
 async function baseline() {
   const current = (await pullsFor(env.SHA)).map((p) => p.number);
   const pulls = await github("pulls?state=closed&sort=updated&direction=desc&per_page=50");
-  const pr = baselinePr(pulls, current);
-  if (!pr) return console.log("baseline: no merged pull request");
-  const { workflow_runs: runs } = await github(`actions/workflows/lighthouse.yml/runs?head_sha=${pr.head.sha}&per_page=20`);
-  const run = baselineRun(runs);
-  if (!run) return console.log(`baseline: PR #${pr.number} has no green Lighthouse run`);
-  console.log(`baseline: PR #${pr.number}, run ${run.id}`);
-  output("run_id", String(run.id));
-  output("pr", String(pr.number));
+  const found = await findBaseline({
+    pulls,
+    currentPrs: current,
+    runsFor: async (pr) => {
+      const { workflow_runs: runs } = await github("actions/workflows/lighthouse.yml/runs" +
+        `?branch=${encodeURIComponent(pr.head.ref)}&status=success&per_page=30`);
+      console.log(`baseline: PR #${pr.number} (${pr.head.ref}): ${runs.length} green run(s)`);
+      return runs;
+    },
+    jobsFor: jobsOf,
+  });
+  if (!found) return console.log("baseline: no recent merged PR has a run whose report job passed");
+  console.log(`baseline: PR #${found.pr.number}, run ${found.run.id} (${found.run.head_sha.slice(0, 7)})`);
+  output("run_id", String(found.run.id));
+  output("pr", String(found.pr.number));
+}
+
+/**
+ * The perf-growth label was added or removed: re-run the report job of the
+ * PR head's newest run that reported. The same run's check then reads the
+ * label, with the numbers it measured: no new load, and no new measured run
+ * against LIGHTHOUSE_MONTHLY_CAP (its measure jobs are not re-run).
+ */
+async function rejudge() {
+  const sha = env.HEAD_SHA;
+  const { workflow_runs: runs } = await github(`actions/workflows/lighthouse.yml/runs?head_sha=${sha}&per_page=30`);
+  const withJobs = await Promise.all(runs.filter((r) => r.status === "completed").map(async (r) => ({ ...r, jobs: await jobsOf(r) })));
+  const target = rejudgeTarget(withJobs);
+  if (!target) {
+    console.log(`rejudge: no finished run on ${sha.slice(0, 7)} reported, so there is nothing to judge again ` +
+      "(a run still measuring reads the label when it reports)");
+    return;
+  }
+  await github(`actions/jobs/${target.job}/rerun`, { method: "POST" });
+  console.log(`rejudge: re-running the report job of run ${target.run}`);
+}
+
+/** budget.json's ceilings from one run's numbers, printed, or written with --write. */
+function ceilings(file, write) {
+  const c = ceilingsFrom(load(file).routes);
+  for (const line of c.lines) console.log(line);
+  if (!write) return;
+  const path = new URL("./budget.json", import.meta.url);
+  const old = JSON.parse(readFileSync(path, "utf8"));
+  // The route list's order, one route a line, as the file has always been laid out.
+  const ids = [...ROUTES.map((r) => r.id).filter((id) => c.routes[id]), ...Object.keys(c.routes).filter((id) => !ROUTES.some((r) => r.id === id))];
+  const one = (o) => JSON.stringify(o).replace(/^\{/, "{ ").replace(/\}$/, " }").replace(/,"/g, ', "').replace(/":/g, '": ');
+  const lines = ids.map((id, i) => `    ${JSON.stringify(id)}: ${one(c.routes[id])}${i < ids.length - 1 ? "," : ""}`);
+  writeFileSync(path, ["{", `  "$comment": ${JSON.stringify(old.$comment)},`, `  "shared": ${one(c.shared)},`, '  "routes": {',
+    ...lines, "  }", "}", ""].join("\n"));
+  console.log("ceilings: wrote scripts/perf/budget.json");
 }
 
 /** Read a metrics.json (this run's or the baseline's) into per-route results. */
@@ -229,31 +287,44 @@ function load(file) {
 
 async function report() {
   const current = load(env.METRICS);
-  const budget = JSON.parse(readFileSync(new URL("./budget.json", import.meta.url), "utf8")).routes;
+  const file = JSON.parse(readFileSync(new URL("./budget.json", import.meta.url), "utf8"));
+  const budget = file.routes;
   const before = env.BASELINE_METRICS && existsSync(env.BASELINE_METRICS) ? load(env.BASELINE_METRICS) : null;
   const baseline = before ? { ...before, pr: env.BASELINE_PR, at: before.measuredAt } : null;
-  const problems = gateProblems(current.routes, budget, ROUTES.map((r) => r.id));
-  const body = renderComment({ current, baseline, budget, problems, missingBudget: unbudgeted(current.routes, budget) });
+  // A hand run has no pull request to answer; its summary is the report. The
+  // labels are read now, so a re-run of this job (rejudge) sees a label added since.
+  const prs = env.EVENT_NAME === "deployment_status" ? await pullsFor(env.SHA) : [];
+  const growth = growthProblems(current.routes, baseline);
+  const judged = judge({
+    gate: gateProblems(current.routes, budget, ROUTES.map((r) => r.id), file.shared),
+    growth,
+    labels: prs.flatMap((p) => p.labels ?? []),
+  });
+  const body = renderComment({
+    current, baseline, budget, shared: file.shared, problems: judged.problems, growth: judged,
+    missingBudget: unbudgeted(current.routes, budget),
+  });
 
   if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, `${body}\n`);
   else console.log(body);
 
-  // A hand run has no pull request to answer; its summary is the report.
-  if (env.EVENT_NAME === "deployment_status") {
-    for (const pr of await pullsFor(env.SHA)) {
-      console.log(`report: ${await writeComment(pr.number, body)} the comment on #${pr.number}`);
-    }
+  for (const pr of prs) {
+    console.log(`report: ${await writeComment(pr.number, body)} the comment on #${pr.number}`);
   }
-  if (problems.length) {
-    for (const p of problems) console.log(`::error::${p}`);
+  for (const a of judged.accepted) console.log(`::notice::accepted (perf-growth): ${a}`);
+  if (judged.problems.length) {
+    for (const p of judged.problems) console.log(`::error::${p}`);
     process.exit(1);
   }
 }
 
 const command = process.argv[2];
-const run = { plan, guard: () => guard(process.argv[3]), merge: () => merge(process.argv[3]), baseline, report }[command];
+const run = {
+  plan, guard: () => guard(process.argv[3]), merge: () => merge(process.argv[3]), baseline, report, rejudge,
+  ceilings: () => ceilings(process.argv[3], process.argv.includes("--write")),
+}[command];
 if (!run) {
-  console.error("usage: node scripts/perf/report.mjs <plan|guard DIR|merge DIR|baseline|report>");
+  console.error("usage: node scripts/perf/report.mjs <plan|guard DIR|merge DIR|baseline|report|rejudge|ceilings FILE [--write]>");
   process.exit(2);
 }
 try {
