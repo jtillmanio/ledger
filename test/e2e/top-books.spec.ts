@@ -472,3 +472,111 @@ test("the sorter and the toast's Rank it meet the floor: 44px named buttons, the
   await rankIt.click();
   expect(await fade()).toBe("none");
 });
+
+// --- Task 3.5b, 3 of 3 (TASK-120; D-157): a Top books title opens the book's sheet ---
+
+const dialogs = (page: Page) => page.locator('[role="dialog"]');
+const titleLink = (page: Page, id: string) => page.locator(".top-list").getByRole("link", { name: titleOf(id), exact: true });
+
+test("a Top books title opens /book/{id} as one sheet headed by the title; Back closes it with the URL and scroll as they were (AC-1, AC-2)", ONCE, async ({ page }) => {
+  await open(page);
+  // The last row, under *Not ranked yet*: the page is scrolled to reach it.
+  const id = UNRANKED[1];
+  const link = titleLink(page, id);
+  await hydrated(link);
+  // Mid-screen, clear of anything fixed, so the click itself scrolls nothing.
+  await link.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const before = await page.evaluate(() => window.scrollY);
+  expect(before, "the list is scrolled to its last row").toBeGreaterThan(0);
+  await link.click();
+
+  await expect(page).toHaveURL(new RegExp(`/book/${id}$`));
+  await expect(dialogs(page)).toHaveCount(1);
+  await expect(dialogs(page)).toHaveAccessibleName(titleOf(id));
+  await expect(dialogs(page).getByRole("heading", { level: 2, name: titleOf(id) })).toBeVisible();
+  expect(await page.evaluate(() => window.scrollY)).toBe(before);
+
+  await page.goBack();
+  await expect(dialogs(page)).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/books/top\\?year=${YEAR}$`));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(before);
+});
+
+test("one link per row, named by its title, holding no button; the handle drags, the menu opens and Rank it opens the sorter, none opening the sheet (AC-3, AC-4)", ONCE, async ({ page }) => {
+  await open(page);
+  const book = 'a[href^="/book/"]';
+  const all = await rows(page).all();
+  expect(all.length).toBe(RANKED.length + UNRANKED.length);
+  for (const [i, row] of all.entries()) {
+    await expect(row.locator(book)).toHaveCount(1);
+    await expect(row.locator(book)).toHaveAccessibleName(titleOf([...RANKED, ...UNRANKED][i]));
+  }
+  await expect(page.locator(`main ${book} button, main a:has(button)`)).toHaveCount(0);
+
+  // The handle drags: rank 2 pulled above rank 1 by the mouse ranks it first, and opens nothing.
+  const handle = page.getByRole("button", { name: `Reorder ${titleOf(RANKED[1])}, rank 2` });
+  await hydrated(handle);
+  const from = (await handle.boundingBox())!;
+  const first = (await rows(page).first().boundingBox())!;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  for (let k = 1; k <= 8; k++) await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 - (k * (from.y - first.y + 8)) / 8);
+  await page.mouse.up();
+  await expect.poll(stored).toEqual([
+    `${RANKED[1]}:1`, `${RANKED[0]}:2`, ...RANKED.slice(2).map((rid, i) => `${rid}:${i + 3}`), ...UNRANKED.map((u) => `${u}:-`),
+  ]);
+  await expect(dialogs(page)).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/books/top\\?year=${YEAR}$`));
+  await page.locator(".toast").getByRole("button", { name: "Undo" }).click();
+  await expect.poll(stored).toEqual(START);
+
+  // The row menu opens its menu, not the sheet.
+  const more = page.getByRole("button", { name: `More for ${titleOf(RANKED[0])}` });
+  await more.click();
+  await expect(page.getByRole("menu")).toBeVisible();
+  await expect(dialogs(page)).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("menu")).toHaveCount(0);
+
+  // *Rank it* opens the sorter, the only dialog, and the URL stays the page's.
+  const rankIt = rankItOn(page, UNRANKED[0]);
+  await rankIt.click();
+  await expect(page.getByRole("dialog", { name: `Rank ${titleOf(UNRANKED[0])} in ${YEAR}` })).toBeVisible();
+  await expect(dialogs(page)).toHaveCount(1);
+  await expect(page).toHaveURL(new RegExp(`/books/top\\?year=${YEAR}$`));
+  await page.keyboard.press("Escape");
+  await expect(dialogs(page)).toHaveCount(0);
+});
+
+test("the title links meet the UX floor at 360 and 1280: a --brand focus ring, 24×24, axe with no nested interactive, a screenshot with a sheet open (AC-5)", ONCE, async ({ page }, info) => {
+  await open(page);
+  const brand = await tokenColour(page, "--brand");
+  for (const [width, height] of [[360, 780], [1280, 800]] as const) {
+    await page.setViewportSize({ width, height });
+    // A fresh page: no click yet, so focus() shows the keyboard's ring.
+    await open(page);
+    for (const id of [RANKED[0], RANKED[1], UNRANKED[0]]) {
+      const link = titleLink(page, id);
+      await link.focus();
+      const ring = await link.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return { style: cs.outlineStyle, color: cs.outlineColor, width: cs.outlineWidth };
+      });
+      expect(ring, `${id} at ${width}`).toEqual({ style: "solid", color: brand, width: "2px" });
+      const box = (await link.boundingBox())!;
+      expect(box.width, `${id} at ${width}`).toBeGreaterThanOrEqual(24);
+      expect(box.height, `${id} at ${width}`).toBeGreaterThanOrEqual(24);
+    }
+    await expectNoHorizontalScroll(page);
+    await expectNoAxeViolations(page, ["nested-interactive", "link-name", "target-size"]);
+    const link = titleLink(page, RANKED[0]);
+    await hydrated(link);
+    await link.click();
+    await expect(dialogs(page)).toHaveCount(1);
+    await expect.poll(() => dialogs(page).evaluate((el) =>
+      el.getAnimations().filter((a) => a.playState === "running").length)).toBe(0);
+    await screenshot(page, info, `top-books-sheet-${width}`);
+    await page.goBack();
+    await expect(dialogs(page)).toHaveCount(0);
+  }
+});
