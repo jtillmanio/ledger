@@ -45,7 +45,9 @@ job's log names that run. A run that covered only some areas never counts as
 a full pass.
 The `e2e-budget` job (D-161) then fails a PR that adds more than 3 minutes of
 browser-suite time, or whose suite passes 6 minutes a shard; its summary lists
-the costliest new tests. Tag each new test for what it checks (untagged
+the costliest new tests. A PR that ran only some areas (0.15) is judged by
+them: each area against main's tests of that area, the growth named by area,
+and the ceiling applied to each of the shards it ran. Tag each new test for what it checks (untagged
 behaviour, `FLOOR`, `FEEL`) before asking for more: the owner's `e2e-growth`
 label accepts the growth for one PR, and Claude asks for it in the PR body
 under **E2E growth** with the reason, and never adds it.

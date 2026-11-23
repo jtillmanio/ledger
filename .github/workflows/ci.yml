@@ -240,6 +240,9 @@ jobs:
   # main's latest (scripts/e2e-budget.mjs). It fails when the PR adds more than
   # 3 minutes of suite time or a shard's tests would pass 6 minutes, unless the
   # owner's `e2e-growth` label accepts it. A draft's core run records nothing.
+  # An area run (0.15) is judged by its areas: each against main's tests of the
+  # same area (an area only its @critical tests brought in, by those tests), the
+  # growth named by area, and the ceiling applied to each shard its plan made.
   e2e-budget:
     needs: [scope, e2e]
     if: needs.e2e.result == 'success'
@@ -300,6 +303,8 @@ jobs:
         env:
           # The e2e matrix's size (test/e2e-budget.test.ts keeps them equal).
           SHARDS: 10
+          E2E_SCOPE: ${{ needs.scope.outputs.e2e_scope }}
+          E2E_AREAS: ${{ needs.scope.outputs.areas }}
           EVENT: ${{ github.event_name }}
           LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
           BASELINE_RUN: ${{ steps.baseline.outputs.run_id }}

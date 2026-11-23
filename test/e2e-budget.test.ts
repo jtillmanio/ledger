@@ -6,9 +6,18 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  GROWTH_LABEL, GROWTH_LIMIT_MS, SHARD_CEILING_MS, budgetProblems, compareTimes, renderSummary, timesFromReport,
+  GROWTH_LABEL, GROWTH_LIMIT_MS, SHARD_CEILING_MS, budgetProblems, compareAreas, compareTimes, renderSummary, shardTimes,
+  timesFromReport,
 } from "../scripts/lib/e2e-budget.mjs";
+import type { Comparison, Times } from "../scripts/lib/e2e-budget.mjs";
 import { ciJob } from "./ci-yml";
+
+// TASK-136 AC-4: compareTimes and budgetProblems on these times, recorded before the budget read areas.
+type RecordedCase = { current: Times; baseline: Times; shards: number; recorded: { comparison: Comparison; problems: string[] } };
+const everyArea = JSON.parse(readFileSync("test/fixtures/e2e-budget-every-area.json", "utf8")) as {
+  areaOf: Record<string, string>;
+  cases: Record<string, RecordedCase>;
+};
 
 const result = (duration: number, status = "passed") => ({ duration, status });
 // The JSON reporter's shape: a suite per file, describes under it (they carry `file` too).
@@ -84,6 +93,109 @@ describe("compareTimes and budgetProblems", () => {
   });
 });
 
+// Roadmap 0.15, task 136: a PR's run is judged area by area against main's
+// recording of the same areas, and its shards are the ones its plan made.
+describe("compareAreas: the budget follows the area", () => {
+  const s = 1_000;
+  const m = 60_000;
+  const areaOf = { "books.spec.ts": "books", "comics.spec.ts": "comics", "shell.spec.ts": "shared" };
+  // Main's latest recording: every area. The comics-only PR runs comics whole and the others' @critical tests.
+  const main: Times = {
+    "comics.spec.ts › opens a run [w390-light]": 60 * s,
+    "comics.spec.ts › opens a run [w1280-light]": 60 * s,
+    "books.spec.ts › lists the shelf [w390-light]": 2 * m,
+    "books.spec.ts › adds a book @critical [w390-light]": 20 * s,
+    "shell.spec.ts › signs in @critical [w390-light]": 10 * s,
+  };
+  const critical = {
+    "books.spec.ts › adds a book @critical [w390-light]": 20 * s,
+    "shell.spec.ts › signs in @critical [w390-light]": 10 * s,
+  };
+  const comicsRun = (extra: Times = {}): Times => ({
+    "comics.spec.ts › opens a run [w390-light]": 61 * s,
+    "comics.spec.ts › opens a run [w1280-light]": 59 * s,
+    ...critical,
+    ...extra,
+  });
+  const unit = (project: string, file: string) => ({ key: `${project}|${file}`, project, file, ms: 0 });
+
+  it("AC-2: fails a comics-only run whose comics tests grew 3.5 minutes, naming comics and the growth", () => {
+    const current = comicsRun({ "comics.spec.ts › a new flow [w390-light]": 3.5 * m });
+    const c = compareAreas(current, main, 10, { areaOf, areas: ["comics"] });
+    expect(c.growth).toBe(3.5 * m);
+    expect(c.byArea.find((a) => a.area === "comics")).toMatchObject({ ran: "area", growth: 3.5 * m });
+    expect(budgetProblems(c)).toEqual([expect.stringMatching(/adds 3\.5 min .* over the 3\.0 min a PR may add — comics \+3\.5 min$/)]);
+    // Before areas, the books tests the run left out counted as removed and hid the growth.
+    expect(budgetProblems(compareTimes(current, main, 10))).toEqual([]);
+    expect(renderSummary(c, { problems: budgetProblems(c), accepted: true, baselineRun: "7" })).toContain("**Accepted:**");
+  });
+
+  it("AC-3: passes a comics-only run when main's books tests grew 4 minutes: books are not compared", () => {
+    // Main's books grew 4 minutes since the PR branched, enough that main's whole suite is past the ceiling.
+    const grownMain: Times = { ...main, "books.spec.ts › lists the shelf [w390-light]": 58 * m, "books.spec.ts › new on main [w390-light]": 4 * m };
+    expect(budgetProblems(compareTimes(grownMain, grownMain, 10))).not.toEqual([]);
+    const plan = [{ ms: 0, units: [unit("w390-light", "comics.spec.ts"), unit("w390-light", "books.spec.ts")] },
+      { ms: 0, units: [unit("w1280-light", "comics.spec.ts"), unit("w390-light", "shell.spec.ts")] }];
+    const c = compareAreas(comicsRun(), grownMain, 2, { areaOf, areas: ["comics"], plan });
+    expect(budgetProblems(c)).toEqual([]);
+    expect(c.growth).toBe(0);
+    expect(c.removedRuns).toBe(0);
+    expect(c.byArea.map((a) => [a.area, a.ran])).toEqual([["books", "critical"], ["comics", "area"], ["shared", "critical"]]);
+    expect(c.byArea.find((a) => a.area === "books")).toMatchObject({ growth: 0, baseline: 20 * s });
+    expect(c.shardMs).toEqual([80 * s, 70 * s]);
+  });
+
+  it("AC-4: a run over every area gives today's comparison and problems, as recorded before the change", () => {
+    for (const [name, k] of Object.entries(everyArea.cases)) {
+      const c = compareAreas(k.current, k.baseline, k.shards, { areaOf: everyArea.areaOf, areas: null });
+      expect(c, name).toMatchObject(k.recorded.comparison);
+      expect(c.shardMs, name).toBeNull();
+      const problems = budgetProblems(c);
+      expect(problems, name).toHaveLength(k.recorded.problems.length);
+      problems.forEach((p, i) => expect(p.startsWith(k.recorded.problems[i]), `${name}: ${p}`).toBe(true));
+    }
+    expect(everyArea.cases.over.recorded.problems).toHaveLength(2);
+    // Its areas partition the run: their growth adds up to the total.
+    const c = compareAreas(everyArea.cases.over.current, everyArea.cases.over.baseline, 2, { areaOf: everyArea.areaOf, areas: null });
+    expect(c.byArea.reduce((sum, a) => sum + a.growth, 0)).toBe(c.growth);
+    expect(budgetProblems(c)[0]).toMatch(/ — books \+2\.5 min, comics \+1\.5 min$/);
+  });
+
+  it("AC-5: applies the ceiling to each shard the run had, naming the one over it", () => {
+    const tall: Times = { ...main, "comics.spec.ts › opens a run [w390-light]": 6.2 * m };
+    const plan = [{ ms: 0, units: [unit("w390-light", "comics.spec.ts")] },
+      { ms: 0, units: [unit("w1280-light", "comics.spec.ts"), unit("w390-light", "books.spec.ts")] },
+      { ms: 0, units: [unit("w390-light", "shell.spec.ts")] }];
+    const c = compareAreas(comicsRun({ "comics.spec.ts › opens a run [w390-light]": 6.1 * m }), tall, 3, { areaOf, areas: ["comics"], plan });
+    // The mean shard is under the ceiling; the first shard is not.
+    expect(c.perShard).toBeLessThan(SHARD_CEILING_MS);
+    expect(c.shardMs).toEqual([6.2 * m, 80 * s, 10 * s]);
+    expect(budgetProblems(c)).toEqual([expect.stringMatching(/^shard 1 of 3 would take 6\.2 min of tests, over the 6\.0 min ceiling$/)]);
+    expect(budgetProblems({ ...c, shardMs: [SHARD_CEILING_MS, 0, 0] })).toEqual([]);
+  });
+
+  it("prices a file the run planned for its @critical tests by those tests alone", () => {
+    const plan = [{ ms: 0, units: [unit("w390-light", "books.spec.ts")] }];
+    expect(shardTimes(plan, critical, main)).toEqual([20 * s]);
+    // A new test counts at its own time, a known one at main's.
+    expect(shardTimes(plan, { ...critical, "books.spec.ts › new [w390-light]": 5 * s }, { ...main, ...{ "books.spec.ts › adds a book @critical [w390-light]": 30 * s } }))
+      .toEqual([35 * s]);
+  });
+
+  it("the summary lists each area against main's, and an area run's shards", () => {
+    const plan = [{ ms: 0, units: [unit("w390-light", "comics.spec.ts"), unit("w390-light", "books.spec.ts")] },
+      { ms: 0, units: [unit("w1280-light", "comics.spec.ts"), unit("w390-light", "shell.spec.ts")] }];
+    const c = compareAreas(comicsRun({ "comics.spec.ts › a new flow [w390-light]": 30 * s }), main, 2, { areaOf, areas: ["comics"], plan });
+    const text = renderSummary(c, { problems: budgetProblems(c), accepted: false, baselineRun: "7" });
+    expect(text).toContain("| This run | 3.0 min over 5 test runs (comics and the critical set) |");
+    expect(text).toContain("| Area | This run | Main | This PR adds |");
+    expect(text).toContain("| comics | 2.5 min | 2.0 min | +0.5 min |");
+    expect(text).toContain("| books (critical set) | 0.3 min | 0.3 min | +0.0 min |");
+    expect(text).toContain("| The slowest shard | 1.8 min of tests (shard 1 of 2), plus about 1 min of setup; ceiling 6.0 min |");
+    expect(text).toContain("| Shards | 1.8 · 1.2 min |");
+  });
+});
+
 describe("renderSummary", () => {
   it("names the suite's time, main's, the growth, a shard's share, and the costliest new tests", () => {
     const c = compareTimes({ "a [p1]": 10_000, "a | b [p1]": 200_000 }, { "a [p1]": 10_000 }, 8);
@@ -135,6 +247,36 @@ describe("scripts/e2e-budget.mjs check", () => {
     expect(run({ "new [p1]": 60_000 }, null, { EVENT: "pull_request" }).status).toBe(0);
   });
 
+  it("judges an area run (E2E_AREAS) by its areas and its shards: comics' growth is named, the label accepts it", () => {
+    // Real spec files, so their areas come from test/e2e: queue is comics, dnf-reason books (with @critical tests).
+    const base = {
+      "queue.spec.ts › the shelf [w390-light]": 30_000,
+      "dnf-reason.spec.ts › a long flow [w390-light]": 5 * 60_000,
+      "dnf-reason.spec.ts › records a reason @critical [w390-light]": 10_000,
+    };
+    const now = {
+      "queue.spec.ts › the shelf [w390-light]": 30_000,
+      "queue.spec.ts › a new flow [w390-light]": 3.5 * 60_000,
+      "dnf-reason.spec.ts › records a reason @critical [w390-light]": 10_000,
+    };
+    const r = run(now, base, { EVENT: "pull_request", LABELS: "[]", E2E_AREAS: "comics", E2E_SCOPE: "full" });
+    expect(r.status).toBe(1);
+    expect(r.out).toMatch(/::error::this PR adds 3\.5 min .* — comics \+3\.5 min/);
+    expect(r.summary).toContain("| comics | 4.0 min | 0.5 min | +3.5 min |");
+    expect(r.summary).toContain("| books (critical set) |");
+    // queue's w390-light unit, priced by this run's tests; its shard may also hold a critical file's 10 s.
+    expect(r.summary).toMatch(/\| The slowest shard \| 4\.[0-2] min of tests \(shard \d+ of 8\)/);
+    expect(run(now, base, { EVENT: "pull_request", LABELS: JSON.stringify([GROWTH_LABEL]), E2E_AREAS: "comics" }).status).toBe(0);
+    // Over every area, the books test the run left out counts as removed, as before.
+    expect(run(now, base, { EVENT: "pull_request", LABELS: "[]", E2E_AREAS: "" }).status).toBe(0);
+  });
+
+  it("refuses an E2E_AREAS that names no area", () => {
+    const r = run(main, main, { EVENT: "pull_request", E2E_AREAS: "comic" });
+    expect(r.status).not.toBe(0);
+    expect(r.out).toMatch(/E2E_AREAS is "comic"/);
+  });
+
   it("refuses without the shard count", () => {
     const r = run(main, main, { EVENT: "pull_request", SHARDS: "" });
     expect(r.status).not.toBe(0);
@@ -153,6 +295,12 @@ describe("ci.yml runs the budget after a green browser suite", () => {
     expect(job).toContain("node scripts/e2e-budget.mjs baseline");
     expect(job).toContain("node scripts/e2e-budget.mjs check e2e-times.json");
     expect(job).toContain("actions: read");
+  });
+
+  it("judges the run by the areas and the scope the scope job chose (0.15)", () => {
+    const step = job.slice(job.indexOf("- name: Within the budget"));
+    expect(step).toContain("E2E_AREAS: ${{ needs.scope.outputs.areas }}");
+    expect(step).toContain("E2E_SCOPE: ${{ needs.scope.outputs.e2e_scope }}");
   });
 
   it("divides by as many shards as the e2e matrix has", () => {

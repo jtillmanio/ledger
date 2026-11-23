@@ -1,14 +1,14 @@
 ---
 id: TASK-136
 title: 0.15 The browser suite runs by area (3 of 3) — the time budget follows the area
-status: Ready
+status: In progress
 depends_on: [TASK-135]
 size: S
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 93eb453
 ---
 
 # TASK-136 — 0.15 The browser suite runs by area (3 of 3) — the time budget follows the area
@@ -70,9 +70,27 @@ Decision row recorded (next free D-n), amending D-80, D-141 and D-161.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Decision row (next free D-n), amending D-161 and finishing D-173 (5): the growth limit stays the PR's total and names each area that grew; an area run's ceiling applies to each of its shards, priced by the tests it ran; an area present only through `@critical` tests compares only those tests (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-23 at 93eb453.
+
+**Steps**
+
+1. Record `test/fixtures/e2e-budget-every-area.json` with today's `compareTimes` + `budgetProblems` (books, comics and shared keys; added, removed and known tests; each key's area) before any change: AC-4's pin.
+2. `scripts/lib/e2e-budget.mjs`: `compareAreas(current, baseline, shards, areaOf, areas)`. Main's tests count only for the areas the run selected; an area present only through `@critical` tests compares only the tests it ran (main's newer tests there are not "removed", AC-3). Returns today's comparison over that slice plus per-area rows (`area` or `critical set`); with `areas` null the slice is everything, so the total is today's `compareTimes` exactly (AC-4). `shardTimes(plan, current, baseline)`: each shard of the run's plan priced by its tests' projected times (main's time for a test main also ran), so a critical-only file counts only its `@critical` tests (TASK-134's note).
+3. `budgetProblems`: the 3-minute growth limit stays on the PR's total; the message names each area that grew (`— comics +3.5 min`, AC-2; `e2e-growth` still accepts). The ceiling: a run over every area as today (the mean shard); an area run per shard of its plan (`shard 4 of 10 … 6.2 min`, AC-5).
+4. `renderSummary`: an area table (this run vs main's, growth), and the shard times for an area run.
+5. `scripts/e2e-budget.mjs check`: reads `E2E_AREAS` / `E2E_SCOPE`, each spec's area from `test/e2e/*.spec.ts`, and builds the run's plan (`plannedProjects` → `plannedUnits` → `planShards`, as `balance` does).
+6. `.github/workflows/ci.yml`: *Within the budget* gets `E2E_AREAS` and `E2E_SCOPE` from the scope job.
+7. `docs/GIT-PR.md`, `docs/COMMANDS.md`: the budget sentences.
+
+**Files**: `scripts/lib/e2e-budget.mjs`, `scripts/lib/e2e-budget.d.mts`, `scripts/e2e-budget.mjs`, `.github/workflows/ci.yml`, `test/e2e-budget.test.ts` (listed); `test/fixtures/e2e-budget-every-area.json` (new, AC-4's recorded fixture), `docs/GIT-PR.md`, `docs/COMMANDS.md` (they describe the budget) (not listed).
+
+**Test strategy** (`test/e2e-budget.test.ts`): AC-2 comics +3.5 min fails naming comics, the label accepts; AC-3 comics-only run vs a baseline whose books grew 4 min passes (a design pricing main's whole suite would fail the ceiling); AC-4 every area equals the recorded fixture's comparison, each problem starts with the recorded text; AC-5 a plan with one shard at 6.2 min fails naming it; a script test with `E2E_AREAS=comics`; ci.yml passes `E2E_AREAS`. AC-1: the existing ci-scope, e2e-guard and e2e-shards tests in `test:no-e2e`.
+
+**Decided at the gate**: a run over every area keeps today's mean-shard ceiling (AC-4; D-167 made imbalance a note); an area run's is per shard.
 
 ## Review log
 
