@@ -12,11 +12,13 @@
 //       Prices the plan for N shards (SHARDS when unset) with a run's own times
 //       and prints how lopsided it was: slowest shard over the mean. It never
 //       fails a run; it writes the summary to GITHUB_STEP_SUMMARY when set.
+//       The plan is the run's own: E2E_SCOPE (full when unset) and E2E_AREAS
+//       (every area when unset), as playwright.config.ts made it (0.15).
 import { appendFileSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { e2eProjects } from "./lib/e2e.mjs";
-import { averageTimes, groupTimes, imbalance, planShards, shardUnits } from "./lib/e2e-shards.mjs";
+import { parseAreas, plannedProjects, plannedUnits } from "./lib/e2e.mjs";
+import { averageTimes, groupTimes, imbalance, planShards } from "./lib/e2e-shards.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const TIMES_FILE = join(root, "test", "e2e", "shard-times.json");
@@ -60,15 +62,20 @@ function update(timesFiles, listFile) {
 function balance(timesFile, shards) {
   const { tests } = readJson(timesFile);
   const actual = groupTimes(tests);
-  const projects = e2eProjects("full").map((p) => p.name);
+  // The plan the run made: its scope and its areas (0.15), as playwright.config.ts planned them.
+  const { areas, error } = parseAreas(process.env.E2E_AREAS);
+  if (error) throw new Error(error);
   const files = readdirSync(join(root, "test", "e2e")).filter((f) => f.endsWith(".spec.ts"));
-  const plan = planShards(shardUnits(projects, files, readJson(TIMES_FILE)), shards);
+  const specs = areas === null ? [] : files.map((file) => ({ file, text: readFileSync(join(root, "test", "e2e", file), "utf8") }));
+  const units = plannedUnits(plannedProjects(process.env.E2E_SCOPE || "full", areas, specs), files, readJson(TIMES_FILE));
+  const plan = planShards(units, shards);
+  const planned = new Set(units.map((u) => u.file)).size;
   const { sums, mean, slowest, ratio } = imbalance(plan, actual);
   const min = (ms) => (ms / 60000).toFixed(1);
   const lines = [
     "## Browser suite shards (D-167)",
     "",
-    `The plan splits ${files.length} spec files over ${shards} shards by recorded time. Priced with this run's own times: ` +
+    `The plan splits ${planned} spec files${areas === null ? "" : ` (${areas.join(", ")} and the critical set)`} over ${shards} shards by recorded time. Priced with this run's own times: ` +
       `slowest ${min(slowest)} min, mean ${min(mean)} min, **${ratio.toFixed(2)}x**. Per shard: ${sums.map(min).join(" · ")} min.`,
   ];
   if (ratio > DRIFT) {

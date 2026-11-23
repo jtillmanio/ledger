@@ -16,10 +16,33 @@ CI checks every project from the first push (a draft checks the core projects
 until it gets the `e2e:full` label, D-80). Claude watches that run in the
 background rather than waiting on it, and fixes a failure on the branch
 (`gh run view <id> --log-failed`, reproduced locally in the failing project)
-and pushes again. Every push to `main` always gets the full suite. A later
-push that adds only docs (a close-out, an accept) skips the browser suite and
-the build when an earlier run on the branch passed every project and nothing
-else differs, `main` included (D-145): the scope job's log names that run.
+and pushes again. Every push to `main` always gets the full suite.
+
+Which specs a PR runs follows the paths it changed (D-173, roadmap 0.15;
+`scripts/lib/ci-scope.mjs`):
+
+| The PR changes | The browser suite runs |
+|---|---|
+| Only one medium's routes, components (the map names them) and specs, besides docs and unit tests | That medium's specs at every project their tags say (D-161), plus the `@critical` set at the core projects |
+| Several media's own files | Each of those media, plus the critical set |
+| A medium's file that a spec of another area imports | That area too |
+| Only shared specs | The shared specs, plus the critical set |
+| Anything shared or unmapped: `src/db/`, `src/lib/`, `etl/views.sql`, a shared component, `globals.css`, `src/proxy.ts`, `package.json` or the lockfile, the Next or Playwright config, `test/e2e/helpers.ts`, `.github/`, a path the map doesn't name | Every area |
+| Only docs, `.claude/`, `backups/` or root markdown | Nothing: the suite and the build are skipped |
+
+A push to `main`, the nightly run on `main` (08:00 UTC) and a PR labelled
+`e2e:full` run every area. The scope job's log and summary name the areas and
+the paths that chose them, and each shard's name carries them
+(`e2e full comics 3/10`; `e2e full 3/10` is every area). A PR the owner or
+Claude judges risky, such as a refactor with no clear area, gets `e2e:full`
+before merge: a failure found only on `main` means reverting it. A failed
+nightly emails the owner, and Release refuses that commit until it is green.
+
+A later push that adds only docs (a close-out, an accept) skips the browser
+suite and the build when an earlier run on the branch passed every area it
+needs now and nothing else differs, the base included (D-145): the scope
+job's log names that run. A run that covered only some areas never counts as
+a full pass.
 The `e2e-budget` job (D-161) then fails a PR that adds more than 3 minutes of
 browser-suite time, or whose suite passes 6 minutes a shard; its summary lists
 the costliest new tests. Tag each new test for what it checks (untagged
