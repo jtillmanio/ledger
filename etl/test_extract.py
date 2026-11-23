@@ -723,6 +723,33 @@ def build_books(master: list[tuple], tabs: dict | None = None,
     return path
 
 
+# Task 6.19 (TASK-131, D-94): sidecars as the owner's were before the ETL
+# stopped carrying the retired lookup: book_details.csv with its old header and
+# 1.14's rows, decided and undecided `open library` rows in book_review.csv,
+# and a Calibre sidecar giving each book an id and #pages. Data, not code, so
+# no etl/*.py names the lookup (6.19's Check). test/books-load.test.ts loads them.
+BEFORE_6_19 = Path(__file__).parent / "testdata" / "before-6.19"
+BEFORE_6_19_BOOKS = [("The Way of Kings", "Brandon Sanderson", None, None, None),
+                     ("Elantris", "Brandon Sanderson", None, None, None),
+                     ("Mistborn", "Brandon Sanderson", None, None, None),
+                     ("Warbreaker", "Brandon Sanderson", None, None, None),
+                     ("Edgedancer Novella", "Brandon Sanderson", None, None, None)]
+
+
+def before_6_19(name: str) -> tuple[list[str], list[dict]]:
+    """One of the fixture sidecars: its header, and its rows."""
+    with (BEFORE_6_19 / f"{name}.csv").open(newline="", encoding="utf-8") as fh:
+        r = csv.DictReader(fh)
+        return list(r.fieldnames or []), list(r)
+
+
+def before_6_19_workbooks() -> tuple[Path, Path]:
+    """Comics.xlsx (one run, one issue) and Books.xlsx (BEFORE_6_19_BOOKS)."""
+    comics = build_workbook([("a", "Avengers (1998) #1", False, "Core", None)],
+                            [("a", "Run A", "Avengers", "Kurt Busiek", "George Perez")])
+    return comics, build_books(BEFORE_6_19_BOOKS)
+
+
 SERIES_COLUMNS = ["Series", "Author", "Percent Read", "Words", "Books Read", "Total Books", "Completed"]
 
 
@@ -1026,17 +1053,18 @@ class BookReviewLeftovers(BookCase):
 
 class BookDetails(BookCase):
     """Task 1.14 (D-44): book_details.csv folds into books, the workbook's year
-    wins, no word count comes from pages, and the Open Library proposals enrich
-    appends to book_review.csv survive extract until they are decided."""
+    wins, no word count comes from pages. Since 6.19 (TASK-131, D-94) 1.14's
+    rows, from the retired lookup, still give their cover and year but no id
+    and no page count; a decided review row of its reason still applies, and
+    an undecided one goes."""
 
-    WOK = {"title": "The Way of Kings", "author": "Brandon Sanderson",
-           "open_library_id": "OL15358691W", "page_count": "1008",
-           "cover_url": "https://covers.openlibrary.org/b/id/14658316-L.jpg",
-           "published_year": "2010", "source": "openlibrary"}
-    PROPOSAL = {"kind": "book", "a": "Edgedancer Novella", "b": "Edgedancer",
-                "a_author": "Brandon Sanderson", "b_author": "Brandon Sanderson", "a_tabs": "",
-                "b_tabs": "Open Library", "reason": "open library", "similarity": "0.58",
-                "keep": "Edgedancer", "decision": ""}
+    # 1.14's row for Elantris, as the fixture sidecar has it: the retired
+    # lookup's source and its id column, which extract no longer reads.
+    RETIRED = next(r for r in before_6_19("book_details")[1] if r["title"] == "Elantris")
+    WOK = {**RETIRED, "title": "The Way of Kings"}
+    # A near spelling 1.14 proposed: reason `open library`, undecided.
+    PROPOSAL = {**next(r for r in before_6_19("book_review")[1] if r["a"] == "Edgedancer Novella"),
+                "decision": ""}
 
     def setUp(self):
         super().setUp()
@@ -1050,8 +1078,9 @@ class BookDetails(BookCase):
             ex.extract_books(path, self.out, book_review=self.review, book_details=self.details)
 
     def write_details(self, rows):
+        """The sidecar as enrich writes it now: a fixture row's old id column is left out."""
         with self.details.open("w", newline="", encoding="utf-8") as fh:
-            w = csv.DictWriter(fh, fieldnames=ex.BOOK_DETAILS_COLUMNS)
+            w = csv.DictWriter(fh, fieldnames=ex.BOOK_DETAILS_COLUMNS, extrasaction="ignore")
             w.writeheader()
             w.writerows(rows)
 
@@ -1067,15 +1096,13 @@ class BookDetails(BookCase):
                                   ("Mistborn", "Brandon Sanderson", None, "Fantasy", 214000)]))
         books = self.books()
         wok = books["the-way-of-kings-brandon-sanderson"]
-        # An Open Library row's page count is no source since 1.14c (D-130).
-        self.assertEqual({k: wok[k] for k in ("open_library_id", "page_count", "cover_url",
-                                              "published_year")},
-                         {"open_library_id": "OL15358691W", "page_count": "",
-                          "cover_url": "https://covers.openlibrary.org/b/id/14658316-L.jpg",
-                          "published_year": "2010"})
+        # A retired row's page count is no source since 1.14c (D-130); its
+        # cover and year still fold, and its id goes nowhere (6.19).
+        self.assertEqual({k: wok[k] for k in ("hardcover_id", "page_count", "cover_url", "published_year")},
+                         {"hardcover_id": "", "page_count": "", "cover_url": self.RETIRED["cover_url"],
+                          "published_year": "2005"})
         mistborn = books["mistborn-brandon-sanderson"]
-        self.assertEqual((mistborn["open_library_id"], mistborn["page_count"], mistborn["cover_url"]),
-                         ("", "", ""))
+        self.assertEqual((mistborn["hardcover_id"], mistborn["page_count"], mistborn["cover_url"]), ("", "", ""))
 
     def test_no_word_count_from_page_count(self):
         self.write_details([self.WOK])
@@ -1087,15 +1114,14 @@ class BookDetails(BookCase):
         cosmere = df({"Completed": [False, False], "Type": ["Novel", "Novel"],
                       "Book": ["The Way of Kings", "Elantris"], "Series": [None, None],
                       "Word Count": [None, None], "Published": [2011, None]})
-        self.write_details([self.WOK, {**self.WOK, "title": "Elantris", "open_library_id": "OL5738148W",
-                                       "published_year": "2005"}])
+        self.write_details([self.WOK, self.RETIRED])
         self.extract(build_books([], {"Cosmere": cosmere}))
         books = self.books()
         self.assertEqual(books["the-way-of-kings-brandon-sanderson"]["published_year"], "2011")
         self.assertEqual(books["elantris-brandon-sanderson"]["published_year"], "2005")
 
     def test_a_hand_row_folds_in_like_any_other(self):
-        self.write_details([{**self.WOK, "open_library_id": "", "page_count": "1001", "source": "hand"}])
+        self.write_details([{**self.WOK, "page_count": "1001", "source": "hand"}])
         self.extract(build_books([("The Way of Kings", "Brandon Sanderson", None, None, None)]))
         self.assertEqual(self.books()["the-way-of-kings-brandon-sanderson"]["page_count"], "1001")
 
@@ -1106,31 +1132,75 @@ class BookDetails(BookCase):
         self.assertEqual(len(flagged), 1)
         self.assertIn("Words of Radiance", flagged[0]["detail"])
 
-    def test_open_library_row_survives_extract(self):
+    def test_an_undecided_retired_review_row_is_dropped(self):
+        """6.19 AC-3: the lookup that proposed it is gone (D-94), so extract
+        drops it even while the workbook still has its spelling; the book
+        keeps the workbook's title."""
         gone = {**self.PROPOSAL, "a": "Not In The Workbook", "b": "Not in the Workbook!"}
         self.write_review([self.PROPOSAL, gone])
         self.extract(build_books([("Edgedancer Novella", "Brandon Sanderson", None, None, None)]))
-        rows = self.review_rows()
-        self.assertEqual([(r["a"], r["reason"], r["decision"]) for r in rows],
-                         [("Edgedancer Novella", "open library", "")])
+        self.assertEqual(self.review_rows(), [])
+        self.assertEqual([b["title"] for b in self.books().values()], ["Edgedancer Novella"])
         self.assertNotIn("stale review", self.reasons())
 
-    def test_accepted_open_library_row_renames_the_book_and_details_follow(self):
+    def test_a_decided_retired_review_row_still_renames_the_book_and_details_follow(self):
+        """6.19 AC-3: a decided row is the owner's decision about the workbook's
+        title, so it stays and applies, with no false stale review."""
         self.write_review([{**self.PROPOSAL, "decision": "merge"}])
-        self.write_details([{**self.WOK, "title": "Edgedancer", "open_library_id": "OL19356251W",
-                             "page_count": "272"}])
+        edgedancer = next(r for r in before_6_19("book_details")[1] if r["title"] == "Edgedancer")
+        self.write_details([edgedancer])
         self.extract(build_books([("Edgedancer Novella", "Brandon Sanderson", None, None, None)]))
         books = self.books()
         self.assertEqual(list(books), ["edgedancer-brandon-sanderson"])
         self.assertEqual((books["edgedancer-brandon-sanderson"]["title"],
-                          books["edgedancer-brandon-sanderson"]["open_library_id"]),
-                         ("Edgedancer", "OL19356251W"))
-        self.assertEqual([r["decision"] for r in self.review_rows()], ["merge"])
+                          books["edgedancer-brandon-sanderson"]["cover_url"]),
+                         ("Edgedancer", edgedancer["cover_url"]))
+        self.assertEqual([(r["reason"], r["decision"]) for r in self.review_rows()], [("open library", "merge")])
+        self.assertNotIn("stale review", self.reasons())
+
+    def test_the_sidecars_from_before_6_19_extract_as_before(self):
+        """6.19 AC-1, AC-2, AC-3 on the fixture sidecars (etl/testdata/before-6.19):
+        book_details.csv still has its old header and 1.14's rows. Extract reads
+        it; every book gets the id, page count and cover the extract before
+        the change gave it (test/books-load.test.ts loads the same values), and
+        seed/books.csv has no old id column. The undecided review row goes;
+        the decided ones stay, and the merge renames its book."""
+        import io
+        import shutil
+        from contextlib import redirect_stdout
+        for name in ("book_details", "book_review", "calibre_books"):
+            shutil.copy(BEFORE_6_19 / f"{name}.csv", self.details.parent / f"{name}.csv")
+        ex.UNRESOLVED.clear()
+        ex.CHANGES.clear()
+        with redirect_stdout(io.StringIO()):
+            ex.extract_books(before_6_19_workbooks()[1], self.out,
+                             book_review=self.details.parent / "book_review.csv", book_details=self.details,
+                             calibre_books=self.details.parent / "calibre_books.csv")
+        books = self.books()
+        # Each retired row's cover is the fixture's, on 1.14's lookup's CDN.
+        cover = {r["title"]: r["cover_url"] for r in before_6_19("book_details")[1]}
+        self.assertEqual({i: (b["hardcover_id"], b["page_count"], b["cover_url"]) for i, b in books.items()}, {
+            "the-way-of-kings-brandon-sanderson": ("386446", "1007", "https://assets.hardcover.app/wok.jpg"),
+            "elantris-brandon-sanderson": ("", "650", cover["Elantris"]),
+            "mistborn-brandon-sanderson": ("", "700", cover["Mistborn"]),
+            "warbreaker-brandon-sanderson": ("", "600", ""),
+            "edgedancer-brandon-sanderson": ("", "300", cover["Edgedancer"]),
+        })
+        self.assertTrue(all(cover[t] for t in ("Elantris", "Mistborn", "Edgedancer")))
+        # seed/books.csv's header, spelled out: the old id column is gone.
+        with (self.out / "books.csv").open(encoding="utf-8") as fh:
+            self.assertEqual(next(csv.reader(fh)), [
+                "id", "title", "author_id", "series_id", "series_position", "book_type", "word_count",
+                "word_count_source", "published_year", "page_count", "cover_url", "hardcover_id", "universe_id",
+                "universe_position", "subseries_id", "subseries_position", "calibre_id"])
+        with (self.details.parent / "book_review.csv").open(newline="", encoding="utf-8") as fh:
+            self.assertEqual([(r["a"], r["reason"], r["decision"]) for r in csv.DictReader(fh)],
+                             [("Edgedancer Novella", "open library", "merge"), ("Mistborn", "open library", "separate")])
         self.assertNotIn("stale review", self.reasons())
 
     # Task 1.14b (D-94): Hardcover's rows and proposals, the same way.
 
-    HARDCOVER = {"title": "The Way of Kings", "author": "Brandon Sanderson", "open_library_id": "",
+    HARDCOVER = {"title": "The Way of Kings", "author": "Brandon Sanderson",
                  "hardcover_id": "386446", "page_count": "1007",
                  "cover_url": "https://assets.hardcover.app/wok.jpg", "published_year": "2010",
                  "source": "hardcover"}
@@ -1141,9 +1211,8 @@ class BookDetails(BookCase):
                                   ("Mistborn", "Brandon Sanderson", None, None, None)]))
         books = self.books()
         wok = books["the-way-of-kings-brandon-sanderson"]
-        self.assertEqual({k: wok[k] for k in ("hardcover_id", "open_library_id", "page_count", "cover_url",
-                                              "published_year")},
-                         {"hardcover_id": "386446", "open_library_id": "", "page_count": "1007",
+        self.assertEqual({k: wok[k] for k in ("hardcover_id", "page_count", "cover_url", "published_year")},
+                         {"hardcover_id": "386446", "page_count": "1007",
                           "cover_url": "https://assets.hardcover.app/wok.jpg", "published_year": "2010"})
         self.assertEqual(books["mistborn-brandon-sanderson"]["hardcover_id"], "")
 
@@ -1156,22 +1225,22 @@ class BookDetails(BookCase):
                          [("Edgedancer Novella", "hardcover", "")])
 
     def test_sidecars_written_before_hardcover_still_load(self):
-        """book_details.csv with no hardcover_id column, and calibre_books.csv
-        with 1.18's `open_library` column, load until their next runs."""
+        """book_details.csv with 1.14's header (no hardcover_id column), and
+        calibre_books.csv with 1.18's column for the retired lookup's series
+        where `hardcover` is now, load until their next runs."""
+        header, _ = before_6_19("book_details")
         with self.details.open("w", newline="", encoding="utf-8") as fh:
-            w = csv.writer(fh)
-            w.writerow(["title", "author", "open_library_id", "page_count", "cover_url", "published_year",
-                        "source"])
-            w.writerow(["The Way of Kings", "Brandon Sanderson", "OL15358691W", "1008", "", "2010",
-                        "openlibrary"])
+            w = csv.DictWriter(fh, fieldnames=[c for c in header if c != "hardcover_id"], extrasaction="ignore")
+            w.writeheader()
+            w.writerow(self.WOK)
         calibre = self.details.parent / "calibre_books.csv"
         old = [c for c in ex.CALIBRE_BOOKS_COLUMNS]
-        old[old.index("hardcover")] = "open_library"
+        old[old.index("hardcover")] = "lookup_series"
         with calibre.open("w", newline="", encoding="utf-8") as fh:
             w = csv.DictWriter(fh, fieldnames=old, restval="")
             w.writeheader()
             w.writerow({"title": "The Way of Kings", "author": "Brandon Sanderson", "series": "Stormlight",
-                        "series_index": "1", "open_library": "The Stormlight Archive #1", "calibre_id": "7"})
+                        "series_index": "1", "lookup_series": "The Stormlight Archive #1", "calibre_id": "7"})
         import io
         from contextlib import redirect_stdout
         ex.UNRESOLVED.clear()
@@ -1180,8 +1249,8 @@ class BookDetails(BookCase):
             ex.extract_books(build_books([("The Way of Kings", "Brandon Sanderson", None, None, None)]),
                              self.out, book_review=self.review, book_details=self.details, calibre_books=calibre)
         wok = self.books()["the-way-of-kings-brandon-sanderson"]
-        self.assertEqual((wok["hardcover_id"], wok["open_library_id"], wok["calibre_id"]),
-                         ("", "OL15358691W", "7"))
+        self.assertEqual((wok["hardcover_id"], wok["cover_url"], wok["calibre_id"]),
+                         ("", self.RETIRED["cover_url"], "7"))
         self.assertNotIn("hardcover series differs", {c["reason"] for c in ex.CHANGES})
 
     # Task 1.14c (D-130): the page count is a hand row's, else Hardcover's
@@ -1230,13 +1299,13 @@ class BookDetails(BookCase):
         # A page count never becomes a word count: the view estimates (D-130 keeps D-87).
         self.assertEqual((books["Short"]["word_count"], books["Short"]["word_count_source"]), ("", ""))
 
-    def test_an_open_library_rows_count_is_no_source(self):
-        """Open Library is gone (D-94; owner, 2026-11-09): Calibre's #pages
-        fills, and with none the book has no count."""
+    def test_a_retired_rows_count_is_no_source(self):
+        """1.14's lookup is gone (D-94; owner, 2026-11-09): Calibre's #pages
+        fills, and with none the book has no count. Its cover still folds."""
         self.write_details([{**self.WOK, "title": "With Calibre"}, {**self.WOK, "title": "Without"}])
         books = self.extract_with_calibre(["With Calibre", "Without"], {"With Calibre": "600"})
         self.assertEqual((books["With Calibre"]["page_count"], books["Without"]["page_count"]), ("600", ""))
-        self.assertEqual(books["Without"]["open_library_id"], "OL15358691W")
+        self.assertEqual(books["Without"]["cover_url"], self.RETIRED["cover_url"])
 
     def test_a_details_file_without_edition_page_count_still_loads(self):
         """A sidecar written before 1.14c: its page_count is the count."""
@@ -1264,7 +1333,7 @@ class BookHold(BookCase):
     seed/ with every row that points at it, and listed in book_hold.csv until
     the owner writes `keep`. A book Calibre created is never held (TASK-030)."""
 
-    KNOWN = {"title": "The Way of Kings", "author": "Brandon Sanderson", "open_library_id": "",
+    KNOWN = {"title": "The Way of Kings", "author": "Brandon Sanderson",
              "hardcover_id": "386446", "page_count": "1007", "cover_url": "", "published_year": "2010",
              "source": "hardcover"}
     WOK = "the-way-of-kings-brandon-sanderson"
@@ -1475,11 +1544,13 @@ class BookHold(BookCase):
         self.assertEqual(self.books()[self.HELD]["page_count"], "310")
         self.assertEqual(self.hold_rows(), [])
 
-    def test_an_open_library_row_is_no_match(self):
-        """D-94: a match is Hardcover's (or hand); 1.14's rows go with Open Library."""
-        self.write(self.details, ex.BOOK_DETAILS_COLUMNS,
-                   [self.KNOWN, {**self.KNOWN, "title": "The Hollow Crown", "author": "Ada Unknown",
-                                 "hardcover_id": "", "open_library_id": "OL1W", "source": "openlibrary"}])
+    def test_a_retired_row_is_no_match(self):
+        """D-94: a match is Hardcover's (or hand); 1.14's rows, from the
+        retired lookup (the fixture's source), are none."""
+        retired = next(r for r in before_6_19("book_details")[1] if r["title"] == "Elantris")
+        header, _ = before_6_19("book_details")
+        self.write(self.details, header,
+                   [self.KNOWN, {**retired, "title": "The Hollow Crown", "author": "Ada Unknown"}])
         self.extract(self.workbook())
         self.assertNotIn(self.HELD, self.books())
         self.assertEqual([r["title"] for r in self.hold_rows()], ["The Hollow Crown"])
@@ -1931,7 +2002,7 @@ class SeriesFollows(BookCase):
                              ("universe_follows", "user_id,universe_id,state")):
             self.assertEqual((self.out / f"{name}.csv").read_text(encoding="utf-8").splitlines()[0], header)
         self.assertTrue((self.out / "books.csv").read_text(encoding="utf-8").splitlines()[0]
-                        .endswith(",open_library_id,hardcover_id,universe_id,universe_position,subseries_id,"
+                        .endswith(",cover_url,hardcover_id,universe_id,universe_position,subseries_id,"
                                   "subseries_position,calibre_id"))
         self.assertEqual((self.out / "book_subseries.csv").read_text(encoding="utf-8").splitlines()[0],
                          "id,name,series_id")

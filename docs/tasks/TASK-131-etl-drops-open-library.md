@@ -1,14 +1,14 @@
 ---
 id: TASK-131
 title: 6.19 Remove Open Library (1 of 2) — extract, enrichment and load stop carrying it
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 729263a
 ---
 
 # TASK-131 — 6.19 Remove Open Library (1 of 2) — extract, enrichment and load stop carrying it
@@ -63,9 +63,81 @@ The ETL no longer reads, writes or loads anything from Open Library: a fresh ext
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- TASK-132: `etl/test_views.sql`'s books column list drops `open_library_id` with the migration; *metadata pending* already marks retired-only books after any load once this merges; the lowercase `open library` review reason stays in `etl/extract.py` (`RETIRED_LOOKUP`), so read the Check's `Open Library` case-sensitively (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner with the recommendations below (2026-11-23).
+
+**What the data says.** The committed `etl/data/book_details.csv` has 2,000
+`openlibrary` rows (1,787 with a cover) and 98 `hardcover` rows, no other
+source; today's extract still folds an `openlibrary` row's `cover_url` and
+year (only its page count went, 1.14c). `book_review.csv` has 47 `open
+library` rows, every one decided.
+
+**Steps**
+
+1. `etl/extract.py`: drop `open_library_id` from `BOOK_DETAILS_COLUMNS`,
+   `BOOK_COLUMNS` and `fold_book_details`. A `retired(row)` helper (source
+   not in `MATCH_SOURCES`) names 1.14's rows without the word: no page count,
+   no match (as today), but their cover and year still fold, so every book
+   keeps the cover it loads with today (AC-1). An old header still reads:
+   extract takes only the columns it knows (AC-2).
+2. The review reason: `OPEN_LIBRARY` becomes `RETIRED_LOOKUP = "open
+   library"`. A decided row applies as today (renames the book, no false
+   *stale review*); an undecided one is now dropped on extract (AC-3). The
+   lowercase reason is the string AC-4 keeps; the roadmap Check's `Open
+   Library` is capitalised.
+3. `etl/enrich_books.py`: `OLD_SOURCE` becomes `ex.retired()`, the same
+   behaviour (dropped as a run reaches the book, kept by a stopped or
+   `--limit` run); `details()` writes no `open_library_id`; the docstring and
+   prints stop naming Open Library; the undecided-review filter uses
+   `ex.RETIRED_LOOKUP`.
+4. `etl/load.ps1`, `etl/load.sh`: `open_library_id` leaves `\copy books(…)`;
+   the column stays in the database, NULL, until TASK-132 drops it.
+5. Tests. Legacy sidecar rows live in fixture CSVs in
+   `etl/testdata/before-6.19/` (data, outside AC-4's `etl/*.py`):
+   `book_details.csv` (the old header; a `hardcover`, an `openlibrary` and a
+   `hand` row), `book_review.csv` (a decided and an undecided `open library`
+   row), `calibre_books.csv`. The Python tests drop the column and use them;
+   `test/books-load.test.ts` (new) builds the fixture workbooks with
+   `test_extract.py`'s builders, runs `etl/extract.py`, then `load.ps1`
+   (Windows) or `load.sh` (Linux, CI) on `TEST_DATABASE_URL` only, as
+   `test/comics-load.test.ts` does.
+6. Not here: `etl/test_views.sql` asserts the table's live columns
+   (`information_schema`), so its list changes with TASK-132's migration;
+   `etl/data/book_details.csv` is not rewritten (the next `enrich:books` writes
+   the new header).
+
+**Files**
+
+- `etl/extract.py`, `etl/enrich_books.py`, `etl/load.ps1`, `etl/load.sh`: steps 1–4.
+- `etl/test_extract.py`, `etl/test_enrich_books.py`, `etl/test_calibre.py`: the column gone, AC-2, AC-3.
+- `etl/testdata/before-6.19/{book_details,book_review,calibre_books}.csv`: new fixtures (not in Files likely touched).
+- `test/books-load.test.ts`: new, AC-1 (not in Files likely touched: the AC needs a real load).
+- `etl/test_views.sql`: unchanged (step 6).
+
+**Test strategy**
+
+- AC-1: `test/books-load.test.ts` › "extract writes seed/books.csv with no
+  open_library_id column" and "loads every book's hardcover_id, page_count and
+  cover_url as before the change" (the values pinned are what the pre-change
+  extract and load produce from the same fixture; run once against
+  `origin/main`'s ETL to confirm).
+- AC-2: `test_enrich_books.py` › the retired rows go and the written header
+  has no `open_library_id`; a stopped run keeps the unreached ones.
+  `test_extract.py` › a sidecar with the old header and an `openlibrary` row
+  reads, folds its cover, gives no page count and no match.
+- AC-3: `test_extract.py` › a decided `open library` merge renames the book;
+  an undecided one is dropped from `book_review.csv`.
+- AC-4: the grep, `py -m unittest discover etl`, `npm run test:views`.
+
+**Risks.** After this load, `books.open_library_id` is NULL everywhere, so
+*metadata pending* (`open_library_id IS NULL AND hardcover_id IS NULL`) marks
+the retired-only books as soon as a load runs, not only after TASK-132: the
+same end state, reached one PR earlier. Size: 8 code files and 3 fixture
+CSVs, over the line; the fixtures are data, not another layer, so no further
+split.
 
 ## Review log
 

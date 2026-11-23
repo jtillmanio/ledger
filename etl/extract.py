@@ -1064,20 +1064,23 @@ SIMILAR_AT = 0.4  # D-25a: pg_trgm similarity at or above this is worth a look
 PAIR_SIMILAR_AT = 0.5
 # A standalone roman numeral from I to XX, or a run of digits.
 NUMBER_RE = re.compile(r"\b(?:\d+|xx|x?(?:ix|iv|v?i{1,3}|v)|x)\b")
-# A near spelling etl/enrich_books.py found on Open Library (task 1.14, D-44):
-# `a` is the workbook's spelling, `b` Open Library's. Extract never proposes one,
-# so it keeps the row, undecided, while the workbook still has `a`.
-OPEN_LIBRARY = "open library"
-# A near spelling etl/enrich_books.py found on Hardcover (task 1.14b, D-94), which
-# replaced Open Library: kept the same way, undecided, while the workbook has `a`.
+# A near spelling etl/enrich_books.py found with 1.14's lookup (task 1.14, D-44),
+# retired by Hardcover (task 1.14b, D-94; removed in 6.19): `a` is the workbook's
+# spelling, `b` the lookup's. A decided row is the owner's decision about the
+# workbook's title, so it stays and applies like any; an undecided one is
+# dropped, since nothing proposes one any more (TASK-131).
+RETIRED_LOOKUP = "open library"
+# A near spelling etl/enrich_books.py found on Hardcover (task 1.14b, D-94): kept
+# undecided while the workbook still has `a`.
 HARDCOVER = "hardcover"
-# etl/data/book_details.csv (tasks 1.14, 1.14b, 1.14c; D-44, D-94, D-130), keyed
-# by title and author. Hardcover's rows fill hardcover_id; open_library_id stays
-# for 1.14's until 6.19 removes Open Library. On a `hardcover` row page_count is
-# Hardcover's book-level count (its default edition's, usually print) and
-# edition_page_count the count of the edition the Calibre ISBN matched (none
-# for a title search); on a `hand` row page_count is the owner's.
-BOOK_DETAILS_COLUMNS = ["title", "author", "open_library_id", "hardcover_id", "page_count",
+# etl/data/book_details.csv (tasks 1.14, 1.14b, 1.14c, 6.19; D-44, D-94, D-130),
+# keyed by title and author. Hardcover's rows fill hardcover_id. On a
+# `hardcover` row page_count is Hardcover's book-level count (its default
+# edition's, usually print) and edition_page_count the count of the edition the
+# Calibre ISBN matched (none for a title search); on a `hand` row page_count is
+# the owner's. A file written before 6.19 has one more column, the retired
+# lookup's id, which nothing reads: the next enrich:books run writes it without.
+BOOK_DETAILS_COLUMNS = ["title", "author", "hardcover_id", "page_count",
                         "edition_page_count", "cover_url", "published_year", "source"]
 WORKBOOK_READS_COLUMNS = ["title", "year", "genre", "tab", "rank"]
 # The Calibre sidecar etl/calibre.py writes (task 1.18, D-73, D-83, D-87), keyed
@@ -1101,8 +1104,8 @@ CALIBRE_MISSING_COLUMNS = ["title", "author", "tabs", "decision"]
 CALIBRE_MISSING_DECISIONS = ("keep", "")
 # etl/data/book_hold.csv (task 1.20, D-94): each workbook book Hardcover doesn't
 # know and Calibre doesn't have, held out of seed/ until the owner writes `keep`.
-# A book_details.csv row from one of MATCH_SOURCES is a match; 1.14's
-# `openlibrary` rows are not.
+# A book_details.csv row from one of MATCH_SOURCES is a match; 1.14's rows
+# (retired(), below) are not.
 BOOK_HOLD_COLUMNS = ["title", "author", "tabs", "lookup", "decision"]
 BOOK_HOLD_DECISIONS = ("keep", "")
 MATCH_SOURCES = ("hardcover", "hand")
@@ -1126,10 +1129,10 @@ HELD_BOOKS_COLUMNS = ["title", "author", "series"]
 # workbook_plans.csv and wishlist_review.csv, never loaded.
 BOOK_COLUMNS = ["id", "title", "author_id", "series_id", "series_position", "book_type",
                 "word_count", "word_count_source", "published_year", "page_count", "cover_url",
-                "open_library_id", "hardcover_id", "universe_id", "universe_position", "subseries_id",
+                "hardcover_id", "universe_id", "universe_position", "subseries_id",
                 "subseries_position", "calibre_id"]
 # What Hardcover can confirm of a Calibre book, in calibre_books.csv's `confirmed`
-# (task 1.14b; Open Library's until then): `isbn` when the ISBN found the book.
+# (task 1.14b; 1.14's lookup's until then): `isbn` when the ISBN found the book.
 CHECKED_FIELDS = ("series", "series_index", "isbn")
 # Not loaded: the books Calibre created, so calibre.py never matches its own.
 CALIBRE_CREATED_COLUMNS = ["title", "author", "book_id"]
@@ -1568,7 +1571,9 @@ def review_book_pairs(idx: BookIndex, existing: list[dict]) -> list[dict]:
                      f"{r['kind']}: {r['a']} / {r['b']} ({r['decision']}) — a name is no longer "
                      "in the workbook; delete the row once it's done with")
             continue
-        if r["reason"] in (OPEN_LIBRARY, HARDCOVER, CALIBRE):
+        if r["reason"] == RETIRED_LOOKUP and not r["decision"]:
+            continue
+        if r["reason"] in (RETIRED_LOOKUP, HARDCOVER, CALIBRE):
             # Only `a` is ever in the workbook, spelled with the author it loads under.
             in_workbook = any(t == key(r["a"]) and key(idx.canonical_author(s["author"])) == key(r["a_author"])
                               for (t, _), s in idx.seen_books.items())
@@ -1608,30 +1613,38 @@ def load_book_details(path) -> list[dict]:
                 for r in csv.DictReader(fh) if (r.get("title") or "").strip()]
 
 
+def retired(row: dict) -> bool:
+    """A book_details.csv row 1.14's lookup wrote (task 1.14, D-44), which
+    Hardcover retired (D-94): its source is neither of MATCH_SOURCES. It is no
+    match and gives no page count; its cover and year still fold until an
+    enrich:books run reaches the book and drops it (6.19, TASK-131)."""
+    return row["source"] not in MATCH_SOURCES
+
+
 def details_pages(row: dict) -> int | None:
     """The page count a book_details.csv row gives, before Calibre's #pages
     (task 1.14c, D-130): a `hardcover` row's book-level count, else its
-    edition's; any other row's count but 1.14's `openlibrary`, which is none."""
+    edition's; a `hand` row's count; a retired row's, none."""
     if row["source"] == "hardcover":
         return as_int(row["page_count"]) or as_int(row["edition_page_count"])
-    if row["source"] == "openlibrary":
+    if retired(row):
         return None
     return as_int(row["page_count"])
 
 
 def fold_book_details(idx: BookIndex, details: list[dict]) -> None:
-    """Fill each book's Hardcover id (or 1.14's Open Library id), page count
-    and cover from its book_details.csv row, matched on title and author after
+    """Fill each book's Hardcover id, page count and cover from its
+    book_details.csv row, matched on title and author after
     clean() and key() (tasks 1.14, 1.14b; D-44, D-94). The published year fills
     only where the workbook has none. A page count never becomes a word count:
     2.1 estimates that.
     The page count (task 1.14c, D-130): a `hand` row's; else Hardcover's
     book-level count; else the matched edition's; else Calibre's #pages, which
     fold_calibre() kept and which is estimated from the ebook, so runs above
-    print. An `openlibrary` row's count is no source: Open Library is gone
-    (D-94)."""
+    print. A retired row's count is no source: 1.14's lookup is gone (D-94);
+    its cover and year still fold."""
     for b in idx.by_key.values():
-        b.update(open_library_id=None, hardcover_id=None, page_count=b.get("calibre_pages"), cover_url=None)
+        b.update(hardcover_id=None, page_count=b.get("calibre_pages"), cover_url=None)
     for row in details:
         b = idx.by_key.get((key(clean(row["title"])), key(clean(row["author"]))))
         if b is None:
@@ -1639,7 +1652,6 @@ def fold_book_details(idx: BookIndex, details: list[dict]) -> None:
                  f"{row['title']} / {row['author'] or '(no author)'} ({row['source']}) — "
                  "renamed or gone from the workbook; enrich:books rekeys an accepted rename")
             continue
-        b["open_library_id"] = clean(row["open_library_id"])
         b["hardcover_id"] = as_int(row["hardcover_id"])
         b["page_count"] = details_pages(row) or b.get("calibre_pages")
         b["cover_url"] = clean(row["cover_url"])
