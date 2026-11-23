@@ -374,9 +374,11 @@ export async function undoBookStatus(userId: string, change: BookStatusChange, n
       if (planned) return false;
     }
     // Nor back to Parked under a listen_queue row written since (task 5.18): a Parked book is on no queue. Read under
-    // the queue's lock, taken after the book's as a status write takes them (no plan lock follows on this path: only
-    // a park has `unplanned`), so a *Queue to listen* that waits on it sees the book Parked and refuses.
+    // the queue's lock, taken after the book's as a status write takes them, so a *Queue to listen* that waits on it
+    // sees the book Parked and refuses. No plan lock follows: only a park has `unplanned`, and a park is never from
+    // Parked (`PARKS_FROM`), so a change claiming both is not one a status write answered and puts no plan row back.
     if (prior?.status === "parked") {
+      if (unplanned.length > 0) return false;
       await lockListen(tx);
       if ((await listenPosition(tx, bookId)) !== null) return false;
     }

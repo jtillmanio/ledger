@@ -38,7 +38,7 @@ beforeAll(async () => {
   books = await import("../src/app/api/books/route");
   bulk = await import("../src/app/api/books/bulk/route");
   planRoute = await import("../src/app/api/plan/route");
-  q =await import("../src/db/queries");
+  q = await import("../src/db/queries");
   parked = await import("../src/lib/parked");
   const finish = await import("../src/lib/finish-date");
   today = () => finish.today(new Date());
@@ -720,6 +720,19 @@ describe("every undo keeps a Parked book out of the plan and the listen queue (5
     expect((await row("d")).status).toBe("parked");
     expect(await sql`SELECT 1 FROM reading_plan WHERE book_id = 'd'`).toHaveLength(0);
     expect(await q1()).toEqual(["a:1", "b:2", "c:3"]);
+  });
+
+  it("a change claiming a park from Parked with plan rows to put back is refused: 409, no plan row under the Parked book", async () => {
+    await parkD();
+    const forged = {
+      bookId: "d", status: "parked", appended: null, edited: null, backfilled: null, unqueued: null,
+      prior: { status: "parked", finishedOn: null, precision: "none", startedOn: null, startPrecision: "none", parkedOn: DAY },
+      unplanned: [{ period: "2027-Q1", ordinal: 1 }],
+    };
+    const before = await snapshot();
+    expect((await undo(forged)).status).toBe(409);
+    expect(await snapshot()).toEqual(before);
+    expect(await sql`SELECT 1 FROM reading_plan WHERE book_id = 'd'`).toHaveLength(0);
   });
 
   it("the add's undo refuses when the book is queued while it waits for the listen lock", async () => {
