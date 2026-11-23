@@ -1,7 +1,7 @@
 ---
 id: TASK-130
 title: 5.18 A Parked book stays out of the plan and the listen queue, through every undo
-status: In progress
+status: Review
 depends_on: []
 size: S
 model: opus
@@ -33,16 +33,16 @@ No Undo can leave a Parked book in a plan period or on the listen queue: each un
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm test`: plan a Parked book from the review to 2027 Q1, queue it to
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm test`: plan a Parked book from the review to 2027 Q1, queue it to
 listen, and undo the plan: the book is `parked` with no `reading_plan` row
 and no `listen_queue` row, or the undo answers 409 and changes nothing.
 The same for an *Unlisted* from the review and its undo. Undoing a queue
 *Remove* after the book was parked leaves it off the queue. Undoing a plan
 move after the book was parked answers 409 and writes no plan row.
-- [ ] AC-2: For each of the four undos, the test asserts the one outcome the plan chose (taken off, or 409 with every row as before), not either. A refused undo leaves `book_status`, `reading_plan` and `listen_queue` exactly as they were before it, compared row for row.
-- [ ] AC-3: An add's undo (`undoInside`) that puts a book back to Parked, after a `listen_queue` row was written for it since the add, leaves the book `parked` with no `listen_queue` row, or refuses as AC-2 says.
-- [ ] AC-4: The listen queue's positions stay contiguous from 1 after any undo that takes a book off it.
-- [ ] AC-5: `.claude/rules/schema.md` names each undo's choice in the Parked paragraph, in the same PR.
+- [x] AC-2: For each of the four undos, the test asserts the one outcome the plan chose (taken off, or 409 with every row as before), not either. A refused undo leaves `book_status`, `reading_plan` and `listen_queue` exactly as they were before it, compared row for row.
+- [x] AC-3: An add's undo (`undoInside`) that puts a book back to Parked, after a `listen_queue` row was written for it since the add, leaves the book `parked` with no `listen_queue` row, or refuses as AC-2 says.
+- [x] AC-4: The listen queue's positions stay contiguous from 1 after any undo that takes a book off it.
+- [x] AC-5: `.claude/rules/schema.md` names each undo's choice in the Parked paragraph, in the same PR.
 
 ## Out of scope
 
@@ -64,7 +64,9 @@ move after the book was parked answers 409 and writes no plan row.
 
 ## Follow-ups
 
-_Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+- Schema review R1, note 2: `undoInside` holds an unparked book's status row and then waits for the listen lock, while `undoBookStatus` back to Parked takes the listen lock and then updates that row. A cycle needs two undos of the same book at once, one of them a stale change, and the outcome is a Postgres deadlock error (one side aborts), not bad data → not tracked: accepted as is (practically unreachable, no data harm)
+- The choice that every undo refuses rather than taking the row off is a lasting rule → not tracked: recorded in `.claude/rules/schema.md` § the Parked paragraph (AC-5), no separate decision needed
+- Spec review R2 nit: `undoBookStatus`'s doc comment doesn't list the park-from-Parked refusal; the inline comment beside it does → not tracked: covered by the inline comment
 
 ## Plan
 
@@ -106,7 +108,9 @@ then locks a book row (the queue helpers only read `books`), so it can't deadloc
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 env FAIL (Git Bash started vitest from `c:\`: "failed to find the runner", no test ran) → R1 PASS from `C:\` | CI R1 PASS (6d03acf, every project)
+- Spec R1 APPROVE (nit: a lost space) | Schema R1 APPROVE (3 MINOR: a hand-built park-from-Parked change with `unplanned` could restore plan rows under a Parked book and take listen → plan; one unreachable deadlock, no action; loose lock wording) → fixed in 4e6f3c9 with a test that fails without it | Verify R2 PASS
+- Spec R2 APPROVE | Schema R2 APPROVE | Audit R1 PASS (7 of 7 new tests fail on 7530fd8; tree restored) | UI not run (`ui: false`, no UI files)
 
 ## Blocked
 
@@ -114,7 +118,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (plus one environment re-run)
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (the schema review's guard is in `writes.ts`, a planned file, inside the goal)

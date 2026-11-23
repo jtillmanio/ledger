@@ -5177,7 +5177,7 @@ it is converted.
     created book has since gained a `calibre_id` answers 409 and changes
     nothing. Screenshots at 360px and 1280px.
 
-- ☐ 5.18 **A Parked book stays out of the plan and the listen queue, through
+- ☑ 5.18 **A Parked book stays out of the plan and the listen queue, through
   every undo** · S. *From TASK-127 and TASK-111 (5.15, PR #304, PR #311;
   schema reviews):* 5.15's invariant is that a Parked book is in no plan
   row and not in `listen_queue`. The forward writes keep it (`saveBookStatus`
