@@ -1,7 +1,7 @@
 ---
 id: TASK-125
 title: 5.9 Series (3 of 3) — every series name in the app links to its page
-status: In progress
+status: Review
 depends_on: [TASK-102]
 size: M
 model: sonnet
@@ -30,7 +30,7 @@ Wherever the app prints a series name, it is a link to that series' own page (`/
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves *a series name in a list row links to its page* for the Library's rows, in the browser (0.11) on the test database. TASK-101 proved the list's counts, meter and next-unread line; TASK-102 the row's link, the series page and the gap row):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves *a series name in a list row links to its page* for the Library's rows, in the browser (0.11) on the test database. TASK-101 proved the list's counts, meter and next-unread line; TASK-102 the row's link, the series page and the gap row):
 a series with 3 of 5 books read renders `3 / 5` and a meter
 filled with `--ready`; one with NULL `total_books` counts its listed books;
 a soft-deleted book is not counted; the next-unread line names the
@@ -38,9 +38,9 @@ lowest-position unread book, and a complete series has none. The row's link
 shows only that series' books. A series holding positions 1, 2 and 4 of 4
 renders a gap row for #3, and a series name in a list row links to its
 page. Screenshot at 360px, 834px and 1280px.
-- [ ] AC-2 (moved from TASK-102 at its plan, 2026-11-18): A Library row's series name and the books dashboard's series line are links to `/books/series/<id>`.
-- [ ] AC-3: The book sheet's Series fact names the series as a link to `/books/series/<id>`; a book with no series draws no link.
-- [ ] AC-4: Each link's accessible name is the series' name; a book in a universe but no series links nothing; the Library route stays within its byte budget (`scripts/perf/budget.json`, `library`).
+- [x] AC-2 (moved from TASK-102 at its plan, 2026-11-18): A Library row's series name and the books dashboard's series line are links to `/books/series/<id>`.
+- [x] AC-3: The book sheet's Series fact names the series as a link to `/books/series/<id>`; a book with no series draws no link.
+- [x] AC-4: Each link's accessible name is the series' name; a book in a universe but no series links nothing; the Library route stays within its byte budget (`scripts/perf/budget.json`, `library`).
 
 ## Out of scope
 
@@ -64,9 +64,12 @@ page. Screenshot at 360px, 834px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Every other place a series name prints links nothing yet: the Up next cards (`PlanShelf`), the status rows (`StatusBookRow`), the plan screens (`PlanQuarter`, `PlanQuarterRows`, `PlanSheet`, `PlanPicker`), Top books, Coming out, Parked, Listen next, Add books' search results, Now's *Next in*, and the follow sheet's rows (TASK-103 named it). A new 5.x roadmap item links them through `BookPlace` (approved at plan)
-- TASK-102's question: By hand could open with *Series* and *#* filled from a gap row (`src/components/ByHand.tsx` through `AddBooks.tsx` and a new parameter on `src/app/books/add/page.tsx`); it goes in the same new roadmap item, not here (approved at plan)
-- TASK-101's question, the Library's own Series section at the foot of `/books/list`: decided by step 1's measurement. With room in the byte budget it stays and is a follow-up; short of room, it becomes one *All series →* link here, retiring `seriesProgress`, `src/lib/series-list.ts` and `test/series-list.test.ts` (approved at plan)
+- Every other place a series name prints links nothing yet: the Up next cards (`PlanShelf`), the status rows (`StatusBookRow`), the plan screens (`PlanQuarter`, `PlanQuarterRows`, `PlanSheet`, `PlanPicker`), Top books, Coming out, Parked, Listen next, Add books' search results, Now's *Next in*, and the follow sheet's rows (TASK-103 named it). A new 5.x roadmap item links them through `BookPlace` (approved at plan) → docs/05-roadmap.md § 5.9b (new)
+- TASK-102's question: By hand could open with *Series* and *#* filled from a gap row (`src/components/ByHand.tsx` through `AddBooks.tsx` and a new parameter on `src/app/books/add/page.tsx`); it goes in the same new roadmap item, not here (approved at plan) → docs/05-roadmap.md § 5.9b (new)
+- TASK-101's question, the Library's own Series section at the foot of `/books/list`: decided by step 1's measurement (short of room), so it is one *All series →* link, retiring `seriesProgress`, `src/lib/series-list.ts` and `test/series-list.test.ts` (approved at plan) → not tracked: done in this PR (plan step 1's outcome)
+- test-auditor R1 advisories: the new `test/library-page.test.tsx` assertions die at base on the retired `seriesProgress` mock before they assert (the row link is proven by `series.spec.ts`), and `book-place.test.tsx`'s plain-form test can't tell `<a>` from `<Link>` (`library-page.test.tsx` checks the bare anchor) → not tracked: accepted as is, both covered elsewhere
+- Verify R2's one failure (`test/books-load.test.ts`, task 6.19) came from `e2e-dash-*` rows that a browser run left by the lost session wrote into this worktree's test database during the suite; alone it passes → not tracked: outside interference, not a flaky test
+- UI R2 set Royal Assassin to Reading and back to To read on the development database; `saveBookStatus` stamps `started_on` on entering Reading and leaving for To read keeps it (`src/db/writes.ts`), so that row held `started_on` 2026-11-23 `exact`, which no screen shows → not tracked: cleared with the owner's OK (one row, the development database; read back as `none`)
 
 ## Plan
 
@@ -103,7 +106,13 @@ Approved by the owner 2026-11-23 ("go with recommendations"): AC-4's *a book in 
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+The first session's transcript was lost (2026-11-23); the rounds before the rebase are rebuilt from the commits and PR #330's first body.
+
+- Verify R1 PASS (touched specs 118 PASS, w390-light) | CI R1 PASS (1812cec, every project)
+- Spec R1 CHANGES (standing rule 6, `ui.redrawFiles`: the mockup must draw the links) → R2 CHANGES (bdash's *On deck* rows) → R3 APPROVE (optional: the Library's *All series* line drawn as the app draws it; done) → R4 APPROVE (57ac6b3..9b865ec, the mockup's 24px link box) | Schema R1 APPROVE (minor: `seriesList`'s doc comment; done)
+- Drift: rebased on main 7b745ff (0.15's two PRs) | Verify R2 FAIL(1) (`test/books-load.test.ts`: `e2e-dash-*` rows from the lost session's browser run on this worktree's test database) → the file alone PASS; touched specs (`mockup-tablet`, `series`, `books-dashboard`) 82 PASS, w390-light | CI R2 PASS (9b865ec, every project, the Vercel preview)
+- Audit R1 PASS (two advisories, accepted: Follow-ups)
+- UI R1 PASS: Library rows and *All series →*, the book page, the floor at 360–1280; the dashboard not reachable on the dev data (nothing Reading, nothing on deck) → R2 PASS: Now's *where the book sits* universe and series links and an *On deck* row's author, universe and series links at 360/768/1280, two books set through the app and set back (screenshots `TASK-125-AC1-*`, `TASK-125-AC3-*`, `TASK-125-AC2-*`)
 
 ## Blocked
 
@@ -111,7 +120,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R2's one failure was outside interference)
+- Review rounds: spec 4, schema 1, audit 1, UI 2
+- First-pass AC FAILs: 0 (UI R1 left the dashboard half of AC-2 untested on the dev data)
+- Plan revisions after approval: 2
