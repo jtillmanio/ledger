@@ -90,9 +90,11 @@ function RunDetails({ report: stored, authors, decisions }: {
             ))}
           </ul>
           <p className="cmore">
-            {decisions
+            {decisions && report.waiting.some((w) => DECIDABLE.has(w.kind))
               ? "Merge or keep separate; the next sync carries out the answer, and you can change it until then."
-              : "A near spelling waited for a merge or separate decision."}
+              : decisions
+                ? "A second Calibre book for one Ledger book is mended in Calibre: remove or retitle the copy."
+                : "A near spelling waited for a merge or separate decision."}
           </p>
         </Section>
       )}

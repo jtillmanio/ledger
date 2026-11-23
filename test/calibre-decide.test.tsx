@@ -192,6 +192,32 @@ describe("the page seeds each waiting entry from the decision (AC-1, AC-4)", () 
     expect([...(await q.waitingDecisions())].sort()).toEqual([[5, "merge"], [6, "separate"]]);
   });
 
+  it("a merge whose Ledger book was soft-deleted since reads as undecided: the next sync ignores it", async () => {
+    await sync([near, sameTitle]);
+    await press({ calibreId: 5, decision: "merge", bookId: "way-of-kings" });
+    await press({ calibreId: 6, decision: "separate", bookId: null });
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 'way-of-kings'`;
+    expect([...(await q.waitingDecisions())]).toEqual([[6, "separate"]]);
+    expect((await render()).match(/aria-pressed="true"/g)).toHaveLength(1);
+  });
+
+  it("an odd report never takes the page down: no waiting list, a non-array one, odd or huge ids, no run at all", async () => {
+    expect([...(await q.waitingDecisions())]).toEqual([]);
+    await sql`INSERT INTO calibre_decisions (calibre_id, decision) VALUES (5, 'separate'), (2147483647, 'separate')`;
+    for (const report of [
+      {}, { waiting: null }, { waiting: {} }, { waiting: "x" },
+      { waiting: [null, 3, {}, { calibreId: "5" }, { calibreId: 5.5 }, { calibreId: 1e30 }, { calibreId: -5 }, { calibreId: null }] },
+    ]) {
+      await sql`DELETE FROM calibre_syncs`;
+      await sql`INSERT INTO calibre_syncs (ran_at, report) VALUES (now(), ${sql.json(report as never)})`;
+      expect([...(await q.waitingDecisions())], JSON.stringify(report)).toEqual([]);
+      await render();
+    }
+    await sql`DELETE FROM calibre_syncs`;
+    await sql`INSERT INTO calibre_syncs (ran_at, report) VALUES (now(), ${sql.json({ waiting: [{ calibreId: 5 }, { calibreId: 2147483647 }] } as never)})`;
+    expect([...(await q.waitingDecisions())].sort()).toEqual([[2147483647, "separate"], [5, "separate"]]);
+  });
+
   it("draws two named buttons per waiting near spelling and same title, and the decision as pressed", async () => {
     await sync([near, sameTitle]);
     let html = await render();
@@ -217,5 +243,8 @@ describe("the page seeds each waiting entry from the decision (AC-1, AC-4)", () 
     expect(html).toContain("A near spelling of");
     expect(html).toContain("A second Calibre book for");
     expect(html).not.toMatch(/<button/);
+    // The newest run has nothing to decide, so it doesn't invite a merge.
+    expect(html).toContain("mended in Calibre");
+    expect(html).not.toContain("Merge or keep separate");
   });
 });
