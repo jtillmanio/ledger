@@ -77,7 +77,7 @@ milestone._
 | F-01 Private sign-in | MVP | 1.11 | M7 |
 | F-02 Both workbooks migrated, rebuildable until cutover | MVP (then Next) | 0.3, 0.4, 0.5, 0.6, 0.7, 1.25, 1.29, 1.26, 1.28 | M1, M9, M13 |
 | F-03 Tested, released by hand, backed up | MVP | 0.1, 0.2, 0.11, 0.12 | M1, M6, M2 |
-| F-04 Fast on a phone | MVP | 0.9, 0.10, 1.8d, 1.30, 0.13, 0.14, 0.14b, 0.14c | M2, M6, M9 |
+| F-04 Fast on a phone | MVP | 0.9, 0.10, 1.8d, 1.30, 0.13, 0.14, 0.14b, 0.14c, 0.14d | M2, M6, M9 |
 | F-05 One shell for three media | MVP | 1.8a, 1.8c, 1.8, 1.8e, 1.8b | M6 |
 | F-06 Mark an issue read, in this run | MVP | 0.8a, 0.8b, 1.2 | M2, M3 |
 | F-07 Mark a range, adopt prior reads | MVP | 1.1 | M3 |
@@ -344,7 +344,8 @@ with the task that first reads it.
 | ✅ | 1.30 → TASK-073 | Bring the Library and Now back under their JS budgets | M | _Owner, 2026-11-10 (PR #222)_ | 1.17b |
 |  | 0.13 | Gate a preview on what its PR adds, not on a ceiling it must raise | M | _Owner, 2026-11-10 (D-142); Phase 0's, listed here beside 1.30; not a cutover gate_ | 1.30 |
 | ✅ | 0.14 → TASK-112 | A measured deploy costs a third of what it did | M | _Owner, 2026-11-17 (D-158); Phase 0's, listed here beside 0.13; not a cutover gate_ | — |
-|  | 0.14b → TASK-113 | Automatic runs are debounced and capped | M | _Owner, 2026-11-17 (D-158); Phase 0's, listed here beside 0.13; not a cutover gate_ | 0.14 |
+| ✅ | 0.14b → TASK-113 | Automatic runs are debounced and capped | M | _Owner, 2026-11-17 (D-158); Phase 0's, listed here beside 0.13; not a cutover gate_ | 0.14 |
+|  | 0.14d | A plan-only run is never main's baseline | S | _From TASK-113 (PR #317); Phase 0's, listed here beside 0.14b; not a cutover gate_ | 0.14b |
 |  | 0.14c → TASK-114 | Every page is measured | M | _Owner, 2026-11-17; Phase 0's, listed here beside 0.13; not a cutover gate; finishes only once `LIGHTHOUSE_MODE` is back on_ | 0.14b |
 |  | 1.31 → TASK-115 | Settle the Owner checklist before the books cutover | S | _Owner, 2026-11-14 (from TASK-084, PR #255); Check proposed_ | — |
 |  | 1.26 → TASK-061 | Cut the books over from the Sheets | M | _The books cutover since 2026-11-08 (D-128)_ | 1.25, 1.14c, 1.17b, 1.29, 1.31, and every open entry 1.25 names for `Books.xlsx`, with 4.4 and 5.17 (D-132, D-133) and what D-139 pulled ahead |

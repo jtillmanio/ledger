@@ -347,6 +347,144 @@ export function unchangedApp(files) {
   return `it changes only backups, docs, design, tests, CI or Claude config (${files.length} file(s)), so the preview serves main's app`;
 }
 
+/**
+ * Task 0.14b: how long an automatic run waits after its preview deploys before
+ * it decides. A burst of pushes to one PR then measures only the last of them:
+ * the others are no longer the PR's head when their wait ends (`notHead`). A
+ * hand run never waits.
+ */
+export const DEBOUNCE_SECONDS = 300;
+
+/**
+ * Automatic measured runs a UTC month when LIGHTHOUSE_MONTHLY_CAP is unset:
+ * about 12 minutes of Vercel Active CPU at 0.14's 7 s or less a run, a twentieth
+ * of the Hobby plan's 4 h (37 minutes even at the 22 s a run cost before 0.14).
+ */
+export const DEFAULT_MONTHLY_CAP = 100;
+
+/**
+ * Which of 0.14b's rules a run applies, from its real trigger (GitHub's
+ * event_name, not a hand run's replayed deployment_status). An automatic run
+ * waits, then decides and acts on the head check and the cap. A hand run does
+ * neither; a dry run (always a hand run) decides as an automatic run would,
+ * without waiting, only to print it.
+ *   { wait, decide, act }: act false means a skip is printed, not obeyed.
+ */
+export function gates({ realEventName, dryRun }) {
+  const automatic = realEventName === "deployment_status";
+  return { wait: automatic, decide: automatic || Boolean(dryRun), act: automatic && !dryRun };
+}
+
+const short = (sha) => String(sha ?? "").slice(0, 7);
+
+/** Why a commit is not measured after the wait, or null while it is still the PR's head. */
+export function notHead({ number, sha, head }) {
+  return head && head !== sha ? `Not measuring #${number}: ${short(sha)} is no longer the head (${short(head)} is)` : null;
+}
+
+/** The repo variable LIGHTHOUSE_MONTHLY_CAP as a number: blank is the default, 0 stops every automatic run. */
+export function monthlyCap(value) {
+  if (value == null || String(value).trim() === "") return DEFAULT_MONTHLY_CAP;
+  const n = Number(String(value).trim());
+  if (!Number.isInteger(n) || n < 0) {
+    throw new Error(`LIGHTHOUSE_MONTHLY_CAP must be a whole number of 0 or more, not ${value}`);
+  }
+  return n;
+}
+
+/** The start of `now`'s calendar month in UTC, as GitHub's `created` filter takes it. */
+export function monthStart(now) {
+  return `${now.toISOString().slice(0, 7)}-01T00:00:00Z`;
+}
+
+/** The first day of the next UTC month after `since` (a monthStart), as YYYY-MM-DD. */
+function nextMonth(since) {
+  const d = new Date(since);
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)).toISOString().slice(0, 10);
+}
+
+/**
+ * The workflow runs that may be this month's automatic measured runs: a real
+ * deployment_status (a hand run is workflow_dispatch, even when it replays
+ * one), created since the month began, not this run, each once (the runs come
+ * from one query per status).
+ */
+export function automaticCandidates(runs, { since, exclude }) {
+  const seen = new Set();
+  return runs.filter((r) => {
+    if (r.event !== "deployment_status" || r.created_at < since || String(r.id) === String(exclude) || seen.has(r.id)) return false;
+    seen.add(r.id);
+    return true;
+  });
+}
+
+/**
+ * Whether a run measured: one of its measure jobs reached a runner. A skipped
+ * one (the plan gave no URL) and one cancelled while queued (a newer push) have
+ * no steps and loaded no page.
+ */
+export function measureRan(jobs) {
+  return jobs.some((j) => /^measure\b/.test(j.name) && j.conclusion !== "skipped" && (j.steps ?? []).length > 0);
+}
+
+/** Why an automatic run is not measured because the month's cap is reached, or null under it. */
+export function capReached({ count, cap, since }) {
+  if (count < cap) return null;
+  return `${count} automatic measured run${count === 1 ? "" : "s"} since ${since.slice(0, 10)} (UTC) ` +
+    `reached the cap of ${cap} (LIGHTHOUSE_MONTHLY_CAP)`;
+}
+
+/** The PR comment (the one the job keeps, by MARKER) when the cap stopped an automatic run. */
+export function renderCapComment({ sha, count, cap, since, branch }) {
+  return [
+    MARKER,
+    "### Lighthouse — not measured: the monthly cap is reached",
+    "",
+    `\`${short(sha)}\` was not measured: ${capReached({ count, cap, since }) ?? `${count} of ${cap}`}. ` +
+      `Automatic runs measure again from ${nextMonth(since)}, so they can't push the Vercel account past its ` +
+      "Active CPU allowance (task 0.14b).",
+    "",
+    `A hand run still measures: \`gh workflow run lighthouse.yml --ref ${branch ?? "<branch>"}\`.`,
+  ].join("\n");
+}
+
+/**
+ * How many runs' jobs the cap count reads at once. One at a time, a month of
+ * about 200 automatic runs took 3 min 19 s (run 45112285873); ten at a time
+ * keeps it to seconds, well inside GitHub's limit on concurrent requests.
+ */
+export const COUNT_CONCURRENCY = 10;
+
+/**
+ * The automatic measured runs among `runs` (automaticCandidates), newest first,
+ * counted no further than the cap: reads `jobsFor(run)` `concurrency` runs at
+ * a time and stops after the batch that reaches the cap. A read that fails
+ * fails the count, which means not measuring (D-158).
+ */
+export async function countMeasured(runs, { cap, jobsFor, concurrency = COUNT_CONCURRENCY }) {
+  const newest = [...runs].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  let count = 0;
+  for (let i = 0; i < newest.length && count < cap; i += concurrency) {
+    const batch = await Promise.all(newest.slice(i, i + concurrency).map((run) => jobsFor(run)));
+    count += batch.filter((jobs) => measureRan(jobs)).length;
+  }
+  return Math.min(count, cap);
+}
+
+/**
+ * The artifact an automatic run leaves when the month's cap stops it, so the
+ * month's later runs find it and skip the count. It names the month and the
+ * cap: raising or lowering LIGHTHOUSE_MONTHLY_CAP counts again.
+ */
+export function capMarkerName({ since, cap }) {
+  return `lighthouse-cap-reached-${since.slice(0, 7)}-${cap}`;
+}
+
+/** Whether the artifacts API lists an unexpired marker of that name. */
+export function capMarked(artifacts, name) {
+  return (artifacts ?? []).some((a) => a.name === name && !a.expired);
+}
+
 /** The rt_session pair (`rt_session=…`) from a login response's Set-Cookie headers, or null. */
 export function sessionCookie(setCookies) {
   return setCookies.map((c) => c.split(";")[0].trim()).find((c) => c.startsWith("rt_session=") && c.length > 11) ?? null;

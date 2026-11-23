@@ -1,6 +1,8 @@
 // The Lighthouse workflow's steps that need thinking (.github/workflows/lighthouse.yml).
 //   node scripts/perf/report.mjs plan       which URL to measure, or why not (previews only, and not a
-//                                           PR that changes only what Vercel never builds); the
+//                                           PR that changes only what Vercel never builds; an automatic
+//                                           run waits, then skips a commit that is no longer the PR's
+//                                           head, or one past the month's cap, task 0.14b); the
 //                                           routes, one job each; the PR whose older runs this cancels
 //   node scripts/perf/report.mjs guard DIR  fail if any file in DIR holds a secret; names files, never values
 //   node scripts/perf/report.mjs merge DIR  the per-route jobs' metrics.json files under DIR, as one
@@ -11,8 +13,9 @@
 import { appendFileSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  aggregateRoute, baselinePr, baselineRun, filesWithSecrets, findComment, gateProblems, measurable, mergeMetrics,
-  renderComment, unbudgeted, unchangedApp,
+  aggregateRoute, automaticCandidates, baselinePr, baselineRun, capMarked, capMarkerName, capReached, countMeasured,
+  DEBOUNCE_SECONDS, filesWithSecrets, findComment, gateProblems, gates, measurable, mergeMetrics, monthlyCap, monthStart,
+  notHead, renderCapComment, renderComment, unbudgeted, unchangedApp,
 } from "./lib/perf.mjs";
 import { ROUTES } from "./routes.mjs";
 
@@ -52,6 +55,46 @@ async function prFiles(number) {
   return null;
 }
 
+/** Edit the one comment this job keeps on a PR (by its marker), or post it. Says which. */
+async function writeComment(number, body) {
+  const mine = findComment(await github(`issues/${number}/comments?per_page=100`));
+  if (mine) await github(`issues/comments/${mine.id}`, { method: "PATCH", body: JSON.stringify({ body }) });
+  else await github(`issues/${number}/comments`, { method: "POST", body: JSON.stringify({ body }) });
+  return mine ? "updated" : "posted";
+}
+
+/**
+ * This UTC month's automatic measured runs, newest first, counted no further
+ * than the cap: { count, marker, marked }. A month whose cap already stopped a
+ * run left an artifact named `marker`, and then nothing is counted (marked).
+ * Otherwise only the statuses a measured run can have are listed (the skipped
+ * runs every status Vercel sends makes while the switch is off are never
+ * fetched), and the remaining runs' jobs are read ten at a time (task 0.14b).
+ */
+async function measuredThisMonth(since, cap) {
+  const marker = capMarkerName({ since, cap });
+  try {
+    const { artifacts } = await github(`actions/artifacts?name=${encodeURIComponent(marker)}&per_page=10`);
+    if (capMarked(artifacts, marker)) return { count: cap, marker, marked: true };
+  } catch (err) {
+    console.log(`Could not look for the artifact ${marker}, so counting: ${err.message}`);
+  }
+  const runs = [];
+  for (const status of ["in_progress", "success", "failure", "cancelled"]) {
+    for (let page = 1; page <= 10; page++) {
+      const { workflow_runs: batch } = await github("actions/workflows/lighthouse.yml/runs?event=deployment_status" +
+        `&status=${status}&created=${encodeURIComponent(`>=${since}`)}&per_page=100&page=${page}`);
+      runs.push(...batch);
+      if (batch.length < 100) break;
+    }
+  }
+  const count = await countMeasured(automaticCandidates(runs, { since, exclude: env.GITHUB_RUN_ID }), {
+    cap,
+    jobsFor: async (run) => (await github(`actions/runs/${run.id}/jobs?filter=latest&per_page=100`)).jobs,
+  });
+  return { count, marker, marked: false };
+}
+
 async function plan() {
   const result = measurable({
     eventName: env.EVENT_NAME,
@@ -67,6 +110,17 @@ async function plan() {
     console.log(`Not measuring: ${result.skip}.`);
     return;
   }
+  // Task 0.14b: an automatic run waits, then measures only the PR's head, and
+  // only under the month's cap. A hand run on a branch replays its preview's
+  // deployment_status (EVENT_NAME), but GitHub still names its real trigger
+  // workflow_dispatch: it neither waits nor is capped. A dry run prints what an
+  // automatic run would decide, without the wait and without a comment.
+  const gate = gates({ realEventName: env.REAL_EVENT_NAME, dryRun: env.DRY_RUN === "true" });
+  const dryRun = !gate.act; // inside gate.decide, a run that doesn't act is a dry run
+  if (gate.wait) {
+    console.log(`Waiting ${DEBOUNCE_SECONDS} s: a newer push to the PR in that time is measured instead of this one.`);
+    await new Promise((resolve) => setTimeout(resolve, DEBOUNCE_SECONDS * 1000));
+  }
   // A newer push to the same PR cancels this run (the jobs' concurrency group);
   // a commit with no PR, or a hand run, is a group of its own.
   const [pr] = env.EVENT_NAME === "deployment_status" ? await pullsFor(env.SHA) : [];
@@ -77,8 +131,52 @@ async function plan() {
     console.log(`Not measuring #${pr.number}: ${unchanged}.`);
     return;
   }
+  if (gate.decide) {
+    const say = (line) => console.log(dryRun ? `  ${line}` : line);
+    if (dryRun) console.log(`Dry run: an automatic run would wait ${DEBOUNCE_SECONDS} s, then decide on what GitHub says now:`);
+    const moved = pr ? notHead({ number: pr.number, sha: env.SHA, head: pr.head?.sha }) : null;
+    if (moved) {
+      say(`${moved}.`);
+      if (!dryRun) return;
+    } else if (dryRun) {
+      say(pr ? `${env.SHA.slice(0, 7)} is #${pr.number}'s head, so it goes on to the cap.`
+        : "No open PR names this commit, so there is no head to compare; it goes on to the cap.");
+    }
+    const cap = monthlyCap(env.LIGHTHOUSE_MONTHLY_CAP);
+    const since = monthStart(new Date());
+    let count = null;
+    let counted = null;
+    try {
+      counted = await measuredThisMonth(since, cap);
+      count = counted.count;
+    } catch (err) {
+      // D-158: a paused Vercel account is worse than an unmeasured PR.
+      say(`::warning::Could not count this month's automatic runs against the cap, so not measuring: ${err.message}`);
+      if (!dryRun) return;
+    }
+    if (counted?.marked) say(`The cap stopped an automatic run this month already (artifact ${counted.marker}), so nothing was counted.`);
+    const reached = count == null ? null : capReached({ count, cap, since });
+    if (reached) {
+      say(`Not measuring${pr ? ` #${pr.number}` : ""}: ${reached}.`);
+      if (!dryRun) {
+        // The month's later automatic runs find this and skip the count.
+        if (!counted.marked && env.RUNNER_TEMP) {
+          writeFileSync(join(env.RUNNER_TEMP, "lighthouse-cap.txt"), `${reached}\n`);
+          output("cap_marker", counted.marker);
+        }
+        if (pr) {
+          const body = renderCapComment({ sha: env.SHA, count, cap, since, branch: pr.head?.ref });
+          console.log(`plan: ${await writeComment(pr.number, body)} the comment on #${pr.number}`);
+        }
+        return;
+      }
+    } else if (count != null) {
+      say(`${count} of ${cap} automatic measured runs since ${since.slice(0, 10)} (UTC, LIGHTHOUSE_MONTHLY_CAP): under the cap, so it measures.`);
+    }
+    // A dry run goes on: its own Dry run step says what a hand run would measure.
+  }
   const group = pr ? `pr-${pr.number}` : `run-${env.GITHUB_RUN_ID}`;
-  console.log(`Measuring ${result.url}${pr ? ` for #${pr.number}` : ""}: ${ROUTES.map((r) => r.id).join(", ")}`);
+  console.log(`${env.DRY_RUN === "true" ? "A hand run would measure" : "Measuring"} ${result.url}${pr ? ` for #${pr.number}` : ""}: ${ROUTES.map((r) => r.id).join(", ")}`);
   output("url", result.url);
   output("group", group);
   output("routes", JSON.stringify(ROUTES.map((r) => r.id)));
@@ -143,11 +241,7 @@ async function report() {
   // A hand run has no pull request to answer; its summary is the report.
   if (env.EVENT_NAME === "deployment_status") {
     for (const pr of await pullsFor(env.SHA)) {
-      const comments = await github(`issues/${pr.number}/comments?per_page=100`);
-      const mine = findComment(comments);
-      if (mine) await github(`issues/comments/${mine.id}`, { method: "PATCH", body: JSON.stringify({ body }) });
-      else await github(`issues/${pr.number}/comments`, { method: "POST", body: JSON.stringify({ body }) });
-      console.log(`report: ${mine ? "updated" : "posted"} the comment on #${pr.number}`);
+      console.log(`report: ${await writeComment(pr.number, body)} the comment on #${pr.number}`);
     }
   }
   if (problems.length) {

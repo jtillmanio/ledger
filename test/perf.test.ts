@@ -4,9 +4,11 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  aggregateRoute, apiPath, baselinePr, baselineRun, filesWithSecrets, findComment, gateProblems, lighthouseArgs, MARKER,
-  measurable, measureRuns, median, mergeMetrics, renderComment, scrubLhr, sessionCookie, summariseLhr, unbudgeted, unchangedApp,
-  type LoadSummary, type MeasuredRoute, type RouteBudget,
+  aggregateRoute, apiPath, automaticCandidates, baselinePr, baselineRun, capMarked, capMarkerName, capReached, COUNT_CONCURRENCY,
+  countMeasured, DEBOUNCE_SECONDS, DEFAULT_MONTHLY_CAP,
+  filesWithSecrets, findComment, gateProblems, gates, lighthouseArgs, MARKER, measurable, measureRan, measureRuns, median, mergeMetrics,
+  monthlyCap, monthStart, notHead, renderCapComment, renderComment, scrubLhr, sessionCookie, summariseLhr, unbudgeted,
+  unchangedApp, type LoadSummary, type MeasuredRoute, type RouteBudget,
 } from "../scripts/perf/lib/perf.mjs";
 import { ROUTES } from "../scripts/perf/routes.mjs";
 
@@ -398,6 +400,241 @@ describe("the switch (D-158): a preview is measured on its own only while LIGHTH
     expect(yml).toMatch(/\n {6}dry_run:\n(?: {8}.*\n)* {8}type: boolean\n {8}default: false\n/);
     expect(ifOf("measure")).toMatch(/needs\.plan\.outputs\.url && !inputs\.dry_run/);
     expect(ifOf("report")).toMatch(/!inputs\.dry_run/);
+  });
+});
+
+describe("automatic runs wait, measure only the PR's head, and stop at a monthly cap (task 0.14b)", () => {
+  const A = "aaaaaaa1111111111111111111111111111111111";
+  const B = "bbbbbbb2222222222222222222222222222222222";
+  const yml = readFileSync(".github/workflows/lighthouse.yml", "utf8");
+  const src = readFileSync("scripts/perf/report.mjs", "utf8");
+  const planBody = src.slice(src.indexOf("async function plan()"), src.indexOf("function walk("));
+  const planJob = yml.slice(yml.indexOf("\n  plan:\n"), yml.indexOf("\n  measure:\n"));
+
+  it("waits a few minutes before it decides", () => {
+    expect(DEBOUNCE_SECONDS).toBe(300);
+    // The plan job holds the wait, so its timeout covers it.
+    const timeout = Number(planJob.match(/timeout-minutes: (\d+)/)![1]);
+    expect(timeout * 60).toBeGreaterThan(DEBOUNCE_SECONDS + 120);
+  });
+
+  it("does not measure a commit that is no longer the PR's head after the wait", () => {
+    expect(notHead({ number: 316, sha: A, head: B })).toBe("Not measuring #316: aaaaaaa is no longer the head (bbbbbbb is)");
+  });
+
+  it("measures a commit that is still the head", () => {
+    expect(notHead({ number: 316, sha: A, head: A })).toBeNull();
+  });
+
+  it("takes the cap from LIGHTHOUSE_MONTHLY_CAP, the documented default when unset, and refuses a bad value", () => {
+    expect(monthlyCap("2")).toBe(2);
+    expect(monthlyCap("0")).toBe(0);
+    expect(monthlyCap(undefined)).toBe(DEFAULT_MONTHLY_CAP);
+    expect(monthlyCap("")).toBe(DEFAULT_MONTHLY_CAP);
+    expect(monthlyCap(" ")).toBe(DEFAULT_MONTHLY_CAP);
+    expect(() => monthlyCap("ten")).toThrow(/LIGHTHOUSE_MONTHLY_CAP/);
+    expect(() => monthlyCap("-1")).toThrow(/LIGHTHOUSE_MONTHLY_CAP/);
+    expect(() => monthlyCap("2.5")).toThrow(/LIGHTHOUSE_MONTHLY_CAP/);
+    // The default the docs name is the one the code applies.
+    const commands = readFileSync("docs/COMMANDS.md", "utf8");
+    expect(commands).toMatch(new RegExp(`LIGHTHOUSE_MONTHLY_CAP[^\\n]*\\n?[^\\n]*default ${DEFAULT_MONTHLY_CAP}\\b`));
+  });
+
+  it("counts the UTC calendar month", () => {
+    expect(monthStart(new Date("2026-11-22T15:00:00Z"))).toBe("2026-11-01T00:00:00Z");
+    // 23:30 on 30 November in New York is already December in UTC.
+    expect(monthStart(new Date("2026-12-01T04:30:00Z"))).toBe("2026-12-01T00:00:00Z");
+    expect(monthStart(new Date("2027-01-01T00:00:00Z"))).toBe("2027-01-01T00:00:00Z");
+  });
+
+  it("counts only this month's automatic runs, never a hand run or this run", () => {
+    const since = "2026-11-01T00:00:00Z";
+    const runs = [
+      { id: 9, event: "deployment_status", created_at: "2026-11-22T10:00:00Z" }, // this run
+      { id: 8, event: "deployment_status", created_at: "2026-11-21T10:00:00Z" },
+      { id: 7, event: "workflow_dispatch", created_at: "2026-11-20T10:00:00Z" }, // a hand run, replayed or not
+      { id: 6, event: "deployment_status", created_at: "2026-11-02T10:00:00Z" },
+      { id: 5, event: "deployment_status", created_at: "2026-10-31T23:59:59Z" }, // last month
+      { id: 6, event: "deployment_status", created_at: "2026-11-02T10:00:00Z" }, // listed twice: once per status query
+    ];
+    expect(automaticCandidates(runs, { since, exclude: 9 }).map((r) => r.id)).toEqual([8, 6]);
+  });
+
+  it("counts a run whose measure job reached a runner, not one that skipped or never started", () => {
+    const plan = { name: "plan", conclusion: "success", steps: [{ name: "Plan" }] };
+    const report = { name: "report", conclusion: "skipped", steps: [] };
+    expect(measureRan([plan, { name: "measure (comics)", conclusion: "success", steps: [{ name: "Measure" }] }, report])).toBe(true);
+    expect(measureRan([plan, { name: "measure (comics)", conclusion: "failure", steps: [{ name: "Measure" }] }])).toBe(true);
+    expect(measureRan([plan, { name: "measure (comics)", status: "in_progress", conclusion: null, steps: [{ name: "Sign in" }] }])).toBe(true);
+    // Skipped: the plan gave no URL (a superseded commit, the cap, a dry run).
+    expect(measureRan([plan, { name: "measure", conclusion: "skipped", steps: [] }, report])).toBe(false);
+    // Cancelled by a newer push while queued: no page was loaded.
+    expect(measureRan([plan, { name: "measure (comics)", conclusion: "cancelled", steps: [] }])).toBe(false);
+    expect(measureRan([plan])).toBe(false);
+  });
+
+  it("with a cap of N, the next automatic run that month is skipped, with the count and the cap", () => {
+    const since = "2026-11-01T00:00:00Z";
+    expect(capReached({ count: 1, cap: 2, since })).toBeNull();
+    const reason = capReached({ count: 2, cap: 2, since });
+    expect(reason).toMatch(/2 automatic measured runs since 2026-11-01 \(UTC\) reached the cap of 2 \(LIGHTHOUSE_MONTHLY_CAP\)/);
+    expect(capReached({ count: 0, cap: 0, since })).not.toBeNull();
+  });
+
+  it("says why on the PR, in the comment the job keeps, and how to measure anyway", () => {
+    const body = renderCapComment({ sha: A, count: 2, cap: 2, since: "2026-11-01T00:00:00Z", branch: "task/0.14b-x" });
+    expect(body.startsWith(MARKER)).toBe(true);
+    expect(findComment([{ body }])).toBeDefined(); // edited in place, like a measured run's
+    expect(body).toMatch(/aaaaaaa/);
+    expect(body).toMatch(/monthly cap/i);
+    expect(body).toMatch(/2 automatic measured runs since 2026-11-01 \(UTC\) reached the cap of 2/);
+    expect(body).toMatch(/2026-12-01/); // when automatic runs start again
+    expect(body).toMatch(/gh workflow run lighthouse\.yml --ref task\/0\.14b-x/);
+  });
+
+  it("the workflow passes the real trigger beside the replayed one, the dry run and the cap, and lets plan count and comment", () => {
+    expect(planJob).toMatch(/REAL_EVENT_NAME: \$\{\{ github\.event_name \}\}/);
+    expect(planJob).toMatch(/DRY_RUN: \$\{\{ inputs\.dry_run \}\}/);
+    expect(planJob).toMatch(/LIGHTHOUSE_MONTHLY_CAP: \$\{\{ vars\.LIGHTHOUSE_MONTHLY_CAP \}\}/);
+    expect(planJob).toMatch(/\n {6}actions: read\n/);
+    expect(planJob).toMatch(/\n {6}pull-requests: write\n/);
+    // Nothing here turns the switch on: only the header's comments name the command.
+    expect(yml.split("\n").filter((l) => !l.trimStart().startsWith("#")).join("\n")).not.toMatch(/variable set|LIGHTHOUSE_MODE --body/);
+  });
+
+  it("a hand run neither waits nor is capped; only a real deployment_status is, and a dry run only decides", () => {
+    // A hand run on a branch reaches plan() as a replayed deployment_status;
+    // its real trigger is still workflow_dispatch.
+    expect(gates({ realEventName: "workflow_dispatch", dryRun: false })).toEqual({ wait: false, decide: false, act: false });
+    expect(gates({ realEventName: "deployment_status", dryRun: false })).toEqual({ wait: true, decide: true, act: true });
+    expect(gates({ realEventName: "workflow_dispatch", dryRun: true })).toEqual({ wait: false, decide: true, act: false });
+    expect(gates({ realEventName: undefined, dryRun: false })).toEqual({ wait: false, decide: false, act: false });
+  });
+
+  it("plan() waits, checks the head and the cap only as gates() says, before it hands out a URL", () => {
+    expect(planBody).toMatch(/gates\(\{ realEventName: env\.REAL_EVENT_NAME, dryRun: env\.DRY_RUN === "true" \}\)/);
+    expect(planBody).toMatch(/if \(gate\.wait\) \{\n\s+console\.log\(`Waiting/);
+    const decide = planBody.indexOf("if (gate.decide) {");
+    expect(decide).toBeGreaterThan(-1);
+    // The head check and the cap sit inside that block.
+    expect(planBody.indexOf("notHead(")).toBeGreaterThan(decide);
+    const waits = planBody.indexOf("DEBOUNCE_SECONDS * 1000");
+    const head = planBody.indexOf("notHead(");
+    const cap = planBody.indexOf("capReached(");
+    const url = planBody.indexOf('output("url"');
+    expect(waits).toBeGreaterThan(-1);
+    expect(planBody.indexOf("pullsFor(")).toBeGreaterThan(waits); // the PR is looked up after the wait
+    expect(head).toBeGreaterThan(waits);
+    expect(cap).toBeGreaterThan(head);
+    expect(url).toBeGreaterThan(cap);
+    expect(planBody).toMatch(/renderCapComment\(/);
+    // Past the cap an automatic run comments and stops: it never goes on to the URL.
+    const capped = planBody.slice(planBody.indexOf("if (reached) {"), planBody.indexOf("} else if (count != null)"));
+    expect(capped).toMatch(/if \(!dryRun\) \{[\s\S]*writeComment\([\s\S]*\n {8}return;\n {6}\}\n {4}$/);
+  });
+
+  it("a dry run reports what an automatic run would decide: the wait, the head and the month's count", () => {
+    expect(planBody).toMatch(/env\.DRY_RUN === "true"/);
+    expect(planBody).toMatch(/Dry run: an automatic run would wait \$\{DEBOUNCE_SECONDS\} s/);
+    expect(planBody).toMatch(/\$\{count\} of \$\{cap\} automatic measured runs since/);
+    // Printed, not obeyed: a dry run's skip never returns before its Dry run step.
+    expect(planBody).toMatch(/if \(!dryRun\) return;/);
+  });
+
+  // Run 45112285873, a dry run: one jobs request at a time took 3 min 19 s
+  // for November's 197 runs, and a month at the cap recounted on every run.
+  const job = (measured: boolean) => [{ name: "measure (comics)", conclusion: measured ? "success" : "skipped", steps: measured ? [{}] : [] }];
+  const month = (n: number, measuredIds: Set<number>) => Array.from({ length: n }, (_, i) => ({
+    id: i, created_at: `2026-11-${String(1 + Math.floor(i / 10)).padStart(2, "0")}T${String(i % 10).padStart(2, "0")}:00:00Z`,
+    measured: measuredIds.has(i),
+  }));
+
+  it("reads the runs' jobs several at a time, newest first, and stops at the cap", async () => {
+    let inFlight = 0;
+    let most = 0;
+    const read: number[] = [];
+    const jobsFor = async (run: { id: number; measured: boolean }) => {
+      inFlight++;
+      most = Math.max(most, inFlight);
+      read.push(run.id);
+      await new Promise((r) => setTimeout(r, 1));
+      inFlight--;
+      return job(run.measured);
+    };
+    // 200 runs; every other one measured.
+    const runs = month(200, new Set(Array.from({ length: 100 }, (_, i) => i * 2)));
+    expect(await countMeasured(runs, { cap: 20, jobsFor })).toBe(20);
+    expect(most).toBe(COUNT_CONCURRENCY);
+    expect(COUNT_CONCURRENCY).toBeGreaterThan(1);
+    // Twenty measured among the newest forty: no batch past them is read.
+    expect(read.length).toBe(40);
+    expect(Math.min(...read)).toBe(160); // the newest, not the first listed
+    // A cap inside a batch: the batch's extra runs are read, but the count
+    // never passes the cap (it reaches the PR comment as "N of cap").
+    read.length = 0;
+    expect(await countMeasured(runs, { cap: 7, jobsFor })).toBe(7);
+    expect(read.length).toBe(20);
+    // Under the cap, every run is read and the count is exact.
+    expect(await countMeasured(runs, { cap: 150, jobsFor })).toBe(100);
+    // A cap of 0 reads nothing.
+    read.length = 0;
+    expect(await countMeasured(runs, { cap: 0, jobsFor })).toBe(0);
+    expect(read).toEqual([]);
+  });
+
+  it("fails the count when a read fails, so the run doesn't measure", async () => {
+    const runs = month(30, new Set());
+    await expect(countMeasured(runs, { cap: 5, jobsFor: async (r) => {
+      if (r.id === 25) throw new Error("GitHub GET actions/runs/25/jobs: 403 rate limit");
+      return job(false);
+    } })).rejects.toThrow(/rate limit/);
+  });
+
+  it("marks a month whose cap stopped a run, so later runs don't count again; a new cap counts afresh", () => {
+    const since = "2026-11-01T00:00:00Z";
+    const name = capMarkerName({ since, cap: 100 });
+    expect(name).toBe("lighthouse-cap-reached-2026-11-100");
+    expect(capMarkerName({ since: "2026-12-01T00:00:00Z", cap: 100 })).not.toBe(name);
+    expect(capMarkerName({ since, cap: 150 })).not.toBe(name);
+    expect(capMarked([{ name, expired: false }], name)).toBe(true);
+    expect(capMarked([{ name, expired: true }], name)).toBe(false);
+    expect(capMarked([{ name: capMarkerName({ since, cap: 50 }) }], name)).toBe(false);
+    expect(capMarked([], name)).toBe(false);
+    expect(capMarked(undefined, name)).toBe(false);
+  });
+
+  it("plan() looks for the marker before it counts, and only a run that obeys the cap leaves one", () => {
+    const count = src.slice(src.indexOf("async function measuredThisMonth("), src.indexOf("async function plan()"));
+    const look = count.indexOf("capMarked(");
+    expect(look).toBeGreaterThan(-1);
+    expect(count.indexOf("actions/workflows/lighthouse.yml/runs")).toBeGreaterThan(look);
+    expect(count).toContain("return { count: cap, marker, marked: true }");
+    expect(count).toContain("countMeasured(automaticCandidates(");
+    // Inside the cap branch's !dryRun block, and not when the marker was already found.
+    const capped = planBody.slice(planBody.indexOf("if (reached) {"), planBody.indexOf("} else if (count != null)"));
+    expect(capped).toMatch(/if \(!dryRun\) \{[\s\S]*if \(!counted\.marked && env\.RUNNER_TEMP\) \{[\s\S]*output\("cap_marker", counted\.marker\)/);
+    expect(src).toContain('join(env.RUNNER_TEMP, "lighthouse-cap.txt")');
+    // The workflow uploads it under that name, for longer than a month.
+    const step = planJob.slice(planJob.indexOf("- name: Mark the month's cap reached"), planJob.indexOf("- name: Dry run"));
+    expect(step).toContain("if: steps.plan.outputs.cap_marker\n");
+    expect(step).toContain("uses: actions/upload-artifact@");
+    expect(step).toContain("name: ${{ steps.plan.outputs.cap_marker }}");
+    expect(step).toContain("path: ${{ runner.temp }}/lighthouse-cap.txt");
+    expect(Number(step.match(/retention-days: (\d+)/)![1])).toBeGreaterThanOrEqual(31);
+  });
+
+  it("a dry run's last line says a hand run would measure, not that it is measuring", () => {
+    expect(planBody).toContain('env.DRY_RUN === "true" ? "A hand run would measure" : "Measuring"');
+  });
+
+  it("is documented where the owner reads it: the cap, its default, the wait, and a hand run exempt", () => {
+    for (const file of ["docs/COMMANDS.md", "docs/GIT-PR.md", ".github/workflows/lighthouse.yml"]) {
+      const text = readFileSync(file, "utf8").replace(/\s+/g, " ");
+      expect(text, file).toMatch(/LIGHTHOUSE_MONTHLY_CAP/);
+      expect(text, file).toMatch(new RegExp(`default ${DEFAULT_MONTHLY_CAP}\\b`));
+      expect(text, file).toMatch(/5 minutes/);
+      expect(text, file).toMatch(/hand run[^.]*(exempt|neither waits nor)/i);
+    }
   });
 });
 

@@ -30,8 +30,17 @@ node scripts/worktree-slot.mjs  # worktree setup runs it: this worktree's own te
 npm run lint                # eslint, zero warnings
 gh variable set LIGHTHOUSE_MODE --body on   # Lighthouse measures every preview on its own; `off` (or unset) stops it (D-158).
                             # Each measured deploy spends ~22 s of the Vercel account's 4 h/month Active CPU
+                            # (7 s or less since 0.14). An automatic run waits 5 minutes, then measures only
+                            # if its commit is still the PR's head (task 0.14b)
+gh variable set LIGHTHOUSE_MONTHLY_CAP --body <n>  # automatic measured runs a UTC month before Lighthouse stops
+                            # measuring on its own and says so on the PR; default 100 when unset, 0 stops them all.
+                            # The first run the cap stops leaves the artifact lighthouse-cap-reached-<YYYY-MM>-<n>,
+                            # so later runs that month don't count again; a new <n> counts afresh.
+                            # A hand run is exempt from the wait and the cap, and isn't counted (0.14b)
 gh workflow run lighthouse.yml --ref <branch>  # measure that branch head's preview by hand, reported on its PR;
-                            # -f url=<deployment> for any deployment, -f dry_run=true to plan only (loads nothing).
+                            # -f url=<deployment> for any deployment, -f dry_run=true to plan only (loads nothing;
+                            # prints what an automatic run would decide: the wait, the head, the month's count).
+                            # A head Vercel skipped (docs, tests or config only) has no preview: pass -f url=.
                             # While the workflow is disabled (D-158), `gh workflow enable lighthouse.yml` first
 npx tsc --noEmit            # typecheck
 node scripts/tsc-brief.mjs  # the same typecheck, first 10 errors only (the post-edit hook's verify.fast)
