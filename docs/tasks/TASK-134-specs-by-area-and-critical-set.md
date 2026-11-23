@@ -1,7 +1,7 @@
 ---
 id: TASK-134
 title: 0.15 The browser suite runs by area (1 of 3) — every spec has an area, and a critical set
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -30,7 +30,7 @@ Every browser spec says which part of the app it checks, a small critical set is
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves its last clause, *a spec file with no area fails `test/e2e-guard.test.ts`*, and the critical set's existence; TASK-135 proves the map, the plan, CI and the git rules): tests pin the map and the plan: a change only under a medium's own
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves its last clause, *a spec file with no area fails `test/e2e-guard.test.ts`*, and the critical set's existence; TASK-135 proves the map, the plan, CI and the git rules): tests pin the map and the plan: a change only under a medium's own
 routes, components and specs selects that medium and the critical set, and
 runs none of another medium's specs; a change under `src/db/`, `etl/views.sql`,
 `src/lib/`, a shared component, `globals.css`, `package.json`, the Playwright
@@ -43,10 +43,10 @@ changes only a comics screen, CI runs the comics specs and the critical set and
 no books spec, and its browser time is under half of a full run's.
 `.claude/rules/git.md`'s *Test on the branch* section says which PRs run what.
 Decision row recorded (next free D-n), amending D-80, D-141 and D-161.
-- [ ] AC-2: `test/e2e-guard.test.ts` fails, naming the file, for a fixture spec with no area, one with two areas, and one with an area not in the six; every real spec in `test/e2e/` passes.
-- [ ] AC-3: With the areas setting `comics`, the planned file list holds every comics spec and every file with a `@critical` test, and no books-only spec; with it unset, the list is every spec, as today. A `@critical` test is planned at each core project and nowhere else, whatever the scope.
-- [ ] AC-4: The critical set covers sign-in, the books and comics dashboards loading, the add flow, a status write and its Undo, the navigation between media, and an error state, each named in the plan with a test it tags. Its total recorded time in `test/e2e/shard-times.json` at the core projects is at most 5 minutes.
-- [ ] AC-5: `npm run test:e2e` with no areas setting runs the same tests at the same projects as before the change (the planned list compared before and after in a test).
+- [x] AC-2: `test/e2e-guard.test.ts` fails, naming the file, for a fixture spec with no area, one with two areas, and one with an area not in the six; every real spec in `test/e2e/` passes.
+- [x] AC-3: With the areas setting `comics`, the planned file list holds every comics spec and every file with a `@critical` test, and no books-only spec; with it unset, the list is every spec, as today. A `@critical` test is planned at each core project and nowhere else, whatever the scope.
+- [x] AC-4: The critical set covers sign-in, the books and comics dashboards loading, the add flow, a status write and its Undo, the navigation between media, and an error state, each named in the plan with a test it tags. Its total recorded time in `test/e2e/shard-times.json` at the core projects is at most 5 minutes.
+- [x] AC-5: `npm run test:e2e` with no areas setting runs the same tests at the same projects as before the change (the planned list compared before and after in a test).
 
 ## Out of scope
 
@@ -73,8 +73,10 @@ Decision row recorded (next free D-n), amending D-80, D-141 and D-161.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- `node scripts/e2e-shards.mjs balance` prices every spec file in every project; once CI sets `E2E_AREAS` it should price the plan the area run made (`areaFilter`) (approved at plan)
-- A file planned only for its `@critical` tests counts its whole recorded time in the shard plan, an overestimate the area budget should know about (approved at plan)
+- `node scripts/e2e-shards.mjs balance` prices every spec file in every project; once CI sets `E2E_AREAS` it should price the plan the area run made (`areaFilter`) → docs/tasks/TASK-135-ci-runs-affected-areas.md § Context (approved at plan)
+- A file planned only for its `@critical` tests counts its whole recorded time in the shard plan, an overestimate the area budget should know about → docs/tasks/TASK-136-e2e-budget-by-area.md § Context (approved at plan)
+- `dnf-reason.spec.ts` is a books spec holding 2 of the 6 `@critical` tests, so a comics-only PR runs those two; the Check's "no books spec" should say a books file's `@critical` tests don't count (spec-reviewer note) → docs/tasks/TASK-135-ci-runs-affected-areas.md § Context
+- The plan's "the guard checks" that a `@critical` test has no `@floor`/`@feel` and only a core `@at-` tag is enforced indirectly, by the "planned at the core projects only" `--list` test, which fails at full scope on a violation (spec-reviewer note) → not tracked: covered as is
 
 ## Plan
 
@@ -175,13 +177,17 @@ the `--list` tests break loudly if that changes. Spec line numbers shift by one.
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 FAIL (tsc: a type in the new e2e-guard test) → fixed | Verify R3 PASS (129 files, 2,544 tests) | touched specs (routes, book-search, dnf-reason, shell) at w390-light PASS | CI R1 PASS (every project, 10 shards; Vercel; Claude PR review: no issues)
+- Verify R4 PASS on 72dd578 (re-run after the session's chat was lost) | Spec R1 APPROVE | Audit R1 PASS (8 of 45 e2e-guard tests fail against the pre-task e2e.mjs and playwright.config.ts; AC-5's test is a guard) | Schema n/a | UI n/a (`ui: false`, no app code)
+- Drift R1 update first (behind 1; main changed src/db/writes.ts, #322) → rebased, no conflict, no new spec | Verify R5 PASS (129 files, 2,551 tests)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 4 (1 FAIL)
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0

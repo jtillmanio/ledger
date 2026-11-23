@@ -25,6 +25,7 @@ The browser suite's time budget compares each area a PR ran with `main`'s time f
 - **What changes:** growth is computed per area, each against `main`'s recording of that area's tests (the area of a test comes from TASK-134's area of its spec), and the summary names the area that grew. The per-shard ceiling applies to the shards the PR actually ran. A run over every area behaves as today.
 - Tests: `test/e2e-budget.test.ts` (it also keeps the matrix size equal to `ci.yml`'s).
 - Decisions: D-161, D-167, and TASK-135's row.
+- *From TASK-134 (0.15, PR #323):* a file planned only for its `@critical` tests (routes, book-search, dnf-reason, shell, at the core projects) counts its whole recorded time in the shard plan, because `shard-times.json` records files, not tests. The area budget overestimates those files: it should price them by their `@critical` tests' own times, or say it doesn't.
 
 ## Acceptance criteria
 
