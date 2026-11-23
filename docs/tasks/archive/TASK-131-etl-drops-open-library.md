@@ -1,7 +1,7 @@
 ---
 id: TASK-131
 title: 6.19 Remove Open Library (1 of 2) — extract, enrichment and load stop carrying it
-status: Review
+status: Done
 depends_on: []
 size: M
 model: opus
