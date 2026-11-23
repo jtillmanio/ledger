@@ -67,7 +67,7 @@ When `LIGHTHOUSE_MODE` goes back on, every page in the app is measured against i
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 - `/books/series`, a series' page, an author's page and a universe's page (5.9, 5.11) have no route; 0.14c exempts them, and a new phase-0 roadmap item measures them as 0.14c does (approved at plan) → docs/05-roadmap.md § 0.14e (new; also its row in docs/06-tasklist.md beside 0.14c, and the F-04 coverage line)
-- The hand run measured `/books` (already budgeted) at 175,572 JS bytes, over its 175,000; the owner left it for 0.13 (2026-11-23) → docs/05-roadmap.md § 0.13
+- The hand run measured `/books` (already budgeted) at 175,572 JS bytes, over its 175,000; the owner left it for 0.13 (2026-11-23) → docs/tasks/TASK-133-perf-growth-gate.md § Context
 - Live has no books shelf: until it has one, every measured run fails `shelf` as not measured → not tracked: owner's data; said in docs/02-architecture.md § Performance budget
 
 ## Plan
@@ -121,7 +121,7 @@ Approved by the owner up front (2026-11-23: "approve plan, go with recommendatio
 
 Verify R1 PASS | CI R1 PASS (95aba84, every project) | Spec R1 CHANGES (book tap timed the sheet's skeleton) → fixed | Verify R2 PASS | Spec R2 APPROVE | CI R2 PASS (6736e2c) | Audit R1 CHANGES (automated ACs PROVEN; budgets owner-gated; optional: assert the resolve log) → test added | Verify R3 PASS | Follow-ups check APPROVE | Drift R1 update first (behind 1: #318 changed globals.css, queries.ts and the sheet markup the book tap reads) → rebased | Verify R4 PASS | CI R3 PASS | Hand Lighthouse run 45127510072 FAIL(3: shelf not measured, live has no shelf; book asked GET /api/progress/book/read; /books JS 572 over) → 7 budgets written, book fixed here, shelf awaits a re-run, /books to 0.13
 
-| CI R4 PASS (e49dc0f) | Spec R3 CHANGES (the shelf's reason lost by the reports upload; this paragraph stale) → fixed, plus the parked tap | Hand Lighthouse run 45184508856 (e49dc0f) FAIL(1: /books JS 175,653 over 175,000, left for 0.13) → shelf budget written; book clean | Verify R6 PASS | Drift R2 update first (behind 1: #320 changed globals.css) → rebased | Verify R7 PASS
+| CI R4 PASS (e49dc0f) | Spec R3 CHANGES (the shelf's reason lost by the reports upload; this paragraph stale) → fixed, plus the parked tap | Hand Lighthouse run 45184508856 (e49dc0f) FAIL(1: /books JS 175,653 over 175,000, left for 0.13) → shelf budget written; book clean | Verify R6 PASS | Drift R2 update first (behind 1: #320 changed globals.css) → rebased | Verify R7 PASS | Drift R3 update first (#321 conflicted in docs/06-tasklist.md: both sides edited 0.14c's row) → rebased, kept main's notes with the ✅ and the hand-run wording; the 0.13 note moved to TASK-133's Context (#321 gave 0.13 its task) | Verify R8 PASS
 
 **Was waiting on the owner (done 2026-11-23):** a shelf on PR #319's preview (its own Neon branch, not live or development), then a second hand run (`gh workflow enable lighthouse.yml`, `gh workflow run lighthouse.yml --ref task/0.14c-measure-every-page`, `gh workflow disable lighthouse.yml`). It gives the shelf's page its budget, so `AWAITING_MEASUREMENT` goes, shows the book page with no route-handler request, and runs the changed workflow on the branch. `LIGHTHOUSE_MODE` stays off (D-158). Status stays In progress until then.
 

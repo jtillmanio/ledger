@@ -263,10 +263,6 @@ route handler check, CLS and accessibility stay as 0.10 built them.
   prefetches and counts neither them nor their bytes (D-160), so this entry's
   measurement is prefetch-free. A growth check against a baseline from before
   0.14 shows a drop, not growth.
-- *From TASK-114 (0.14c, PR #319):* the 2026-11-23 hand run measured `/books`
-  at 175,572 JS bytes, over its 175,000 budget (main's JS grew since its last
-  measure; #318 drew the book sheet's move and shelf controls). The owner left
-  it for this entry, so until then every measured run reports that finding.
 
 **Check:** (proposed; the owner agrees it by merging or edits it first)
 `test/perf.test.ts` covers the growth gate on fixture metrics: a route 3,001

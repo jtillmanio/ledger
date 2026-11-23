@@ -29,6 +29,7 @@ A preview's Lighthouse job fails when its PR grows a route's weight over main's,
 - **The label re-reports without a push.** The workflow runs on `deployment_status` and by hand today. The plan says how a `labeled` event re-runs only the report against the existing measurement (no new Lighthouse load, no new measured run counted against `LIGHTHOUSE_MONTHLY_CAP`, D-170).
 - **The history moves.** § Performance budget's paragraphs on each raise, PR #80 to #224, move to a new `docs/perf-budget-history.md`, which the section links (`docs/archive/` is frozen).
 - Decisions: D-142, D-158, D-160, D-170, the 0.10 budget rule it amends.
+- *From TASK-114 (0.14c, PR #319):* both of 0.14c's hand runs (2026-11-23) measured `/books` over its 175,000 JS budget: 175,572, then 175,653 bytes (main's JS grew since its last measure; #318 and #320 drew the book sheet's controls and the dashboard rows that open it). The owner left it for this task, so until then every measured run reports that finding.
 
 ## Acceptance criteria
 
