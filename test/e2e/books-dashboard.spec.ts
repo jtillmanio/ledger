@@ -815,13 +815,24 @@ test.describe("where the book sits (2.2g)", () => {
     await screenshot(page, info, "books-where");
   });
 
-  test("the rows are read-only text: no link, no button, the meter hidden from a screen reader (AC-1)", ONCE, async ({ page }) => {
+  // Task 5.9, 3 of 3 (TASK-125, AC-2) made the names links: the universe's and the series' to their own pages,
+  // named by the level; a subseries has no page, so its name stays text. Still no button, the meter still hidden.
+  test("the universe and series names link to their pages, the subseries is text, no button, the meter hidden from a screen reader (AC-1; TASK-125 AC-2)", ONCE, async ({ page }) => {
     await seedWhere();
     await open(page);
-    await expect(page.locator(".now-where a, .now-where button")).toHaveCount(0);
-    await expect(page.getByRole("list", { name: "Where this book sits" }).getByRole("listitem")).toHaveCount(3);
+    const where = page.getByRole("list", { name: "Where this book sits" });
+    await expect(where.getByRole("listitem")).toHaveCount(3);
+    await expect(where.getByRole("link")).toHaveCount(2);
+    await expect(where.getByRole("link", { name: UNIVERSE_NAME, exact: true })).toHaveAttribute("href", "/books/universes/e2e-dash-uni");
+    await expect(where.getByRole("link", { name: WSERIES_NAME, exact: true })).toHaveAttribute("href", "/books/series/e2e-dash-wser");
+    await expect(names(page).nth(2).locator("a")).toHaveCount(0);
+    await expect(page.locator(".now-where button")).toHaveCount(0);
     await expect(page.locator('.now-where .emeter[aria-hidden="true"]')).toHaveCount(3);
     await expect(page.locator(".now-where .emeter:not([aria-hidden])")).toHaveCount(0);
+    // The series line opens the series' own page.
+    await where.getByRole("link", { name: WSERIES_NAME, exact: true }).click();
+    await expect(page).toHaveURL(/\/books\/series\/e2e-dash-wser$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(WSERIES_NAME);
   });
 
   test("a book in a series alone draws one row (AC-1)", ONCE, async ({ page }) => {

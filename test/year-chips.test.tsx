@@ -15,7 +15,6 @@ const listBooks = vi.hoisted(() => vi.fn<(userId: string, options: Record<string
 vi.mock("@/db/queries", () => ({
   listBooks,
   OWNED_FILTERS: ["physical", "audio", "ebook", "none"],
-  seriesProgress: async () => [],
   listCounts: async () => ({ unlisted: 0, genres: [] }),
   inboxCount: async () => 0,
 }));

@@ -28,7 +28,7 @@ const READ = (r: Partial<HistoryRead>): HistoryRead => ({
 function book(over: Partial<Book> = {}): Book {
   return {
     id: "b1", title: "The Way of Kings", author: "Brandon Sanderson", series: "Stormlight Archive", series_position: 1,
-    universe: null, genre: "Epic Fantasy", summary: "Roshar is a world of stone and storms.", subjects: ["Magic"],
+    universe: null, author_id: null, series_id: null, universe_id: null, genre: "Epic Fantasy", summary: "Roshar is a world of stone and storms.", subjects: ["Magic"],
     page_count: 1007, word_count: 387000, word_count_source: "stated", published_year: 2010, cover_url: null,
     pending: false, status: "to_read", finished_on: null, finished_on_precision: "none",
     started_on: null, started_on_precision: "none", notes: null, plan_level: null, plan_period: null,
@@ -165,6 +165,36 @@ describe("Details and About (AC-5)", () => {
     expect(heads(without)).toEqual(["About", "Details", "Your record", "Reading history"]);
     expect(text(without.querySelector(".detail-about"))).toBe("No summary yet.");
     expect(text(withOne.querySelector(".detail-about"))).toContain("Roshar is a world of stone and storms.");
+  });
+
+  // Task 5.9, 3 of 3 (TASK-125, AC-3): the Series fact names the series as a link to its page, named by the
+  // series, the `#n` after it; the hero's author and place line link the same way; no series, no series link.
+  const links = (el: Element | null) =>
+    [...(el?.querySelectorAll("a") ?? [])].map((a) => [text(a), a.getAttribute("href")]);
+  const fact = (doc: Document, k: string) =>
+    [...doc.querySelectorAll(".frow")].find((r) => text(r.querySelector(".k")) === k) ?? null;
+  const placed = { author_id: "brandon-sanderson", series_id: "stormlight-archive", universe_id: "cosmere" };
+
+  it("names the series in the Series fact as a link to its page (AC-3)", () => {
+    const doc = render(book({ ...placed }));
+    const series = fact(doc, "Series");
+    expect(text(series?.querySelector(".v") ?? null)).toBe("Stormlight Archive #1");
+    expect(links(series)).toEqual([["Stormlight Archive", "/books/series/stormlight-archive"]]);
+  });
+
+  it("links the hero's author and place line: Cosmere, then the series", () => {
+    const doc = render(book({ ...placed, universe: "Cosmere" }));
+    expect(links(doc.querySelector(".detail-by"))).toEqual([["Brandon Sanderson", "/books/authors/brandon-sanderson"]]);
+    expect(text(doc.querySelector(".detail-place"))).toBe("Cosmere · Stormlight Archive #1 · 2010");
+    expect(links(doc.querySelector(".detail-place"))).toEqual([
+      ["Cosmere", "/books/universes/cosmere"], ["Stormlight Archive", "/books/series/stormlight-archive"],
+    ]);
+  });
+
+  it("draws no series link for a book with no series (AC-3)", () => {
+    const doc = render(book({ ...placed, series: null, series_id: null, series_position: null }));
+    expect(fact(doc, "Series")).toBeNull();
+    expect([...doc.querySelectorAll("a")].filter((a) => a.getAttribute("href")?.startsWith("/books/series/"))).toEqual([]);
   });
 
   it("leaves out a fact the book doesn't have, never a —", () => {

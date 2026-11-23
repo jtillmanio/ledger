@@ -129,28 +129,58 @@ export function wordsK(words: number | null): string | null {
   return words ? `${Math.round(words / 1000)}k` : null;
 }
 
+/** What a book's place line is built from; the ids, where a caller has them, make its names links (task 5.9). */
+type PlaceOf = {
+  universe: string | null; series: string | null; series_position: number | null;
+  universe_id?: string | null; series_id?: string | null;
+};
+
 /**
- * Where a book belongs, as its row's second line says it (task 2.2j, D-134): the universe (D-90,
+ * One name on a book's place line (task 5.9, TASK-125): the author, the universe or the series, with the id
+ * of its page (null when the caller has none: it draws as text), and a series' `#position` beside its name,
+ * so a link carries the name alone.
+ */
+export type PlacePart = { kind: "author" | "universe" | "series"; id: string | null; name: string; position?: string };
+
+/** A part as the line prints it: the name, then a series' `#n`. */
+export const partText = (p: PlacePart) => (p.position ? `${p.name} ${p.position}` : p.name);
+
+/**
+ * Where a book belongs, as its row's second line says it (task 2.2j, D-134), in parts: the universe (D-90,
  * Calibre's superseries), then the series and `#position`: *Cosmere · Mistborn #4*. No universe, the
  * series alone (*Robot #2*); no series, the universe alone and unnumbered (*First Law World*); neither,
- * `""`. A series with no position drops the `#` (only a missing position does: a `0` prints `#0`), and a
+ * none. A series with no position drops the `#` (only a missing position does: a `0` prints `#0`), and a
  * whole-number position prints without a decimal (`#4`, not `#4.0`). The universe is dropped when the
  * series name already contains it, case-insensitively (*Magic Tree House #3*). The subseries is not on
- * this line (2.2g draws it in Now). The one builder of the line: every books screen reads it here.
+ * this line (2.2g draws it in Now). The one home of the line's rule: `bookPlace` prints it, `BookPlace`
+ * draws it with links.
  */
-export function bookPlace(b: { universe: string | null; series: string | null; series_position: number | null }): string {
+export function placeParts(b: PlaceOf): PlacePart[] {
   const { universe, series } = b;
-  if (!series) return universe ?? "";
-  const numbered = b.series_position == null ? series : `${series} #${Number(b.series_position)}`;
-  if (!universe || series.toLowerCase().includes(universe.toLowerCase())) return numbered;
-  return `${universe} · ${numbered}`;
+  const inUniverse: PlacePart | null = universe ? { kind: "universe", id: b.universe_id ?? null, name: universe } : null;
+  if (!series) return inUniverse ? [inUniverse] : [];
+  const inSeries: PlacePart = {
+    kind: "series", id: b.series_id ?? null, name: series,
+    ...(b.series_position != null && { position: `#${Number(b.series_position)}` }),
+  };
+  if (!inUniverse || series.toLowerCase().includes(inUniverse.name.toLowerCase())) return [inSeries];
+  return [inUniverse, inSeries];
+}
+
+/** The second line's parts: the author, then where the book belongs (`placeParts`). */
+export function subParts(b: PlaceOf & { author: string | null; author_id?: string | null }): PlacePart[] {
+  const by: PlacePart[] = b.author ? [{ kind: "author", id: b.author_id ?? null, name: b.author }] : [];
+  return [...by, ...placeParts(b)];
+}
+
+/** Where a book belongs, as text (`placeParts`): *Cosmere · Mistborn #4*, or `""`. */
+export function bookPlace(b: PlaceOf): string {
+  return placeParts(b).map(partText).join(" · ");
 }
 
 /** A book's second line on every books screen: the author, then where it belongs (`bookPlace`; tasks 1.9, 2.2j). */
-export function bookSub(
-  b: { author: string | null; universe: string | null; series: string | null; series_position: number | null },
-): string {
-  return [b.author, bookPlace(b)].filter(Boolean).join(" · ");
+export function bookSub(b: PlaceOf & { author: string | null }): string {
+  return subParts(b).map(partText).join(" · ");
 }
 
 const OWNED_WORDS = { physical: "Physical", audio: "Audiobook", ebook: "Ebook" } as const;

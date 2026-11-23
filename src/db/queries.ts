@@ -511,6 +511,8 @@ export type BookRow = {
   series_position: number | null;
   /** Its universe's name (task 2.2j, D-134); null when it is in none. */
   universe: string | null;
+  /** The ids of its author, series and universe, so the row's names link to their pages (task 5.9, TASK-125). */
+  author_id: string | null; series_id: string | null; universe_id: string | null;
   /** The last segment of its deepest Calibre genre (task 4.5, D-98): `Romantasy`; null for a book Calibre gives none. */
   genre: string | null; word_count: number | null;
   /** `estimated` is pages × words per page, shown with a `~` (task 2.2b). */
@@ -573,6 +575,7 @@ export async function listBooks(
   const { sort, dir } = parseSort(opts.sort, opts.dir);
   return sql<WithTotal<BookRow>[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe,
+           a.id AS author_id, s.id AS series_id, u.id AS universe_id,
            -- The row's genre (task 4.5): the last segment of its deepest direct path, ties by the path.
            (SELECT l.name FROM book_genre_levels l WHERE l.book_id = b.id AND l.direct
             ORDER BY l.depth DESC, l.genre LIMIT 1) AS genre,
@@ -997,6 +1000,8 @@ export type HistoryRead = {
 export type BookDetail = {
   id: string; title: string; author: string | null; series: string | null; series_position: number | null;
   universe: string | null;
+  /** The ids of its author, series and universe, so the sheet's names link to their pages (task 5.9, TASK-125). */
+  author_id: string | null; series_id: string | null; universe_id: string | null;
   /** The last segment of its deepest Calibre genre, as the Library row shows it (task 4.5, D-98). */
   genre: string | null;
   /** Calibre's comments and tags (TASK-078); null when Calibre has none. */
@@ -1035,6 +1040,7 @@ export type BookDetail = {
 export async function bookDetail(userId: string, bookId: string): Promise<BookDetail | null> {
   const [row] = await sql<BookDetail[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe,
+           a.id AS author_id, s.id AS series_id, u.id AS universe_id,
            (SELECT l.name FROM book_genre_levels l WHERE l.book_id = b.id AND l.direct
             ORDER BY l.depth DESC, l.genre LIMIT 1) AS genre,
            b.summary, b.subjects, b.page_count, b.word_count, b.word_count_source, b.published_year, b.cover_url,
@@ -1142,18 +1148,6 @@ export async function listCounts(userId: string): Promise<{ unlisted: number; pa
   return row;
 }
 
-export async function seriesProgress(userId: string) {
-  return sql<{
-    series_id: string; name: string; author: string | null;
-    books_read: number; total_books: number; pct: number;
-  }[]>`
-    SELECT series_id, name, author, books_read, total_books, pct
-    FROM series_progress
-    WHERE user_id = ${userId} AND total_books > 1
-    ORDER BY pct DESC NULLS LAST, name
-  `;
-}
-
 /** The book a series names next (task 5.9): its id, title and `series_position` (NULL when it has none). */
 export type SeriesNext = { id: string; title: string; position: number | null };
 
@@ -1173,8 +1167,9 @@ export type SeriesSummary = {
  * `to_read` or `unlisted`) at the lowest `series_position`, a book with none after every positioned one.
  * Unlike `follow_next`, a book in hand (reading, listening) or a DNF is skipped, not blocking: the next
  * eligible book is named (task 5.9 decision 3). A complete series has none. A series with more read than its
- * stated total (4 / 3) is complete. All derived here, never stored (hard rule 2). `seriesProgress` stays
- * for the Library's Series section, which keeps only series of more than one book.
+ * stated total (4 / 3) is complete. All derived here, never stored (hard rule 2). The one reader of
+ * `series_progress`'s rows for a list: the Library's own Series section, and its `seriesProgress`, went in
+ * task 5.9's third part (TASK-125).
  */
 export async function seriesList(userId: string): Promise<SeriesSummary[]> {
   return sql<SeriesSummary[]>`
@@ -2089,6 +2084,8 @@ export type ShelfBook = {
   cover_url: string | null; ordinal: number | null;
   /** Where it belongs, for the row's second line (`bookSub`; task 2.2j, D-134). */
   series: string | null; series_position: number | null; universe: string | null;
+  /** The ids of its author, series and universe, so the line's names link to their pages (task 5.9, TASK-125). */
+  author_id: string | null; series_id: string | null; universe_id: string | null;
 };
 
 /** *Up next in Qn* (task 2.2, D-37): the quarter's books still `to_read`, in your order. The
@@ -2096,7 +2093,7 @@ export type ShelfBook = {
 export async function quarterShelf(userId: string, period: string) {
   return sql<ShelfBook[]>`
     SELECT b.id, b.title, a.name AS author, b.page_count AS pages, b.word_count AS words, b.cover_url, pp.ordinal,
-           s.name AS series, b.series_position, u.name AS universe
+           s.name AS series, b.series_position, u.name AS universe, a.id AS author_id, s.id AS series_id, u.id AS universe_id
     FROM plan_period pp
     JOIN book_status st ON st.user_id = pp.user_id AND st.book_id = pp.book_id AND st.status = 'to_read'
     JOIN books b ON b.id = pp.book_id
@@ -2227,7 +2224,8 @@ export async function unplacedBooks(userId: string, year: number): Promise<Unpla
 export async function onDeck(userId: string, limit: number): Promise<{ rows: ShelfBook[]; total: number }> {
   const rows = await sql<(ShelfBook & { total: number })[]>`
     SELECT b.id, b.title, a.name AS author, b.page_count AS pages, b.word_count AS words, b.cover_url,
-           NULL::int AS ordinal, s.name AS series, b.series_position, u.name AS universe, COUNT(*) OVER ()::int AS total
+           NULL::int AS ordinal, s.name AS series, b.series_position, u.name AS universe,
+           a.id AS author_id, s.id AS series_id, u.id AS universe_id, COUNT(*) OVER ()::int AS total
     FROM to_read_level l
     JOIN books b ON b.id = l.book_id
     LEFT JOIN authors a ON a.id = b.author_id

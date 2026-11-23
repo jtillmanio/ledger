@@ -117,8 +117,8 @@ describe("the AC-1 fixture: lists, counts, search, levels, status tabs, series a
   });
 
   it("a series holding one read and one Unlisted book reads 1 / 2; the author counts it listed, not read", async () => {
-    const [series] = (await q.seriesProgress(USER)).filter((s) => s.series_id === "selish");
-    expect(`${series.books_read} / ${series.total_books}`).toBe("1 / 2");
+    const [series] = (await q.seriesList(USER)).filter((s) => s.id === "selish");
+    expect(`${series.read} / ${series.total}`).toBe("1 / 2");
     const [author] = await sql`SELECT books_listed::int AS books_listed, books_read::int AS books_read FROM author_progress
                                WHERE user_id = ${USER} AND author_id = 'brandon-sanderson'`;
     expect(author).toEqual({ books_listed: 3, books_read: 1 });

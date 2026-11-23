@@ -1,14 +1,14 @@
 ---
 id: TASK-125
 title: 5.9 Series (3 of 3) — every series name in the app links to its page
-status: Ready
+status: In progress
 depends_on: [TASK-102]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 078a19b
 ---
 
 # TASK-125 — 5.9 Series (3 of 3) — every series name in the app links to its page
@@ -64,9 +64,40 @@ page. Screenshot at 360px, 834px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Every other place a series name prints links nothing yet: the Up next cards (`PlanShelf`), the status rows (`StatusBookRow`), the plan screens (`PlanQuarter`, `PlanQuarterRows`, `PlanSheet`, `PlanPicker`), Top books, Coming out, Parked, Listen next, Add books' search results, Now's *Next in*, and the follow sheet's rows (TASK-103 named it). A new 5.x roadmap item links them through `BookPlace` (approved at plan)
+- TASK-102's question: By hand could open with *Series* and *#* filled from a gap row (`src/components/ByHand.tsx` through `AddBooks.tsx` and a new parameter on `src/app/books/add/page.tsx`); it goes in the same new roadmap item, not here (approved at plan)
+- TASK-101's question, the Library's own Series section at the foot of `/books/list`: decided by step 1's measurement. With room in the byte budget it stays and is a follow-up; short of room, it becomes one *All series →* link here, retiring `seriesProgress`, `src/lib/series-list.ts` and `test/series-list.test.ts` (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-23 ("go with recommendations"): AC-4's *a book in a universe but no series links nothing* reads as *draws no series link*, so the universe's name links on its own (TASK-103's note); the task stays whole (8 source files and 4 tests, over the split line: it is already 3 of 3, has no schema change, and a split would halve AC-2); this session (Opus) implements it.
+
+**Steps**
+
+1. Measure first: a local `next build` + `next start` of main on the development database, the Library's document bytes (brotli) as the baseline; the same after step 9. Lighthouse is off (`LIGHTHOUSE_MODE` unset, D-158): the numbers go in the PR, and a hand run only if the owner asks. Short of room under 80,000, the foot Series section becomes one *All series →* link (Follow-ups).
+2. `src/lib/format.ts`: `placeParts(b)`, the D-134 line as segments (author, universe, series and its `#n`, each with its id), and `bookPlace` / `bookSub` built from it, so the drop rules keep one home.
+3. `src/components/BookPlace.tsx` (new): draws the segments, author, universe and series as links (`authorHref`, `universeHref`, `seriesHref`); the `#n` outside the link, so a series link's name is the series' name. A plain `<a>` for the Library (its byte budget), `<Link prefetch={false}>` elsewhere.
+4. `src/db/queries.ts`: `author_id`, `universe_id`, `series_id` on `BookRow` (`listBooks`), `ShelfBook` (`quarterShelf`, `onDeck`) and `BookDetail` (`bookDetail`).
+5. `src/app/books/list/page.tsx`: the row's sub-line through `BookPlace`.
+6. `src/components/WhereItSits.tsx`: the universe, author and series names link to their pages; a subseries (no page) stays text.
+7. `src/components/OnDeckRow.tsx`: the sub-line through `BookPlace`.
+8. `src/components/BookDetail.tsx`: the hero's author and place line, and the Series fact, link; the *plain text until 5.9* note goes.
+9. `src/app/globals.css`: the place links keep the ink, underlined (axe's link-in-text-block), with a 24px hit box from padding that doesn't move the line.
+
+**Files**: the nine above (`format.ts` and `globals.css` beyond *Files likely touched*); tests `test/e2e/series.spec.ts`, `test/book-place.test.tsx` (new), `test/book-detail.test.tsx`, `test/books-dashboard.test.ts`. No schema; no mockup redraw (layout and copy unchanged).
+
+**Revision 1** (owner, 2026-11-23, in Phase 2): `seriesHref`, `authorHref` and `universeHref` move into `BookPlace.tsx`, and `src/components/SeriesList.tsx` and `src/components/GroupingBooks.tsx` import and re-export them: the client *On deck* row draws `BookPlace`, and importing them from those two would bring the follow control and the series list into `/books`' JS. And `test/e2e/books-dashboard.spec.ts`: 2.2g's *the rows are read-only text: no link* test pinned what AC-2 changes; it now proves the dashboard half of AC-2 in the browser (the universe and series links, the subseries text, a tap to the series page).
+
+**Test strategy**
+
+- AC-1, AC-2 (Library): `series.spec.ts`, a Library row's series name is a link named by the series to `/books/series/e2e-sp-gap`, and a tap opens that page; screenshots at 360, 834 and 1280px.
+- AC-2 (dashboard): a render test that *where the book sits* links its series row to `/books/series/<id>` and leaves a subseries as text.
+- AC-3: `book-detail.test.tsx`, the Series fact links to `/books/series/<id>`; a book with no series draws no series link.
+- AC-4: `book-place.test.tsx`, each series link's accessible name is the series' name; a book in a universe but no series draws no series link (its universe links); the budget by step 1's measurement.
+
+**Step 1's outcome** (a local `next start` on the development database, 500 rows, the document gzip / brotli): main 79,023 / 66,034 bytes; with the row links 83,699 / 70,564 (+4,676 gzip). Against PR #275's preview measure (76,462) that is about 81,100, over 80,000, so the foot Series section became one *All series →* link as planned, retiring `seriesProgress`, `src/lib/series-list.ts` and `test/series-list.test.ts` (and their mocks in `test/library-page.test.tsx`, `test/list-totals.test.tsx`, `test/year-chips.test.tsx`, the helper's name in `test/no-prefetched-filters.test.ts`, and `test/unlisted.test.ts` reading `seriesList` instead). With the foot cut: 79,815 / 67,496 (+792 gzip, +1,462 brotli over main), about 77,300–77,900 on the preview's scale, inside 80,000.
+
+**Risks**: about 1,500 more links on the Library's 500 rows against 80,000 bytes (76,462 at PR #275); over it, stop and ask.
 
 ## Review log
 
