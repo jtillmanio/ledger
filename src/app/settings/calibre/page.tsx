@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { calibreReports, calibreRuns, createdBookAuthors, notInCalibre, type CalibreRun } from "@/db/queries";
+import { calibreReports, calibreRuns, createdBookAuthors, notInCalibre, waitingDecisions, type CalibreRun } from "@/db/queries";
 import type { SyncReport } from "@/db/calibre-sync";
+import CalibreDecide from "@/components/CalibreDecide";
 import {
   BOOK_CAP, byBook, changedNothing, columnLabel, normalizeReport, ranWhen, SKIPPED_COLUMNS_LABEL, WAITING_WORDS, type BookEntry, type Change,
 } from "@/lib/calibre-log";
@@ -54,7 +55,12 @@ function Section({ title, n, children }: { title: string; n?: number; children: 
   );
 }
 
-function RunDetails({ report: stored, authors }: { report: SyncReport; authors: Map<string, string | null> }) {
+/** What the page can decide: a near spelling or one title under another author. A second Calibre book for one Ledger book is mended in Calibre: neither answer clears it. */
+const DECIDABLE = new Set(["near spelling", "same title"]);
+
+function RunDetails({ report: stored, authors, decisions }: {
+  report: SyncReport; authors: Map<string, string | null>; decisions?: Map<number, "merge" | "separate">;
+}) {
   const report = normalizeReport(stored);
   const entries = byBook(report);
   const came = entries.filter((e) => e.came.length);
@@ -74,10 +80,22 @@ function RunDetails({ report: stored, authors }: { report: SyncReport; authors: 
               <li key={w.calibreId}>
                 <span className="ctitle">{w.title}</span>{w.author && <span className="cby"> · {w.author}</span>}
                 <p className="cwhy">{WAITING_WORDS[w.kind] ?? w.kind}: <span className="ctitle">{w.bookTitle}</span></p>
+                {decisions && DECIDABLE.has(w.kind) && (
+                  <CalibreDecide
+                    calibreId={w.calibreId} title={w.title} bookId={w.bookId} bookTitle={w.bookTitle}
+                    decided={decisions.get(w.calibreId) ?? null}
+                  />
+                )}
               </li>
             ))}
           </ul>
-          <p className="cmore">A near spelling waits for a merge or separate decision.</p>
+          <p className="cmore">
+            {decisions && report.waiting.some((w) => DECIDABLE.has(w.kind))
+              ? "Merge or keep separate; the next sync carries out the answer, and you can change it until then."
+              : decisions
+                ? "A second Calibre book for one Ledger book is mended in Calibre: remove or retitle the copy."
+                : "A near spelling waited for a merge or separate decision."}
+          </p>
         </Section>
       )}
       {report.gone.length > 0 && (
@@ -118,16 +136,16 @@ function Summary({ run, now }: { run: CalibreRun; now: Date }) {
  * The *Calibre* page (task 4.4, D-133; Settings → Calibre): every sync run newest first, each a
  * native `<details>` whose summary is its Eastern date and time and its counts in, out and waiting,
  * the newest open. A run's details list each change by book: what came in, what went out, what
- * waits (a near spelling waits for a merge or separate decision, which nothing in the app makes
- * yet), the books gone from Calibre, and what the run skipped. *Not in Calibre* lists the live
+ * waits (the newest run's near spelling and same-title entries carry *Merge* and *Keep separate*,
+ * task 4.6; an older run's stay text), the books gone from Calibre, and what the run skipped. *Not in Calibre* lists the live
  * books with no `calibre_id`. Nothing here runs a sync: the command on the PC is the only trigger.
  */
 export default async function CalibrePage() {
   const now = new Date();
   // One wave: the runs and their counts, the newest runs' reports, a created book's author as it stands
   // today (so a stray new spelling shows) and the books with no Calibre id.
-  const [runs, missing, detailed, authors] = await Promise.all([
-    calibreRuns(), notInCalibre(), calibreReports(DETAIL_RUNS), createdBookAuthors(DETAIL_RUNS),
+  const [runs, missing, detailed, authors, decisions] = await Promise.all([
+    calibreRuns(), notInCalibre(), calibreReports(DETAIL_RUNS), createdBookAuthors(DETAIL_RUNS), waitingDecisions(),
   ]);
   const reports = new Map(detailed.map((d) => [d.id, d.report]));
 
@@ -149,7 +167,7 @@ export default async function CalibrePage() {
             return report ? (
               <details key={run.id} className="crun" open={n === 0}>
                 <summary><Summary run={run} now={now} /></summary>
-                <RunDetails report={report} authors={authors} />
+                <RunDetails report={report} authors={authors} decisions={n === 0 ? decisions : undefined} />
               </details>
             ) : (
               <div key={run.id} className="crun crun-flat"><div className="csum"><Summary run={run} now={now} /></div></div>

@@ -3266,8 +3266,9 @@ export type CalibreDecision = (typeof CALIBRE_DECISIONS)[number];
  * Decide a Calibre near spelling the sync held (task 4.4, D-89, D-133): `merge`
  * makes Calibre's book `bookId` (the next sync renames it to Calibre's spelling
  * and gives it the id, D-87), `separate` makes it a book of its own. Keyed on
- * the Calibre id, so a second decision replaces the first. False, writing
- * nothing, for a merge into a missing or soft-deleted book.
+ * the Calibre id, so a second decision replaces the first, and the same
+ * decision again leaves the row (its `decided_at` too) as it was (task 4.6).
+ * False, writing nothing, for a merge into a missing or soft-deleted book.
  */
 export async function decideCalibrePair(calibreId: number, decision: CalibreDecision, bookId: string | null): Promise<boolean> {
   return db.transaction(async (tx) => {
@@ -3279,7 +3280,11 @@ export async function decideCalibrePair(calibreId: number, decision: CalibreDeci
       if (!book) return false;
     }
     await tx.insert(calibreDecisions).values({ calibreId, decision, bookId: target })
-      .onConflictDoUpdate({ target: calibreDecisions.calibreId, set: { decision, bookId: target, decidedAt: sql`now()` } });
+      .onConflictDoUpdate({
+        target: calibreDecisions.calibreId,
+        set: { decision, bookId: target, decidedAt: sql`now()` },
+        setWhere: sql`${calibreDecisions.decision} IS DISTINCT FROM ${decision} OR ${calibreDecisions.bookId} IS DISTINCT FROM ${target}`,
+      });
     return true;
   });
 }

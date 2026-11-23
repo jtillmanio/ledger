@@ -56,8 +56,9 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   // Task 4.4 adds the last Calibre sync (one scalar row) for the *Calibre* row, in the same wave.
   "/settings": { queries: 3, waves: 1 },
   // The Calibre page (task 4.4): the runs and their counts, the books with no Calibre id, the newest runs' reports
-  // (one read, not one per run) and the authors of the books they created, together.
-  "/settings/calibre": { queries: 4, waves: 1 },
+  // (one read, not one per run), the authors of the books they created and, from task 4.6, the decisions on the
+  // newest run's waiting books (one read, whatever is waiting), together.
+  "/settings/calibre": { queries: 5, waves: 1 },
   "/watch": { queries: 0, waves: 0 },
   "/login": { queries: 0, waves: 0 },
 };
