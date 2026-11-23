@@ -1,7 +1,7 @@
 ---
 id: TASK-128
 title: 4.4b A year-only Calibre date isn't rewritten every sync
-status: In progress
+status: Review
 depends_on: []
 size: S
 model: sonnet
@@ -28,7 +28,7 @@ Once the sync writes reads into Calibre, a book whose Calibre date-read column s
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm
 test` on the test database, with no column skipped: a Calibre record whose
 date read is the year `2024` and a Ledger book finished 2024-03-14 (`exact`)
 returns no `#date_read` write and logs none under what went out, and a second
@@ -37,9 +37,9 @@ Ledger finish on 2023-11-02 returns one `#date_read` write, `2023-11-02`; a
 day-precise Calibre date of 2024-07-01 against the Ledger's 2024-03-14 returns
 one write, as today; a book new to the Ledger from the year-only record has one
 read finished 2024-07-01, `approximate`.
-- [ ] AC-2: Given a year-only Calibre date `2024` and a Ledger book with no finish (read, `none`, or no read at all), the sync returns the write it returns today (`#date_read` cleared or `#read` changed as now): matching by year never hides a missing finish.
-- [ ] AC-3: Given a month-and-year Calibre date whose stored day is 2024-03-10 (`approximate`) and a Ledger finish of 2024-03-14, the sync returns one `#date_read` write, `2024-03-14`: only a year-only value is compared by year.
-- [ ] AC-4: `.claude/rules/schema.md`'s write-back paragraph says a year-only date-read value is compared by its year, in the same PR.
+- [x] AC-2: Given a year-only Calibre date `2024` and a Ledger book with no finish (read, `none`, or no read at all), the sync returns the write it returns today (`#date_read` cleared or `#read` changed as now): matching by year never hides a missing finish.
+- [x] AC-3: Given a month-and-year Calibre date whose stored day is 2024-03-10 (`approximate`) and a Ledger finish of 2024-03-14, the sync returns one `#date_read` write, `2024-03-14`: only a year-only value is compared by year.
+- [x] AC-4: `.claude/rules/schema.md`'s write-back paragraph says a year-only date-read value is compared by its year, in the same PR.
 
 ## Out of scope
 
@@ -60,7 +60,8 @@ read finished 2024-07-01, `approximate`.
 
 ## Follow-ups
 
-_Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+- An exact Ledger day in the same year as a year-only Calibre date never reaches Calibre unless the owner changes the column's display format (schema-reviewer's minor note). → not tracked: it is what the roadmap's Check asks for (a year in step with the Ledger's year), and Calibre cannot show the day.
+- The second-run half of AC-1 could assert the whole `out` is empty (spec-reviewer and test-auditor notes). → not tracked: the second payload equals the first, whose whole `out` is asserted empty, so the added line proves nothing more.
 
 ## Plan
 
@@ -116,7 +117,7 @@ in the route's comparison, and the Python read and write are out of scope.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL (1: `books-dashboard.test.ts`, an unrelated 5 s timeout under full parallel load; passes alone, 51/51) → R2 PASS | Audit R1 PASS (the in-step test fails on the base, the other six are guards) | Spec R1 APPROVE | Schema R1 APPROVE | UI n/a (`ui: false`) | CI R1 PASS (`check`, all ten e2e shards, Vercel) | Drift R1 merge as-is (0 behind) | Round 2 reviews not needed: nothing changed after either approved.
 
 ## Blocked
 
@@ -124,7 +125,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1's one failure was an unrelated timeout)
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0

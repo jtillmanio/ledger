@@ -4493,7 +4493,7 @@ logs that nothing changed. A missing `#owned` column is named and skipped. In
 the browser (0.11), the *Calibre* page lists the run, and the dashboard's line
 shows when the last run is 8 days old and not when it is 6.
 
-### ☐ 4.4b A year-only Calibre date isn't rewritten every sync · S
+### ☑ 4.4b A year-only Calibre date isn't rewritten every sync · S
 *From TASK-082 and TASK-083 (4.4, PR #267, PR #270; the schema review), carried
 until now only in TASK-061's Context. Owner, 2026-11-23. The Check is a
 proposal: agreed when merged, or edit it first.*
