@@ -442,7 +442,7 @@ with the task that first reads it.
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
 |  | 3.5 → TASK-078, TASK-079, TASK-080 | Detail sheets — books and issues | M |  | — |
-|  | 3.5b → TASK-118, TASK-119, TASK-120 | The book sheet's own writes | M | _Split from TASK-079 (PR #275)_ | 3.5 |
+| ✅ | 3.5b → TASK-118, TASK-119, TASK-120 | The book sheet's own writes | M | _Split from TASK-079 (PR #275)_ | 3.5 |
 |  | 3.5c | The book sheet follows its own writes | S | _From TASK-119 (PR #318)_ | 3.5b |
 | ✅ | 3.4 → TASK-074 | Book ratings and top-books reorder | S |  | — |
 | ✅ | 3.4b → TASK-075, TASK-076, TASK-091, TASK-077 | Rank a book when you finish it, and every year's top ten | M | _Pulled ahead of 1.26 (D-139)_ | 3.4, 1.5 |

@@ -1,7 +1,7 @@
 ---
 id: TASK-120
 title: 3.5b The book sheet's own writes (3 of 3) — the dashboards' book rows open the sheet
-status: In progress
+status: Review
 depends_on: [TASK-079, TASK-116]
 size: M
 model: sonnet
@@ -33,11 +33,11 @@ Tapping a book's title on the books dashboard (the book in hand, On deck, the *U
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the dashboards' rows: TASK-118 proves the note and the owned toggles, TASK-119 *Move* leaving one sheet): test that saving a note from the sheet writes `book_status.notes` once and its Undo puts the old note back; that each owned toggle writes or deletes exactly one `owned_copies` row and its Undo reverses it; that opening *Move* from the sheet leaves exactly one sheet in the DOM; and that a book row on each books dashboard opens `/book/{id}` as a sheet.
-- [ ] AC-2: On the test database with a Reading book, an On deck book, two books planned this quarter and a ranked read this year: tapping the title on Now, on an On deck row, on an *Up next* card and on a Top books row each changes the URL to `/book/{that book's id}`, shows exactly one sheet over the page with that book's title as its heading, and Back closes it with the URL and the scroll position as they were.
-- [ ] AC-3: A direct load of `/book/{id}` still draws the full page (not the sheet). Each row's other controls do what they did: On deck's *Plan* opens the plan picker, the shelf's *Reorder* goes to Status, Top books' handle drags, its menu opens and *Rank it* opens the ranking, none of them opening the book sheet.
-- [ ] AC-4: Each row has one link to the book, named by its title (no duplicate link for the cover and the title), and no row is wrapped in a link that contains a button.
-- [ ] AC-5: The books dashboard and Top books meet the UX floor (`docs/04-design.md` § 10): each link has a visible focus ring and a target of at least 24×24px, axe passes (no nested interactive), no horizontal scroll at 360px, screenshots at 360px and 1280px with a sheet open from the dashboard.
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the dashboards' rows: TASK-118 proves the note and the owned toggles, TASK-119 *Move* leaving one sheet): test that saving a note from the sheet writes `book_status.notes` once and its Undo puts the old note back; that each owned toggle writes or deletes exactly one `owned_copies` row and its Undo reverses it; that opening *Move* from the sheet leaves exactly one sheet in the DOM; and that a book row on each books dashboard opens `/book/{id}` as a sheet.
+- [x] AC-2: On the test database with a Reading book, an On deck book, two books planned this quarter and a ranked read this year: tapping the title on Now, on an On deck row, on an *Up next* card and on a Top books row each changes the URL to `/book/{that book's id}`, shows exactly one sheet over the page with that book's title as its heading, and Back closes it with the URL and the scroll position as they were.
+- [x] AC-3: A direct load of `/book/{id}` still draws the full page (not the sheet). Each row's other controls do what they did: On deck's *Plan* opens the plan picker, the shelf's *Reorder* goes to Status, Top books' handle drags, its menu opens and *Rank it* opens the ranking, none of them opening the book sheet.
+- [x] AC-4: Each row has one link to the book, named by its title (no duplicate link for the cover and the title), and no row is wrapped in a link that contains a button.
+- [x] AC-5: The books dashboard and Top books meet the UX floor (`docs/04-design.md` § 10): each link has a visible focus ring and a target of at least 24×24px, axe passes (no nested interactive), no horizontal scroll at 360px, screenshots at 360px and 1280px with a sheet open from the dashboard.
 
 ## Out of scope
 
@@ -64,8 +64,9 @@ Tapping a book's title on the books dashboard (the book in hand, On deck, the *U
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Now's *Next in* line still links to the Library's search (its comment says "until 3.5's sheet"); `NextIn` carries the book's id, so it could open the sheet. Out of this task's scope ("stays") (approved at plan; placed at close-out)
-- AC-3's wording says On deck's *Plan* "opens the plan picker"; *Plan* moves the book to the quarter with an Undo, and was tested as that (approved at plan; placed at close-out)
+- Now's *Next in* line still links to the Library's search (its comment says "until 3.5's sheet"); `NextIn` carries the book's id, so it could open the sheet. Out of this task's scope ("stays") (approved at plan) → docs/05-roadmap.md § 3.5c
+- AC-3's wording says On deck's *Plan* "opens the plan picker"; *Plan* moves the book to the quarter with an Undo, and was tested as that (approved at plan) → not tracked: the AC is the owner's and this task is closing; the reading is recorded in the Plan and flagged in PR #320
+- ui-verifier could not walk the dashboard's rows on the development database (no Reading, planned or On deck book there; it was told not to write rows) → not tracked: proven by the e2e specs on their fixture, locally and on every CI project; the owner's preview walk covers it
 
 ## Plan
 
@@ -93,7 +94,7 @@ Approved by the owner at the gate (2026-11-23, "approve plan, go with recommenda
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (verify.full) · touched specs R1 FAIL(3: test-side, a regex escape lost and a click under the thumb bar) → R2 FAIL(1: same escape) → R3 PASS (books-dashboard 54, top-books 14, w390-light) | CI R1 PASS (every project, 10 shards; Vercel pass; Claude PR review: no issues) | Spec R1 APPROVE | Audit R1 PASS (all six fail on base) | UI R1 PARTIAL: Top books PASS at 360–1280 (open, Back with scroll, drag, menu, direct load, 24px, ring); the dashboard rows not walkable on the dev data (none in hand, planned or on deck), proven by the e2e specs | Lighthouse skipped (LIGHTHOUSE_MODE off, D-158)
 
 ## Blocked
 
@@ -101,7 +102,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1 (verify.full) + 3 touched-spec rounds
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0

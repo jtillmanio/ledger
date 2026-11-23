@@ -3670,7 +3670,7 @@ exactly one sheet in the DOM, and Back returns to the issue sheet. An issue
 with a `cover_date` renders *Cover date* in `Mon YYYY`. An undated issue
 renders no *Dates* group and no `—`.
 
-### ☐ 3.5b The book sheet's own writes · M
+### ☑ 3.5b The book sheet's own writes · M
 *Split from 3.5 at TASK-079's plan gate (owner, 2026-11-16; PR #275).* The book
 sheet (`/book/{id}`, D-157) shows your notes, what you own, where the book sits
 in your plan and its shelves as text. This item makes each one editable there,
@@ -3695,7 +3695,8 @@ each books dashboard opens `/book/{id}` as a sheet.
 
 ### ☐ 3.5c The book sheet follows its own writes · S
 *From TASK-119 (3.5b, part 2, PR #318).* Two things the sheet's writes leave
-behind, each found at a plan gate or in a UI walk:
+behind, and one link that doesn't reach it yet, each found at a plan gate or
+in a UI walk:
 
 - **The rows follow a status change without a reload.** After *Listening* is
   chosen on the sheet's status control, *Planned for*, its *Move* and *Listen
@@ -3707,6 +3708,10 @@ behind, each found at a plan gate or in a UI walk:
   next* for a queued book, with a *Remove* (`DELETE /api/listen-queue`) and its
   Undo, instead of offering *Queue to listen* again. `booksListenNext` has the
   order.
+- **Now's *Next in* line opens the book's sheet** (from TASK-120, 3.5b part 3,
+  PR #320; kept out of it as "stays"): it still links to the Library's search
+  (`BooksNow.tsx`, "the Library row until 3.5's sheet"). `NextIn` carries the
+  book's id, so it can link to `/book/{id}` as the hero's title now does.
 
 **Check:** (proposed; the owner agrees it by merging or edits it first) in the
 browser (0.11), choosing *Listening* on a to-read book's sheet hides *Planned
