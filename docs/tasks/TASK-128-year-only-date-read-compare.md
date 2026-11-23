@@ -1,14 +1,14 @@
 ---
 id: TASK-128
 title: 4.4b A year-only Calibre date isn't rewritten every sync
-status: Ready
+status: In progress
 depends_on: []
 size: S
 model: sonnet
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: b4823c6
 ---
 
 # TASK-128 — 4.4b A year-only Calibre date isn't rewritten every sync
@@ -64,7 +64,55 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-11-23.
+
+**Cause.** `src/db/calibre-sync.ts`'s write-back compares `#date_read` by day
+(`out("#date_read", theirs.finishedOn, h.finishedOn)`); a year-only `dateRead`
+(`"2024"`) is `2024-07-01` through `calibreRead`, so any other Ledger day in
+2024 differs, and goes out on every run.
+
+**Steps**
+
+1. Tests first, confirmed failing: a new `describe("a year-only date read
+   (task 4.4b)")` in `test/calibre-sync.test.ts`, with the file's
+   `book`/`read`/`status` helpers and `missingColumns: []` (no column skipped):
+   - AC-1: year `2024` vs a Ledger finish 2024-03-14 (`exact`) → no
+     `#date_read` in `report.out` (nor the logged report), and a second run
+     over the same records → none; vs 2023-11-02 → one write, `to:
+     "2023-11-02"`; a day-precise `2024-07-01` vs 2024-03-14 → one write; a
+     book new to the Ledger from the year-only record → one read, 2024-07-01,
+     `approximate`.
+   - AC-2: year `2024` vs (a) a book read with precision `none`, (b) a book
+     with no read at all → today's writes (`#date_read` cleared; `#read` and
+     `#date_read`).
+   - AC-3: `dateRead: "2024-03-10"`, `approximate` (month and year) vs
+     2024-03-14 → one write, `2024-03-14`.
+2. Fix, in `syncCalibre`'s write-back loop: when `rec.dateRead` is four
+   characters and the Ledger's `finishedOn` is in that year, Calibre's side
+   compares as the Ledger's day, so `same()` holds and nothing goes out.
+   Everything else unchanged, the log's `from` (`2024-07-01`) included;
+   `calibreRead` and the inbound side untouched.
+3. AC-4: `.claude/rules/schema.md`'s write-back paragraph gains one clause: a
+   date-read value Calibre shows as a year alone is in step with any Ledger
+   finish in that year (task 4.4b); a day or month-and-year value compares by
+   day.
+
+**Files**
+
+- `src/db/calibre-sync.ts`: the `#date_read` comparison.
+- `test/calibre-sync.test.ts`: AC-1 to AC-3.
+- `.claude/rules/schema.md`: AC-4.
+- This task file.
+
+**Test strategy.** AC-1–AC-3 in `test/calibre-sync.test.ts` on
+`TEST_DATABASE_URL`; AC-4 is the rules diff, checked by spec-reviewer. No
+`test/calibre-sync-command.test.ts` fixture: the bug and the fix live entirely
+in the route's comparison, and the Python read and write are out of scope.
+
+**Risks.** None found: one comparison, reached only by a four-character
+`dateRead`.
+
+**Follow-ups.** None found at plan.
 
 ## Review log
 
