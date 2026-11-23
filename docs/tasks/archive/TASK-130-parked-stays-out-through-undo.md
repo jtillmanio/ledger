@@ -1,7 +1,7 @@
 ---
 id: TASK-130
 title: 5.18 A Parked book stays out of the plan and the listen queue, through every undo
-status: Review
+status: Done
 depends_on: []
 size: S
 model: opus
