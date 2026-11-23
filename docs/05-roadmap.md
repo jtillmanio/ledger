@@ -400,7 +400,7 @@ gone from `UNMEASURED` in `test/perf.test.ts`, which still passes on the real
 
 ---
 
-### ☐ 0.15 The browser suite runs by area, with a critical set always · L
+### ☑ 0.15 The browser suite runs by area, with a critical set always · L
 Owner, 2026-11-20 (from the shard-time work after TASK-127, PR #304; **amends
 D-80, D-141 and D-161**). Every ready PR runs every project of every spec: main's
 suite is 2,084 test runs and 51.6 minutes, 6.5 a shard at eight against D-161's
@@ -453,6 +453,28 @@ no books spec, and its browser time is under half of a full run's.
 `.claude/rules/git.md`'s *Test on the branch* section says which PRs run what.
 Decision row recorded (next free D-n), amending D-80, D-141 and D-161.
 *(Check proposed by Claude; the owner agrees it by promoting the entry, or edits it first.)*
+
+---
+
+### ☐ 0.16 An area run takes the shards its plan needs · S
+From TASK-136 (0.15, PR #329; owner, 2026-11-23, D-174 (4)). The `e2e` matrix
+in `.github/workflows/ci.yml` is ten shards whatever the areas, so an area run
+builds the app ten times for a few minutes of tests: comics-only, PR #328, ran
+2.1 minutes of suite time on 15.1 job-minutes, against main's 57.3.
+
+- **The scope job sizes the matrix** from the run's own plan (its areas and
+  the critical set, priced by `test/e2e/shard-times.json`): enough shards that
+  none passes the 6-minute ceiling (D-161), at most ten, and ten for a run
+  over every area. The shards' names, `E2E_SHARD`, the budget's `SHARDS` and
+  `e2e-shards.mjs balance` read the same number.
+
+**Check:** `test/ci-scope.test.ts` pins the shard count: a plan over every
+area gets ten; a plan whose units total 9 minutes gets two; no plan gets a
+shard past the ceiling when fewer than ten would leave one past it.
+`test/e2e-budget.test.ts` still keeps the budget's `SHARDS` equal to the
+matrix's. On a branch that changes only a comics screen, CI runs fewer than
+ten `e2e` shards, and the `e2e-budget` job passes.
+*(Check proposed by Claude; the owner agrees it by merging, or edits it first.)*
 
 ---
 
