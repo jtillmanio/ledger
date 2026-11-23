@@ -104,6 +104,8 @@ Approved by the owner up front (2026-11-23: "approve plan, go with recommendatio
 
 **Revision 1 (during Phase 2, owner's standing "go with recommendations").** `docs/GIT-PR.md` § the Lighthouse gate also said "a new top-level screen adds its route"; it now says any page at any depth, or listed as unmeasured with a reason, as `docs/02-architecture.md` does. One sentence, the same rule this task changes. `test/perf.test.ts`'s existing "takes the count from measureRuns" anchors on `for (let route of routes)`: the loop rebinds `route` to its resolved path.
 
+**Revision 2 (spec review R1).** Step 4's `paints` was wrong: the sheet's skeleton (`loading.tsx`, `BookDetailSkeleton as="sheet"`) draws a `data-sheet-heading` too ("Loading book"), so the tap would have timed the skeleton. It is now `[role="dialog"] .detail:not([aria-busy]) [data-sheet-heading]`: the skeleton's `.detail` is `aria-busy="true"` and the loaded book's isn't, and `test/perf.test.ts` reads `BookDetail.tsx` to hold that. Step 3, corrected: `routes.mjs` and the doc table show a resolved route's pattern, but the PR comment shows the path measured (`measure.mjs` stores it, and the landed-on check compares against it).
+
 ## Review log
 
 _Filled by /implement-task. One line per round._

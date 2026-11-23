@@ -813,8 +813,15 @@ describe("the route list (scripts/perf/routes.mjs)", () => {
     expect(by.shelf.resolve).toEqual({ from: "/books/shelves", selector: 'a[href^="/books/shelves/"]' });
     expect(by.shelf.tap).toMatchObject({ from: "/books/shelves", selector: by.shelf.resolve!.selector });
     expect(by.book.resolve).toEqual({ from: "/books/list", selector: '.book-row a[href^="/book/"]' });
-    // A Library row opens the book as a sheet over the list, whose h1 stays: the tap waits for the sheet's heading.
-    expect(by.book.tap).toMatchObject({ from: "/books/list", selector: by.book.resolve!.selector, paints: '[role="dialog"] [data-sheet-heading]' });
+    // A Library row opens the book as a sheet over the list, whose h1 stays: the tap waits for the loaded book's
+    // heading. The sheet's skeleton draws a heading too, inside a `.detail` marked aria-busy; the book's isn't.
+    const paints = '[role="dialog"] .detail:not([aria-busy]) [data-sheet-heading]';
+    expect(by.book.tap).toMatchObject({ from: "/books/list", selector: by.book.resolve!.selector, paints });
+    const detail = readFileSync("src/components/BookDetail.tsx", "utf8");
+    const skeleton = detail.slice(detail.indexOf("export function BookDetailSkeleton"), detail.indexOf("export default"));
+    expect(skeleton).toMatch(/<div className="detail" data-detail=\{as\} aria-busy="true">/);
+    expect(skeleton).toMatch(/<SheetHeading/);
+    expect(detail.slice(detail.indexOf("export default"))).toMatch(/<div className="detail" data-detail=\{as\}>/);
     expect(by["run-add"].tap).toEqual({ from: "/comics/bendis-disassembled", selector: 'a[href="/comics/bendis-disassembled/add"]' });
     expect(by.calibre.tap).toEqual({ from: "/settings", selector: 'a[href="/settings/calibre"]' });
     for (const id of ["releases", "shelves", "books-add", "top"]) {
