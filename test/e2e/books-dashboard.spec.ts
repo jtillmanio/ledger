@@ -1303,3 +1303,117 @@ test.describe("reduced transparency", () => {
     }
   });
 });
+
+// Task 3.5b, 3 of 3 (TASK-120; D-157, D-34): the dashboard's book rows open the book's sheet, as the
+// Library's do. Now's title, an On deck row's and an *Up next* card's each go to /book/{id} as one
+// sheet over the page; Back closes it with the URL and the scroll where they were. Each row has one
+// link, named by its title, holding no button; the rows' other controls do what they did.
+test.describe("the book rows open the sheet (3.5b)", () => {
+  test.beforeEach(() => seed({ reading: true }));
+
+  const dialogs = (page: Page) => page.locator('[role="dialog"]');
+  /** Where each row is, its book, and the title its link is named by. */
+  const ROWS = [
+    { where: "Now", slot: '[data-slot="now"]', id: "e2e-dash-hero", title: HERO },
+    { where: "On deck", slot: '[data-slot="situation"]', id: "e2e-dash-deck-0", title: DECK[0] },
+    { where: "Up next", slot: '[data-slot="next"]', id: "e2e-dash-1", title: ONE },
+  ];
+  const linkIn = (page: Page, r: (typeof ROWS)[number]) => page.locator(r.slot).getByRole("link", { name: r.title, exact: true });
+
+  test("each row's title opens /book/{id} as one sheet headed by the title; Back closes it with the URL and scroll as they were (AC-1, AC-2)", ONCE, async ({ page }) => {
+    for (const r of ROWS) {
+      await open(page);
+      const link = linkIn(page, r);
+      await hydrated(link);
+      // Mid-screen, clear of the thumb bar, so the click itself scrolls nothing; On deck sits below
+      // the fold at 390, so the page is scrolled there, and the sheet must not move it.
+      await link.evaluate((el) => el.scrollIntoView({ block: "center" }));
+      const before = await page.evaluate(() => window.scrollY);
+      if (r.where === "On deck") expect(before, "On deck is scrolled to").toBeGreaterThan(0);
+      await link.click();
+
+      await expect(page, r.where).toHaveURL(new RegExp(`/book/${r.id}$`));
+      await expect(dialogs(page), r.where).toHaveCount(1);
+      await expect(dialogs(page), r.where).toHaveAccessibleName(r.title);
+      await expect(dialogs(page).getByRole("heading", { level: 2, name: r.title }), r.where).toBeVisible();
+      // The dashboard is still drawn behind it, where it was.
+      await expect(page.locator("main [data-slot]").first(), r.where).toBeAttached();
+      expect(await page.evaluate(() => window.scrollY), r.where).toBe(before);
+
+      await page.goBack();
+      await expect(dialogs(page), r.where).toHaveCount(0);
+      await expect(page, r.where).toHaveURL(/\/books$/);
+      await expect.poll(() => page.evaluate(() => window.scrollY), r.where).toBe(before);
+    }
+  });
+
+  test("one link per row, named by its title, holding no button; a direct load is the full page; Plan and Reorder do what they did, opening no sheet (AC-3, AC-4)", ONCE, async ({ page }) => {
+    await open(page);
+    const book = 'a[href^="/book/"]';
+    // Now: one link, the title. Each On deck row and each Up next card: one link each, its title.
+    const rows = [
+      page.locator(".now-hero"),
+      ...(await page.locator('[data-slot="situation"] .deck-row').all()),
+      ...(await page.locator('[data-slot="next"] .shelf > li').all()),
+    ];
+    expect(rows.length).toBe(1 + 3 + 2);
+    for (const row of rows) {
+      await expect(row.locator(book)).toHaveCount(1);
+      const title = await row.locator(".now-name, .row-title, .card-title").first().evaluate((el) =>
+        [...el.childNodes].filter((n) => !(n instanceof Element && n.classList.contains("sr-only"))).map((n) => n.textContent).join("").trim());
+      await expect(row.locator(book)).toHaveAccessibleName(title);
+    }
+    await expect(page.locator(`main ${book} button, main a:has(button)`)).toHaveCount(0);
+
+    // Plan still plans the book, with its toast, and opens nothing.
+    const deck = page.locator('[data-slot="situation"]');
+    const plan = deck.getByRole("button", { name: `Plan ${DECK[0]} for Q${Q} ${YEAR}` });
+    await hydrated(plan);
+    await plan.click();
+    await expect(page.locator(".toast-label").first()).toHaveText(`${DECK[0]}: planned for Q${Q} ${YEAR}`);
+    await expect(dialogs(page)).toHaveCount(0);
+    await expect(page).toHaveURL(/\/books$/);
+    await page.locator(".toast").getByRole("button", { name: "Undo" }).click();
+    await expect(deck.locator(".row-title").first()).toHaveText(DECK[0]);
+
+    // Reorder still goes to Status's reorder, no sheet.
+    await page.getByRole("link", { name: "Reorder" }).click();
+    await page.waitForURL(`**/books/status?tab=next#plan-${PERIOD}`);
+    await expect(dialogs(page)).toHaveCount(0);
+
+    // A direct load of the book's own route is the full page, not the sheet.
+    await page.goto("/book/e2e-dash-hero");
+    await expect(dialogs(page)).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 1, name: HERO })).toBeVisible();
+  });
+
+  test("the links meet the UX floor at 360 and 1280: a --brand focus ring, 24×24, axe with no nested interactive, no sideways scroll, a screenshot with a sheet open (AC-5)", ONCE, async ({ page }, info) => {
+    const brand = await (async () => { await page.goto("/books"); return tokenColour(page, "--brand"); })();
+    for (const [width, height] of [[360, 780], [1280, 800]] as const) {
+      await page.setViewportSize({ width, height });
+      for (const r of ROWS) {
+        // A fresh page each time: no click yet, so focus() shows the keyboard's ring.
+        await open(page);
+        const link = linkIn(page, r);
+        await link.focus();
+        const ring = await computedStyle(link, ["outline-style", "outline-color", "outline-width"]);
+        expect(ring, `${r.where} at ${width}`).toEqual({ "outline-style": "solid", "outline-color": brand, "outline-width": "2px" });
+        const box = (await link.boundingBox())!;
+        expect(box.width, `${r.where} at ${width}`).toBeGreaterThanOrEqual(24);
+        expect(box.height, `${r.where} at ${width}`).toBeGreaterThanOrEqual(24);
+      }
+      await expectNoHorizontalScroll(page);
+      await expectNoAxeViolations(page, ["nested-interactive", "link-name", "target-size"]);
+      const card = linkIn(page, ROWS[2]);
+      await hydrated(card);
+      await card.click();
+      await expect(dialogs(page)).toHaveCount(1);
+      await expect.poll(() => dialogs(page).evaluate((el) =>
+        el.getAnimations().filter((a) => a.playState === "running").length)).toBe(0);
+      await expectNoHorizontalScroll(page);
+      await screenshot(page, info, `books-sheet-from-up-next-${width}`);
+      await page.goBack();
+      await expect(dialogs(page)).toHaveCount(0);
+    }
+  });
+});

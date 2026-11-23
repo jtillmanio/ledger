@@ -4,6 +4,7 @@ import Link from "next/link";
 import AddBooksButton from "@/components/AddBooksButton";
 import { ArtCover } from "@/components/Cover";
 import EmptySlate from "@/components/EmptySlate";
+import { bookHref } from "@/components/StatusBookRow";
 import { useShelfPager } from "@/components/useShelfPager";
 import type { ShelfBook } from "@/db/queries";
 import { bookSub, wordsK } from "@/lib/format";
@@ -15,7 +16,8 @@ import { BOOKS_NEXT_HREF } from "@/lib/status-tabs";
  * where the book belongs, wrapping (`bookSub`; task 2.2j, D-134), and mono
  * *304 pp · 92k*. The comics shelf's pattern (`QueueShelf`): the row scrolls and snaps, and from
  * 1024px a fine pointer gets ‹ › only while it overflows. **Reorder** opens 1.9's reorder for this
- * quarter on Status. No card is a link: a book has no page of its own yet. With nothing planned,
+ * quarter on Status. A card's title is its one link, named by the title alone (its place stays
+ * outside it): it opens the book's sheet over the dashboard (task 3.5b, D-157). With nothing planned,
  * an empty slate with one primary, *Add a book* (to On deck).
  */
 export default function PlanShelf({ rows, period, quarter }: { rows: ShelfBook[]; period: string; quarter: string }) {
@@ -52,7 +54,10 @@ export default function PlanShelf({ rows, period, quarter }: { rows: ShelfBook[]
                 <ArtCover url={b.cover_url} w={112} />
                 <span className="pos mono" aria-hidden="true">{b.ordinal}</span>
               </span>
-              <span className="card-title"><span className="sr-only">{b.ordinal}. </span>{b.title}</span>
+              <span className="card-title">
+                <span className="sr-only">{b.ordinal}. </span>
+                <Link href={bookHref(b.id)} scroll={false} prefetch={false} className="card-link">{b.title}</Link>
+              </span>
               {bookSub(b) && <span className="card-sub">{bookSub(b)}</span>}
               <span className="card-meta mono">
                 {[b.pages && `${b.pages} pp`, wordsK(b.words)].filter(Boolean).join(" · ")}

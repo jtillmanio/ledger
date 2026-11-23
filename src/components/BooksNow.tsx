@@ -4,6 +4,7 @@ import { ArtCover } from "@/components/Cover";
 import { Headphones } from "@/components/nav/Icons";
 import type { InHandBook, NextIn } from "@/db/queries";
 import { dayWhen } from "@/lib/format";
+import { bookHref } from "@/components/StatusBookRow";
 import WhereItSits from "@/components/WhereItSits";
 import { libraryHref } from "@/lib/library-sort";
 import type { ReadingSettings } from "@/lib/settings";
@@ -55,7 +56,7 @@ export function nowFoot(book: InHandBook, s: ReadingSettings, now = new Date()):
 /**
  * Now (§14.1, task 2.2): the book in hand, the dashboard's only large thing. The cover, *Reading
  * now* (or *Listening now* with the headphones glyph, 1.23), the title in Newsreader, the author,
- * the page count in mono, and the foot. No page position, meter or sittings until 2.1b (Q1).
+ * the page count in mono, and the foot. The title opens the book's sheet (task 3.5b). No page position, meter or sittings until 2.1b (Q1).
  * Under the band sits the book's status control (task 1.17b, D-131): its badge expands the
  * statuses and the date line, and *Reading* asks *Started*; no `⋯`, the dashboard has no row to act on.
  * *Where the book sits* (2.2g): thin rows under the band, one per level (universe, series,
@@ -77,7 +78,10 @@ export default function BooksNow({ book, settings, next = null }: {
             {listening ? "Listening now" : "Reading now"}
             {listening && <> <Headphones label="Listening" /></>}
           </span>
-          <h2 className="now-name">{book.title}</h2>
+          {/* The title opens the book's sheet over the dashboard (task 3.5b, D-157); Back closes it where it was. */}
+          <h2 className="now-name">
+            <Link href={bookHref(book.id)} scroll={false} prefetch={false} className="book-link">{book.title}</Link>
+          </h2>
           {book.author && <span className="now-by">{book.author}</span>}
           <span className="grow" />
           {book.pages ? <span className="now-pages"><b className="mono">{book.pages.toLocaleString()}</b> pages</span> : null}

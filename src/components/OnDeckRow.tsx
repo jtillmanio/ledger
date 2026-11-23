@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
 import { ArtCover } from "@/components/Cover";
+import { bookHref } from "@/components/StatusBookRow";
 import { useUndo } from "@/components/Undo";
 import type { ShelfBook } from "@/db/queries";
 import { bookSub } from "@/lib/format";
@@ -52,7 +54,10 @@ export default function OnDeckRow({ book, period, quarter }: { book: ShelfBook; 
     <article className="row deck-row">
       <ArtCover url={book.cover_url} w={36} />
       <span className="deck-body">
-        <span className="row-title">{book.title}</span>
+        {/* The title opens the book's sheet (task 3.5b, D-157); *Plan* stays a button beside it. */}
+        <span className="row-title">
+          <Link href={bookHref(book.id)} scroll={false} prefetch={false} className="book-link">{book.title}</Link>
+        </span>
         {bookSub(book) && <span className="row-sub">{bookSub(book)}</span>}
       </span>
       <button type="button" className="btn sec sm deck-plan" aria-label={`Plan ${book.title} for ${quarter}`}

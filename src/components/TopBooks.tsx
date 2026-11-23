@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Cover from "@/components/Cover";
 import { Headphones } from "@/components/nav/Icons";
 import { useRankSorter, type SorterRead } from "@/components/RankSorter";
 import ReorderList, { type MoveResult, type ReorderRow } from "@/components/ReorderList";
+import { bookHref } from "@/components/StatusBookRow";
 import type { RankChange } from "@/db/writes";
 
 /** The first ten of a year's ranking are its top ten (D-101): read off the order, never stored. */
@@ -51,7 +53,8 @@ function Body({ r, rank }: { r: TopRow; rank?: (opener: HTMLElement) => void }) 
       </span>
       <span className="qbody">
         <span className="qtitle">
-          {r.title}
+          {/* The title opens the book's sheet (task 3.5b, D-157). The drag starts only on the handle. */}
+          <Link href={bookHref(r.bookId)} scroll={false} prefetch={false} className="qtitle-link">{r.title}</Link>
           {r.listened && <> <Headphones label="Listened" /></>}
         </span>
         {(r.sub || r.month) && (
