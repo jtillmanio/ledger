@@ -2,7 +2,9 @@
 // then 0.9's tap → next-paint runner on the same profile. Run after login.mjs.
 // One Lighthouse load and one tap run per route (task 0.14). The Lighthouse
 // load blocks Next's RSC prefetches (lighthouseArgs); the tap run keeps them,
-// and is where a route handler a prefetch asks for is caught.
+// and is where a route handler a prefetch asks for is caught. A route with
+// `resolve` (task 0.14c) first takes its path from the page that lists it, and
+// logs the path it chose.
 //
 //   TARGET_URL=… HEADERS_DIR=… OUT_DIR=… CHROME_PATH=… APP_PASSCODE=… node scripts/perf/measure.mjs
 //   optional: RUNS (default 1; 3 for a hand comparison with the runs before 0.14),
@@ -19,7 +21,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer-core";
 import { ReportGenerator } from "lighthouse/report/generator/report-generator.js";
-import { apiPath, CPU_SLOWDOWN, lighthouseArgs, measureRuns, NETWORK, scrubLhr, summariseLhr } from "./lib/perf.mjs";
+import { apiPath, CPU_SLOWDOWN, lighthouseArgs, measureRuns, NETWORK, resolvedPath, scrubLhr, summariseLhr } from "./lib/perf.mjs";
 import { ROUTES } from "./routes.mjs";
 
 const env = process.env;
@@ -95,19 +97,23 @@ async function phoneTab(browser, signedIn, api) {
   return { context, page };
 }
 
-/** In the page: click, then wait for the <h1> to change and two frames to pass (the paint). */
-async function clientTap(page, selector) {
-  return page.evaluate(async (sel) => {
+/**
+ * In the page: click, then wait for the <h1> to change, or for `paints` to appear when the page keeps its
+ * <h1> (a sheet over a list, task 0.14c), and two frames to pass (the paint).
+ */
+async function clientTap(page, selector, paints) {
+  return page.evaluate(async (sel, paintSel) => {
     const link = document.querySelector(sel);
     if (!link) return { error: `no ${sel} on the page` };
     const before = document.querySelector("h1")?.textContent;
+    if (paintSel && document.querySelector(paintSel)) return { error: `${paintSel} was on the page before the tap` };
     const t0 = performance.now();
     link.click();
     const painted = await new Promise((resolve) => {
       const giveUp = setTimeout(() => resolve(false), 60_000);
       const tick = () => {
         const h = document.querySelector("h1")?.textContent;
-        if (h && h !== before) {
+        if (paintSel ? document.querySelector(paintSel)?.textContent : h && h !== before) {
           clearTimeout(giveUp);
           requestAnimationFrame(() => requestAnimationFrame(() => resolve(true)));
         } else requestAnimationFrame(tick);
@@ -119,7 +125,27 @@ async function clientTap(page, selector) {
     const rsc = performance.getEntriesByType("resource")
       .filter((e) => e.name.includes("_rsc=") && e.startTime >= t0 - 1 && new URL(e.name).pathname === location.pathname);
     return { ms: Math.round(t1 - t0), rscBytes: rsc.at(-1)?.transferSize ?? null };
-  }, selector);
+  }, selector, paints ?? null);
+}
+
+/**
+ * The path a route measures (task 0.14c). A route with `resolve` (a shelf, a book: ids that are the owner's
+ * data) loads `resolve.from` signed in and takes the first link its selector matches (resolvedPath).
+ */
+async function resolveRoute(browser, route) {
+  if (!route.resolve) return { path: route.path };
+  const { context, page } = await phoneTab(browser, route.signedIn, new Set());
+  try {
+    await page.goto(base + route.resolve.from, { waitUntil: "load", timeout: 120_000 });
+    const at = new URL(page.url()).pathname;
+    if (at !== route.resolve.from) return { error: `resolving ${route.path}: ${route.resolve.from} landed on ${at}` };
+    const hrefs = await page.$$eval(route.resolve.selector, (as) => as.map((a) => a.getAttribute("href")));
+    return resolvedPath(route, hrefs);
+  } catch (e) {
+    return { error: scrub(`resolving ${route.path}: ${e.message}`).slice(0, 300) };
+  } finally {
+    await context.close();
+  }
 }
 
 /** Sign-in: type the passcode, submit, and time it until the home page's <h1> is painted. */
@@ -158,7 +184,7 @@ async function taps(browser, route) {
         results.push({ error: `the tap's page ${route.tap.from} landed on ${at}` });
         continue;
       }
-      results.push(route.tap.login ? await loginTap(page) : await clientTap(page, route.tap.selector));
+      results.push(route.tap.login ? await loginTap(page) : await clientTap(page, route.tap.selector, route.tap.paints));
     } catch (e) {
       results.push({ error: scrub(e.message).slice(0, 300) });
     } finally {
@@ -174,7 +200,16 @@ const metrics = {
   measuredAt: new Date().toISOString(), runs: RUNS, routes: {},
 };
 try {
-  for (const route of routes) {
+  for (let route of routes) {
+    const target = await resolveRoute(browser, route);
+    if (target.error) {
+      // Recorded, not thrown: the gate fails the route as not measured, naming why.
+      metrics.routes[route.id] = { path: route.path, loads: [{ error: target.error }], taps: [{ error: target.error }], tapApiRequests: [] };
+      console.log(`measure: ${route.id} ${route.path}: not measured: ${target.error}`);
+      continue;
+    }
+    if (route.resolve) console.log(`measure: ${route.id} resolved ${route.path} to ${target.path}`);
+    route = { ...route, path: target.path };
     const loads = [];
     for (let n = 1; n <= RUNS; n++) loads.push(lighthouse(route, n));
     const tapped = await taps(browser, route);

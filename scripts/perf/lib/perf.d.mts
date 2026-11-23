@@ -114,3 +114,10 @@ export function scrubLhr(lhr: any, secrets: (string | undefined)[]): any;
 export function filesWithSecrets(files: { name: string; text: string }[], secrets: (string | undefined)[]): string[];
 export function baselinePr<T extends { number: number; merged_at: string | null }>(pulls: T[], currentPrs?: number[]): T | null;
 export function baselineRun<T extends { status: string; conclusion: string | null; created_at: string }>(runs: T[]): T | null;
+export function listPages(dir: string): string[];
+export function pagePattern(file: string): string;
+export function unmeasuredPages(args: { pages: string[]; routes: string[]; exempt: Record<string, string> }): string[];
+export function resolvedPath(
+  route: { id: string; path: string; resolve?: { from: string; selector: string } },
+  hrefs: (string | null | undefined)[],
+): { path: string } | { error: string };
