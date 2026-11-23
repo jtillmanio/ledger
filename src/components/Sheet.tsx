@@ -5,6 +5,12 @@ import { createPortal } from "react-dom";
 
 const CloseContext = createContext<(() => void) | null>(null);
 
+/**
+ * What `useSheetClose()` calls below it, for a body drawn somewhere other than a `Sheet`: the
+ * book sheet's pane (`RouteSheet`, task 3.5b) gives `MoveBody` its own step back.
+ */
+export const SheetCloseProvider = CloseContext.Provider;
+
 /** Closes the sheet this is rendered in: for its Cancel, and after a confirm. */
 export function useSheetClose() {
   const close = useContext(CloseContext);

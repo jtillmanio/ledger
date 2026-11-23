@@ -3,10 +3,26 @@
 import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import { useSheetFocus } from "@/components/Sheet";
+import { SheetCloseProvider, useSheetFocus } from "@/components/Sheet";
 
 /** The heading id of the route sheet a `SheetHeading` is drawn in; null on a full page. */
 const HeadingId = createContext<string | null>(null);
+
+/**
+ * A sheet opened from the route sheet, drawn in its place (D-34; task 3.5b): its own heading, the
+ * name of where you came from (the back control's), its body, and the control that opened it.
+ */
+export type Pane = { heading: string; back: string; body: React.ReactNode; opener: HTMLElement | null };
+
+const PaneContext = createContext<((pane: Pane) => void) | null>(null);
+
+/**
+ * Opens a pane in place of the route sheet's body (D-34: one sheet at a time); null outside a route
+ * sheet, on the full page, where the caller opens its own `Sheet` instead.
+ */
+export function useRoutePane() {
+  return useContext(PaneContext);
+}
 
 /** Below this a route sheet rises from the bottom and follows a drag; from it, a centred modal (D-33). */
 const SHEET_MEDIA = "(max-width: 1023px)";
@@ -57,6 +73,17 @@ export function SheetHeading({ className, children }: { className?: string; chil
  * sheet first rendered (R1-11). The page behind does not scroll while it is
  * open, so Back finds the list where it was. One sheet at a time (D-34): a
  * route opened from inside it replaces it.
+ *
+ * A sheet opened from inside it (*Move*, *Shelves Edit*; task 3.5b, D-34) is a
+ * pane (`useRoutePane`): it takes the body's place in the same dialog, which
+ * it labels with its own heading (focused on open), and the sheetbar's label
+ * becomes a back control naming where you came from (*‹ The Way of Kings*).
+ * The body stays mounted, hidden, so its scroll, a half-typed note and the
+ * opener survive. Opening a pane pushes one history entry at the same URL (as
+ * `Sheet` does): Back, Esc and the back control pop it, one level, and focus
+ * returns to the opener; the close, the grab, the scrim and a drag close the
+ * whole sheet from either level, popping both entries. A pane's own Cancel or
+ * confirm (`useSheetClose()`) steps back too.
  */
 export default function RouteSheet({ label, children }: { label: string; children: React.ReactNode }) {
   // A soft navigation keeps a slot's last page drawn: the sheet belongs to the
@@ -78,15 +105,69 @@ function OpenSheet({ label, children }: { label: string; children: React.ReactNo
   const leaving = useRef(false);
   const scrimDown = useRef(false);
   const drag = useRef<{ y0: number; y: number; t: number; v: number; id: number; moving: boolean } | null>(null);
+  const paneHeadingId = useId();
+  const [pane, setPane] = useState<Pane | null>(null);
+  // What popstate and the exit read: the pane open now, and where the body was scrolled under it.
+  const paneNow = useRef<Pane | null>(null);
+  const bodyScroll = useRef(0);
+  const stepped = useRef<"in" | "out" | null>(null);
 
-  /** Leave once: Back, the route's own entry. */
-  const back = useCallback(() => router.back(), [router]);
+  /** Leave once: Back, the route's own entry, and the pane's above it when one is open. */
+  const back = useCallback(() => {
+    if (paneNow.current) history.go(-2);
+    else router.back();
+  }, [router]);
   const close = useCallback(() => {
     if (leaving.current) return;
     leaving.current = true;
     setClosing(true);
   }, []);
-  const onKeyDown = useSheetFocus(host, panel, opener, close);
+
+  const openPane = useCallback((next: Pane) => {
+    if (leaving.current || paneNow.current) return;
+    history.pushState(history.state, "");
+    bodyScroll.current = panel.current?.scrollTop ?? 0;
+    paneNow.current = next;
+    stepped.current = "in";
+    setPane(next);
+  }, []);
+  /** One level back, to the body: the pane's history entry pops, and popstate draws the body again. */
+  const backPane = useCallback(() => {
+    if (paneNow.current && !leaving.current) history.back();
+  }, []);
+
+  useEffect(() => {
+    function onPop() {
+      if (!paneNow.current) return;
+      paneNow.current = null;
+      stepped.current = "out";
+      setPane(null);
+    }
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  // A pane opens at its top with its heading focused; the body comes back where it was scrolled, focus on the opener.
+  const lastPane = useRef<Pane | null>(null);
+  useLayoutEffect(() => {
+    const el = panel.current;
+    if (!el) return;
+    if (stepped.current === "in" && pane) {
+      lastPane.current = pane;
+      el.scrollTop = 0;
+      el.querySelector<HTMLElement>("[data-pane-heading]")?.focus();
+    } else if (stepped.current === "out" && !pane) {
+      el.scrollTop = bodyScroll.current;
+      const to = lastPane.current?.opener;
+      if (to?.isConnected) to.focus();
+      else el.querySelector<HTMLElement>("[data-sheet-heading]")?.focus();
+      lastPane.current = null;
+    }
+    stepped.current = null;
+  }, [pane]);
+
+  // Esc steps back one level from a pane, and closes the sheet from its body.
+  const onKeyDown = useSheetFocus(host, panel, opener, pane ? backPane : close);
 
   // The exit plays (`data-state="closing"`), then Back: once its animations end, or the fallback.
   useEffect(() => {
@@ -174,20 +255,35 @@ function OpenSheet({ label, children }: { label: string; children: React.ReactNo
         className="sheet rsheet"
         role="dialog"
         aria-modal="true"
-        aria-labelledby={headingId}
+        aria-labelledby={pane ? paneHeadingId : headingId}
         onKeyDown={onKeyDown}
       >
         <div className="rsheet-top" onPointerDown={onPointerDown} onPointerMove={onPointerMove}
           onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
           <button type="button" className="grab" aria-label={`Dismiss ${label.toLowerCase()}`} onClick={close} />
           <div className="sheetbar">
-            <span className="lede">{label}</span>
+            {pane ? (
+              // D-34's back chevron, naming where you came from; its name keeps the visible title (WCAG 2.5.3).
+              <button type="button" className="btn sec sm rsheet-back" aria-label={`Back to ${pane.back}`} onClick={backPane}>
+                <span aria-hidden="true">‹</span> <span className="rsheet-back-name">{pane.back}</span>
+              </button>
+            ) : <span className="lede">{label}</span>}
             <button type="button" className="x" aria-label="Close" onClick={close}>
               <span aria-hidden="true">✕</span>
             </button>
           </div>
         </div>
-        <HeadingId.Provider value={headingId}>{children}</HeadingId.Provider>
+        <div className="rsheet-body" hidden={pane !== null}>
+          <PaneContext.Provider value={openPane}>
+            <HeadingId.Provider value={headingId}>{children}</HeadingId.Provider>
+          </PaneContext.Provider>
+        </div>
+        {pane && (
+          <div className="rsheet-pane">
+            <h2 id={paneHeadingId} tabIndex={-1} data-pane-heading className="rsheet-pane-h">{pane.heading}</h2>
+            <SheetCloseProvider value={backPane}>{pane.body}</SheetCloseProvider>
+          </div>
+        )}
       </div>
     </div>,
     document.body,

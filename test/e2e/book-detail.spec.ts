@@ -13,10 +13,17 @@
 // status row is refused and nothing is written (AC-1, AC-2); each owned toggle
 // writes or deletes exactly one owned_copies row and its Undo reverses it, and
 // the ebook has none (AC-1, AC-3); and the editor and toggles meet the UX floor (AC-5).
+// Task 3.5b, 2 of 3 (TASK-119): *Move* and *Shelves Edit* open their sheet in
+// place of the book's, one dialog the whole way, with a back control naming the
+// book; Back unwinds one level, then to the Library where it was (AC-1, AC-2);
+// a book that isn't to read shows *Planned for* only with a plan row, and no
+// *Move* (AC-3); each shelf toggle writes or deletes one shelf_books row, with
+// an Undo that reverses just that (AC-4); and each pane meets the floor (AC-5).
 // The books are made here, under E2E ids the rest of the suite doesn't use, and
 // removed after the last test.
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
+import { easternYear } from "../../src/lib/settings";
 import { testSql, type TestSql } from "../db";
 import {
   computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
@@ -44,7 +51,15 @@ const GONE = { id: "e2e-bd-gone", title: `${PREFIX} Gone` };
 const NOTE = { id: "e2e-bsw-note", title: "E2E Bsw Note" };
 const BARE = { id: "e2e-bsw-bare", title: "E2E Bsw Bare" };
 const OWN = { id: "e2e-bsw-own", title: "E2E Bsw Own" };
-const IDS = [...FILLER, FEATURE, PLAIN, GONE, NOTE, BARE, OWN].map((b) => b.id);
+// Move and Shelves (TASK-119). The book moved is a filler row, so the Library behind its sheet scrolls.
+const MOVE = FILLER[43];
+const READING = { id: "e2e-bsw-reading", title: "E2E Bsw Reading" };
+const SHELVED = { id: "e2e-bsw-shelved", title: "E2E Bsw Shelved" };
+const SHELF_A = { id: "e2e-bsw-shelf-a", name: "E2E Bsw Shelf A" };
+const SHELF_B = { id: "e2e-bsw-shelf-b", name: "E2E Bsw Shelf B" };
+/** The last year the picker's chips offer: no other spec plans a book there. */
+const YEAR = easternYear() + 4;
+const IDS = [...FILLER, FEATURE, PLAIN, GONE, NOTE, BARE, OWN, READING, SHELVED].map((b) => b.id);
 
 async function withSql<T>(work: (sql: TestSql) => Promise<T>): Promise<T> {
   const sql = testSql();
@@ -55,7 +70,10 @@ async function withSql<T>(work: (sql: TestSql) => Promise<T>): Promise<T> {
   }
 }
 
-const clean = () => withSql((sql) => sql`DELETE FROM books WHERE id = ANY(${IDS}::text[])`);
+const clean = () => withSql(async (sql) => {
+  await sql`DELETE FROM shelves WHERE id IN (${SHELF_A.id}, ${SHELF_B.id})`;
+  await sql`DELETE FROM books WHERE id = ANY(${IDS}::text[])`;
+});
 
 test.beforeAll(async () => {
   await clean();
@@ -70,6 +88,15 @@ test.beforeAll(async () => {
     for (const b of [NOTE, BARE]) await sql`INSERT INTO books (id, title) VALUES (${b.id}, ${b.title})`;
     await sql`INSERT INTO books (id, title, calibre_id) VALUES (${OWN.id}, ${OWN.title}, -9311)`;
     for (const b of [NOTE, OWN]) await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${b.id}, 'to_read')`;
+    for (const b of [READING, SHELVED]) await sql`INSERT INTO books (id, title) VALUES (${b.id}, ${b.title})`;
+    for (const [b, status] of [[MOVE, "to_read"], [READING, "reading"], [SHELVED, "to_read"]] as const) {
+      await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${b.id}, ${status})`;
+    }
+    // Planned before it was started: a reading book keeps its plan row (it counts while reading, D-112).
+    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${E2E_USER}, ${READING.id}, ${String(YEAR)}, NULL)`;
+    for (const s of [SHELF_A, SHELF_B]) {
+      await sql`INSERT INTO shelves (id, user_id, name, kind) VALUES (${s.id}, ${E2E_USER}, ${s.name}, 'books')`;
+    }
     await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
               VALUES (${E2E_USER}, ${FEATURE.id}, 'read', '2025-03-17', 'exact')`;
     for (const [start, finish, format] of [
@@ -551,4 +578,254 @@ test("the note editor and the owned toggles meet the UX floor at 360 and 1280px,
     }
   }
   expect(await storedNote(NOTE.id)).toEqual([{ notes: "old" }]);
+});
+
+// --- Task 3.5b, 2 of 3 (TASK-119): Move and Shelves, a sheet from the sheet -------------------------------
+
+const dialogs = (page: Page) => page.locator('[role="dialog"]');
+const backTo = (page: Page, title: string) => sheet(page).getByRole("button", { name: `Back to ${title}`, exact: true });
+const planOf = (bookId: string) =>
+  withSql((sql) => sql<{ period: string }[]>`SELECT period FROM reading_plan WHERE user_id = ${E2E_USER} AND book_id = ${bookId}`)
+    .then((rows) => rows.map((r) => r.period));
+/** A shelf's rows in shelf order, each with its note. */
+const shelfRows = (shelfId: string) =>
+  withSql((sql) => sql<{ book_id: string; ordinal: number; note: string | null }[]>`
+    SELECT book_id, ordinal, note FROM shelf_books WHERE shelf_id = ${shelfId} ORDER BY ordinal`)
+    .then((rows) => rows.map((r) => [r.book_id, r.ordinal, r.note] as const));
+/** MOVE planned for Q3 of YEAR, and nothing else. */
+const planMove = () => withSql(async (sql) => {
+  await sql`DELETE FROM reading_plan WHERE user_id = ${E2E_USER} AND book_id = ${MOVE.id}`;
+  await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal)
+            VALUES (${E2E_USER}, ${MOVE.id}, ${`${YEAR}-Q3`},
+                    (SELECT COALESCE(MAX(ordinal), 0) + 1 FROM reading_plan WHERE user_id = ${E2E_USER} AND period = ${`${YEAR}-Q3`}))`;
+});
+/** Shelf A holds OWN, SHELVED (with a note) and NOTE; shelf B holds OWN alone. */
+const stockShelves = () => withSql(async (sql) => {
+  await sql`DELETE FROM shelf_books WHERE shelf_id IN (${SHELF_A.id}, ${SHELF_B.id})`;
+  await sql`INSERT INTO shelf_books (shelf_id, book_id, ordinal, note) VALUES
+            (${SHELF_A.id}, ${OWN.id}, 1, NULL), (${SHELF_A.id}, ${SHELVED.id}, 2, 'why it is here'),
+            (${SHELF_A.id}, ${NOTE.id}, 3, NULL), (${SHELF_B.id}, ${OWN.id}, 1, NULL)`;
+});
+
+test("Move from the sheet replaces it: one dialog with a back control naming the book; a move writes once with an Undo; Back unwinds to the book, then to the Library where it was (AC-1, AC-2)", async ({ page }) => {
+  await planMove();
+  await page.goto(LIST);
+  const link = rowLink(page, MOVE.title);
+  await hydrated(link);
+  await link.scrollIntoViewIfNeeded();
+  const scrolled = await page.evaluate(() => window.scrollY);
+  expect(scrolled).toBeGreaterThan(0);
+  await link.click();
+  await expect(sheet(page).getByRole("heading", { level: 2, name: MOVE.title })).toBeFocused();
+
+  const planned = recordRow(sheet(page), page, "Planned for");
+  await expect(planned.locator(".v")).toHaveText(`Q3 ${YEAR}`);
+  const move = planned.getByRole("button", { name: `Move ${MOVE.title} in your plan`, exact: true });
+  await hydrated(move);
+  await move.click();
+
+  // One sheet, the picker in the book's place: its heading has focus and names the dialog.
+  await expect(dialogs(page)).toHaveCount(1);
+  const pane = sheet(page).getByRole("heading", { level: 2, name: "Move in your plan" });
+  await expect(pane).toBeFocused();
+  await expect(sheet(page)).toHaveAccessibleName("Move in your plan");
+  await expect(backTo(page, MOVE.title)).toBeVisible();
+  await expect(sheet(page).locator(".detail")).toBeHidden();
+  await expect(page).toHaveURL(new RegExp(`/book/${MOVE.id}$`));
+
+  // Q4 of the same year (the picker opens on the year it is planned in), then confirm.
+  await sheet(page).getByRole("group", { name: `Quarter of ${YEAR}` }).getByRole("button", { name: /^Q4/ }).click();
+  await sheet(page).getByRole("button", { name: `Move to Q4 ${YEAR}`, exact: true }).click();
+  await expect(toast(page).locator(".toast-label")).toHaveText(`Moved to Q4 ${YEAR}`);
+  expect(await planOf(MOVE.id)).toEqual([`${YEAR}-Q4`]);
+  // Back on the book, which says where it went, with focus on *Move*.
+  await expect(pane).toHaveCount(0);
+  await expect(planned.locator(".v")).toHaveText(`Q4 ${YEAR}`);
+  await expect(move).toBeFocused();
+  await expect(dialogs(page)).toHaveCount(1);
+
+  await toast(page).getByRole("button", { name: "Undo" }).click();
+  await expect.poll(() => planOf(MOVE.id)).toEqual([`${YEAR}-Q3`]);
+  await expect(planned.locator(".v")).toHaveText(`Q3 ${YEAR}`);
+
+  // Browser Back from the picker shows the book again, focus on *Move*; Back once more is the Library where it was.
+  await move.click();
+  await expect(pane).toBeFocused();
+  await page.goBack();
+  await expect(pane).toHaveCount(0);
+  await expect(sheet(page).getByRole("heading", { level: 2, name: MOVE.title })).toBeVisible();
+  await expect(move).toBeFocused();
+  await expect(dialogs(page)).toHaveCount(1);
+  await page.goBack();
+  await expect(dialogs(page)).toHaveCount(0);
+  await expect(page).toHaveURL(LIST);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scrolled);
+  await expect(link).toBeFocused();
+
+  // The close from the picker shuts the whole sheet, not just the picker.
+  await link.click();
+  await hydrated(move);
+  await move.click();
+  await expect(pane).toBeFocused();
+  await sheet(page).getByRole("button", { name: "Close", exact: true }).click();
+  await expect(dialogs(page)).toHaveCount(0);
+  await expect(page).toHaveURL(LIST);
+  await expect(link).toBeFocused();
+  expect(await planOf(MOVE.id)).toEqual([`${YEAR}-Q3`]);
+});
+
+test("a book that isn't to read shows Planned for only with a plan row, and no Move; on the full page Move opens one sheet (AC-3)", async ({ page }) => {
+  // Reading, planned for YEAR before it was started.
+  await page.goto(`/book/${READING.id}`);
+  const planned = recordRow(page, page, "Planned for");
+  await expect(planned.locator(".v")).toHaveText(String(YEAR));
+  await expect(planned.getByRole("button")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Move/ })).toHaveCount(0);
+
+  // Read, with no plan row: no *Planned for* at all.
+  await page.goto(`/book/${FEATURE.id}`);
+  await expect(recordRow(page, page, "Status")).toBeVisible();
+  await expect(recordRow(page, page, "Planned for")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Move/ })).toHaveCount(0);
+
+  // A to-read book on its full page: *Move* opens the picker as the one sheet there is, and Esc puts focus back.
+  await planMove();
+  await page.goto(`/book/${MOVE.id}`);
+  const move = recordRow(page, page, "Planned for").getByRole("button", { name: `Move ${MOVE.title} in your plan`, exact: true });
+  await hydrated(move);
+  await move.click();
+  await expect(dialogs(page)).toHaveCount(1);
+  // The picker, open on where the book is planned.
+  await expect(sheet(page).getByRole("button", { name: `Move to Q3 ${YEAR}`, exact: true })).toBeVisible();
+  await expect(sheet(page).getByRole("button", { name: "On deck", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialogs(page)).toHaveCount(0);
+  await expect(move).toBeFocused();
+});
+
+test("Shelves Edit replaces the sheet with every shelf on or off; each toggle writes or deletes one shelf_books row and its Undo reverses just that; Back names the shelves as they now are (AC-4)", async ({ page }) => {
+  await stockShelves();
+  await openOwn(page, SHELVED);
+  const shelvesRow = recordRow(sheet(page), page, "Shelves");
+  await expect(shelvesRow.locator(".v")).toHaveText(SHELF_A.name);
+  const edit = shelvesRow.getByRole("button", { name: `Edit the shelves for ${SHELVED.title}`, exact: true });
+  await hydrated(edit);
+  await edit.click();
+
+  await expect(dialogs(page)).toHaveCount(1);
+  const pane = sheet(page).getByRole("heading", { level: 2, name: "Shelves" });
+  await expect(pane).toBeFocused();
+  await expect(backTo(page, SHELVED.title)).toBeVisible();
+  const group = sheet(page).getByRole("group", { name: `Shelves for ${SHELVED.title}` });
+  const a = group.getByRole("button", { name: SHELF_A.name, exact: true });
+  const b = group.getByRole("button", { name: SHELF_B.name, exact: true });
+  await hydrated(b);
+  await expect(a).toHaveAttribute("aria-pressed", "true");
+  await expect(b).toHaveAttribute("aria-pressed", "false");
+
+  // On B: one row, at B's end.
+  await b.click();
+  await expect(b).toHaveAttribute("aria-pressed", "true");
+  await expect(toast(page).locator(".toast-label")).toHaveText(`Added to ${SHELF_B.name}`);
+  await expect(toast(page)).toContainText(SHELVED.title);
+  expect(await shelfRows(SHELF_B.id)).toEqual([[OWN.id, 1, null], [SHELVED.id, 2, null]]);
+  await toast(page).getByRole("button", { name: "Undo" }).click();
+  await expect(b).toHaveAttribute("aria-pressed", "false");
+  await expect.poll(() => shelfRows(SHELF_B.id)).toEqual([[OWN.id, 1, null]]);
+
+  // Off A: its row goes and the gap closes; the Undo puts it back at 2 with its note.
+  await a.click();
+  await expect(a).toHaveAttribute("aria-pressed", "false");
+  await expect(toast(page).locator(".toast-label")).toHaveText(`Removed from ${SHELF_A.name}`);
+  expect(await shelfRows(SHELF_A.id)).toEqual([[OWN.id, 1, null], [NOTE.id, 2, null]]);
+  await toast(page).getByRole("button", { name: "Undo" }).click();
+  await expect(a).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => shelfRows(SHELF_A.id))
+    .toEqual([[OWN.id, 1, null], [SHELVED.id, 2, "why it is here"], [NOTE.id, 3, null]]);
+
+  // On B again, then Back: the book's sheet names both shelves, focus on *Edit*, still one dialog.
+  await b.click();
+  await expect.poll(() => shelfRows(SHELF_B.id)).toEqual([[OWN.id, 1, null], [SHELVED.id, 2, null]]);
+  await backTo(page, SHELVED.title).click();
+  await expect(pane).toHaveCount(0);
+  await expect(edit).toBeFocused();
+  await expect(dialogs(page)).toHaveCount(1);
+  await expect(shelvesRow.locator(".v")).toHaveText(`${SHELF_A.name}, ${SHELF_B.name}`);
+  await stockShelves();
+});
+
+test("Shelves Edit with no shelves says so and links to Shelves; a failed load says so in grey (AC-4, AC-5)", async ({ page }) => {
+  let answer: "none" | "fail" = "none";
+  await page.route("**/api/shelves", (route) => route.request().method() !== "GET" ? route.continue()
+    : answer === "none" ? route.fulfill({ json: { shelves: [] } }) : route.fulfill({ status: 500, json: {} }));
+  await openOwn(page, SHELVED);
+  const edit = recordRow(sheet(page), page, "Shelves").getByRole("button", { name: `Edit the shelves for ${SHELVED.title}`, exact: true });
+  await hydrated(edit);
+  await edit.click();
+  await expect(sheet(page).locator(".book-shelves-empty")).toContainText("No shelves yet");
+  await expect(sheet(page).getByRole("link", { name: "Shelves", exact: true })).toHaveAttribute("href", "/books/shelves");
+  await expect(sheet(page).getByRole("group", { name: `Shelves for ${SHELVED.title}` })).toHaveCount(0);
+
+  answer = "fail";
+  await page.keyboard.press("Escape");
+  await expect(edit).toBeFocused();
+  await edit.click();
+  const alert = sheet(page).getByRole("alert");
+  await expect(alert).toHaveText("× Couldn't load your shelves. Go back and try again.");
+  expect((await computedStyle(alert, ["color"])).color).not.toBe(await tokenColour(page, "--danger"));
+});
+
+test("Move and Shelves meet the UX floor at 360 and 1280px, light and dark: focus in and back, a 44px back control, axe, contrast, no --danger, no slide under reduced motion, screenshots (AC-5)", ONCE, async ({ page }, info) => {
+  await planMove();
+  await stockShelves();
+  for (const [width, height] of [[360, 780], [1280, 800]] as const) {
+    for (const colorScheme of ["light", "dark"] as const) {
+      const at = `${width}px ${colorScheme}`;
+      await page.setViewportSize({ width, height });
+      await page.emulateMedia({ colorScheme, reducedMotion: colorScheme === "dark" ? "reduce" : "no-preference" });
+      await openOwn(page, SHELVED);
+      for (const [k, name, heading, shot] of [
+        ["Planned for", `Move ${SHELVED.title} in your plan`, "Move in your plan", "move"],
+        ["Shelves", `Edit the shelves for ${SHELVED.title}`, "Shelves", "shelves"],
+      ] as const) {
+        const opener = recordRow(sheet(page), page, k).getByRole("button", { name, exact: true });
+        await hydrated(opener);
+        const box = (await opener.boundingBox())!;
+        expect(Math.min(box.width, box.height), `${name} ${at}`).toBeGreaterThanOrEqual(width < 768 ? 44 : 24);
+        await opener.click();
+        const pane = sheet(page).getByRole("heading", { level: 2, name: heading });
+        await expect(pane, at).toBeFocused();
+        await expect(dialogs(page), at).toHaveCount(1);
+        // Under reduced motion the swap just happens: nothing slides.
+        if (colorScheme === "dark") {
+          expect(await sheet(page).locator(".rsheet-pane").evaluate((el) => el.getAnimations().length), at).toBe(0);
+        }
+        // Loaded: the picker's chips, or the shelves' toggles.
+        await expect(sheet(page).getByRole("button", { name: shot === "move" ? "On deck" : SHELF_A.name, exact: true }), at).toBeVisible();
+
+        const back = backTo(page, SHELVED.title);
+        const b = (await back.boundingBox())!;
+        expect(b.height, `back ${at}`).toBeGreaterThanOrEqual(width < 768 ? 44 : 24);
+        expect(b.width, `back ${at}`).toBeGreaterThanOrEqual(44);
+        const style = await computedStyle(back, ["background-color", "color", "border-color"]);
+        for (const token of ["--danger", "--danger-soft"]) {
+          expect(Object.values(style), `back ${at} against ${token}`).not.toContain(await tokenColour(page, token));
+        }
+        await expectNoHorizontalScroll(page);
+        await expectNoAxeViolations(page, AXE, '[role="dialog"]');
+        expect(await contrastFailures(page), at).toEqual([]);
+        await screenshot(page, info, `book-sheet-${shot}-${width}-${colorScheme}`);
+
+        // Esc from the picker goes back one level, to the book, focus on the opener; the back control does the same.
+        if (shot === "move") await page.keyboard.press("Escape");
+        else await back.click();
+        await expect(pane, at).toHaveCount(0);
+        await expect(opener, at).toBeFocused();
+        await expect(sheet(page), at).toBeVisible();
+      }
+      await page.keyboard.press("Escape");
+      await expect(dialogs(page), at).toHaveCount(0);
+    }
+  }
+  expect(await shelfRows(SHELF_A.id)).toEqual([[OWN.id, 1, null], [SHELVED.id, 2, "why it is here"], [NOTE.id, 3, null]]);
 });

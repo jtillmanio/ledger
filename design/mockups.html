@@ -6930,8 +6930,31 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   </div></div>
 </div></div></div>
 
+<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <div class="wrap">
+    <h1 class="t">Master list</h1>
+    <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
+  </div>
+  <div class="scrim"></div>
+  <div class="dsheet">
+    <div class="grab"></div>
+    <div class="sheetbar"><button class="btn sec sm" style="min-height:44px" aria-label="Back to The Way of Kings"><span aria-hidden="true">&#8249;</span> The Way of Kings</button><button class="x" aria-label="Close">&#10005;</button></div>
+    <div class="wrap" style="padding-top:0">
+      <h3 class="s" style="margin-top:.25rem">Shelves</h3>
+      <p class="lede" style="margin:0 0 .625rem">Tap a shelf to put the book on it or take it off. Each one saves at once, with an Undo.</p>
+      <div role="group" aria-label="Shelves for The Way of Kings" style="display:flex;flex-wrap:wrap;gap:.375rem">
+        <button class="chip" aria-pressed="true" data-on style="min-height:44px"><span aria-hidden="true">&#10003;</span> Cosmere</button>
+        <button class="chip" aria-pressed="false" style="min-height:44px">Comfort rereads</button>
+        <button class="chip" aria-pressed="false" style="min-height:44px">Doorstoppers</button>
+        <button class="chip" aria-pressed="true" data-on style="min-height:44px"><span aria-hidden="true">&#10003;</span> Epic fantasy</button>
+      </div>
+    </div>
+  </div>
+</div></div></div>
+
 <div class="notes">
-<p><span class="chg">Nov 2026, task 3.5b (TASK-118):</span> <i>Your record</i> gains an <b>Owned</b> line, always drawn: what you own as the Library row ends (<i>Physical &middot; Audiobook &middot; Ebook</i>, as they apply), then two toggles, <b>Paper</b> and <b>Audiobook</b>, named <i>I own it on paper</i> and <i>I own the audiobook</i>: the row menu&rsquo;s own write, a toast and Undo each. The ebook is Calibre&rsquo;s and has no toggle. <b>Notes</b> edit in place: <b>Edit</b> under the note (<b>Add a note</b> when there is none) opens a field named <i>Note on &lt;title&gt;</i>, filled with the note, with <b>Save</b> and <b>Cancel</b>, both grey; <i>Save</i> shows the note at once with a toast (<i>Note saved</i>) whose Undo puts the old one back. A save that fails keeps the field and the text and says why under it with a grey &times;, never red; a book with no status row is refused so. Toggles and buttons are 44px on the phone.</p><p><span class="chg">Nov 2026, task 5.14 (F-59):</span> <i>Your record</i> gains <b>Listen next</b>, under <i>Planned for</i>, with <b>Queue to listen</b>: the Library row&rsquo;s verb, the same toast and Undo; absent while the book is <i>Listening</i> or <i>Parked</i>. It doesn&rsquo;t say whether or where the book is queued yet: that is the sheet&rsquo;s own writes (3.5b).</p><h3>Book detail — a sheet, not a hover</h3>
+<p><span class="chg">Nov 2026, task 3.5b (TASK-119):</span> <b>Move</b> on <i>Planned for</i> (a to-read book only; a book that isn&rsquo;t to read shows <i>Planned for</i> only when it has a plan row, with no <i>Move</i>) and <b>Edit</b> on <i>Shelves</i> (always drawn) open their sheet <b>in place of the book&rsquo;s</b>, one sheet at a time (D-34): the sheetbar&rsquo;s <i>Book</i> becomes a back control naming the book (<i>&lsaquo; The Way of Kings</i>, 44px), and Back, Esc or that control go back one level to the book, focus on the button that opened it; the close shuts the whole sheet. <i>Move</i> is the plan picker (<code>moveplan</code>) as it is. <i>Edit</i> (third frame) lists every one of your shelves as a toggle, on with a &check;: each saves as it is tapped, with its own toast and Undo; there is no <i>New shelf&hellip;</i> here (Add books&rsquo; and Shelves&rsquo;). On the full page (no sheet under it) each opens as an ordinary sheet.</p><p><span class="chg">Nov 2026, task 3.5b (TASK-118):</span> <i>Your record</i> gains an <b>Owned</b> line, always drawn: what you own as the Library row ends (<i>Physical &middot; Audiobook &middot; Ebook</i>, as they apply), then two toggles, <b>Paper</b> and <b>Audiobook</b>, named <i>I own it on paper</i> and <i>I own the audiobook</i>: the row menu&rsquo;s own write, a toast and Undo each. The ebook is Calibre&rsquo;s and has no toggle. <b>Notes</b> edit in place: <b>Edit</b> under the note (<b>Add a note</b> when there is none) opens a field named <i>Note on &lt;title&gt;</i>, filled with the note, with <b>Save</b> and <b>Cancel</b>, both grey; <i>Save</i> shows the note at once with a toast (<i>Note saved</i>) whose Undo puts the old one back. A save that fails keeps the field and the text and says why under it with a grey &times;, never red; a book with no status row is refused so. Toggles and buttons are 44px on the phone.</p><p><span class="chg">Nov 2026, task 5.14 (F-59):</span> <i>Your record</i> gains <b>Listen next</b>, under <i>Planned for</i>, with <b>Queue to listen</b>: the Library row&rsquo;s verb, the same toast and Undo; absent while the book is <i>Listening</i> or <i>Parked</i>. It doesn&rsquo;t say whether or where the book is queued yet: that is the sheet&rsquo;s own writes (3.5b).</p><h3>Book detail — a sheet, not a hover</h3>
   <p><span class="chg">Your question answered:</span> a hover popup is the wrong shape here. A sheet over the list is the right one.</p>
   <ul>
     <li><b>Desktop:</b> On desktop the same intercepted route renders as a centred dialogue over the dimmed list rather than a bottom sheet. A right-hand panel was considered — it keeps the list usable — but it makes the detail permanently narrow, and the detail is the thing you came for.</li>

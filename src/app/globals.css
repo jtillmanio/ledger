@@ -757,10 +757,25 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .book-note-field{margin-top:.375rem}
 .book-note-actions{margin-top:.5rem}
 .book-note-actions .btn{flex:0 0 auto}
+/* Task 3.5b (TASK-119): *Move* and *Edit* at the row's end, where a value's badge sits. */
+.detail-plan,.detail-shelves{align-items:center}
+.detail .frow .detail-act{margin-left:auto;flex:0 0 auto}
 @media (max-width:767px){
   /* Above .opts .opt's 32px, which comes later in the file. */
-  .opts.owned-toggles .opt,.book-note-edit,.book-note-actions .btn{min-height:44px}
+  .opts.owned-toggles .opt,.book-note-edit,.book-note-actions .btn,.detail .frow .detail-act{min-height:44px}
 }
+/* A sheet opened from the book's, in its place (D-34): the sheetbar's back control names the book, cut
+   short with an ellipsis rather than pushing the close off; the pane slides in from the side it came
+   from, and under reduced motion it simply swaps. */
+.rsheet-back{min-height:44px;min-width:44px;max-width:calc(100% - 3.5rem);justify-content:flex-start}
+.rsheet-back-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.rsheet-pane{padding-bottom:1rem}
+.sheet h2.rsheet-pane-h{margin:.25rem 0 .75rem}
+.book-shelves-lede{margin:0 0 .625rem}
+@media (prefers-reduced-motion:no-preference){
+  .rsheet-pane{animation:pane-in var(--dur-2) var(--ease-out)}
+}
+@keyframes pane-in{from{opacity:0;transform:translateX(1.5rem)}}
 .detail-history-head{display:flex;align-items:baseline;gap:.5rem}
 .detail-history-head .detail-reads{margin-left:auto}
 .detail-history{list-style:none;margin:0;padding:0}
