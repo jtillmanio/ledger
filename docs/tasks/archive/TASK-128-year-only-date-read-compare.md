@@ -1,7 +1,7 @@
 ---
 id: TASK-128
 title: 4.4b A year-only Calibre date isn't rewritten every sync
-status: Review
+status: Done
 depends_on: []
 size: S
 model: sonnet
