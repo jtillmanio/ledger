@@ -457,3 +457,79 @@ describe("a new book's page count (D-130)", () => {
     expect(result.report.notes).toEqual(["Small Gods: Hardcover wasn't asked, so its page count waits for the backfill"]);
   });
 });
+
+describe("a year-only date read (task 4.4b)", () => {
+  // `missingColumns` is empty throughout (payloadOf's default): no column is skipped, as once
+  // CALIBRE_SYNC_READS is on. Calibre shows 2024 alone; the Ledger holds a day in some year.
+  const yearOnly = (extra: Partial<CalibreRecord> = {}): CalibreRecord => ({
+    calibreId: 7, title: "Piranesi", authors: ["Susanna Clarke"], read: true, dateRead: "2024", precision: "approximate",
+    ledgerStatus: "read", ...extra,
+  });
+  const dateWrites = (r: SyncResult) => r.report.out.filter((o) => o.column === "#date_read");
+
+  beforeEach(async () => {
+    await author("susanna-clarke", "Susanna Clarke");
+    await book({ id: "piranesi", title: "Piranesi", authorId: "susanna-clarke", calibreId: 7 });
+  });
+
+  async function finishedOn(day: string) {
+    await read("piranesi", day);
+    await status("piranesi", "read", day);
+  }
+
+  it("is in step with a Ledger finish in that year, on the first run and the second", async () => {
+    await finishedOn("2024-03-14");
+    const records = [yearOnly()];
+    const first = await sync(payloadOf(records));
+    expect(dateWrites(first)).toEqual([]);
+    expect(first.report.out).toEqual([]);
+    const second = await sync(payloadOf(written(records, first)));
+    expect(dateWrites(second)).toEqual([]);
+    const logs = await sql<{ report: SyncResult["report"] }[]>`SELECT report FROM calibre_syncs ORDER BY id`;
+    expect(logs.map((l) => l.report.out.filter((o) => o.column === "#date_read"))).toEqual([[], []]);
+    expect(await sql`SELECT finished_on::text, finished_on_precision FROM read_events WHERE book_id = 'piranesi'`)
+      .toEqual([{ finished_on: "2024-03-14", finished_on_precision: "exact" }]);
+  });
+
+  it("goes out as the Ledger's day when the finish is in another year", async () => {
+    await finishedOn("2023-11-02");
+    const result = await sync(payloadOf([yearOnly()]));
+    expect(dateWrites(result)).toEqual([
+      { calibreId: 7, bookId: "piranesi", title: "Piranesi", column: "#date_read", from: "2024-07-01", to: "2023-11-02" },
+    ]);
+  });
+
+  it("is written as before when Calibre's date is a day, not a year", async () => {
+    await finishedOn("2024-03-14");
+    const result = await sync(payloadOf([yearOnly({ dateRead: "2024-07-01", precision: "exact" })]));
+    expect(dateWrites(result).map((o) => [o.from, o.to])).toEqual([["2024-07-01", "2024-03-14"]]);
+  });
+
+  it("is written when Calibre's date is a month and year: the stored day is compared", async () => {
+    await finishedOn("2024-03-14");
+    const result = await sync(payloadOf([yearOnly({ dateRead: "2024-03-10", precision: "approximate" })]));
+    expect(dateWrites(result).map((o) => [o.from, o.to])).toEqual([["2024-03-10", "2024-03-14"]]);
+  });
+
+  it("never hides a missing finish: a read with no date clears the column as today", async () => {
+    await status("piranesi", "read");
+    const result = await sync(payloadOf([yearOnly()]));
+    expect(result.report.out.filter((o) => o.column === "#read" || o.column === "#date_read").map((o) => [o.column, o.from, o.to]))
+      .toEqual([["#date_read", "2024-07-01", null]]);
+  });
+
+  it("never hides a missing finish: a book with no read at all changes #read and clears the date", async () => {
+    const result = await sync(payloadOf([yearOnly()]));
+    expect(result.report.out.filter((o) => o.column === "#read" || o.column === "#date_read").map((o) => [o.column, o.from, o.to]))
+      .toEqual([["#read", true, false], ["#date_read", "2024-07-01", null]]);
+  });
+
+  it("makes a book new to the Ledger one read on July 1st, approximate", async () => {
+    const records = [yearOnly({ calibreId: 8, title: "Jonathan Strange", authors: ["Susanna Clarke"] })];
+    const result = await sync(payloadOf(records));
+    expect(result.report.in.map((c) => [c.kind, c.calibreId])).toEqual([["created", 8]]);
+    expect(await sql`SELECT r.finished_on::text, r.finished_on_precision FROM read_events r JOIN books b ON b.id = r.book_id
+      WHERE b.calibre_id = 8`).toEqual([{ finished_on: "2024-07-01", finished_on_precision: "approximate" }]);
+    expect(dateWrites(result)).toEqual([]);
+  });
+});

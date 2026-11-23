@@ -590,7 +590,10 @@ export async function syncCalibre(userId: string, payload: SyncPayload, opts: Sy
         report.out.push({ calibreId: rec.calibreId, bookId: h.bookId, title, column, from: from ?? null, to: to ?? null });
       };
       out("#read", rec.read ?? false, h.read);
-      out("#date_read", theirs.finishedOn, h.finishedOn);
+      // A date Calibre shows as a year alone is in step with any Ledger finish in that year: the
+      // command writes the Ledger's day, and the next run reads it back as the year (task 4.4b).
+      const yearOnly = rec.dateRead?.length === 4 && h.finishedOn?.startsWith(rec.dateRead);
+      out("#date_read", theirs.finishedOn, yearOnly ? theirs.finishedOn : h.finishedOn);
       out("#ledger_status", rec.ledgerStatus ?? null, h.status);
       out("#owned", [...(rec.owned ?? [])].sort(), h.owned);
     }

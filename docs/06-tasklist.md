@@ -486,7 +486,7 @@ with the task that first reads it.
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
 | ✅ | 4.4 → TASK-081, TASK-082, TASK-083 | Sync with Calibre, both ways: one command, by hand or weekly | M | _Pulled ahead of 1.26 (D-133)_ | 1.18, 1.21, 1.14c, 5.17 |
-|  | 4.4b → TASK-128 | A year-only Calibre date isn't rewritten every sync | S | _From TASK-082, TASK-083 (PR #267, PR #270), 2026-11-23; pulled ahead of 1.26 (D-172): before the owner turns `CALIBRE_SYNC_READS` on; Check proposed_ | 4.4 |
+| ✅ | 4.4b → TASK-128 | A year-only Calibre date isn't rewritten every sync | S | _From TASK-082, TASK-083 (PR #267, PR #270), 2026-11-23; pulled ahead of 1.26 (D-172): before the owner turns `CALIBRE_SYNC_READS` on; Check proposed_ | 4.4 |
 |  | 4.6 → TASK-129 | Decide a waiting Calibre near spelling on the Calibre page | S | _From TASK-083 (PR #270); pulled ahead of 1.26 (D-172); Check proposed_ | 4.4 |
 |  | 4.1 | Metron backfill | M |  | — |
 | ✅ | 4.2 → TASK-084 | Open Library and Hardcover backfill | M | _Pulled ahead of 1.26 (D-139)_ | — |
