@@ -1,7 +1,7 @@
 ---
 id: TASK-136
 title: 0.15 The browser suite runs by area (3 of 3) — the time budget follows the area
-status: Review
+status: Done
 depends_on: [TASK-135]
 size: S
 model: opus
