@@ -1,7 +1,7 @@
 ---
 id: TASK-135
 title: 0.15 The browser suite runs by area (2 of 3) — CI runs what a PR's paths can break
-status: Review
+status: Done
 depends_on: [TASK-134]
 size: M
 model: opus
