@@ -612,3 +612,14 @@ export function resolvedPath(route, hrefs) {
   }
   return { path: new URL(href, "http://x").pathname };
 }
+
+/**
+ * Whether the tap's page loaded as itself: `url` has `from`'s path and, when
+ * `from` names one, its query (the parked review's tap starts on
+ * `/books/list?status=parked`, which a path-only check could never match).
+ */
+export function samePage(from, url) {
+  const want = new URL(from, "http://x");
+  const got = new URL(url, "http://x");
+  return got.pathname === want.pathname && (!want.search || got.search === want.search);
+}

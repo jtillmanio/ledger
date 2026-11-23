@@ -316,7 +316,7 @@ tables.
     | `/watch` | 12,500 | 173,000 | 28 | 100 |
     | `/books/releases` | 8,500 | 162,900 | 19 | 100 |
     | `/books/shelves` | 8,700 | 160,100 | 19 | 100 |
-    | `/books/shelves/[id]` | – | – | – | – |
+    | `/books/shelves/[id]` | 9,700 | 167,100 | 21 | 100 |
     | `/books/add` | 9,400 | 177,300 | 19 | 100 |
     | `/books/top` | 10,100 | 164,900 | 28 | 100 |
     | `/book/[id]` | 9,400 | 181,900 | 25 | 100 |
@@ -329,7 +329,9 @@ tables.
     name. The old check read only top-level folders, so eight nested pages went unmeasured; they are the
     last eight rows. Each number is a hand run's measurement of PR #319's preview plus about 5%
     (2026-11-23, `LIGHTHOUSE_MODE` off: the owner allowed a hand run, D-158), one load per route.
-    A shelf's page is `–` until live has a shelf to measure. The same run found the book's page asking
+    Live had no shelf, so a shelf's page is a second hand run's, on a shelf made on the preview's own
+    branch; live needs a shelf of its own before the next measured run, or that route fails as not
+    measured. The first run found the book's page asking
     for `GET /api/progress/book/read` on every load (its status control is drawn open and loaded the
     reads); since 0.14c the page hands the control its read count, and the reads load only when *All
     reads* is pressed. A shelf's and a book's ids are the owner's data,

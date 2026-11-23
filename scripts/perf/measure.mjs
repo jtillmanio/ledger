@@ -21,7 +21,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer-core";
 import { ReportGenerator } from "lighthouse/report/generator/report-generator.js";
-import { apiPath, CPU_SLOWDOWN, lighthouseArgs, measureRuns, NETWORK, resolvedPath, scrubLhr, summariseLhr } from "./lib/perf.mjs";
+import { apiPath, CPU_SLOWDOWN, lighthouseArgs, measureRuns, NETWORK, resolvedPath, samePage, scrubLhr, summariseLhr } from "./lib/perf.mjs";
 import { ROUTES } from "./routes.mjs";
 
 const env = process.env;
@@ -179,9 +179,9 @@ async function taps(browser, route) {
         // Idle: every prefetch the page makes is done before the tap.
         await page.goto(base + route.tap.from, { waitUntil: "networkidle0", timeout: 120_000 });
       }
-      const at = new URL(page.url()).pathname;
-      if (at !== route.tap.from) {
-        results.push({ error: `the tap's page ${route.tap.from} landed on ${at}` });
+      if (!samePage(route.tap.from, page.url())) {
+        const { pathname, search } = new URL(page.url());
+        results.push({ error: `the tap's page ${route.tap.from} landed on ${pathname}${search}` });
         continue;
       }
       results.push(route.tap.login ? await loginTap(page) : await clientTap(page, route.tap.selector, route.tap.paints));

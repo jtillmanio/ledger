@@ -9,7 +9,7 @@ import {
   countMeasured, DEBOUNCE_SECONDS, DEFAULT_MONTHLY_CAP,
   filesWithSecrets, findComment, gateProblems, gates, lighthouseArgs, listPages, MARKER, measurable, measureRan, measureRuns, median,
   mergeMetrics, monthlyCap, monthStart, notHead, pagePattern, renderCapComment, renderComment, resolvedPath, scrubLhr, sessionCookie,
-  summariseLhr, unbudgeted, unchangedApp, unmeasuredPages, type LoadSummary, type MeasuredRoute, type RouteBudget,
+  samePage, summariseLhr, unbudgeted, unchangedApp, unmeasuredPages, type LoadSummary, type MeasuredRoute, type RouteBudget,
 } from "../scripts/perf/lib/perf.mjs";
 import { ROUTES } from "../scripts/perf/routes.mjs";
 
@@ -392,6 +392,14 @@ describe("the switch (D-158): a preview is measured on its own only while LIGHTH
   };
   const ifOf = (name: string) => job(name).match(/\n {4}if: (>-\n(?: {6}.*\n)+|.*\n)/)![1].replace(/\s+/g, " ");
 
+  it("a route that never loaded still uploads the metrics that say why (task 0.14c)", () => {
+    const measure = job("measure");
+    const reports = measure.slice(measure.indexOf("- name: Upload the reports"), measure.indexOf("- name: Upload the metrics"));
+    expect(reports).toMatch(/if-no-files-found: warn/);
+    // The metrics are what the report reads: their absence still fails.
+    expect(measure.slice(measure.indexOf("- name: Upload the metrics"))).toMatch(/if-no-files-found: error/);
+  });
+
   it("gates the deployment trigger on the switch, and leaves a hand run alone", () => {
     const plan = ifOf("plan");
     // Off unless the variable says `on`: unset is off, so a fresh fork or a
@@ -723,11 +731,6 @@ const UNMEASURED: Record<string, string> = {
   "/books/universes/[id]": "drawn by 5.11, outside 0.14c's eight: its route and budget are roadmap 0.14e",
 };
 
-/**
- * Routes whose budget waits for their first measured run (task 0.14c): budget.json holds null for
- * each, and the report measures them without gating them. Emptied when the run's numbers land.
- */
-const AWAITING_MEASUREMENT: string[] = ["shelf"]; // live had no shelf on 2026-11-23's hand run
 
 describe("the page guard (task 0.14c)", () => {
   /** A throwaway app/ tree holding a page.tsx at each of `pages`. */
@@ -807,6 +810,24 @@ describe("resolvedPath (a route whose id is the owner's data, task 0.14c)", () =
   });
 });
 
+describe("samePage (the tap's page loaded as itself)", () => {
+  it("matches the path, and the query when the tap's page names one", () => {
+    expect(samePage("/books", `${BASE}/books`)).toBe(true);
+    expect(samePage("/books", `${BASE}/comics`)).toBe(false);
+    // The parked review's tap starts on the Library's Parked filter (task 5.15).
+    expect(samePage("/books/list?status=parked", `${BASE}/books/list?status=parked`)).toBe(true);
+    expect(samePage("/books/list?status=parked", `${BASE}/books/list`)).toBe(false);
+    // A page that adds a query of its own is still that page when the tap named none.
+    expect(samePage("/books/list", `${BASE}/books/list?sort=title`)).toBe(true);
+  });
+
+  it("is what measure.mjs checks the tap's page with", () => {
+    const src = readFileSync("scripts/perf/measure.mjs", "utf8");
+    expect(src).toContain("if (!samePage(route.tap.from, page.url())) {");
+    expect(src).not.toContain("at !== route.tap.from");
+  });
+});
+
 describe("the route list (scripts/perf/routes.mjs)", () => {
   it("measures every page in src/app, at any depth, or lists it with a reason (task 0.14c)", () => {
     const pages = listPages("src/app");
@@ -871,13 +892,8 @@ describe("the route list (scripts/perf/routes.mjs)", () => {
   it("holds a number for everything it gates on every route", () => {
     const budget = JSON.parse(readFileSync("scripts/perf/budget.json", "utf8")).routes;
     for (const r of ROUTES) {
-      for (const k of ["docRscBytes", "jsBytes", "requests", "a11y"]) {
-        // Until its first measured run, a new route's numbers are null (the report lists it as unbudgeted, not failed).
-        if (AWAITING_MEASUREMENT.includes(r.id)) expect(budget[r.id][k], `${r.id}.${k}`).toBeNull();
-        else expect(typeof budget[r.id][k], `${r.id}.${k}`).toBe("number");
-      }
+      for (const k of ["docRscBytes", "jsBytes", "requests", "a11y"]) expect(typeof budget[r.id][k], `${r.id}.${k}`).toBe("number");
     }
-    for (const id of AWAITING_MEASUREMENT) expect(ROUTES.map((r) => r.id), id).toContain(id);
   });
 
   it("is mirrored in the architecture's Performance budget", () => {

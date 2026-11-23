@@ -332,7 +332,7 @@ Nothing turns `LIGHTHOUSE_MODE` on.
 
 ---
 
-### ☐ 0.14c Every page is measured · M
+### ☑ 0.14c Every page is measured · M
 Owner, 2026-11-17. Since Lighthouse was switched off (D-158), 5.1 drew
 `/books/shelves` and a shelf's page and 5.7 drew `/books/releases`, and none of
 them has a route in `scripts/perf/routes.mjs` or a budget. Five older pages

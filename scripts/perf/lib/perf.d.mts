@@ -121,3 +121,4 @@ export function resolvedPath(
   route: { id: string; path: string; resolve?: { from: string; selector: string } },
   hrefs: (string | null | undefined)[],
 ): { path: string } | { error: string };
+export function samePage(from: string, url: string): boolean;

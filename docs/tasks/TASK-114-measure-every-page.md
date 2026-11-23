@@ -1,7 +1,7 @@
 ---
 id: TASK-114
 title: 0.14c Every page is measured
-status: In progress
+status: Review
 depends_on: [TASK-113]
 size: M
 model: opus
@@ -35,10 +35,10 @@ When `LIGHTHOUSE_MODE` goes back on, every page in the app is measured against i
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `scripts/perf/routes.mjs` and `scripts/perf/budget.json` have a route for each of `/books/releases`, `/books/shelves`, a shelf's page, `/books/add`, `/books/top`, a book's page, a run's *Add* and `/settings/calibre`, each with a tap from a screen that links to it, and each budget comes from a measured run of the branch's preview (a hand run while `LIGHTHOUSE_MODE` is off; owner, 2026-11-23), not copied from another route. `test/perf.test.ts` fails when any `page.tsx` under `src/app/`, at any depth, is neither measured by a route nor listed as unmeasured with a reason. Nothing in this entry turns `LIGHTHOUSE_MODE` on.
+- [x] AC-1 (roadmap **Check:**, verbatim): `scripts/perf/routes.mjs` and `scripts/perf/budget.json` have a route for each of `/books/releases`, `/books/shelves`, a shelf's page, `/books/add`, `/books/top`, a book's page, a run's *Add* and `/settings/calibre`, each with a tap from a screen that links to it, and each budget comes from a measured run of the branch's preview (a hand run while `LIGHTHOUSE_MODE` is off; owner, 2026-11-23), not copied from another route. `test/perf.test.ts` fails when any `page.tsx` under `src/app/`, at any depth, is neither measured by a route nor listed as unmeasured with a reason. Nothing in this entry turns `LIGHTHOUSE_MODE` on.
 - [x] AC-2: Given a fixture `app/` tree with `books/page.tsx` measured and `books/new-thing/page.tsx` not, the guard reports `/books/new-thing`. Given the same page in the exemption list with a reason, it reports nothing. An exemption with an empty reason, or one naming a page that no longer exists, also fails. The guard is a pure function run on fixtures, and the real `src/app` passes it.
-- [ ] AC-3: Every new route id has a `budget.json` entry and a row in `docs/02-architecture.md` § Performance budget with the same four numbers. The PR's Lighthouse comment from the measured run (a hand run, owner 2026-11-23) lists every new id, and each budget is that run's measurement plus about 5% (§ Performance budget's rule), written in the PR body as measured → budget per id.
-- [ ] AC-4: Each new route's tap, run from its `from` screen, reaches the route's page (the tap run in the PR's Lighthouse comment shows a time for every new id, none `did not finish`). A route whose path is resolved at run time logs the path it chose.
+- [x] AC-3: Every new route id has a `budget.json` entry and a row in `docs/02-architecture.md` § Performance budget with the same four numbers. The PR's Lighthouse comment from the measured run (a hand run, owner 2026-11-23) lists every new id, and each budget is that run's measurement plus about 5% (§ Performance budget's rule), written in the PR body as measured → budget per id.
+- [x] AC-4: Each new route's tap, run from its `from` screen, reaches the route's page (the tap run in the PR's Lighthouse comment shows a time for every new id, none `did not finish`). A route whose path is resolved at run time logs the path it chose.
 
 ## Out of scope
 
@@ -68,6 +68,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 - `/books/series`, a series' page, an author's page and a universe's page (5.9, 5.11) have no route; 0.14c exempts them, and a new phase-0 roadmap item measures them as 0.14c does (approved at plan) → docs/05-roadmap.md § 0.14e (new; also its row in docs/06-tasklist.md beside 0.14c, and the F-04 coverage line)
 - The hand run measured `/books` (already budgeted) at 175,572 JS bytes, over its 175,000; the owner left it for 0.13 (2026-11-23) → docs/05-roadmap.md § 0.13
+- Live has no books shelf: until it has one, every measured run fails `shelf` as not measured → not tracked: owner's data; said in docs/02-architecture.md § Performance budget
 
 ## Plan
 
@@ -112,11 +113,17 @@ Approved by the owner up front (2026-11-23: "approve plan, go with recommendatio
 
 **Revision 4 (owner, 2026-11-23, after the hand run).** The hand run (run 45127510072, `cd5f93c`) measured seven of the eight; each budget is that measurement plus about 5%, rounded up (bytes to 100, requests to the next whole one), in `budget.json` and the doc table, and `AWAITING_MEASUREMENT` holds only `shelf`: live has no shelf, so the owner adds one and a second hand run measures it. The run also failed `book` on `GET /api/progress/book/read` during the load: the page draws the status control open (task 3.5) and it loaded the reads on mount (1.17b). The owner chose to fix it here: `BookDetail` hands `BookStatus` the book's logged read count (`readCount`), *All reads (n)* shows from it, and the reads load only when it is pressed (`src/components/BookStatus.tsx`, `src/components/BookDetail.tsx`; tests in `test/reading-log.test.tsx` and `test/book-detail.test.tsx`). A Library row (no count) loads them when it opens, as before. `/books`' JS over its budget is left for 0.13 (owner).
 
+**Revision 5 (spec review R3).** A route that never loaded (the shelf, with no shelf) wrote no Lighthouse report, so the workflow's *Upload the reports* (`if-no-files-found: error`) failed the job before *Upload the metrics*, and the report said "its job wrote no metrics" instead of the reason measure.mjs recorded: the reports upload now warns (`.github/workflows/lighthouse.yml`, which the second hand run exercises). The same review noticed the parked tap (5.15) could never pass: its page carries a query, and the check compared the path alone. `samePage` (perf.mjs) compares the path, and the query when the tap's page names one.
+
+**Revision 6 (owner, 2026-11-23).** The owner made a shelf on the preview's own Neon branch and ran a second hand run (run 45184508856, `e49dc0f`): the shelf's page measured at `/books/shelves/test`, its budget is that load plus about 5%, and `AWAITING_MEASUREMENT` is gone, so every route's budget is a number again. The same run showed the book page asking no route handler on its load or its tap. Its one finding is `/books`' JS (175,653 over 175,000), left for 0.13.
+
 ## Review log
 
 Verify R1 PASS | CI R1 PASS (95aba84, every project) | Spec R1 CHANGES (book tap timed the sheet's skeleton) → fixed | Verify R2 PASS | Spec R2 APPROVE | CI R2 PASS (6736e2c) | Audit R1 CHANGES (automated ACs PROVEN; budgets owner-gated; optional: assert the resolve log) → test added | Verify R3 PASS | Follow-ups check APPROVE | Drift R1 update first (behind 1: #318 changed globals.css, queries.ts and the sheet markup the book tap reads) → rebased | Verify R4 PASS | CI R3 PASS | Hand Lighthouse run 45127510072 FAIL(3: shelf not measured, live has no shelf; book asked GET /api/progress/book/read; /books JS 572 over) → 7 budgets written, book fixed here, shelf awaits a re-run, /books to 0.13
 
-**Waiting on the owner (D-158):** `LIGHTHOUSE_MODE` is unset. AC-1's measured budgets, AC-3 and AC-4's tap times need the automatic Lighthouse run on PR #319's preview with the switch on; then each budget is that measurement plus about 5%, `AWAITING_MEASUREMENT` goes, and the PR body gets measured → budget per id. Status stays In progress until then.
+| CI R4 PASS (e49dc0f) | Spec R3 CHANGES (the shelf's reason lost by the reports upload; this paragraph stale) → fixed, plus the parked tap | Hand Lighthouse run 45184508856 (e49dc0f) FAIL(1: /books JS 175,653 over 175,000, left for 0.13) → shelf budget written; book clean | Verify R6 PASS | Drift R2 update first (behind 1: #320 changed globals.css) → rebased | Verify R7 PASS
+
+**Was waiting on the owner (done 2026-11-23):** a shelf on PR #319's preview (its own Neon branch, not live or development), then a second hand run (`gh workflow enable lighthouse.yml`, `gh workflow run lighthouse.yml --ref task/0.14c-measure-every-page`, `gh workflow disable lighthouse.yml`). It gives the shelf's page its budget, so `AWAITING_MEASUREMENT` goes, shows the book page with no route-handler request, and runs the changed workflow on the branch. `LIGHTHOUSE_MODE` stays off (D-158). Status stays In progress until then.
 
 ## Blocked
 
@@ -124,7 +131,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds: 3
-- Review rounds: 2 (spec), 1 (audit)
+- Verify rounds: 6
+- Review rounds: 3 (spec), 1 (audit)
 - First-pass AC FAILs: 1 (AC-4: the book tap's `paints` matched the skeleton)
-- Plan revisions after approval: 3
+- Plan revisions after approval: 6

@@ -1,5 +1,5 @@
 {
-  "$comment": "Task 0.10. Per route (scripts/perf/routes.mjs): the most document + RSC bytes, JS bytes and requests a page load may take (Lighthouse's median of three, Vercel's preview toolbar left out), and the lowest accessibility score it may have. Mirrored in docs/02-architecture.md's Performance budget; raise a number only with a reason there. A route's numbers are null only until its first measured run (task 0.14c): the report lists it as unbudgeted and does not gate it.",
+  "$comment": "Task 0.10. Per route (scripts/perf/routes.mjs): the most document + RSC bytes, JS bytes and requests a page load may take (Lighthouse's median of three, Vercel's preview toolbar left out), and the lowest accessibility score it may have. Mirrored in docs/02-architecture.md's Performance budget; raise a number only with a reason there.",
   "routes": {
     "login": { "docRscBytes": 8000, "jsBytes": 170000, "requests": 30, "a11y": 100 },
     "comics": { "docRscBytes": 30500, "jsBytes": 170000, "requests": 41, "a11y": 100 },
@@ -18,7 +18,7 @@
     "watch": { "docRscBytes": 12500, "jsBytes": 173000, "requests": 28, "a11y": 100 },
     "releases": { "docRscBytes": 8500, "jsBytes": 162900, "requests": 19, "a11y": 100 },
     "shelves": { "docRscBytes": 8700, "jsBytes": 160100, "requests": 19, "a11y": 100 },
-    "shelf": { "docRscBytes": null, "jsBytes": null, "requests": null, "a11y": null },
+    "shelf": { "docRscBytes": 9700, "jsBytes": 167100, "requests": 21, "a11y": 100 },
     "books-add": { "docRscBytes": 9400, "jsBytes": 177300, "requests": 19, "a11y": 100 },
     "top": { "docRscBytes": 10100, "jsBytes": 164900, "requests": 28, "a11y": 100 },
     "book": { "docRscBytes": 9400, "jsBytes": 181900, "requests": 25, "a11y": 100 },
