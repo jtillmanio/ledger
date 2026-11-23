@@ -717,6 +717,9 @@ export function filesWithSecrets(files, secrets) {
   return files.filter(({ text }) => live.some((s) => text.includes(s))).map((f) => f.name);
 }
 
+/** How long `lighthouse-metrics` is kept (task 0.13), so how far back a baseline can be. */
+export const BASELINE_DAYS = 90;
+
 /** Whether a run's `report` job concluded `conclusions` (a job that ran). */
 const reportJob = (jobs, conclusions) => (jobs ?? []).find((j) => j.name === "report" && conclusions.includes(j.conclusion));
 
@@ -740,12 +743,15 @@ export function baselineRun(runs) {
  * merge, on any commit (a task PR's head is a docs-only close-out that Vercel
  * never builds, so its head has no run). A PR with none (docs-only, or never
  * measured) is passed over for the one before it.
+ * It walks back as far as the numbers last (BASELINE_DAYS): a dozen PRs can
+ * merge in a day without one measured run while LIGHTHOUSE_MODE is off.
  *   runsFor(pr) → its branch's runs   jobsFor(run) → that run's jobs
  *   → { pr, run } | null
  */
-export async function findBaseline({ pulls, currentPrs = [], runsFor, jobsFor, limit = 10 }) {
-  const merged = pulls.filter((p) => p.merged_at && !currentPrs.includes(p.number))
-    .sort((a, b) => (a.merged_at < b.merged_at ? 1 : -1)).slice(0, limit);
+export async function findBaseline({ pulls, currentPrs = [], runsFor, jobsFor, now = new Date() }) {
+  const since = new Date(now.getTime() - BASELINE_DAYS * 24 * 3600 * 1000).toISOString();
+  const merged = pulls.filter((p) => p.merged_at && p.merged_at >= since && !currentPrs.includes(p.number))
+    .sort((a, b) => (a.merged_at < b.merged_at ? 1 : -1));
   for (const pr of merged) {
     const green = (await runsFor(pr))
       .filter((r) => r.status === "completed" && r.conclusion === "success" && r.created_at <= pr.merged_at);

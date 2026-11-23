@@ -285,15 +285,15 @@ jobs:
         run: node scripts/perf/report.mjs merge "$RUNNER_TEMP/parts"
 
       # Numbers only: what the next PR compares itself with, kept 90 days (task
-      # 0.13). A rejudge re-runs this job on the same numbers, which attempt 1
-      # already uploaded.
+      # 0.13). A re-run of this job (a rejudge, or re-running a failed route)
+      # replaces them with the numbers it merged.
       - name: Upload the metrics
-        if: github.run_attempt == 1
         uses: actions/upload-artifact@v7
         with:
           name: lighthouse-metrics
           path: ${{ runner.temp }}/parts/metrics.json
           retention-days: 90
+          overwrite: true
           if-no-files-found: error
 
       - name: Find main's last run

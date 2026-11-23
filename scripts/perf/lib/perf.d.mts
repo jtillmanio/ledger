@@ -147,8 +147,9 @@ export function findBaseline<
   currentPrs?: number[];
   runsFor: (pr: P) => Promise<R[]>;
   jobsFor: (run: R) => Promise<Job[]>;
-  limit?: number;
+  now?: Date;
 }): Promise<{ pr: P; run: R & { jobs: Job[] } } | null>;
+export const BASELINE_DAYS: number;
 export function rejudgeTarget(runs: { id: number; status: string; created_at: string; jobs?: Job[] }[]):
   { run: number; job: number } | null;
 export function listPages(dir: string): string[];

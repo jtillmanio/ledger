@@ -225,7 +225,8 @@ function guard(dir) {
 
 async function baseline() {
   const current = (await pullsFor(env.SHA)).map((p) => p.number);
-  const pulls = await github("pulls?state=closed&sort=updated&direction=desc&per_page=50");
+  // The newest hundred closed PRs: findBaseline walks those merged in the last 90 days.
+  const pulls = await github("pulls?state=closed&sort=updated&direction=desc&per_page=100");
   const found = await findBaseline({
     pulls,
     currentPrs: current,

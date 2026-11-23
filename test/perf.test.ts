@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  aggregateRoute, apiPath, automaticCandidates, baselineRun, capMarked, capMarkerName, capReached, ceilingsFrom,
+  aggregateRoute, apiPath, automaticCandidates, BASELINE_DAYS, baselineRun, capMarked, capMarkerName, capReached, ceilingsFrom,
   COUNT_CONCURRENCY, countMeasured, DEBOUNCE_SECONDS, DEFAULT_MONTHLY_CAP, filesWithSecrets, findBaseline, findComment, gateProblems,
   gates, GROWTH_LABEL, growthProblems, growthUnchecked, judge, lighthouseArgs, listPages, MARKER, measurable, measureRan, measureRuns,
   median, mergeMetrics, monthlyCap, monthStart, notHead, ownJs, pagePattern, rejudgeTarget, renderCapComment, renderComment,
@@ -705,9 +705,24 @@ describe("main's last run", () => {
     const runsFor = async (pr: { number: number }) =>
       [{ id: pr.number, status: "completed", conclusion: "success", created_at: "2026-10-01T00:00:00Z" }];
     const jobsFor = async () => [{ name: "report", conclusion: "success" }];
-    expect((await findBaseline({ pulls, runsFor, jobsFor }))?.pr.number).toBe(49);
-    expect((await findBaseline({ pulls, currentPrs: [49], runsFor, jobsFor }))?.pr.number).toBe(48);
-    expect(await findBaseline({ pulls: pulls.slice(0, 1), runsFor, jobsFor })).toBeNull();
+    const now = new Date("2026-10-07T00:00:00Z");
+    expect((await findBaseline({ pulls, runsFor, jobsFor, now }))?.pr.number).toBe(49);
+    expect((await findBaseline({ pulls, currentPrs: [49], runsFor, jobsFor, now }))?.pr.number).toBe(48);
+    expect(await findBaseline({ pulls: pulls.slice(0, 1), runsFor, jobsFor, now })).toBeNull();
+  });
+
+  it("walks back past any number of unmeasured PRs, but no further than the numbers last (90 days)", async () => {
+    // 2026-11-23 merged twelve PRs; none was measured while LIGHTHOUSE_MODE was off.
+    const pulls = Array.from({ length: 15 }, (_, i) => ({
+      number: 330 - i, merged_at: `2026-11-23T${String(23 - i).padStart(2, "0")}:00:00Z`, head: { ref: `b${330 - i}`, sha: "s" },
+    }));
+    const runsFor = async (pr: { number: number; merged_at: string | null }) => (pr.number === 317
+      ? [{ id: 9, status: "completed", conclusion: "success", created_at: "2026-11-23T05:41:18Z" }] : []);
+    const jobsFor = async () => [{ name: "report", conclusion: "success" }];
+    expect(BASELINE_DAYS).toBe(90);
+    expect((await findBaseline({ pulls, runsFor, jobsFor, now: new Date("2026-11-24T00:00:00Z") }))?.pr.number).toBe(317);
+    // 91 days on, that run's numbers have expired: no baseline rather than a dead artifact.
+    expect(await findBaseline({ pulls, runsFor, jobsFor, now: new Date("2027-02-22T00:00:00Z") })).toBeNull();
   });
 
   const plan = { name: "plan", conclusion: "success" };
@@ -753,7 +768,7 @@ describe("main's last run", () => {
     const jobs: Record<number, typeof reported> = { 20: reported, 19: reported, 21: reported, 9: reported };
     const read: string[] = [];
     const found = await findBaseline({
-      pulls, currentPrs: [340],
+      pulls, currentPrs: [340], now: new Date("2026-11-24T12:00:00Z"),
       runsFor: async (pr) => { read.push(pr.head.ref); return runs[pr.head.ref] ?? []; },
       jobsFor: async (run) => jobs[run.id] ?? [],
     });
@@ -973,10 +988,11 @@ describe("adding the label re-reports without a push (task 0.13)", () => {
     expect(rejudge).toMatch(/run: node scripts\/perf\/report\.mjs rejudge/);
     expect(rejudge).toMatch(/HEAD_SHA: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
     expect(rejudge).not.toMatch(/measure\.mjs|login\.mjs|lighthouse\b.*--/);
-    // The report job's re-run keeps attempt 1's numbers: it uploads them only once.
+    // A re-run of the report job (a rejudge, or a re-run failed route) replaces the numbers it merged.
     const report = jobText("report");
     const upload = report.slice(report.indexOf("- name: Upload the metrics"), report.indexOf("- name: Find main's last run"));
-    expect(upload).toMatch(/if: github\.run_attempt == 1/);
+    expect(upload).toMatch(/\n {10}overwrite: true\n/);
+    expect(upload).not.toMatch(/run_attempt/);
   });
 
   it("report.mjs rejudge asks GitHub to re-run that one job", () => {
