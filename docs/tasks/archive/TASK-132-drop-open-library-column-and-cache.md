@@ -1,7 +1,7 @@
 ---
 id: TASK-132
 title: 6.19 Remove Open Library (2 of 2) — the column, the cache table, the client and the documents
-status: Review
+status: Done
 depends_on: [TASK-131]
 size: M
 model: opus
