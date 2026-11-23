@@ -314,21 +314,25 @@ tables.
     | `/inbox` | 16,000 | 173,000 | 31 | 100 |
     | `/settings` | 16,800 | 173,000 | 32 | 100 |
     | `/watch` | 12,500 | 173,000 | 28 | 100 |
-    | `/books/releases` | – | – | – | – |
-    | `/books/shelves` | – | – | – | – |
+    | `/books/releases` | 8,500 | 162,900 | 19 | 100 |
+    | `/books/shelves` | 8,700 | 160,100 | 19 | 100 |
     | `/books/shelves/[id]` | – | – | – | – |
-    | `/books/add` | – | – | – | – |
-    | `/books/top` | – | – | – | – |
-    | `/book/[id]` | – | – | – | – |
-    | `/comics/bendis-disassembled/add` | – | – | – | – |
-    | `/settings/calibre` | – | – | – | – |
+    | `/books/add` | 9,400 | 177,300 | 19 | 100 |
+    | `/books/top` | 10,100 | 164,900 | 28 | 100 |
+    | `/book/[id]` | 9,400 | 181,900 | 25 | 100 |
+    | `/comics/bendis-disassembled/add` | 22,300 | 172,200 | 18 | 100 |
+    | `/settings/calibre` | 8,300 | 170,900 | 21 | 100 |
     <!-- /perf-budget -->
 
     Task 0.14c (TASK-114) measures every page, at any depth: `test/perf.test.ts` fails on a `page.tsx`
     under `src/app` that no route measures and that its unmeasured list (each with a reason) doesn't
     name. The old check read only top-level folders, so eight nested pages went unmeasured; they are the
-    last eight rows. Each number is `–` until the branch's preview is measured with `LIGHTHOUSE_MODE`
-    on, and then that run's measurement plus about 5%. A shelf's and a book's ids are the owner's data,
+    last eight rows. Each number is a hand run's measurement of PR #319's preview plus about 5%
+    (2026-11-23, `LIGHTHOUSE_MODE` off: the owner allowed a hand run, D-158), one load per route.
+    A shelf's page is `–` until live has a shelf to measure. The same run found the book's page asking
+    for `GET /api/progress/book/read` on every load (its status control is drawn open and loaded the
+    reads); since 0.14c the page hands the control its read count, and the reads load only when *All
+    reads* is pressed. A shelf's and a book's ids are the owner's data,
     so those two routes take the first link on the page that lists them (`/books/shelves`, the Library)
     and log the path they chose; when live has none, the route fails as not measured. A book's page is
     measured both ways under one id: the Lighthouse load is the full page (a reload or a shared link),

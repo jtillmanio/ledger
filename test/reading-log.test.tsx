@@ -134,12 +134,15 @@ const pressed = () => [...container.querySelectorAll(".status-group button[aria-
 function renderBook(row: {
   status: string; on?: string | null; precision?: "exact" | "approximate" | "none";
   started?: string | null; startPrecision?: "exact" | "approximate" | "none"; listened?: boolean;
+  /** The book page's control (task 0.14c): drawn open, with the read count the page already has. */
+  expanded?: boolean; readCount?: number;
 }) {
   act(() => root.render(
     <UndoProvider>
       <BookStatus bookId="wok" status={row.status}
         finishedOn={row.on ?? null} precision={row.precision ?? "none"}
-        startedOn={row.started ?? null} startPrecision={row.startPrecision ?? "none"} listened={row.listened} />
+        startedOn={row.started ?? null} startPrecision={row.startPrecision ?? "none"} listened={row.listened}
+        expanded={row.expanded} {...(row.readCount !== undefined && { readCount: row.readCount })} />
     </UndoProvider>,
   ));
 }
@@ -669,6 +672,35 @@ describe("the status control asks the dates (task 1.17b, D-131)", () => {
       root = createRoot(container);
       renderBook({ status: "read", on: "2025-03-19", precision: "exact" });
       expect(requests).toEqual([]);
+    });
+
+    it("drawn open with its read count (the book page, task 0.14c), no read loads until All reads is pressed", async () => {
+      await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+                VALUES (${USER}, 'wok', 'read', '2025-03-19', 'exact')`;
+      await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, started_on, started_on_precision, format)
+                VALUES (${USER}, 'wok', '2022-07-01', 'approximate', '2022-06-03', 'exact', 'text'),
+                       (${USER}, 'wok', '2025-03-19', 'exact', '2025-03-02', 'exact', 'audio')`;
+      renderBook({ status: "read", on: "2025-03-19", precision: "exact", started: "2025-03-02", startPrecision: "exact",
+        listened: true, expanded: true, readCount: 2 });
+      await act(async () => { await new Promise((r) => setTimeout(r, 25)); });
+      // A Lighthouse load of /book/[id] fails on any route handler it asks for: the page's load asks for none.
+      expect(requests.filter((r) => r.startsWith("GET"))).toEqual([]);
+      const toggle = button("All reads (2)", container.querySelector(".date-line")!);
+      await openReads(toggle);
+      expect(requests.filter((r) => r.startsWith("GET"))).toEqual(["GET /api/progress/book/read"]);
+      expect([...list().querySelectorAll("li")]).toHaveLength(2);
+    });
+
+    it("drawn open with one read: no All reads line and nothing loaded", async () => {
+      await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+                VALUES (${USER}, 'wok', 'read', '2025-03-19', 'exact')`;
+      await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, started_on, started_on_precision)
+                VALUES (${USER}, 'wok', '2025-03-19', 'exact', '2025-03-02', 'exact')`;
+      renderBook({ status: "read", on: "2025-03-19", precision: "exact", started: "2025-03-02", startPrecision: "exact",
+        expanded: true, readCount: 1 });
+      await act(async () => { await new Promise((r) => setTimeout(r, 25)); });
+      expect(requests.filter((r) => r.startsWith("GET"))).toEqual([]);
+      expect([...container.querySelectorAll("button")].some((b) => /^All reads/.test(b.textContent!))).toBe(false);
     });
 
     it("two reads: All reads (2) in the date line, each read with its Started and Finished, the listen named Listened", async () => {

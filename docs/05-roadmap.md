@@ -263,6 +263,10 @@ route handler check, CLS and accessibility stay as 0.10 built them.
   prefetches and counts neither them nor their bytes (D-160), so this entry's
   measurement is prefetch-free. A growth check against a baseline from before
   0.14 shows a drop, not growth.
+- *From TASK-114 (0.14c, PR #319):* the 2026-11-23 hand run measured `/books`
+  at 175,572 JS bytes, over its 175,000 budget (main's JS grew since its last
+  measure; #318 drew the book sheet's move and shelf controls). The owner left
+  it for this entry, so until then every measured run reports that finding.
 
 **Check:** (proposed; the owner agrees it by merging or edits it first)
 `test/perf.test.ts` covers the growth gate on fixture metrics: a route 3,001
@@ -339,9 +343,9 @@ everything under it passes), which is how all eight got past it.
 
 - **Every page gets a route and a budget**, each with a tap from a screen that
   links to it.
-- **Budgets are measured, not guessed.** Each comes from the branch's preview
-  measured with `LIGHTHOUSE_MODE` on, so this entry finishes only after the
-  owner turns the switch back on (after 0.14b).
+- **Budgets are measured, not guessed.** Each comes from a measured run of the
+  branch's preview: with the switch still off, one hand run (D-158), which the
+  owner allowed on 2026-11-23 so the entry needn't wait for the switch.
 - **The guard checks every depth.** A page that is deliberately not measured
   is listed with its reason.
 - **Nothing here turns `LIGHTHOUSE_MODE` on.**
@@ -350,8 +354,8 @@ everything under it passes), which is how all eight got past it.
 for each of `/books/releases`, `/books/shelves`, a shelf's page, `/books/add`,
 `/books/top`, a book's page, a run's *Add* and `/settings/calibre`, each with a
 tap from a screen that links to it, and each budget comes from a measured run
-of the branch's preview with `LIGHTHOUSE_MODE` on, not copied from another
-route. `test/perf.test.ts` fails when any `page.tsx` under `src/app/`, at any
+of the branch's preview (a hand run while `LIGHTHOUSE_MODE` is off; owner,
+2026-11-23), not copied from another route. `test/perf.test.ts` fails when any `page.tsx` under `src/app/`, at any
 depth, is neither measured by a route nor listed as unmeasured with a reason.
 Nothing in this entry turns `LIGHTHOUSE_MODE` on.
 
@@ -387,13 +391,14 @@ this item as its reason, in `test/perf.test.ts`'s `UNMEASURED`.
   links to it (*Series* in the books medium's nav; a series row; an author's
   or a universe's name), and a path resolved at run time (`resolve`) where the
   id is the owner's data.
-- **Budgets are measured, not guessed**: from the branch's preview with
-  `LIGHTHOUSE_MODE` on, plus about 5%. Nothing here turns the switch on.
+- **Budgets are measured, not guessed**: from a measured run of the branch's
+  preview (automatic with the switch on, or a hand run), plus about 5%. Nothing
+  here turns the switch on.
 
 **Check:** `scripts/perf/routes.mjs` and `scripts/perf/budget.json` have a route
 for each of `/books/series`, a series' page, an author's page and a universe's
 page, each with a tap from a screen that links to it and a budget from a
-measured run of the branch's preview with `LIGHTHOUSE_MODE` on; the four are
+measured run of the branch's preview (automatic or by hand); the four are
 gone from `UNMEASURED` in `test/perf.test.ts`, which still passes on the real
 `src/app`, and the PR's Lighthouse comment shows a tap time for each.
 

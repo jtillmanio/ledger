@@ -183,7 +183,10 @@ export default function BookDetail({ book: b, as }: { book: Book; as: "sheet" | 
               {...(b.status !== "to_read" && { status: b.status })}
               {...(b.finished_on !== null && { finishedOn: b.finished_on, precision: b.finished_on_precision })}
               {...(b.started_on !== null && { startedOn: b.started_on, startPrecision: b.started_on_precision })}
-              {...(b.listens > 0 && { listened: true })} />
+              {...(b.listens > 0 && { listened: true })}
+              // Its logged reads, so *All reads* needs no fetch until pressed (task 0.14c): the read a status
+              // holds with no log row (id null) is no row `useReads` would list.
+              readCount={b.history.filter((h) => h.id !== null).length} />
           </div>
         </div>
         {plan && (

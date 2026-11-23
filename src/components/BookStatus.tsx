@@ -112,6 +112,9 @@ function startValue(d: Finish): FinishValue {
  * only · No date*). On a Read book *Started* edits the latest read's start.
  * A book read more than once adds *All reads (n)* (`AllReads`, 1.17b): each read,
  * each date editable. The reads load when the row opens, never with the page.
+ * Drawn open with `readCount` (the book's sheet and page, which know it), they
+ * load only when *All reads* is pressed: the page's load asks no route handler
+ * for anything (task 0.14c; Lighthouse fails a load that does).
  * A start after the finish can't be saved: the reason sits under the control,
  * announced, and so does the server's if it refuses one. Closing the control,
  * any way, puts focus back on the button that opened it.
@@ -133,13 +136,16 @@ function startValue(d: Finish): FinishValue {
  */
 export default function BookStatus({
   bookId, status = "to_read", finishedOn = null, precision = "none", startedOn = null, startPrecision = "none",
-  listened = false, title: given, menu = true, glyph: showGlyph = true, owned, expanded = false,
+  listened = false, title: given, menu = true, glyph: showGlyph = true, owned, expanded = false, readCount,
 }: {
   bookId: string; status?: string; finishedOn?: string | null; precision?: Precision;
   startedOn?: string | null; startPrecision?: Precision; listened?: boolean;
   title?: string; menu?: boolean; glyph?: boolean;
   /** Drawn open: the book sheet's *Your record* (task 3.5), where the controls are the point. */
   expanded?: boolean;
+  /** How many reads the book has (its `read_events` rows), when the page already knows: *All reads (n)* shows
+   * from it, and the reads load only when it is pressed (task 0.14c). Left out, they load when the row opens. */
+  readCount?: number;
   /** The copies the row owns, for the `⋯`'s toggles (task 5.17); left out when none. */
   owned?: readonly OwnedCopy[];
 }) {
@@ -177,8 +183,11 @@ export default function BookStatus({
   const unlisted = saved.status === "unlisted";
   const parked = saved.status === "parked";
   const dated = saved.status === "reading" || saved.status === "listening" || saved.status === "read";
-  // The book's reads load once its row is open on a dated status, and again after any save or undo.
-  const { reads, failed: readsFailed, reload } = useReads(bookId, open && dated);
+  // The book's reads load once its row is open on a dated status, and again after any save or undo. With a
+  // known count (the sheet and the page), only once *All reads* is pressed.
+  const { reads, failed: readsFailed, reload } =
+    useReads(bookId, open && dated && (readCount === undefined || showReads));
+  const readTotal = reads?.length ?? readCount ?? 0;
 
   // A refresh after a save brings the server's row back: keep it, not the last local guess.
   const props = { status, finishedOn, precision, startedOn, startPrecision, listened };
@@ -475,8 +484,8 @@ export default function BookStatus({
               </button>
             )}
             {/* A book read more than once lists every read (task 1.17b). */}
-            {reads && reads.length > 1 && (
-              <AllReadsToggle count={reads.length} open={showReads} listId={readsId}
+            {readTotal > 1 && (
+              <AllReadsToggle count={readTotal} open={showReads} listId={readsId}
                 onToggle={() => setShowReads((o) => !o)} />
             )}
           </p>

@@ -99,6 +99,15 @@ describe("Reading history (AC-4)", () => {
     expect(text(render(book()).querySelector(".detail-history")) ).toBe("");
     expect(text(render(book()).querySelector(".empty b"))).toBe("Not read yet");
   });
+
+  it("draws All reads from the logged reads it already has, so its load asks for none (task 0.14c)", () => {
+    const toggle = (b: Book) => [...render(b).querySelectorAll("button")].map(text).find((t) => t.startsWith("All reads"));
+    // Three logged reads: the count is on the page as served, before any fetch could have answered.
+    expect(toggle(TWICE_HEARD)).toBe("All reads (3)");
+    // The read a Read status holds with no log row is no row the list would load: one logged read, no toggle.
+    expect(toggle(book({ status: "read", finished_on: "2025-03-17", finished_on_precision: "exact", reads: 2,
+      history: [READ({ id: 1, finished_on: "2025-03-17", finished_on_precision: "exact" }), READ({ id: null })] }))).toBeUndefined();
+  });
 });
 
 describe("Read again presses (AC-4)", () => {

@@ -727,7 +727,7 @@ const UNMEASURED: Record<string, string> = {
  * Routes whose budget waits for their first measured run (task 0.14c): budget.json holds null for
  * each, and the report measures them without gating them. Emptied when the run's numbers land.
  */
-const AWAITING_MEASUREMENT: string[] = ["releases", "shelves", "shelf", "books-add", "top", "book", "run-add", "calibre"];
+const AWAITING_MEASUREMENT: string[] = ["shelf"]; // live had no shelf on 2026-11-23's hand run
 
 describe("the page guard (task 0.14c)", () => {
   /** A throwaway app/ tree holding a page.tsx at each of `pages`. */
