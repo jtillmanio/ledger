@@ -88,6 +88,8 @@ Approved by the owner 2026-11-23 ("go with recommendations"): AC-4's *a book in 
 
 **Revision 1** (owner, 2026-11-23, in Phase 2): `seriesHref`, `authorHref` and `universeHref` move into `BookPlace.tsx`, and `src/components/SeriesList.tsx` and `src/components/GroupingBooks.tsx` import and re-export them: the client *On deck* row draws `BookPlace`, and importing them from those two would bring the follow control and the series list into `/books`' JS. And `test/e2e/books-dashboard.spec.ts`: 2.2g's *the rows are read-only text: no link* test pinned what AC-2 changes; it now proves the dashboard half of AC-2 in the browser (the universe and series links, the subseries text, a tap to the series page).
 
+**Revision 2** (spec-reviewer R1, standing rule 6 and `ui.redrawFiles`): the plan's *no mockup redraw* no longer held once the links were underlined, bdash's note said *Read-only, and not links*, and step 1 put new copy at the Library's foot. `design/mockups.html` draws the place links (`a.plink`, underlined in `--faint`) on bdash's *where the book sits* rows, blist's sub-lines and bookdetail's author, place line and Series fact, blist's first frame ends *All series →*, bdash's note is rewritten and blist and bookdetail gain a notes entry; `design/mockups-index.md`'s `bdash`, `blist`, `bookdetail` and `series` rows say so.
+
 **Test strategy**
 
 - AC-1, AC-2 (Library): `series.spec.ts`, a Library row's series name is a link named by the series to `/books/series/e2e-sp-gap`, and a tap opens that page; screenshots at 360, 834 and 1280px.

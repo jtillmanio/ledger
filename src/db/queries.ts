@@ -1167,9 +1167,9 @@ export type SeriesSummary = {
  * `to_read` or `unlisted`) at the lowest `series_position`, a book with none after every positioned one.
  * Unlike `follow_next`, a book in hand (reading, listening) or a DNF is skipped, not blocking: the next
  * eligible book is named (task 5.9 decision 3). A complete series has none. A series with more read than its
- * stated total (4 / 3) is complete. All derived here, never stored (hard rule 2). The one reader of
- * `series_progress`'s rows for a list: the Library's own Series section, and its `seriesProgress`, went in
- * task 5.9's third part (TASK-125).
+ * stated total (4 / 3) is complete. All derived here, never stored (hard rule 2). The only list that reads
+ * `series_progress` now: the Library's own Series section and its `seriesProgress` were removed in task 5.9's
+ * third part (TASK-125).
  */
 export async function seriesList(userId: string): Promise<SeriesSummary[]> {
   return sql<SeriesSummary[]>`
