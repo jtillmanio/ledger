@@ -1,7 +1,7 @@
 ---
 id: TASK-135
 title: 0.15 The browser suite runs by area (2 of 3) — CI runs what a PR's paths can break
-status: In progress
+status: Review
 depends_on: [TASK-134]
 size: M
 model: opus
@@ -34,7 +34,7 @@ A ready PR's browser suite runs only the areas its changed files can break, plus
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves every clause but the guard's, which TASK-134 proves): tests pin the map and the plan: a change only under a medium's own
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves every clause but the guard's, which TASK-134 proves): tests pin the map and the plan: a change only under a medium's own
 routes, components and specs selects that medium and the critical set, and
 runs none of another medium's specs; a change under `src/db/`, `etl/views.sql`,
 `src/lib/`, a shared component, `globals.css`, `package.json`, the Playwright
@@ -47,10 +47,10 @@ changes only a comics screen, CI runs the comics specs and the critical set and
 no books spec, and its browser time is under half of a full run's.
 `.claude/rules/git.md`'s *Test on the branch* section says which PRs run what.
 Decision row recorded (next free D-n), amending D-80, D-141 and D-161.
-- [ ] AC-2: Given changed files under both `src/app/comics/` and `src/app/books/`, the scope selects `books` and `comics` and not `watch`, `music` or `games`; given one file under `src/components/` that the map does not name, it selects every area.
-- [ ] AC-3: `ci.yml` has a `schedule` trigger that runs on `main` with every area, and `test/ci-yml.ts` asserts it; a scheduled run's scope output is every area.
-- [ ] AC-4: A docs-only push after a run that covered only some areas does not reuse that run as a full pass under D-145: the plan's rule is pinned by a test in `test/ci-scope.test.ts`.
-- [ ] AC-5: The PR body records the comics-only branch's run (its URL, the areas the summary names, its browser time) beside a full run's from `main`, and the ratio is under one half.
+- [x] AC-2: Given changed files under both `src/app/comics/` and `src/app/books/`, the scope selects `books` and `comics` and not `watch`, `music` or `games`; given one file under `src/components/` that the map does not name, it selects every area.
+- [x] AC-3: `ci.yml` has a `schedule` trigger that runs on `main` with every area, and `test/ci-yml.ts` asserts it; a scheduled run's scope output is every area.
+- [x] AC-4: A docs-only push after a run that covered only some areas does not reuse that run as a full pass under D-145: the plan's rule is pinned by a test in `test/ci-scope.test.ts`.
+- [x] AC-5: The PR body records the comics-only branch's run (its URL, the areas the summary names, its browser time) beside a full run's from `main`, and the ratio is under one half.
 
 ## Out of scope
 
@@ -75,7 +75,8 @@ Decision row recorded (next free D-n), amending D-80, D-141 and D-161.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- TASK-136 (the budget by area): an area run's `e2e-times` covers only its areas, so the per-area comparison reads `E2E_AREAS`; and a one-area run still builds on all ten shards for a couple of minutes of tests: whether an area run takes fewer shards (approved at plan)
+- TASK-136 (the budget by area): an area run's `e2e-times` covers only its areas, so today's `compareTimes` counts main's other tests as removed and the per-area comparison should read `E2E_AREAS`; and a one-area run still builds on all ten shards for about two minutes of tests (PR #328: 15.1 job-minutes against main's 57.3): whether an area run takes fewer shards (approved at plan) → docs/tasks/TASK-136-e2e-budget-by-area.md § Context
+- The first nightly run on `main` after merge can only be checked then: Actions → CI, event `schedule`, its scope summary reads "every area" → not tracked: a one-time post-merge check, listed in PR #327's How it was verified
 
 ## Plan
 
@@ -110,13 +111,15 @@ Approved by the owner 2026-11-23 (attended, at the plan gate).
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS | CI R1 PASS (every area, 1f86fd5) | Throwaway PR #328 CI PASS (`e2e full comics`, 2.09 of 43.78 min suite time) | Spec R1 APPROVE (note: api/books and api/shelves mapped to books only) → plan revision 2 | Verify R2 PASS | Audit R1 PASS | Spec R2 APPROVE (the fix's diff) | CI R2 PASS (41302e6) | Follow-ups check APPROVE | Drift R1 update first (behind 1; main changed globals.css, src/db/queries.ts, src/db/writes.ts) → rebased | Verify R3 PASS | CI R3 on the rebased head: see PR
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2 (spec)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 2 (the spec-import rule; api/books and api/shelves to every area)
