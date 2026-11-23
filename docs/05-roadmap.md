@@ -4587,7 +4587,7 @@ both is in each, and the tab counts it once; the *Fantasy* chip leaves only
 *Fantasy*, survives a reload and writes nothing. In the Library, *To read · On
 deck* then a genre chip lists only that genre's On deck books. Screenshots at 360px and 1280px.
 
-### ☐ 4.6 Decide a waiting Calibre near spelling on the Calibre page · S
+### ☑ 4.6 Decide a waiting Calibre near spelling on the Calibre page · S
 *From task 4.4 part 3 (TASK-083, PR #270). The Check is a proposal: agreed when merged, or edit it first.*
 The *Calibre* page lists what a sync holds (a near spelling, or two Calibre
 books on one Ledger book) but nothing in the app decides one.
@@ -4618,6 +4618,29 @@ second press changes nothing; the next sync (`POST /api/calibre/sync`) renames
 the book or creates a new one to match, and logs it. In the browser the entry
 reads *Merged* or *Kept separate* after the press, each button is named for its
 book and 44px at 360px, and axe reports no violation.
+
+### ☐ 4.6b Flag a book the sync created under a new author · S
+*From task 4.6 (TASK-129, PR #326), which left 4.6's *Noted with it* paragraph undone. The Check is a proposal: agreed when merged, or edit it first.*
+A Calibre author spelled a new way creates a new author when the sync creates
+the book (the app keeps no author merges), and the *Calibre* page can't tell a
+stray new spelling from a known author: a run's report names a created book by
+its title, and the page shows the author the book has today.
+
+- **The sync records it.** Each `created` entry in the report carries
+  `newAuthor`, true when the book's author did not exist before the run. It is
+  read from the run, not stored on the book (hard rule 2), and a report stored
+  before this change has no such key.
+- **The page marks it.** A created book whose entry says `newAuthor` shows
+  *new author* beside its author, in text (never colour alone); an entry with
+  no key shows no mark. No button: whether to merge two authors is not an
+  action the app has.
+
+**Check:** with the test database, a sync whose payload creates one book by an
+author the Ledger lacks and one by a known author: the report's first `created`
+entry carries `newAuthor: true` and the second `newAuthor: false`; the *Calibre*
+page marks the first *new author* beside its author and not the second; a stored
+run whose `created` entries have no `newAuthor` key shows no mark and no error.
+At 360px the mark has contrast 4.5:1 in both themes and axe reports no violation.
 
 ---
 

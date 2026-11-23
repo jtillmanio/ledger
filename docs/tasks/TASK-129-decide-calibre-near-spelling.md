@@ -1,7 +1,7 @@
 ---
 id: TASK-129
 title: 4.6 Decide a waiting Calibre near spelling on the Calibre page
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: sonnet
@@ -30,17 +30,17 @@ A near spelling the Calibre sync holds can be settled from the *Calibre* page: o
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): with the test database, a run whose report has one waiting near
+- [x] AC-1 (roadmap **Check:**, verbatim): with the test database, a run whose report has one waiting near
 spelling and the Ledger book it is near: *Merge* writes one `calibre_decisions`
 row, `merge`, with that book's id; *Separate* writes `separate` with none; a
 second press changes nothing; the next sync (`POST /api/calibre/sync`) renames
 the book or creates a new one to match, and logs it. In the browser the entry
 reads *Merged* or *Kept separate* after the press, each button is named for its
 book and 44px at 360px, and axe reports no violation.
-- [ ] AC-2: The route answers 401 without a session, and 400, writing nothing, for an unknown decision, a non-integer Calibre id, a merge with no book id, or a merge into a missing or soft-deleted book.
-- [ ] AC-3: Given a decided entry, it keeps both buttons, and pressing the other one replaces the decision (one `calibre_decisions` row for that Calibre id, the new value). The sync log row for the run is byte-for-byte unchanged by any press.
-- [ ] AC-4: The buttons' accessible names are *Merge "<Calibre title>" into <Ledger title>* and *Keep "<Calibre title>" separate*, each a real `<button>`. A failed press shows the page's error treatment (grey, never red) and leaves the entry waiting.
-- [ ] AC-5: The *Calibre* page's waiting entries meet the UX floor (`docs/04-design.md` § 10. The UX floor): 44px targets on the phone, real controls with names, text contrast 4.5:1 in both themes, focus visible, a pending state while a press is in flight, no horizontal scroll at 360px, and screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-2: The route answers 401 without a session, and 400, writing nothing, for an unknown decision, a non-integer Calibre id, a merge with no book id, or a merge into a missing or soft-deleted book.
+- [x] AC-3: Given a decided entry, it keeps both buttons, and pressing the other one replaces the decision (one `calibre_decisions` row for that Calibre id, the new value). The sync log row for the run is byte-for-byte unchanged by any press.
+- [x] AC-4: The buttons' accessible names are *Merge "<Calibre title>" into <Ledger title>* and *Keep "<Calibre title>" separate*, each a real `<button>`. A failed press shows the page's error treatment (grey, never red) and leaves the entry waiting.
+- [x] AC-5: The *Calibre* page's waiting entries meet the UX floor (`docs/04-design.md` § 10. The UX floor): 44px targets on the phone, real controls with names, text contrast 4.5:1 in both themes, focus visible, a pending state while a press is in flight, no horizontal scroll at 360px, and screenshots at each `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -69,7 +69,8 @@ book and 44px at 360px, and axe reports no violation.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The created book's `newAuthor` flag (4.6's *Noted with it*) is still undone: TASK-083 shows a created book's author today, but no run records whether it brought a new author. A new phase-4 roadmap item carrying the note's own Check → `docs/05-roadmap.md` § 4.x (new) (approved at plan)
+- The created book's `newAuthor` flag (4.6's *Noted with it*) is still undone: TASK-083 shows a created book's author today, but no run records whether it brought a new author. A new phase-4 roadmap item carrying the note's own Check → `docs/05-roadmap.md` § 4.6b (new, Check proposed), with its stub in `docs/06-tasklist.md` M16 (approved at plan)
+- The test audit found the AC-2 401 case mocks `apiUserId` (the repo's pattern in every API test: the route's part is `unauthorized()` on a null user; the gate itself is `src/proxy.ts`) → not tracked: accepted as the repo's pattern
 - *Two calibre books* gets no buttons: neither answer clears it (an exact title-and-author match ignores *separate*; a *merge* into a claimed book waits again). It is fixed in Calibre by removing or retitling the copy → not tracked: no Ledger decision applies (approved at plan)
 
 ## Plan
@@ -116,7 +117,11 @@ _Approved 2026-11-23 at 78c28a3._
 
 _Filled by /implement-task. One line per round._
 
-- Local: vitest (calibre-decide, calibre-page, calibre-sync) PASS 77/77 | e2e calibre-page.spec.ts w390-light R1 FAIL (curly vs straight apostrophe in the test) → R2 PASS 20/20
+- Verify R1 FAIL(1: query-budget.test.ts, /settings/calibre 5 queries over 4) → ceiling raised to 5 for the one decisions read → R2 PASS | Touched specs: calibre-page.spec.ts w390-light R1 FAIL(1: a curly vs straight apostrophe in the test) → R2 PASS 20/20 | CI R1 PASS (b0a6d13, every project)
+- Schema R1 CHANGES (queries.ts: a merge whose Ledger book was soft-deleted read as Merged; an unguarded `::int` cast; no odd-report tests) → fixed in 912c8c9 → Verify R3 PASS (130 files, 2581 tests; calibre-page.spec.ts 20/20); not re-run: its files were fixed as it asked
+- Spec R1 APPROVE (note: the *Merge or keep separate* line showed with only a second-Calibre-book entry → fixed in 912c8c9, with a test)
+- Audit R1 CHANGES (AC-2's 401 case mocks `apiUserId`) → accepted as the repo's pattern (every API test mocks it; the gate is `src/proxy.ts`); every other AC PROVEN or DISCRIMINATING, `setWhere` pinned by the second-press test
+- UI: not yet run (needs a dev database run holding a waiting near spelling; see the PR)
 
 ## Blocked
 
@@ -124,7 +129,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 1 (schema CHANGES fixed; spec APPROVE); audit 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (two additions outside the plan's list, both reported: `test/query-budget.test.ts` and the test file's `.tsx` extension)
