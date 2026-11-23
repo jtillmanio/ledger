@@ -6,7 +6,9 @@
 // never --danger, and links to the page. The UX floor (design § 10): the empty, loading and error
 // states drawn, named controls, 44px summaries, contrast in both themes, axe, no sideways scroll, and
 // the screenshots at 360, 834 and 1280px light and dark and the dashboard's line at every feel-pass
-// width with reduced motion and reduced transparency (D-40).
+// width with reduced motion and reduced transparency (D-40). Task 4.6 (D-87, D-89): the newest run's
+// waiting near spelling carries *Merge* and *Keep separate*; a press reads *Merged* or *Kept separate*,
+// both buttons stay, and a failed press is a grey line that leaves the entry waiting.
 //
 // The log is the whole table, so each test seeds its own runs and deletes every `calibre_syncs` row
 // after, and the e2e suite runs one worker: no other spec's dashboard meets a stale run.
@@ -49,6 +51,13 @@ const CHANGED = report({
   out: [{ calibreId: 9001, bookId: "e2e-cal-b1", title: "E2E Calibre Renamed", column: "#date_read", from: "2026-03-01", to: "2026-03-17" }],
   waiting: [{ kind: "near spelling", calibreId: 9002, title: "E2E Calibre Piranesi!", author: "E2E Susanna Clarke", bookId: "e2e-cal-b2", bookTitle: "E2E Calibre Piranesi" }],
 });
+/** The newest run in the decide tests: a near spelling to decide, and a second Calibre book that has no answer in the app. */
+const WAITING = report({
+  waiting: [
+    { kind: "near spelling", calibreId: 9002, title: "E2E Calibre Piranesi!", author: "E2E Susanna Clarke", bookId: "e2e-cal-b2", bookTitle: "E2E Calibre Piranesi" },
+    { kind: "two calibre books", calibreId: 9007, title: "E2E Calibre Elantris", author: "E2E Brandon Sanderson", bookId: "e2e-cal-b7", bookTitle: "E2E Calibre Elantris" },
+  ],
+});
 const FRESH = report({
   in: [{ kind: "created", calibreId: 9003, bookId: "e2e-cal-b3", title: "E2E Calibre Gideon", changes: [{ field: "status", from: null, to: "unlisted" }] }],
   gone: [{ bookId: "e2e-cal-b4", title: "E2E Calibre Vanished", calibreId: 9004 }],
@@ -75,6 +84,7 @@ const threeRuns = () => seedRuns([daysAgo(20), NOTHING], [daysAgo(10), CHANGED],
 
 const clean = () => withSql(async (sql) => {
   await sql`DELETE FROM calibre_syncs`;
+  await sql`DELETE FROM calibre_decisions`;
   await sql`DELETE FROM books WHERE id LIKE 'e2e-cal-%'`;
 });
 
@@ -243,6 +253,135 @@ test("the error state: a neutral line with a grey ×, a named Try again button, 
   expect(await contrastFailures(page)).toEqual([]);
   await expectNoAxeViolations(page, AXE);
   await screenshot(page, info, "calibre-error");
+});
+
+// ---- deciding a waiting near spelling (task 4.6) ------------------------------------------------
+
+const MERGE_NAME = 'Merge "E2E Calibre Piranesi!" into E2E Calibre Piranesi';
+const SEPARATE_NAME = 'Keep "E2E Calibre Piranesi!" separate';
+
+const waitingBooks = () => withSql(async (sql) => {
+  await sql`INSERT INTO books (id, title) VALUES ('e2e-cal-b2', 'E2E Calibre Piranesi'), ('e2e-cal-b7', 'E2E Calibre Elantris')`;
+});
+const decisionRows = () => withSql((sql) => sql`SELECT calibre_id, decision, book_id FROM calibre_decisions`);
+const logOf = () => withSql((sql) => sql`SELECT report::text AS report FROM calibre_syncs ORDER BY id`);
+
+async function openWaiting(page: Page) {
+  await waitingBooks();
+  await seedRuns([daysAgo(10), CHANGED], [daysAgo(1), WAITING]);
+  await open(page);
+  const merge = page.getByRole("button", { name: MERGE_NAME });
+  const separate = page.getByRole("button", { name: SEPARATE_NAME });
+  await hydrated(merge);
+  return { merge, separate, status: page.locator(".cdecided") };
+}
+
+test("pressing Keep separate then Merge reads Kept separate then Merged, both buttons stay, and the log is untouched (AC-1, AC-3, AC-4)", async ({ page }) => {
+  const { merge, separate, status } = await openWaiting(page);
+  const before = await logOf();
+  await expect(status).toHaveText("");
+  await expect(merge).toHaveAttribute("aria-pressed", "false");
+  await separate.click();
+  await expect(status).toHaveText("Kept separate");
+  await expect(separate).toHaveAttribute("aria-pressed", "true");
+  await expect(merge).toHaveAttribute("aria-pressed", "false");
+  expect(await decisionRows()).toEqual([{ calibre_id: 9002, decision: "separate", book_id: null }]);
+  // The answer is stored, not remembered by the page: a reload reads it back.
+  await page.reload();
+  await expect(page.locator(".cdecided")).toHaveText("Kept separate");
+  const again = page.getByRole("button", { name: MERGE_NAME });
+  await hydrated(again);
+  await again.click();
+  await expect(page.locator(".cdecided")).toHaveText("Merged");
+  await expect(page.getByRole("button", { name: SEPARATE_NAME })).toHaveAttribute("aria-pressed", "false");
+  expect(await decisionRows()).toEqual([{ calibre_id: 9002, decision: "merge", book_id: "e2e-cal-b2" }]);
+  expect(await logOf()).toEqual(before);
+  // Only the near spelling has buttons: the second Calibre book is mended in Calibre, and the older run is text.
+  await expect(page.locator(".cdecide")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: /^(Merge|Keep)/ })).toHaveCount(2);
+});
+
+test("a press that fails says so in a grey line and leaves the entry waiting (AC-4)", async ({ page }) => {
+  const { merge, status } = await openWaiting(page);
+  await page.route("**/api/calibre/decide", (route) => route.fulfill({ status: 400, contentType: "application/json", body: '{"error":"no such book to merge into"}' }));
+  await merge.click();
+  const alert = page.locator(".cdecide [role=alert]");
+  await expect(alert).toContainText("Couldn't save that. It is still waiting.");
+  await expect(status).toHaveText("");
+  await expect(merge).toHaveAttribute("aria-pressed", "false");
+  expect(await decisionRows()).toEqual([]);
+  const danger = await tokenColour(page, "--danger");
+  const colours = await alert.evaluate((el) => [el, ...el.querySelectorAll("*")].flatMap((e) => {
+    const cs = getComputedStyle(e); return [cs.color, cs.backgroundColor, cs.borderTopColor];
+  }));
+  expect(colours).not.toContain(danger);
+  // The next press tries again and clears the line.
+  await page.unroute("**/api/calibre/decide");
+  await merge.click();
+  await expect(status).toHaveText("Merged");
+  await expect(alert).toHaveCount(0);
+});
+
+test("a press in flight disables both buttons and says it is saving (AC-5)", async ({ page }) => {
+  const { merge, separate, status } = await openWaiting(page);
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  await page.route("**/api/calibre/decide", async (route) => { await held; await route.continue(); });
+  await separate.click();
+  await expect(separate).toHaveAttribute("aria-busy", "true");
+  await expect(separate).toHaveAttribute("aria-disabled", "true");
+  await expect(merge).toHaveAttribute("aria-disabled", "true");
+  await expect(status).toHaveText("Saving…");
+  release();
+  await expect(status).toHaveText("Kept separate");
+  await expect(separate).not.toHaveAttribute("aria-busy", "true");
+  await expect(merge).not.toHaveAttribute("aria-disabled", "true");
+});
+
+test("the buttons are real, named, 44px on the phone, focusable and visibly focused; contrast, axe and no sideways scroll (AC-4, AC-5)", FLOOR, async ({ page }, info) => {
+  const { merge, separate, status } = await openWaiting(page);
+  const floor = page.viewportSize()!.width < 768 ? 44 : 24;
+  for (const button of [merge, separate]) {
+    expect(await button.evaluate((el) => el.tagName)).toBe("BUTTON");
+    const box = (await button.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(floor);
+    expect(box.width).toBeGreaterThanOrEqual(floor);
+  }
+  await merge.focus();
+  await expect(merge).toBeFocused();
+  const outline = await computedStyle(merge, ["outline-style", "outline-width"]);
+  expect(outline["outline-style"], "a visible focus ring").not.toBe("none");
+  expect(Number.parseFloat(outline["outline-width"])).toBeGreaterThan(0);
+  await expectNoHorizontalScroll(page);
+  expect(await contrastFailures(page)).toEqual([]);
+  await expectNoAxeViolations(page, AXE);
+  await separate.click();
+  await expect(status).toHaveText("Kept separate");
+  expect(await contrastFailures(page)).toEqual([]);
+  await expectNoAxeViolations(page, AXE);
+  await expectNoHorizontalScroll(page);
+  await screenshot(page, info, "calibre-decide");
+});
+
+test("the waiting entries at 360, 834 and 1280px, light and dark, undecided and decided (AC-5)", ONCE, async ({ page }, info) => {
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    for (const [width, height] of [[360, 780], [834, 1112], [1280, 800]]) {
+      await page.setViewportSize({ width, height });
+      await clean();
+      const { merge, separate, status } = await openWaiting(page);
+      await expectNoHorizontalScroll(page);
+      expect(await contrastFailures(page), `${width}px ${colorScheme} waiting`).toEqual([]);
+      await screenshot(page, info, `calibre-waiting-${width}-${colorScheme}`);
+      await separate.click();
+      await expect(status).toHaveText("Kept separate");
+      await expect(merge).toHaveAttribute("aria-pressed", "false");
+      await expectNoHorizontalScroll(page);
+      expect(await contrastFailures(page), `${width}px ${colorScheme} decided`).toEqual([]);
+      await expectNoAxeViolations(page, AXE);
+      await screenshot(page, info, `calibre-decided-${width}-${colorScheme}`);
+    }
+  }
 });
 
 // ---- the dashboard's line ----------------------------------------------------------------------

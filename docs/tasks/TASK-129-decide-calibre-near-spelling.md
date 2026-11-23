@@ -116,6 +116,8 @@ _Approved 2026-11-23 at 78c28a3._
 
 _Filled by /implement-task. One line per round._
 
+- Local: vitest (calibre-decide, calibre-page, calibre-sync) PASS 77/77 | e2e calibre-page.spec.ts w390-light R1 FAIL (curly vs straight apostrophe in the test) → R2 PASS 20/20
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._

@@ -2469,6 +2469,24 @@ export async function createdBookAuthors(limit: number): Promise<Map<string, str
 }
 
 /**
+ * What has been decided of the newest run's waiting Calibre books (task 4.6, D-89): the Calibre id
+ * → `merge` or `separate`, read from `calibre_decisions` for the ids in that run's `waiting` list.
+ * Derived at read, so the sync log is never edited. A run with no waiting list, or one that isn't
+ * an array, has none.
+ */
+export async function waitingDecisions(): Promise<Map<number, "merge" | "separate">> {
+  const rows = await sql<{ calibreId: number; decision: "merge" | "separate" }[]>`
+    SELECT d.calibre_id AS "calibreId", d.decision
+    FROM calibre_decisions d
+    WHERE d.calibre_id IN (
+      SELECT (e->>'calibreId')::int
+      FROM (SELECT report FROM calibre_syncs ORDER BY ran_at DESC, id DESC LIMIT 1) s,
+           jsonb_array_elements(CASE WHEN jsonb_typeof(s.report->'waiting') = 'array' THEN s.report->'waiting' ELSE '[]'::jsonb END) e
+      WHERE jsonb_typeof(e->'calibreId') = 'number')`;
+  return new Map(rows.map((r) => [r.calibreId, r.decision]));
+}
+
+/**
  * Live books Calibre doesn't have (task 4.4, D-90): `books.calibre_id` is NULL, so no sync has
  * matched or made them. Derived, never stored; title order, with the author.
  */
