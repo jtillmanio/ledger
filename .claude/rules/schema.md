@@ -108,7 +108,9 @@ Release, test isolation) and the Hard rules a reviewer checks.
   and writes what the Ledger holds into Calibre with `calibredb set_metadata`
   (through the content server on localhost while Calibre is open, else the
   library folder): `#read`, the date-read column (the latest read's finish,
-  its day at noon Eastern; a `none` finish clears it), `#ledger_status` and
+  its day at noon Eastern; a `none` finish clears it; a date Calibre shows as
+  a year alone is in step with any Ledger finish in that year, and a day or a
+  month-and-year value compares by day, task 4.4b), `#ledger_status` and
   `#owned` (5.17's formats). Never the start date, never `metadata.db`
   directly, never a database: it talks only to the app's URL. A column the
   library lacks is named and skipped. Until the books cutover (1.26) the reads
