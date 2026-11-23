@@ -1,14 +1,14 @@
 ---
 id: TASK-130
 title: 5.18 A Parked book stays out of the plan and the listen queue, through every undo
-status: Ready
+status: In progress
 depends_on: []
 size: S
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 7530fd8
 ---
 
 # TASK-130 — 5.18 A Parked book stays out of the plan and the listen queue, through every undo
@@ -68,7 +68,41 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-23. **Every one of the four undos refuses** (409, nothing changed); none takes the book off
+the queue. This matches the undos' existing rule for a plan row gained since: taking the queue row off would
+erase a later action the undo never recorded.
+
+1. Tests first (`test/parked.test.ts`, a new describe), through the routes, each comparing `book_status`,
+   `reading_plan` and `listen_queue` row for row (AC-2):
+   - *Plan…* undo: Parked `d` added to 2027 Q1, queued, the add undone → 409, all as before (AC-1, AC-3).
+   - *Unlisted* undo: Unlisted from Parked, queued, undone → 409, all as before (AC-1).
+   - *Remove* undo: `d` queued, removed, parked, the remove undone → 409, `d` off the queue, the queue as
+     before (AC-1, AC-4).
+   - Plan move undo: `d` in Q1 and On deck, moved Q1 → On deck (`placed: false`), parked, undone → 409, no
+     plan row (AC-1).
+   - Two races: another transaction holds the listen lock and queues `d` while each status undo (add's,
+     *Unlisted*'s) waits → it refuses.
+2. `undoBookStatus`: with `prior.status = 'parked'`, take `lockListen` and refuse when the book has a
+   `listen_queue` row. Order book → listen; no plan lock on that path (`unplanned` is empty when the prior
+   is Parked).
+3. `undoInside`: for the unparked books, take `lockListen` after the plan re-check, before the status goes
+   back to Parked; a queue row throws `refused`. Order add lock → status rows → plan → listen, as a park.
+4. `restoreListen`: read the status under the listen lock; a Parked book throws `RefusedStatus`.
+5. `undoMoveIn`: refuse `parked` as it refuses `unlisted`.
+6. `src/app/api/listen-queue/route.ts` (not in Files likely touched): `RefusedStatus` on the *Remove* undo
+   answers 409.
+7. `.claude/rules/schema.md` Parked paragraph names each choice (AC-5); the `writes.ts` doc comments too.
+
+**Files:** `src/db/writes.ts`, `src/app/api/listen-queue/route.ts`, `test/parked.test.ts`,
+`.claude/rules/schema.md`, this task file.
+
+**Test strategy:** AC-1–AC-3 by the tests in step 1. AC-4: no undo takes a book off, so the row-for-row
+queue comparison (positions 1…N unchanged) after each refusal proves it. AC-5: the schema.md diff.
+
+**Risks:** the new lock-order edge is book → listen in `undoBookStatus`; nothing takes the listen lock and
+then locks a book row (the queue helpers only read `books`), so it can't deadlock.
+
+**Follow-ups:** none at plan.
 
 ## Review log
 

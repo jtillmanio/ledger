@@ -338,8 +338,8 @@ export async function saveBookStatus(
  * back under a plan row it has gained since (task 1.21), or take the status
  * row of a book that had none, and has been planned since, out from under its
  * plan row (task 2.3), or put a park's plan rows back in a period the book is in
- * again since, or put a book back to Parked under a plan row it has gained since
- * (task 5.15). A re-date's undo (task 3.4c) also refuses once the old year's
+ * again since, or put a book back to Parked under a plan row or a listen-queue row it has gained since
+ * (tasks 5.15, 5.18). A re-date's undo (task 3.4c) also refuses once the old year's
  * ranking has moved since the re-date took the read out of it (`asLeft`), or when
  * the read has been ranked since and its old date would carry that rank into
  * another year; otherwise the old year's ranks come back with the date.
@@ -372,6 +372,13 @@ export async function undoBookStatus(userId: string, change: BookStatusChange, n
       const [planned] = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
         .where(and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId))).limit(1);
       if (planned) return false;
+    }
+    // Nor back to Parked under a listen_queue row written since (task 5.18): a Parked book is on no queue. Read under
+    // the queue's lock, taken after the book's as a status write takes them (no plan lock follows on this path: only
+    // a park has `unplanned`), so a *Queue to listen* that waits on it sees the book Parked and refuses.
+    if (prior?.status === "parked") {
+      await lockListen(tx);
+      if ((await listenPosition(tx, bookId)) !== null) return false;
     }
     // A park's plan rows go back only to periods the book isn't in again (task 5.15).
     if (unplanned.length > 0) {
@@ -1612,8 +1619,8 @@ export async function planMove(userId: string, bookId: string, from: PlanEnd, to
  * the quarter it left reads exactly as before. Refuses, changing nothing, when
  * the book has moved on since: it is no longer in `to`, or is back in a period
  * it left. A row comes back only to a live book on your list: never to one
- * removed, Unlisted or with no status (a plan row is always a listed book's,
- * task 1.21), and after a move to Someday only to one still `to_read` (read
+ * removed, Unlisted, Parked or with no status (a plan row is always a listed book's,
+ * tasks 1.21, 5.18), and after a move to Someday only to one still `to_read` (read
  * or started since, it has moved on).
  */
 export async function undoPlanMove(userId: string, move: PlanMove): Promise<boolean> {
@@ -1645,7 +1652,8 @@ async function undoMoveIn(tx: Tx, userId: string, move: PlanMove, refused: symbo
     const [listed] = await tx.select({ status: bookStatus.status }).from(bookStatus)
       .innerJoin(books, eq(books.id, bookStatus.bookId))
       .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId), isNull(books.deletedAt)));
-    if (!listed || listed.status === "unlisted") throw refused;
+    // A plan row is a listed book's: never one Unlisted (task 1.21) or Parked since (tasks 5.15, 5.18).
+    if (!listed || listed.status === "unlisted" || listed.status === "parked") throw refused;
     if (to === "someday" && listed.status !== "to_read") throw refused;
   }
   if (to === "someday") {
@@ -2008,6 +2016,15 @@ async function listenable(tx: Tx, bookId: string) {
   return Boolean(book);
 }
 
+/** A Parked book is put away (task 5.15, D-105): never queued, never put back on the queue. Read under the queue's
+ * lock: a park takes it after its status write, so one that commits first is seen here, and one that waits for it
+ * takes the row off again. */
+async function parkedNow(tx: Tx, bookId: string) {
+  const [parked] = await tx.select({ bookId: bookStatus.bookId }).from(bookStatus)
+    .where(and(eq(bookStatus.bookId, bookId), eq(bookStatus.status, "parked"))).limit(1);
+  return Boolean(parked);
+}
+
 async function listenPosition(tx: Tx, bookId: string): Promise<number | null> {
   const [row] = await tx.select({ position: listenQueue.position }).from(listenQueue).where(eq(listenQueue.bookId, bookId));
   return row?.position ?? null;
@@ -2076,9 +2093,7 @@ export type ListenQueued = { position: number; added: boolean };
 export async function queueListen(bookId: string): Promise<ListenQueued | null> {
   return inListen(async (tx) => {
     if (!(await listenable(tx, bookId))) return null;
-    const [parked] = await tx.select({ bookId: bookStatus.bookId }).from(bookStatus)
-      .where(and(eq(bookStatus.bookId, bookId), eq(bookStatus.status, "parked"))).limit(1);
-    if (parked) throw new RefusedStatus("a parked book can't be queued to listen");
+    if (await parkedNow(tx, bookId)) throw new RefusedStatus("a parked book can't be queued to listen");
     const there = await listenPosition(tx, bookId);
     if (there !== null) return { position: there, added: false };
     const position = (await listenLength(tx)) + 1;
@@ -2102,10 +2117,12 @@ export async function removeListen(bookId: string): Promise<number | null> {
 }
 
 /** *Remove*'s undo: the book comes back at `position`, so the order is exactly
- * what it was. Null, writing nothing, for a missing or soft-deleted book. */
+ * what it was. Null, writing nothing, for a missing or soft-deleted book. A book
+ * parked since (task 5.18) stays off: it throws `RefusedStatus` and nothing is written. */
 export async function restoreListen(bookId: string, position: number): Promise<number | null> {
   return inListen(async (tx) => {
     if (!(await listenable(tx, bookId))) return null;
+    if (await parkedNow(tx, bookId)) throw new RefusedStatus("the book has been parked since: it stays off the listen queue");
     return restoreListenIn(tx, bookId, position);
   });
 }
@@ -2614,8 +2631,9 @@ async function newBookRow(tx: Tx, userId: string, item: Exclude<AddBookItem, { u
  * An Unlisted book the add promoted (task 1.21) goes back to `unlisted`: an
  * update, never a delete, so the row and anything on it stay. A Parked book it
  * unparked (task 5.15) goes back to `parked` on the day it had, and refuses once
- * it is no longer `to_read` or has a plan row but the add's own (a finish on its
- * status from an earlier read is no reason to refuse).
+ * it is no longer `to_read`, has a plan row but the add's own, or has been queued
+ * to listen since (task 5.18; a finish on its status from an earlier read is no
+ * reason to refuse).
  *
  * Refuses, changing nothing, when anything moved in between: a status it wrote
  * is no longer a bare `to_read` (it gained a rating, a note, a finish, or a
@@ -2773,6 +2791,12 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
     const stray = await inPlan(userId, tx, (t) => t.select({ bookId: readingPlan.bookId }).from(readingPlan)
       .where(and(eq(readingPlan.userId, userId), inArray(readingPlan.bookId, unparkedIds))).limit(1));
     if (stray.length) throw refused;
+    // Nor on the listen queue (task 5.18): a row written since it was unparked refuses the undo. Read under the
+    // queue's lock, after the status rows and the plan lock, the order a park takes them.
+    await lockListen(tx);
+    const queued = await tx.select({ bookId: listenQueue.bookId }).from(listenQueue)
+      .where(inArray(listenQueue.bookId, unparkedIds)).limit(1);
+    if (queued.length) throw refused;
   }
   for (const [bookId, parkedOn] of unparkedDays) {
     const back = await tx.update(bookStatus).set({ status: "parked", parkedOn })

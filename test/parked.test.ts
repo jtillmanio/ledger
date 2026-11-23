@@ -24,6 +24,7 @@ let status: typeof import("../src/app/api/progress/book/route");
 let queue: typeof import("../src/app/api/listen-queue/route");
 let books: typeof import("../src/app/api/books/route");
 let bulk: typeof import("../src/app/api/books/bulk/route");
+let planRoute: typeof import("../src/app/api/plan/route");
 let q: typeof import("../src/db/queries");
 let parked: typeof import("../src/lib/parked");
 let today: () => string;
@@ -36,7 +37,8 @@ beforeAll(async () => {
   queue = await import("../src/app/api/listen-queue/route");
   books = await import("../src/app/api/books/route");
   bulk = await import("../src/app/api/books/bulk/route");
-  q = await import("../src/db/queries");
+  planRoute = await import("../src/app/api/plan/route");
+  q =await import("../src/db/queries");
   parked = await import("../src/lib/parked");
   const finish = await import("../src/lib/finish-date");
   today = () => finish.today(new Date());
@@ -629,4 +631,124 @@ describe("Unlisted from Parked (TASK-127, AC-4)", () => {
     expect((await undo(change)).status).toBe(409);
     expect((await row("b")).status).toBe("unlisted");
   });
+});
+
+// Task 5.18 (TASK-130): no undo leaves a Parked book in a plan period or on the listen queue. Each of the four
+// undos that could refuses instead, answering 409 with book_status, reading_plan and listen_queue exactly as
+// they were (the plan's choice: a queue row written since is a later action the undo never recorded).
+describe("every undo keeps a Parked book out of the plan and the listen queue (5.18, TASK-130)", () => {
+  const DAY = "2026-06-01";
+  const jsonReq = (path: string, method: string, body: unknown) => new Request(`http://ledger.test${path}`, {
+    method, headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+  });
+  const addTo = (destination: unknown, id = "d") => bulk.POST(jsonReq("/api/books/bulk", "POST", { items: [{ use: id }], destination }));
+  const undoAdd = (r: Record<string, unknown>) => books.DELETE(jsonReq("/api/books", "DELETE", {
+    destination: r.destination, created: r.created, added: r.added, statused: r.statused, promoted: r.promoted, unparked: r.unparked,
+  }));
+  const enqueue = async (id: string) => expect((await queue.POST(jsonReq("/api/listen-queue", "POST", { bookId: id }))).status).toBe(200);
+  const listen = async () => (await sql`SELECT book_id, position FROM listen_queue ORDER BY position`).map((r) => `${r.book_id}:${r.position}`);
+
+  /** Every row the invariant reads, as plain objects: a refused undo must leave each exactly as it was (AC-2). */
+  async function snapshot() {
+    const plain = (rows: readonly Record<string, unknown>[]) => rows.map((r) => ({ ...r }));
+    return {
+      status: plain(await sql`SELECT book_id, status, parked_on::text AS parked_on, started_on::text AS started_on,
+        finished_on::text AS finished_on, rating FROM book_status WHERE user_id = ${USER} ORDER BY book_id`),
+      plan: plain(await sql`SELECT book_id, period, ordinal FROM reading_plan WHERE user_id = ${USER} ORDER BY period, book_id`),
+      queue: plain(await sql`SELECT book_id, position FROM listen_queue ORDER BY position`),
+    };
+  }
+
+  /** `d` Parked on a known day. */
+  async function parkD() {
+    await park("d");
+    await sql`UPDATE book_status SET parked_on = ${DAY} WHERE book_id = 'd'`;
+  }
+
+  it("Plan… from the review to 2027 Q1, then Queue to listen: the plan's undo answers 409 and changes nothing (AC-1, AC-3)", async () => {
+    await parkD();
+    await enqueue("a");
+    const result = await (await addTo({ kind: "period", period: "2027-Q1" })).json();
+    expect(result.unparked).toEqual([{ bookId: "d", parkedOn: DAY }]);
+    await enqueue("d");
+    await enqueue("b");
+    const before = await snapshot();
+    expect((await undoAdd(result)).status).toBe(409);
+    expect(await snapshot()).toEqual(before);
+    expect(await row("d")).toMatchObject({ status: "to_read", parked_on: null });
+    expect(await q1()).toEqual(["d:1"]);
+    expect(await listen()).toEqual(["a:1", "d:2", "b:3"]);
+  });
+
+  it("Unlisted from the review, then Queue to listen: its undo answers 409 and changes nothing (AC-1)", async () => {
+    await parkD();
+    const { change } = await (await post({ bookId: "d", status: "unlisted" })).json();
+    await enqueue("a");
+    await enqueue("d");
+    await enqueue("b");
+    const before = await snapshot();
+    expect((await undo(change)).status).toBe(409);
+    expect(await snapshot()).toEqual(before);
+    expect(await row("d")).toMatchObject({ status: "unlisted", parked_on: null });
+    expect(await listen()).toEqual(["a:1", "d:2", "b:3"]);
+  });
+
+  it("a queue Remove undone after the book was parked answers 409 and leaves it off the queue (AC-1, AC-4)", async () => {
+    await enqueue("a");
+    await enqueue("d");
+    await enqueue("b");
+    const removed = await queue.DELETE(jsonReq("/api/listen-queue", "DELETE", { bookId: "d" }));
+    expect(await removed.json()).toMatchObject({ position: 2 });
+    await park("d");
+    const before = await snapshot();
+    expect((await queue.POST(jsonReq("/api/listen-queue", "POST", { bookId: "d", restore: 2 }))).status).toBe(409);
+    expect(await snapshot()).toEqual(before);
+    expect((await row("d")).status).toBe("parked");
+    expect(await listen()).toEqual(["a:1", "b:2"]);
+  });
+
+  it("a plan move undone after the book was parked answers 409 and writes no plan row (AC-1)", async () => {
+    // d in 2027 Q1 (3rd) and On deck: the move Q1 → On deck places no row, so its undo would only put Q1's back.
+    await planThree();
+    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${USER}, 'd', '2027-Q1', 4), (${USER}, 'd', 'on_deck', NULL)`;
+    const { move } = await (await planRoute.POST(jsonReq("/api/plan", "POST", { bookId: "d", from: "2027-Q1", to: "on_deck" }))).json();
+    expect(move).toMatchObject({ placed: false, prior: [{ period: "2027-Q1", ordinal: 4 }] });
+    await park("d");
+    const before = await snapshot();
+    expect((await planRoute.DELETE(jsonReq("/api/plan", "DELETE", { move }))).status).toBe(409);
+    expect(await snapshot()).toEqual(before);
+    expect((await row("d")).status).toBe("parked");
+    expect(await sql`SELECT 1 FROM reading_plan WHERE book_id = 'd'`).toHaveLength(0);
+    expect(await q1()).toEqual(["a:1", "b:2", "c:3"]);
+  });
+
+  it("the add's undo refuses when the book is queued while it waits for the listen lock", async () => {
+    await parkD();
+    const result = await (await addTo({ kind: "someday" })).json();
+    let undoing!: Promise<Response>;
+    await whileHolding(async (t, blocked) => {
+      await t`SELECT pg_advisory_xact_lock(hashtext('ledger:listen-queue'))`;
+      undoing = undoAdd(result);
+      await blocked();
+      await t`INSERT INTO listen_queue (book_id, position) VALUES ('d', 1)`;
+    });
+    expect((await undoing).status).toBe(409);
+    expect(await row("d")).toMatchObject({ status: "to_read", parked_on: null });
+    expect(await listen()).toEqual(["d:1"]);
+  }, 20000);
+
+  it("the Unlisted undo refuses when the book is queued while it waits for the listen lock", async () => {
+    await parkD();
+    const { change } = await (await post({ bookId: "d", status: "unlisted" })).json();
+    let undoing!: Promise<Response>;
+    await whileHolding(async (t, blocked) => {
+      await t`SELECT pg_advisory_xact_lock(hashtext('ledger:listen-queue'))`;
+      undoing = undo(change);
+      await blocked();
+      await t`INSERT INTO listen_queue (book_id, position) VALUES ('d', 1)`;
+    });
+    expect((await undoing).status).toBe(409);
+    expect((await row("d")).status).toBe("unlisted");
+    expect(await listen()).toEqual(["d:1"]);
+  }, 20000);
 });
