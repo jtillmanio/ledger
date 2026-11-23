@@ -13,7 +13,8 @@ export const runtime = "nodejs";
  * - POST `{ bookId }`: *Queue to listen*, at the end. A book already queued
  *   stays put (`added: false`). 404, writing nothing, for a missing or
  *   soft-deleted book; 400, writing nothing, for a Parked book (task 5.15).
- * - POST `{ bookId, restore: n }`: *Remove*'s undo, back at position n.
+ * - POST `{ bookId, restore: n }`: *Remove*'s undo, back at position n. 409,
+ *   writing nothing, for a book parked since (task 5.18): it stays off.
  * - PATCH `{ bookId, to: n }`: *Move to…*. Answers `from`, the position it had,
  *   which the undo moves it back to. 404 when not queued.
  * - DELETE `{ bookId }`: *Remove*. Answers the position it had, for the undo.
@@ -28,7 +29,14 @@ export async function POST(req: Request) {
 
   if (restore !== undefined) {
     if (!isPosition(restore)) return bad("restore is a position, 1 or more");
-    const position = await restoreListen(bookId, restore);
+    let position;
+    try {
+      position = await restoreListen(bookId, restore);
+    } catch (e) {
+      // Parked since the Remove (task 5.18): the undo is refused, as every undo that has moved on is.
+      if (e instanceof RefusedStatus) return NextResponse.json({ error: e.message }, { status: 409 });
+      throw e;
+    }
     return position === null ? noBook() : NextResponse.json({ ok: true, position });
   }
   let queued;

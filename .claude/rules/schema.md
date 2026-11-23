@@ -257,7 +257,8 @@ Release, test isolation) and the Hard rules a reviewer checks.
   (`queueListen`, `moveListen`, `removeListen`, `restoreListen`). Entering
   Listening, Read, DNF or Parked (`saveBookStatus`) takes a queued book off in the same
   transaction, and `undoBookStatus` puts it back where it was; a Read book
-  re-dated stays queued. A soft-deleted book keeps its row and every read
+  re-dated stays queued; *Remove*'s undo leaves a book parked since off
+  (task 5.18). A soft-deleted book keeps its row and every read
   filters it out. `load` empties it through `books`' `CASCADE`.
 - **A why is authored, so it is stored.** `runs.why_source` is `hand` or
   `claude`. `hand` means Justin wrote or edited it and nothing automated may
@@ -312,7 +313,18 @@ Release, test isolation) and the Hard rules a reviewer checks.
   naming it in `unparked` with its day, the status read again under the plan
   lock so a park that commits meanwhile is kept); the add's undo puts back
   `parked` and the day. The listen queue refuses a Parked book (`queueListen`,
-  400).
+  400). **No undo puts a Parked book back in a plan or on the queue** (task
+  5.18): each one that would **refuses, changing nothing** (409), never takes
+  the row off, since that row is a later action the undo never recorded.
+  `undoInside` (an add's undo) refuses once an unparked book has a
+  `listen_queue` row, read under `lockListen` after the status rows and the
+  plan lock; `undoBookStatus` back to `parked` (*Unlisted*'s undo, leaving
+  Parked's) refuses one with a queue row, read under `lockListen` after
+  `lockBook`; `restoreListen` (a queue *Remove* undone) refuses a book parked
+  since (`RefusedStatus`, the route's 409); and `undoMoveIn` refuses a book
+  gone `parked`, as it refuses `unlisted`. The listen lock is always taken
+  last, after any book, status-row or plan lock the undo holds, as a park
+  takes them.
 - **Blocks group runs inside a track; eras section issues inside a run.** Both
   are tables, both are optional, and both are ordered — `blocks(track_id,
   number, name?)` and `eras(run_id, ordinal, name)`. Era membership goes on the
