@@ -1,14 +1,14 @@
 ---
 id: TASK-129
 title: 4.6 Decide a waiting Calibre near spelling on the Calibre page
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 78c28a3
 ---
 
 # TASK-129 — 4.6 Decide a waiting Calibre near spelling on the Calibre page
@@ -69,9 +69,48 @@ book and 44px at 360px, and axe reports no violation.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The created book's `newAuthor` flag (4.6's *Noted with it*) is still undone: TASK-083 shows a created book's author today, but no run records whether it brought a new author. A new phase-4 roadmap item carrying the note's own Check → `docs/05-roadmap.md` § 4.x (new) (approved at plan)
+- *Two calibre books* gets no buttons: neither answer clears it (an exact title-and-author match ignores *separate*; a *merge* into a claimed book waits again). It is fixed in Calibre by removing or retitling the copy → not tracked: no Ledger decision applies (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+_Approved 2026-11-23 at 78c28a3._
+
+**Steps**
+
+1. `decideCalibrePair` (`src/db/writes.ts`): the upsert's `onConflictDoUpdate` gets a `setWhere` (decision or book id differs), so a second press of the same answer leaves the row, `decided_at` included, as it was (the Check's "a second press changes nothing").
+2. `waitingDecisions()` (`src/db/queries.ts`): `Map<calibreId, "merge" | "separate">` for the newest run's waiting Calibre ids, read from `calibre_syncs.report` in SQL as `createdBookAuthors` does, in the page's one wave. Derived; the log is never written.
+3. `POST /api/calibre/decide` (`src/app/api/calibre/decide/route.ts`, the `follows/route.ts` pattern: `apiUserId`, `unauthorized`, a `bad` 400 helper, `runtime = "nodejs"`): `{ calibreId, decision, bookId }`. 401 without a session; 400, writing nothing, for an unknown decision, a calibreId that isn't a positive integer, a merge with no book id, or `decideCalibrePair` false (a missing or soft-deleted book). 200 `{ ok: true, decision }`.
+4. `src/components/CalibreDecide.tsx` (client): two real `<button>`s, `.btn.sec` (grey), visible *Merge* and *Keep separate*, completed by `.sr-only` text into *Merge "<Calibre title>" into <Ledger title>* and *Keep "<Calibre title>" separate*. The chosen one `aria-pressed="true"`; a `role="status"` line reads *Merged* or *Kept separate*. In flight: the pressed button `aria-busy`, both `aria-disabled`. A failure: the grey `neutral-error` × line (`role="alert"`), the entry left as it was.
+5. `src/app/settings/calibre/page.tsx`: the newest run's *near spelling* and *same title* entries carry `CalibreDecide`, seeded from `waitingDecisions()`; older runs and *two calibre books* stay text.
+6. `src/app/globals.css`: the button row from tokens only; 44px under 768px, ≥24px above; wraps at 360px.
+7. `design/mockups.html` § `calibre` (phone and desktop): one waiting entry with the two buttons and one decided (*Kept separate*); the note no longer says nothing decides one. `design/mockups-index.md`: the `calibre` row says so.
+
+**Files**
+
+- `src/app/api/calibre/decide/route.ts` (new): the POST.
+- `src/components/CalibreDecide.tsx` (new): the buttons, pending and error states.
+- `src/app/settings/calibre/page.tsx`: the waiting entries use it.
+- `src/db/queries.ts`: `waitingDecisions()`.
+- `src/db/writes.ts` (not in *Files likely touched*): the no-op second press.
+- `src/app/globals.css`: the buttons.
+- `test/calibre-decide.test.ts` (new): AC-1 write and next-sync clauses, AC-2, AC-3.
+- `test/e2e/calibre-page.spec.ts`: AC-1 browser clauses, AC-4, AC-5.
+- `design/mockups.html`, `design/mockups-index.md`: the frame redrawn (`ui.redrawFiles`).
+
+**Test strategy**
+
+- AC-1 (DB): `test/calibre-decide.test.ts` › *Merge* writes one `merge` row with the book's id; *Separate* writes `separate` with none; a second identical press leaves the row byte-identical (`decided_at` too); the next `POST /api/calibre/sync` renames the book (merge) or creates one (separate) and logs it in `report.in`.
+- AC-2: same file › 401 without a session; each 400 case leaves `calibre_decisions` empty.
+- AC-3: same file › the other answer replaces the decision (one row, new value); the run's `calibre_syncs.report::text` is identical before and after every press.
+- AC-1 (browser), AC-4: `test/e2e/calibre-page.spec.ts` › pressing each button makes the entry read *Merged* / *Kept separate*, both buttons stay with the names above, each `<button>` 44px at 360px, axe clean; a route answering 400 (`page.route`) shows the grey error, nothing `--danger`, the entry still waiting.
+- AC-5: same spec › the pending state while the request is held, focus visible, contrast in both themes, no sideways scroll at 360px; the screenshot loop (360, 834, 1280 light and dark) shows the buttons, and a FLOOR test runs in every project (every `ui.viewports` width in CI).
+- Manual: the task's Verification step on the dev server, the decision put back as found.
+
+**Risks / open questions**
+
+- Size: 10 files (2 tests, 2 the required redraw); kept whole, approved at plan.
+- `same title` merge renames onto the Ledger book under Calibre's author (the sync's own rule, 4.4); nothing new here.
 
 ## Review log
 
