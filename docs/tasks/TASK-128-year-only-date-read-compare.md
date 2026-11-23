@@ -117,7 +117,7 @@ in the route's comparison, and the Python read and write are out of scope.
 
 ## Review log
 
-Verify R1 FAIL (1: `books-dashboard.test.ts`, an unrelated 5 s timeout under full parallel load; passes alone, 51/51) → R2 PASS | Audit R1 PASS (the in-step test fails on the base, the other six are guards) | Spec R1 APPROVE | Schema R1 APPROVE | UI n/a (`ui: false`) | CI R1 PASS (`check`, all ten e2e shards, Vercel) | Drift R1 merge as-is (0 behind) | Round 2 reviews not needed: nothing changed after either approved.
+Verify R1 FAIL (1: `books-dashboard.test.ts`, an unrelated 5 s timeout under full parallel load; passes alone, 51/51) → R2 PASS | Audit R1 PASS (the in-step test fails on the base, the other six are guards) | Spec R1 APPROVE | Schema R1 APPROVE | UI n/a (`ui: false`) | CI R1 PASS (`check`, all ten e2e shards, Vercel) | Drift R1 merge as-is (0 behind) → main moved while CI ran, Drift R2 update first (behind 1, changed `playwright.config.ts`) → rebased | Verify R3 PASS | Round 2 reviews not needed: nothing changed after either approved.
 
 ## Blocked
 
