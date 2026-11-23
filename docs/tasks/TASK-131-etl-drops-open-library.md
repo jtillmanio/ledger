@@ -1,7 +1,7 @@
 ---
 id: TASK-131
 title: 6.19 Remove Open Library (1 of 2) — extract, enrichment and load stop carrying it
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -34,10 +34,10 @@ The ETL no longer reads, writes or loads anything from Open Library: a fresh ext
 
 ## Acceptance criteria
 
-- [ ] AC-1: `npm run extract` writes `seed/books.csv` with no `open_library_id` column, and `etl/load.ps1` and `etl/load.sh` load it into the TEST database with every books row's `hardcover_id`, `page_count` and `cover_url` equal to what the run before the change loaded (compared in a test on a fixture workbook and sidecars).
-- [ ] AC-2: `etl/enrich_books.py` writes `book_details.csv` with no `open_library_id` column and no `openlibrary` row; given a sidecar that still has the old header and an `openlibrary` row, extract reads it and the run drops that row, as it does today.
-- [ ] AC-3: A decided `book_review.csv` row whose reason is `open library` still applies on extract (the book takes its decided title), and an undecided one is still dropped.
-- [ ] AC-4: `grep -n -i -E "open_library|openlibrary" etl/*.py etl/*.ps1 etl/*.sh` finds nothing outside the `book_review.csv` reason AC-3 keeps, and `py -m unittest discover etl` and `etl/test_views.sql` pass.
+- [x] AC-1: `npm run extract` writes `seed/books.csv` with no `open_library_id` column, and `etl/load.ps1` and `etl/load.sh` load it into the TEST database with every books row's `hardcover_id`, `page_count` and `cover_url` equal to what the run before the change loaded (compared in a test on a fixture workbook and sidecars).
+- [x] AC-2: `etl/enrich_books.py` writes `book_details.csv` with no `open_library_id` column and no `openlibrary` row; given a sidecar that still has the old header and an `openlibrary` row, extract reads it and the run drops that row, as it does today.
+- [x] AC-3: A decided `book_review.csv` row whose reason is `open library` still applies on extract (the book takes its decided title), and an undecided one is still dropped.
+- [x] AC-4: `grep -n -i -E "open_library|openlibrary" etl/*.py etl/*.ps1 etl/*.sh` finds nothing outside the `book_review.csv` reason AC-3 keeps, and `py -m unittest discover etl` and `etl/test_views.sql` pass.
 
 ## Out of scope
 
@@ -63,7 +63,7 @@ The ETL no longer reads, writes or loads anything from Open Library: a fresh ext
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- TASK-132: `etl/test_views.sql`'s books column list drops `open_library_id` with the migration; *metadata pending* already marks retired-only books after any load once this merges, and `Cover` draws the pending box before it reads `cover_url`, so those books' covers hide until TASK-132 lands (schema review); the lowercase `open library` review reason stays in `etl/extract.py` (`RETIRED_LOOKUP`), so read the Check's `Open Library` case-sensitively → docs/tasks/TASK-132-drop-open-library-column-and-cache.md § Context (approved at plan)
+- TASK-132: `etl/test_views.sql`'s books column list drops `open_library_id` with the migration; *metadata pending* already marks retired-only books after any load once this merges, and `Cover` draws the pending box before it reads `cover_url`, so those books' covers hide until TASK-132 lands (schema review); the lowercase `open library` review reason stays in `etl/extract.py` (`RETIRED_LOOKUP`), so read the Check's `Open Library` case-sensitively → docs/tasks/TASK-132-drop-open-library-column-and-cache.md § Context (approved at plan; PR #325)
 - `retired()` counts any `book_details.csv` source but `hardcover` or `hand` as 1.14's, so a hand-typed row with a misspelled source would lose its count and be dropped by enrich (schema review, MINOR) → not tracked: `book_details.csv`'s sources are `hardcover` or `hand` (`.claude/rules/schema.md`), the committed file has no other, and flagging each retired row would put 2,000 lines in `unresolved.csv`
 
 ## Plan
@@ -106,7 +106,9 @@ library` rows, every one decided.
    (Windows) or `load.sh` (Linux, CI) on `TEST_DATABASE_URL` only, as
    `test/comics-load.test.ts` does. (Revision 1, spec review: 1.18's
    Calibre header comes from a fourth fixture, `calibre_books_1_18.csv`, so
-   the pre-Hardcover test keeps the real legacy column name.)
+   the pre-Hardcover test keeps the real legacy column name. Revision 2, CI
+   R2: `test/e2e/covers-reduced-data.spec.ts` polls for the image request it
+   read once, which CI saw as 0.)
 6. Not here: `etl/test_views.sql` asserts the table's live columns
    (`information_schema`), so its list changes with TASK-132's migration;
    `etl/data/book_details.csv` is not rewritten (the next `enrich:books` writes
@@ -144,7 +146,7 @@ split.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | CI R1 PASS (2ebcc5c, every project; load.sh and load.ps1 twins both ran on Linux) | Schema R1 APPROVE (2 MINOR → Follow-ups) | Spec R1 CHANGES (Follow-ups destination; optional: 1.18's real Calibre header) → fixed (56a217a) | Verify R2 PASS | Audit R1 PASS | Spec R2 APPROVE | Schema R2 APPROVE | Close-out check APPROVE | CI R2 FAIL (covers-reduced-data.spec.ts:99, w390-light: an image request read once, before Chromium reported it; not reproduced in 15 local runs) → fixed (poll) | Verify R3 PASS | Drift R1 update first (behind 1; main changed src/db/calibre-sync.ts) → rebased | Verify R4 PASS | CI R3: see PR
 
 ## Blocked
 
@@ -152,7 +154,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 2 (a fourth fixture, `calibre_books_1_18.csv`, from spec review; `test/e2e/covers-reduced-data.spec.ts` polls for the image request, a CI flake on this branch)

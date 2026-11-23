@@ -96,5 +96,7 @@ test("the same spine with the device not asking for less data does request its i
   const seen = await watch(page, baseURL!);
   await page.goto(`/comics/${RUN}`);
   await expect(page.locator("#p-3 .rcv img")).toHaveCount(1);
-  expect(seen.length).toBeGreaterThan(0);
+  // The element can be in the DOM a tick before Chromium reports its request
+  // (CI, PR #325: 0 seen): wait for the request, don't read the count once.
+  await expect.poll(() => seen.length).toBeGreaterThan(0);
 });
