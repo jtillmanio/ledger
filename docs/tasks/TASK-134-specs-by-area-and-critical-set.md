@@ -1,7 +1,7 @@
 ---
 id: TASK-134
 title: 0.15 The browser suite runs by area (1 of 3) — every spec has an area, and a critical set
-status: Draft
+status: Ready
 depends_on: []
 size: M
 model: opus
@@ -19,7 +19,7 @@ Every browser spec says which part of the app it checks, a small critical set is
 
 ## Context
 
-- Roadmap: `docs/05-roadmap.md` § 0.15 (owner, 2026-11-20, from the shard-time work after TASK-127, PR #304; **amends D-80, D-141 and D-161**). Its **Check:** is AC-1, verbatim. Listed in `docs/06-tasklist.md` M9 beside 0.13 (added 2026-11-23); not a cutover gate. Feature F-03.
+- Roadmap: `docs/05-roadmap.md` § 0.15 (owner, 2026-11-20, from the shard-time work after TASK-127, PR #304; **amends D-80, D-141 and D-161**). Its **Check:** is AC-1, verbatim. Listed in `docs/06-tasklist.md` M9 beside 0.13 (added 2026-11-23); pulled ahead of 1.26 (D-172). Feature F-03.
 - **Split, 1 of 3** (`workflow.splitPolicy: split`; the entry is size L: the specs, the test plan, CI's scope job and workflow, the time budget and the git rules). This part is the specs and the local plan: areas, the critical set, and an area filter Playwright honours. TASK-135 maps a PR's changed paths to areas in CI and records the decision. TASK-136 makes the time budget follow the area.
 - **The areas:** `books`, `comics`, `watch`, `music`, `games`, `shared` (the shell, the thumb bar, the status control, Add books, settings, the sheets, and every other control more than one medium uses). Watch, music and games have no specs yet: their areas exist so 8.8, 9.3 and 10.1 have somewhere to land.
 - **How a spec says its area:** a folder or a tag, "whichever `playwright.config.ts` and `scripts/lib/e2e.mjs` can read" (the entry). There are 48 spec files in `test/e2e/` today (`ls test/e2e/*.spec.ts`), plus `auth.setup.ts`, `global-setup.ts`, `helpers.ts` and `fixtures/`. A folder move touches every path in `test/e2e/shard-times.json` and any `@at-` or `--grep` that names a file. A tag touches every `describe`. The plan picks one and says why.

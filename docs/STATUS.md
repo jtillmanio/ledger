@@ -9,9 +9,10 @@ wins (D-1): recount and fix this page, don't argue from it.
 
 ## Where we are
 
-**100 of 195 roadmap entries done (51%).** Every entry the books cutover
-depends on is done except one, 1.31 (settle the Owner checklist,
-TASK-115). After it comes 1.26 itself (TASK-061), which the owner runs.
+**100 of 195 roadmap entries done (51%).** The books cutover (1.26,
+TASK-061, which the owner runs) waits on ten open entries, every one with
+Ready task files: 1.31, and the nine the owner pulled ahead on 2026-11-23
+(D-172).
 `LEDGER_LIVE` is `false` (the repo variable and `.env.live`), so production
 is still disposable: `npm run rebuild` can reload it.
 
@@ -30,15 +31,22 @@ what you own (5.17, 5.17b).
 The books cutover (1.26) waits for (`docs/cutover-parity.md` § What each
 cutover waits for; 1.26's **Depends on**):
 
-- **1.31**, the Owner checklist settled (TASK-115, Ready);
+- **1.31**, the Owner checklist settled (TASK-115);
+- **4.4b** and **4.6**, the Calibre sync's year-only date and a near spelling
+  decided on the *Calibre* page (TASK-128, TASK-129): from the switch the sync
+  is the only way Calibre's changes arrive, and `CALIBRE_SYNC_READS` goes on;
+- **5.18**, Parked through every undo (TASK-130);
+- **6.19**, Open Library removed (TASK-131 → TASK-132);
+- **0.13** with **0.14c**, the preview's growth gate and every page measured
+  (TASK-114 → TASK-133), which finish only with `LIGHTHOUSE_MODE` on (D-158);
+- **0.15**, the browser suite by area (TASK-134 → TASK-135 → TASK-136);
+- **6.21** with **6.23**, where the book sits, redesigned from the owner's
+  Claude Design review (TASK-126 → TASK-137);
 - **every box in START-HERE Step 14 *Before the switch***, ticked by the
   owner.
 
-Not in 1.26's **Depends on**, but it should land before the switch:
-**4.4b** (TASK-128, added 2026-11-23). The owner sets `CALIBRE_SYNC_READS=true`
-at the switch. From then on, a Calibre date-read column that shows only a
-year would make the sync rewrite every such book's date on every run.
-Whether it joins **Depends on** is the owner's call.
+So the switch also waits on two things only the owner does: turning
+`LIGHTHOUSE_MODE` back on, and the 6.23 session in Claude Design.
 
 The comics cutover (1.28) waits for 3.1 → 3.2 → 3.3 and 5.6 → 5.10, none of
 which has a task file yet.
@@ -59,19 +67,19 @@ tasklist's *Build order* is (D-129, D-139).
 | M6 The real navigation | 8 / 8 | Done |
 | M7 Phase 1 complete | 5 / 5 | Done |
 | M8 Books load clean | 9 / 9 | Done |
-| M9 Captured from cutover on | 15 / 21 | 1.31 (TASK-115), then 1.26 (TASK-061). Phase 0's 0.13 (TASK-133), 0.14c (TASK-114, PR #319), 0.14d (no task file) and 0.15 (TASK-134–136) are listed here and are not cutover gates |
+| M9 Captured from cutover on | 15 / 21 | 1.31 (TASK-115); Phase 0's 0.13 (TASK-133), 0.14c (TASK-114, PR #319) and 0.15 (TASK-134–136), pulled ahead of 1.26 (D-172); then 1.26 (TASK-061). 0.14d (no task file) is listed here and is not a gate |
 | M10 Capacity: is the year overcommitted? | 15 / 16 | 2.1b, after the books cutover; no task file |
 | M11 Editing the plan | 5 / 5 | Done (pulled ahead of 1.26, D-139) |
 | M12 The comics dashboard and the telescope | 0 / 7 | Not started† |
 | M13 Editing the catalog | 0 / 7 | Not started; ends in 1.28, the comics cutover |
 | M14 The run detail and the detail sheets | 4 / 9 | 3.5 (TASK-080 left), 3.5c, 3.6 → 3.6b → 3.6c |
 | M15 Adding at scale | 0 / 3 | Not started |
-| M16 Enrichment and covers | 5 / 8 | 4.4b (TASK-128), 4.6 (TASK-129), 4.1 |
-| M17 Book surfaces | 10 / 12 | 5.9 (TASK-125 left), 5.18 (TASK-130) |
+| M16 Enrichment and covers | 5 / 8 | 4.4b (TASK-128) and 4.6 (TASK-129), pulled ahead of 1.26 (D-172); 4.1 |
+| M17 Book surfaces | 10 / 12 | 5.18 (TASK-130), pulled ahead of 1.26 (D-172); 5.9 (TASK-125 left) |
 | M18 Comic surfaces | 0 / 7 | Not started; 5.6 → 5.10 are pulled ahead of 1.28 |
 | M19 Find and look back | 0 / 6 | Not started |
 | M20 Devices and input | 0 / 6 | Not started |
-| M21 Hardening and the last pass | 0 / 9 | 6.19 (TASK-131, TASK-132), 6.21 (TASK-137, after TASK-126), 6.23 (TASK-126) have task files |
+| M21 Hardening and the last pass | 0 / 10 | 6.19 (TASK-131, TASK-132), 6.21 (TASK-137) and 6.23 (TASK-126), pulled ahead of 1.26 (D-172); 6.22 placed here 2026-11-23 |
 | M22 AI-assisted curation | 0 / 8 | Not started |
 | M23–M24 Watchlist | 0 / 10 | Not started |
 | M25 Music | 0 / 8 | Not started |
@@ -84,13 +92,13 @@ into 2.4 and 2.6), so the tasklist counts it open and the roadmap done.
 
 | Phase | Done / total | Status |
 |---|---|---|
-| 0 — Foundation | 15 / 19 | Open: 0.13, 0.14c, 0.14d, 0.15 (measurement and CI cost; none gates a cutover) |
+| 0 — Foundation | 15 / 19 | Open: 0.13, 0.14c and 0.15, before 1.26 (D-172); 0.14d |
 | 1 — Daily use | 44 / 47 | Open: 1.31, then 1.26 (books cutover); 1.28 (comics cutover) later |
 | 2 — The pace engine | 21 / 28 | Open: 2.1b; the comics dashboard and telescope (2.4, 2.5, 2.5b, 2.6, 2.9, 2.12) |
 | 3 — Editing | 4 / 18 | 3.4, 3.4b, 3.4c, 3.5b done; 3.1–3.3 before 1.28 |
-| 4 — Enrichment | 5 / 8 | Open: 4.1, 4.4b, 4.6 |
-| 5 — Remaining surfaces | 10 / 19 | The books surfaces done but 5.9 and 5.18; 5.6 and 5.10 before 1.28 |
-| 6 — Polish | 1 / 23 | 6.19, 6.21 and 6.23 have task files |
+| 4 — Enrichment | 5 / 8 | Open: 4.4b and 4.6, before 1.26 (D-172); 4.1 |
+| 5 — Remaining surfaces | 10 / 19 | The books surfaces done but 5.9 and 5.18 (5.18 before 1.26, D-172); 5.6 and 5.10 before 1.28 |
+| 6 — Polish | 1 / 23 | 6.19, 6.21 and 6.23 before 1.26 (D-172) |
 | 7 — AI-assisted curation | 0 / 8 | Not started |
 | 8 — Watchlist (film/TV) | 0 / 10 | Not started |
 | 9 — Music | 0 / 8 | Not started |
@@ -101,19 +109,17 @@ is not counted.
 
 ## What's next
 
-**To the books cutover:** 1.31 (TASK-115), with 4.4b (TASK-128) before the
-switch, then 1.26 (TASK-061): the owner runs START-HERE Step 14, and Claude
+**To the books cutover**, every task Ready: 1.31 (TASK-115); 4.4b (TASK-128),
+4.6 (TASK-129), 5.18 (TASK-130); 6.19 (TASK-131 → TASK-132); 0.14c
+(TASK-114, PR #319) → 0.13 (TASK-133), once `LIGHTHOUSE_MODE` is on; 0.15
+(TASK-134 → TASK-135 → TASK-136); 6.23 (TASK-126, the owner's session) → 6.21
+(TASK-137). Then 1.26 (TASK-061): the owner runs START-HERE Step 14, and Claude
 confirms every **Depends on** entry is ticked and `py -m unittest
-etl.test_cutover_parity` passes on `main` first. 4.6 (TASK-129) is not a gate,
-but from 1.26 the sync is the only way Calibre's changes arrive, and a held
-near spelling can't be decided in the app until it lands.
+etl.test_cutover_parity` passes on `main` first.
 
-**Ready or Draft, any time:** 3.5's issue sheet (TASK-080), 5.9's series links
-(TASK-125), 0.14c (TASK-114, PR #319, which finishes only once
-`LIGHTHOUSE_MODE` is back on), 6.23's design review (TASK-126, run by the owner
-in Claude Design), and the Drafts converted 2026-11-23: TASK-128–TASK-137
-(4.4b, 4.6, 5.18, 6.19, 0.13, 0.15, 6.21). TASK-120 (3.5b, part 3) merged as
-PR #320 and waits for the owner's accept.
+**Ready, and not a gate:** 3.5's issue sheet (TASK-080) and 5.9's series
+links (TASK-125). TASK-120 (3.5b, part 3) merged as PR #320 and waits for the
+owner's accept.
 
 **After 1.26, books first (D-129):** 2.1b, 3.5's last part and 3.5c, 5.9's
 last part, and Phase 6. **Then comics:**
@@ -122,7 +128,6 @@ M12, M13 with 5.6 → 5.10 pulled ahead and 1.28 at its end, then 3.6 → 3.6b �
 
 Questions the new task files leave for their plan gates:
 
-- **4.4b** (TASK-128): whether it joins 1.26's **Depends on**.
 - **4.6** (TASK-129): which waiting kinds get the two buttons (`two calibre
   books` may need a different answer), and whether anything is left of the
   new-author note.

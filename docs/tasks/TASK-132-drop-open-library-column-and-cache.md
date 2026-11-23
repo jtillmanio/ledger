@@ -1,7 +1,7 @@
 ---
 id: TASK-132
 title: 6.19 Remove Open Library (2 of 2) — the column, the cache table, the client and the documents
-status: Draft
+status: Ready
 depends_on: [TASK-131]
 size: M
 model: opus
@@ -19,7 +19,7 @@ Open Library is gone from the app: its id column, its cache table and its client
 
 ## Context
 
-- Roadmap: `docs/05-roadmap.md` § 6.19 Remove Open Library (D-94; owner, 2026-10-28: *both removals are approved*). Its **Check:** is AC-1, verbatim. Listed in `docs/06-tasklist.md` M21.
+- Roadmap: `docs/05-roadmap.md` § 6.19 Remove Open Library (D-94; owner, 2026-10-28: *both removals are approved*). Its **Check:** is AC-1, verbatim. Listed in `docs/06-tasklist.md` M21; pulled ahead of 1.26 (D-172).
 - **Split, 2 of 2.** TASK-131 took it out of the ETL, so `load` no longer names the column. This part is the migration, `src/`, `test/` and the documents. The documents ride here because each names Open Library beside the code this part removes; they add files but no layer.
 - **The schema change is approved in the entry** (dropping `books.open_library_id` and the `open_library_cache` table). The plan gate still confirms it, per CLAUDE.md *Stop and ask*. The migration drops a column and a table, so it ships `drizzle/down/<tag>.sql` and an up → down → up test (`.claude/rules/schema.md`; precedent `drizzle/0027_drop_books_genre.sql`, `drizzle/down/0027_drop_books_genre.sql` and `test/genre-drop-migration.test.ts`, TASK-089). Production lags `main` until a Release: no view in `etl/views.sql` names `open_library_id` today, and the plan says how it checks with `pg_depend` that none on the oldest live `views.sql` does.
 - **What changes in meaning.** *Metadata pending* is `open_library_id IS NULL AND hardcover_id IS NULL` in five queries (`src/db/queries.ts`, around lines 580, 901, 936, 1041, 1688); it becomes `hardcover_id IS NULL`. A book with an Open Library id and no Hardcover id would turn *pending*. The plan counts them on a fresh extract (not a live database) and says what the owner sees.

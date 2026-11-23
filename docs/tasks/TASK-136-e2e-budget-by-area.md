@@ -1,7 +1,7 @@
 ---
 id: TASK-136
 title: 0.15 The browser suite runs by area (3 of 3) — the time budget follows the area
-status: Draft
+status: Ready
 depends_on: [TASK-135]
 size: S
 model: opus
@@ -19,7 +19,7 @@ The browser suite's time budget compares each area a PR ran with `main`'s time f
 
 ## Context
 
-- Roadmap: `docs/05-roadmap.md` § 0.15, the bullet *The time budget follows the area* (D-161). Its **Check:** is AC-1, verbatim. Listed in `docs/06-tasklist.md` M9 beside 0.13; not a cutover gate.
+- Roadmap: `docs/05-roadmap.md` § 0.15, the bullet *The time budget follows the area* (D-161). Its **Check:** is AC-1, verbatim. Listed in `docs/06-tasklist.md` M9 beside 0.13; pulled ahead of 1.26 (D-172).
 - **Split, 3 of 3.** TASK-134 gave specs areas; TASK-135 made CI run the affected ones and recorded the decision that amends D-161. This part changes the `e2e-budget` job to match.
 - **Today** (D-161, D-167): `scripts/lib/e2e-budget.mjs` compares the run's per-test times with `main`'s latest recording (`compareTimes(current, baseline, shards)`), fails on more than `GROWTH_LIMIT_MS` (3 minutes) of suite time or a shard over `SHARD_CEILING_MS` (6 minutes), and the `e2e-growth` label accepts growth (`GROWTH_LABEL`). The `e2e-budget` job in `.github/workflows/ci.yml` (around line 222) records `e2e-times.json` and checks it against the baseline's. It only runs at full scope (`FULL_SCOPE`).
 - **What changes:** growth is computed per area, each against `main`'s recording of that area's tests (the area of a test comes from TASK-134's area of its spec), and the summary names the area that grew. The per-shard ceiling applies to the shards the PR actually ran. A run over every area behaves as today.

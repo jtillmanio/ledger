@@ -1,7 +1,7 @@
 ---
 id: TASK-131
 title: 6.19 Remove Open Library (1 of 2) — extract, enrichment and load stop carrying it
-status: Draft
+status: Ready
 depends_on: []
 size: M
 model: opus
@@ -19,7 +19,7 @@ The ETL no longer reads, writes or loads anything from Open Library: a fresh ext
 
 ## Context
 
-- Roadmap: `docs/05-roadmap.md` § 6.19 Remove Open Library (D-94; owner, 2026-10-28; both removals approved). Its **Check:** is AC-1 of TASK-132, which proves it whole. Listed in `docs/06-tasklist.md` M21 (Phase 6). Its precondition (1.14b and 1.4f merged, the owner content with Hardcover) is met: both are done, and since 1.4f nothing reads Open Library (*From TASK-040*, in the entry).
+- Roadmap: `docs/05-roadmap.md` § 6.19 Remove Open Library (D-94; owner, 2026-10-28; both removals approved). Its **Check:** is AC-1 of TASK-132, which proves it whole. Listed in `docs/06-tasklist.md` M21 (Phase 6); pulled ahead of 1.26 (D-172), so it lands while production is still rebuildable. Its precondition (1.14b and 1.4f merged, the owner content with Hardcover) is met: both are done, and since 1.4f nothing reads Open Library (*From TASK-040*, in the entry).
 - **Split, 1 of 2** (`workflow.splitPolicy: split`: the entry spans the ETL, a migration, the app and seven documents). This part is the ETL: once the seed and the load stop naming the column, TASK-132 can drop it without breaking `load`. TASK-132 is the migration, the app code, the tests in `test/` and the documents.
 - **What carries it today:**
   - `etl/extract.py`: `OPEN_LIBRARY = "open library"` (the `book_review.csv` reason, around line 1070), `BOOK_DETAILS_COLUMNS` and the books columns with `open_library_id` (around lines 1080 and 1129), the `openlibrary` source rule (around lines 1105, 1614–1642).

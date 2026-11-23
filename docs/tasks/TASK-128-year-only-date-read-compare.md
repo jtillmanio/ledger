@@ -1,7 +1,7 @@
 ---
 id: TASK-128
 title: 4.4b A year-only Calibre date isn't rewritten every sync
-status: Draft
+status: Ready
 depends_on: []
 size: S
 model: sonnet
@@ -20,7 +20,7 @@ Once the sync writes reads into Calibre, a book whose Calibre date-read column s
 ## Context
 
 - Roadmap: `docs/05-roadmap.md` § 4.4b (added 2026-11-23, from TASK-082 and TASK-083's schema-review note that TASK-061's Context carried). Its **Check:** is AC-1, verbatim; proposed, and agreed by the owner merging the PR that adds it. Listed in `docs/06-tasklist.md` M16 beside 4.4.
-- **Why before the books cutover.** The owner sets `CALIBRE_SYNC_READS=true` at the switch (TASK-061 § Context; `docs/OWNER-CHECKLIST.md` § Actions from follow-ups). Until then the command sends `#read` and `#date_read` in `missingColumns`, so `out()` skips them and the bug can't show. It is not in 1.26's **Depends on**; whether it should be is the owner's call.
+- **Why before the books cutover.** The owner sets `CALIBRE_SYNC_READS=true` at the switch (TASK-061 § Context; `docs/OWNER-CHECKLIST.md` § Actions from follow-ups). Until then the command sends `#read` and `#date_read` in `missingColumns`, so `out()` skips them and the bug can't show. Since 2026-11-23 it is in 1.26's **Depends on** (D-172).
 - **The loop, in code.** `etl/calibre.py` `read_date` (around line 288): a display format with no `d` and no `M` returns `str(day.year)`, `approximate`; one with `M` but no `d` keeps the stored day, `approximate`. `src/db/calibre-sync.ts` `calibreRead` (around line 392) turns a four-character `dateRead` into `YYYY-07-01`, `approximate`. The write-back (`out("#date_read", theirs.finishedOn, h.finishedOn)`, around line 593) compares with `same()`, by day. `etl/calibre_sync.py` `field_value` writes the Ledger's day at noon Eastern (D-67), and the next run reads it back as the year.
 - **The fix the entry names:** when Calibre's value came as a year alone, compare years. A day-precise column, and a month-and-year one (which carries the stored day), compare days as now. The inbound side for a book new to the Ledger stays July 1st, `approximate` (data model 2.17; `docs/03-data-model.md` 2.17).
 - Rules: `.claude/rules/schema.md` § *Calibre is the source of truth for a book's data and its reads* (the write-back paragraph). Decisions: D-67, D-87, D-88, D-133.
@@ -46,7 +46,6 @@ read finished 2024-07-01, `approximate`.
 - Turning `CALIBRE_SYNC_READS` on, or anything else the owner does at the switch.
 - How the command writes a date (`etl/calibre_sync.py` `field_value`) or how `etl/calibre.py` reads one.
 - The *Calibre* page (TASK-083's), and deciding a near spelling (4.6, TASK-129).
-- Adding 4.4b to 1.26's **Depends on**: an owner decision, not this task's.
 
 ## Files likely touched
 

@@ -1,7 +1,7 @@
 ---
 id: TASK-129
 title: 4.6 Decide a waiting Calibre near spelling on the Calibre page
-status: Draft
+status: Ready
 depends_on: []
 size: M
 model: sonnet
@@ -19,7 +19,7 @@ A near spelling the Calibre sync holds can be settled from the *Calibre* page: o
 
 ## Context
 
-- Roadmap: `docs/05-roadmap.md` § 4.6 (from task 4.4 part 3, TASK-083, PR #270). Its **Check:** is AC-1, verbatim; proposed, and agreed when merged. Listed in `docs/06-tasklist.md` M16 beside 4.4 (added 2026-11-23). Not a books-cutover gate, but from 1.26 the sync is the only way Calibre's changes reach the Ledger (D-133), and today nothing in the app decides a held book.
+- Roadmap: `docs/05-roadmap.md` § 4.6 (from task 4.4 part 3, TASK-083, PR #270). Its **Check:** is AC-1, verbatim; proposed, and agreed when merged. Listed in `docs/06-tasklist.md` M16 beside 4.4 (added 2026-11-23). A books-cutover gate since 2026-11-23 (D-172): from 1.26 the sync is the only way Calibre's changes reach the Ledger (D-133), and today nothing in the app decides a held book.
 - **The write exists.** `decideCalibrePair(calibreId, decision, bookId)` (`src/db/writes.ts`, around line 3246) upserts one `calibre_decisions` row keyed on the Calibre id: `merge` with a live book's id, `separate` with none; false, writing nothing, for a merge into a missing or soft-deleted book. `test/calibre-sync.test.ts` covers it and shows the next sync applying it (rename for a merge, D-87; a new book for separate). No new table (`calibre_decisions` exists, task 4.4).
 - **What waits.** `Waiting` in `src/db/calibre-sync.ts` (around line 116): `kind` is `near spelling`, `same title` or `two calibre books`, with `calibreId`, `title`, `author`, `bookId`, `bookTitle`. The page (`src/app/settings/calibre/page.tsx`, the `Waiting` section around line 70) lists the newest run's `report.waiting` and says *A near spelling waits for a merge or separate decision*. The plan says which kinds get the two buttons: `two calibre books` (one Ledger book claimed by two Calibre books) may need a different answer.
 - **Derived, never stored on the log.** An entry reads *Merged* or *Kept separate* from `calibre_decisions`, read beside `calibreReports` in `src/db/queries.ts`; the sync log (`calibre_syncs.report`) is never edited.

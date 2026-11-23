@@ -1,7 +1,7 @@
 ---
 id: TASK-133
 title: 0.13 Gate a preview on what its PR adds, not on a ceiling it must raise
-status: Draft
+status: Ready
 depends_on: [TASK-114]
 size: M
 model: opus
@@ -19,7 +19,7 @@ A preview's Lighthouse job fails when its PR grows a route's weight over main's,
 
 ## Context
 
-- Roadmap: `docs/05-roadmap.md` § 0.13 (owner, 2026-11-10; D-142). Its **Check:** is AC-1, verbatim; proposed, and agreed when merged. Listed in `docs/06-tasklist.md` M9 beside 1.30 and 0.14c; not a cutover gate. Feature F-04.
+- Roadmap: `docs/05-roadmap.md` § 0.13 (owner, 2026-11-10; D-142). Its **Check:** is AC-1, verbatim; proposed, and agreed when merged. Listed in `docs/06-tasklist.md` M9 beside 1.30 and 0.14c; pulled ahead of 1.26 (D-172). Feature F-04.
 - **D-142 is the rule** (`docs/review/decisions.md`): growth over main's last green run fails at more than 3,000 bytes of JS, more than 10% and 1,500 bytes of document + RSC, or more than 3 requests; the `perf-growth` label accepts it; the owner adds the label, and Claude asks for it in the PR body under **Perf growth** and never adds it; ceilings at the measurement plus 25%, raised only by a decision; requests to another origin reported, not budgeted; the numbers artifact kept 90 days.
 - **After 1.30** (done, TASK-073), as the entry says. **After 0.14c (TASK-114)** too, an ordering this task adds: 0.14c measures eight pages under the old rule (plus about 5%), and this task resets every ceiling from one preview. Building 0.13 second resets all of them at once. The owner can reverse that order at the plan gate.
 - **This task finishes only with `LIGHTHOUSE_MODE` on** (D-158), like TASK-114: the plus-25% ceilings come from this entry's own preview, measured automatically. The code and the tests can be built before then; the PR waits for the run. Claude never turns `LIGHTHOUSE_MODE` on and never dispatches a run unasked (D-158, D-170). The Check's throwaway branch needs a hand run (`gh workflow run lighthouse.yml --ref <branch>`), which the owner starts or tells Claude to start.

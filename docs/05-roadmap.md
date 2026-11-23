@@ -1896,6 +1896,17 @@ rail shows can be acted on, and what the owner records from the first day
 has a place. Only 2.1b, 3.5 and the read-only pages (5.9, 5.11, 5.12, 4.3,
 Phase 6) stay after the switch.
 
+*Amended 2026-11-23 (D-172): nine more entries before the switch.* The owner
+pulled ahead the entries converted to tasks that day: the Calibre sync's
+year-only date and near spellings (4.4b, 4.6), Parked through every undo
+(5.18), Open Library removed (6.19), the preview's growth gate and the
+browser suite by area (0.13, 0.15), and where the book sits redesigned
+(6.21). They come with the two entries those build on: 0.14c (every page
+measured, which 0.13's ceilings start from) and 6.23 (the design review
+whose drawing 6.21 builds). 0.13 and 0.14c finish only with
+`LIGHTHOUSE_MODE` on (D-158), and 6.23 is the owner's session in Claude
+Design, so the switch now waits on both.
+
 **Depends on:** 1.25; the open Phase 1 entries the books need (1.14c, 1.17b)
 and 1.29, so the comics can still be refreshed after the switch; 2.11a and
 1.11 (done); and every open entry `docs/cutover-parity.md` names for
@@ -1907,7 +1918,12 @@ the owner pulled ahead (D-132); and the entries the owner pulled ahead on
 2.8, 2.10 and 2.10b (editing and planning the year), 3.4b (ranking as you
 finish), 4.2, 4.5 and 4.5b (Hardcover backfill and Calibre's genres), and
 5.5, 5.14 and 5.15 (DNF with a reason, the listen queue, Parked); and 1.31
-(the Owner checklist settled, owner 2026-11-14).
+(the Owner checklist settled, owner 2026-11-14); and the entries the owner
+pulled ahead on 2026-11-23 (D-172): 0.13 and 0.15 (the preview's growth gate,
+the browser suite by area), with 0.14c, which 0.13 builds on; 4.4b and 4.6
+(the Calibre sync's year-only date, a near spelling decided on the page); 5.18
+(Parked through every undo); 6.19 (Open Library removed); and 6.21 (where the
+book sits, redesigned), with 6.23, whose drawing it starts from.
 
 **Check:** the owner, after the switch: `npm run rebuild -- -EnvFile .env.live`
 and `.\etl\load.ps1 seed-final -EnvFile .env.live` both refuse, naming

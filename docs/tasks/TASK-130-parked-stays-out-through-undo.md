@@ -1,7 +1,7 @@
 ---
 id: TASK-130
 title: 5.18 A Parked book stays out of the plan and the listen queue, through every undo
-status: Draft
+status: Ready
 depends_on: []
 size: S
 model: opus
@@ -19,7 +19,7 @@ No Undo can leave a Parked book in a plan period or on the listen queue: each un
 
 ## Context
 
-- Roadmap: `docs/05-roadmap.md` § 5.18 (from TASK-127 and TASK-111, 5.15, PR #304 and PR #311; their schema reviews). Its **Check:** is AC-1, verbatim; proposed, and agreed when merged. Listed in `docs/06-tasklist.md` M17. Depends on 5.15 (done).
+- Roadmap: `docs/05-roadmap.md` § 5.18 (from TASK-127 and TASK-111, 5.15, PR #304 and PR #311; their schema reviews). Its **Check:** is AC-1, verbatim; proposed, and agreed when merged. Listed in `docs/06-tasklist.md` M17; pulled ahead of 1.26 (D-172). Depends on 5.15 (done).
 - **The invariant** (5.15, D-105; `.claude/rules/schema.md` § the Parked paragraph, around line 297): a Parked book is in no `reading_plan` row and not in `listen_queue`. The forward writes keep it: `saveBookStatus` (`src/db/writes.ts`, around line 187) under the status-row lock, and `queueListen` (around line 2076) refusing a Parked book.
 - **The four undos the entry names:**
   - `undoInside` (an add's undo, around line 2645), and `undoBookStatus` (around line 357) with `prior.status = 'parked'`: they put a book back to Parked while a `listen_queue` row written since stays. Reachable from `/parked` (TASK-111): *Plan…* or *Unlisted*, then *Queue to listen*, then the first verb's Undo.

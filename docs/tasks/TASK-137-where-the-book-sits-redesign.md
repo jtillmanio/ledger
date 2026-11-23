@@ -1,7 +1,7 @@
 ---
 id: TASK-137
 title: 6.21 Redesign where the book sits, with Claude Design
-status: Draft
+status: Ready
 depends_on: [TASK-126]
 size: M
 model: opus
@@ -19,7 +19,7 @@ How a book's universe, author, series and subseries read in Now, on the tablet a
 
 ## Context
 
-- Roadmap: `docs/05-roadmap.md` § 6.21 (owner intake, 2026-11-05; D-119). Its **Check:** is AC-1, verbatim; proposed, and agreed when merged. Listed in `docs/06-tasklist.md` M21. Depends on 2.2g (TASK-056, done) and 5.12 (TASK-104, TASK-105, done).
+- Roadmap: `docs/05-roadmap.md` § 6.21 (owner intake, 2026-11-05; D-119). Its **Check:** is AC-1, verbatim; proposed, and agreed when merged. Listed in `docs/06-tasklist.md` M21; pulled ahead of 1.26 with 6.23 (D-172). Depends on 2.2g (TASK-056, done) and 5.12 (TASK-104, TASK-105, done).
 - **The drawing comes first, and from the owner.** The design tool's frames land as `design/*.dc.html`, which are in `protectedPaths` (`.claude/kit.json`: *changes come from the design tool*). Claude never edits them. The owner puts the export there, and Claude checks it and stages it as delivered, as TASK-126's plan does.
 - **Depends on TASK-126 (6.23).** *From 6.23 (2026-11-18):* the mediums review's part E asks for these frames (`docs/design-briefs/2026-11-mediums-review.md`, § E, `bdash`: *where the book sits* with a long universe name, a book on three levels and a book on none, given its own frames). If the owner picks one there, this task starts from that drawing. If the owner draws 6.21 on its own instead, the plan gate drops the dependency and says which file holds the drawing.
 - **What exists (2.2g, 5.12).** `src/components/WhereItSits.tsx` draws up to three rows (universe, author, series, subseries), each `read / total` from the progress views with a `--ready` meter, in `src/components/BooksNow.tsx` above *Next in*. `src/components/ProgressRows.tsx` draws `/progress`'s nested rows (`src/app/progress/page.tsx`). The mockup: `design/mockups.html` § `bdash` (the *where the book sits* rows on the reading and listening frames, task 2.2g) and § `progress` (task 5.12), per `design/mockups-index.md`. Feel pass: `design/Ledger Feel Review.dc.html`, `design/LedgerDesktop.dc.html`, `design/STYLE_GUIDE.md` § 14–§ 16.

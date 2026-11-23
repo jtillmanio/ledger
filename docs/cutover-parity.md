@@ -61,6 +61,9 @@ And the books entries the owner pulled ahead on 2026-11-10 (D-139), which
 no use below needs: 2.2j, 2.2k, 2.7, 2.8, 2.10, 2.10b, 3.4b, 4.2, 4.5, 4.5b,
 5.5, 5.14 and 5.15.
 
+And the entries the owner pulled ahead on 2026-11-23 (D-172), which no use
+below needs either: 0.13, 0.14c, 0.15, 4.4b, 4.6, 5.18, 6.19, 6.21 and 6.23.
+
 ### The comics cutover (1.28)
 
 The open entries below, each built before 1.28 and named in its **Depends

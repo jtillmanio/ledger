@@ -35,12 +35,13 @@ milestone._
   2026-11-08: 1.14c, 1.17b, 1.29, 4.4 and 5.17, and on 2026-11-10 the rest
   of the books work but 2.1b, 3.5 and the read-only pages (D-139): 2.2j,
   2.2k, 2.7, 2.8, 2.10, 2.10b, 3.4b, 4.2, 4.5, 4.5b, 5.1, 5.5, 5.14 and
-  5.15. 1.28, the last entry of M13,
+  5.15; and on 2026-11-23 (D-172): 0.13, 0.14c, 0.15, 4.4b, 4.6, 5.18, 6.19,
+  6.21 and 6.23. 1.28, the last entry of M13,
   cuts the **comics** over, after 3.1–3.3 and 5.6 → 5.10; until then
   `Comics.xlsx` stays the comics record and 1.29's comics-only load refreshes
   production from it. Cutting over before M9 defeats the migration (HANDOFF
   §10).
-- **Build order: books first** (D-129, D-139). M9 to 1.26, with what it pulls
+- **Build order: books first** (D-129, D-139, D-172). M9 to 1.26, with what it pulls
   ahead, which is now nearly all the books work; then the books entries left
   after it, 2.1b and 3.5; then the comics: M12, M13 (ending in 1.28, with 5.6 → 5.10 pulled
   ahead from M18), the rest of M14 (3.6 → 3.6b → 3.6c) and M15; then Later in
@@ -63,20 +64,20 @@ milestone._
 
 | Check | Result |
 |---|---|
-| MVP features in an MVP milestone | 20/20 (F-01–F-20) |
-| Next and Later features scheduled | 12/12 Next, 25/25 Later |
-| Roadmap entries in exactly one milestone | 129/129 |
-| Roadmap entries serving a feature | 129/129 |
+| MVP features in an MVP milestone | 21/22 (F-01–F-20, F-58); F-73 sits in M17, pulled ahead of 1.26 (D-132) |
+| Next and Later features scheduled | 19/19 Next, 34/34 Later |
+| Roadmap entries in exactly one milestone | 195/195 (recounted 2026-11-23; 6.22 placed in M21 the same day). 1.24 keeps its row, done another way, with no entry |
+| Roadmap entries serving a feature | 195/195 (recounted 2026-11-23, when twenty sub-entries and Phase 6 entries were mapped to their features) |
 | MVP screens built by a task | `spine`, `range`, `batch`, `bulk`, `addsearch`, `apistates`, `add`, `blist`, `capture`, `queue`, `status`, `moveplan` (levels only), and the shell around `home`, `bdash` and `watchlist` (1.8); the dashboards' contents are M10 and M12 |
-| Tables | 32/32 built (`src/db/schema.ts`, migrations through `0013`); every proposed table has its task (below) |
+| Tables | 46/46 built (`src/db/schema.ts`, migrations through `0034`; recounted 2026-11-23), each in *Entities → tasks* with what made it; every proposed table has its entry (below) |
 
 ### Features → milestones
 
 | Feature | Priority | Roadmap entries | Milestones |
 |---|---|---|---|
 | F-01 Private sign-in | MVP | 1.11 | M7 |
-| F-02 Both workbooks migrated, rebuildable until cutover | MVP (then Next) | 0.3, 0.4, 0.5, 0.6, 0.7, 1.25, 1.29, 1.26, 1.28 | M1, M9, M13 |
-| F-03 Tested, released by hand, backed up | MVP | 0.1, 0.2, 0.11, 0.12, 0.15 | M1, M6, M2, M9 |
+| F-02 Both workbooks migrated, rebuildable until cutover | MVP (then Next) | 0.3, 0.4, 0.5, 0.6, 0.7, 1.25, 1.29, 1.26, 1.28, 1.27, 1.31 | M1, M9, M13 |
+| F-03 Tested, released by hand, backed up | MVP | 0.1, 0.2, 0.11, 0.12, 0.15, 6.20 | M1, M6, M2, M9, M21 |
 | F-04 Fast on a phone | MVP | 0.9, 0.10, 1.8d, 1.30, 0.13, 0.14, 0.14b, 0.14c, 0.14d | M2, M6, M9 |
 | F-05 One shell for three media | MVP | 1.8a, 1.8c, 1.8, 1.8e, 1.8b | M6 |
 | F-06 Mark an issue read, in this run | MVP | 0.8a, 0.8b, 1.2 | M2, M3 |
@@ -88,26 +89,26 @@ milestone._
 | F-12 In flight · Up next · Done | MVP (then Later) | 1.9, 2.2f, 8.8 | M7, M10, M24 |
 | F-13 The volume map | MVP (then Next) | 1.12, 3.9 | M7, M13 |
 | F-14 A prerequisite graph without cycles | MVP (then Next) | 2.11a, 3.3 | M7, M13 |
-| F-15 Add books by search, paste or hand | MVP | 1.4, 1.4c, 1.4e, 1.22 | M5, M9 |
+| F-15 Add books by search, paste or hand | MVP | 1.4, 1.4c, 1.4e, 1.22, 1.4f | M5, M9 |
 | F-16 Quick-capture inbox | MVP | 1.4b | M5 |
 | F-17 A dated reading log | MVP | 1.5, 1.16, 1.17, 1.17b | M5, M9 |
 | F-18 To-read levels | MVP | 1.7, 1.4d, 1.21 | M6, M5, M8 |
-| F-19 A clean, enriched book catalog | MVP | 1.13, 1.14, 1.18, 1.20, 1.14c | M8, M9 |
+| F-19 A clean, enriched book catalog | MVP | 1.13, 1.14, 1.18, 1.20, 1.14c, 1.14b, 1.18b, 1.18c, 6.19 | M8, M9, M21 |
 | F-20 Follow series, authors and universes | MVP (then Later) | 1.15, 5.11, 5.12 | M8, M17 |
 | F-21 The pace engine | Next (then Later) | 2.0, 2.0b, 2.1, 2.1b, 6.12 | M10, M20 |
-| F-22 Books dashboard and the plan rail | Next | 2.2, 2.2b | M10 |
+| F-22 Books dashboard and the plan rail | Next | 2.2, 2.2b, 2.2k | M10 |
 | F-23 Plan editing and rebalance | Next | 2.3, 2.7, 2.8, 2.10 | M11 |
 | F-24 Comics dashboard and the telescope | Next | 2.5, 2.5b, 2.4 | M12 |
 | F-25 Unlock cost, leverage and the frontier | Next | 2.6, 6.2b | M12 |
 | F-26 Run list by track and block | Next | 2.9 | M12 |
 | F-27 Run and block completion | Next | 2.12 | M12 |
 | F-28 Edit the catalog in place | Next | 3.1, 3.2, 3.7, 3.8 | M13 |
-| F-29 Detail sheets | Next (then Later) | 3.5, 8.4 | M14, M23 |
+| F-29 Detail sheets | Next (then Later) | 3.5, 8.4, 3.5b, 3.5c | M14, M23 |
 | F-30 Eras and spine v2 | Next | 3.6, 3.6b, 3.6c | M14 |
 | F-31 Ratings, notes and DNF | Next (then Later) | 3.4, 5.4, 5.5 | M14, M18, M17 |
 | F-32 Adding at scale | Next | 3.10, 3.11, 3.12 | M15 |
 | F-33 Metadata backfill and covers | Later | 4.1, 4.2, 4.3, 4.4, 4.4b, 4.6 | M16 |
-| F-34 Shelves with context | Later | 5.1, 8.6 | M17, M24 |
+| F-34 Shelves with context | Later | 5.1, 8.6, 5.1b | M17, M24 |
 | F-35 Tracks page | Later | 5.2 | M18 |
 | F-36 Editions: collected in | Later | 5.6, 5.10 | M18 |
 | F-37 Coming out | Later | 5.7, 5.8 | M17, M18 |
@@ -117,8 +118,8 @@ milestone._
 | F-41 Offline and the keyboard | Later | 6.4, 6.5 | M20 |
 | F-42 Prerequisite graph and events | Later | 6.3, 6.8 | M19 |
 | F-43 Choosing from the master list | Later | 6.10 | M19 |
-| F-44 Appearance | Later | 6.11, 6.14, 6.15, 6.9 | M20, M21 |
-| F-45 Hardening | Later | 6.13, 6.16 | M21 |
+| F-44 Appearance | Later | 6.11, 6.14, 6.15, 6.9, 6.23 | M20, M21 |
+| F-45 Hardening | Later | 6.13, 6.16, 6.18, 6.22 | M21 |
 | F-46 Import from Goodreads or StoryGraph | Later | 6.6 | M21 |
 | F-47 AI review and drafting | Later | 7.1, 7.2, 7.3, 7.4, 7.5 | M22 |
 | F-48 Release digest email | Later | 7.6 | M22 |
@@ -133,36 +134,41 @@ milestone._
 | F-57 Music dashboard and status | Later | 9.6 | M25 |
 | F-58 Audiobooks | MVP | 1.23 | M9 |
 | F-59 A queue to listen next | Later | 5.14 | M17 |
-| F-60 Rank a book as I finish it, and every year's top ten | Next | 3.4b | M14 |
+| F-60 Rank a book as I finish it, and every year's top ten | Next | 3.4b, 3.4c | M14 |
 | F-61 New albums from the artists I follow on Spotify | Later | 9.7 | M25 |
 | F-62 Games: search, a queue, by my platforms | Later | 10.0, 10.1, 10.2, 10.3 | M26 |
 | F-63 Games coming out | Later | 10.4 | M26 |
 | F-64 Games dashboard | Later | 10.5 | M26 |
 | F-65 Plan a year or a quarter, with suggestions | Next | 2.10b | M11 |
-| F-66 Parked, and its review | Later | 5.15, 5.16, 8.8, 9.3, 10.1 | M17, M18 (then M24–M26) |
+| F-66 Parked, and its review | Later | 5.15, 5.16, 8.8, 9.3, 10.1, 5.18 | M17, M18 (then M24–M26) |
 | F-67 Game shelves | Later | 10.6 | M26 |
 | F-68 Follow what I'm reading, and see what's next in it | Next | 2.2c, 2.2h, 2.2d, 2.10b | M10, M11 |
 | F-69 In the middle of, and completed | Later | 5.12, 8.8, 9.6, 10.3 | M17 (then M24–M26) |
 | F-70 The Library, sorted | Next | 2.2e | M10 |
 | F-71 Every screen from a phone | Next | 2.2i | M10 |
 | F-72 Where the book sits | Next (then Later) | 2.2g, 6.21 | M10, M21 |
-| F-73 What I own: physical copies and audiobooks | MVP (D-132) | 5.17 | M17, pulled ahead of 1.26 |
-| F-74 On deck by genre | Later | 4.5b | M16 |
-| F-75 The universe and series on every book row | Next | 2.2j | M10 |
+| F-73 What I own: physical copies and audiobooks | MVP (D-132) | 5.17, 5.17b | M17, pulled ahead of 1.26 |
+| F-74 On deck by genre | Later | 4.5b, 4.5 | M16 |
+| F-75 The universe and series on every book row | Next | 2.2j, 2.2l | M10 |
 
 ### Entities → tasks
 
 | Tables | Created by |
 |---|---|
-| `users`, `tracks`, `runs`, `run_tracks`, `prereqs`, `events`, `editions`, `edition_progress`, `issues`, `issue_progress`, `books`, `authors`, `book_series`, `book_status`, `reading_plan`, `releases`, `wishlist`, `external_lists` | v1, before the roadmap (migration `0000`); reshaped by 0.4, 0.7, 0.8a, 1.5 and 1.7 |
+| `users`, `tracks`, `runs`, `run_tracks`, `prereqs`, `events`, `editions`, `edition_progress`, `issues`, `issue_progress`, `books`, `authors`, `book_series`, `book_status`, `reading_plan`, `releases`, `wishlist`, `external_lists`, `event_tracks` | v1, before the roadmap (migration `0000`); reshaped by 0.4, 0.7, 0.8a, 1.5 and 1.7; `event_tracks` renamed `event_runs` (`0001`); `wishlist` dropped by 1.27 (`0019`, D-111) |
 | `blocks` | migration `0002` (ahead of 0.3) |
 | `run_issues`, `creators`, `issue_credits` | 0.7 (`0003`) |
 | `eras`, `reading_settings`, `shelves`, `shelf_books`, `volume_rules` | 0.3 (`0005`); `volume_rules` is loaded by 1.12, `eras` edited by 3.6, `reading_settings` by 2.0, shelves by 5.1 |
-| `metron_cache`, `open_library_cache` | 1.3b (`0008`), 1.4c (`0009`) |
+| `metron_cache`, `open_library_cache` | 1.3b (`0008`), 1.4c (`0009`); `open_library_cache` is dropped by 6.19 |
+| `book_subseries` | 1.18b (`0016`) |
+| `book_genres` | 1.18c (`0017`) |
+| `hardcover_cache` | 1.14b (`0018`) |
+| `plan_acceptance` | 2.7 (`0025`) |
+| `calibre_syncs`, `calibre_decisions` | 4.4 (`0029`) |
 | `inbox` | 1.4b (`0010`) |
 | `read_events` | 1.5 (`0011`) |
-| `run_queue` | 1.10 (proposed) |
-| `book_universes`, `series_follows`, `author_follows`, `universe_follows` | 1.15 (proposed) |
+| `run_queue` | 1.10 (`0014`) |
+| `book_universes`, `series_follows`, `author_follows`, `universe_follows` | 1.15 (`0015`) |
 | `sessions` | 2.1b (proposed) |
 | `edition_issues` | 5.6 (proposed) |
 | `proposals` | 7.1 (proposed) |
@@ -170,13 +176,13 @@ milestone._
 | `shelf_titles` | 8.6 (proposed) |
 | `title_providers` | 8.9 (proposed) |
 | `artists`, `albums`, `tracks` (music), `artist_follows`, `album_status`, `listen_events`, song rankings | 9.1, 9.4 (proposed) |
-| `listen_queue` | 5.14 (proposed) |
+| `listen_queue` | 5.14 (`0032`) |
 | `games`, `game_genres`, `platforms`, `game_releases`, `owned_platforms`, `game_status`, `play_events`, the IGDB cache; `game_queue` | 10.1; 10.2 (proposed) |
 | `run_parked` | 5.16 (proposed) |
 | `shelf_games` | 10.6 (proposed) |
 | `shelf_follows` | 2.2c (approved 2026-11-04; built: TASK-048, migration 0022) |
-| `subseries_follows` | 2.2h (proposed) |
-| `owned_copies` | 5.17 (proposed; replaces `physical_copies`, D-132) |
+| `subseries_follows` | 2.2h (`0023`) |
+| `owned_copies` | 5.17 (`0028`; replaces the proposed `physical_copies`, D-132) |
 
 Views are in `etl/views.sql` and listed in data model §3; each new one lands
 with the task that first reads it.
@@ -342,14 +348,14 @@ with the task that first reads it.
 | ✅ | 1.17b → TASK-058, TASK-059 | Dates when you start and finish, and on every read | M | _Owner, 2026-11-08 (D-131)_ | 1.17, 1.23 |
 | ✅ | 1.29 → TASK-060 | Refresh production's comics from `Comics.xlsx`, books untouched | M | _Owner, 2026-11-08 (D-128)_ | — |
 | ✅ | 1.30 → TASK-073 | Bring the Library and Now back under their JS budgets | M | _Owner, 2026-11-10 (PR #222)_ | 1.17b |
-|  | 0.13 → TASK-133 | Gate a preview on what its PR adds, not on a ceiling it must raise | M | _Owner, 2026-11-10 (D-142); Phase 0's, listed here beside 1.30; not a cutover gate_ | 1.30 |
-| ✅ | 0.14 → TASK-112 | A measured deploy costs a third of what it did | M | _Owner, 2026-11-17 (D-158); Phase 0's, listed here beside 0.13; not a cutover gate_ | — |
+|  | 0.13 → TASK-133 | Gate a preview on what its PR adds, not on a ceiling it must raise | M | _Owner, 2026-11-10 (D-142); Phase 0's, listed here beside 1.30; pulled ahead of 1.26 (D-172)_ | 1.30, 0.14c |
+| ✅ | 0.14 → TASK-112 | A measured deploy costs a third of what it did | M | _Owner, 2026-11-17 (D-158); Phase 0's, listed here beside 0.13; pulled ahead of 1.26 (D-172)_ | — |
 | ✅ | 0.14b → TASK-113 | Automatic runs are debounced and capped | M | _Owner, 2026-11-17 (D-158); Phase 0's, listed here beside 0.13; not a cutover gate_ | 0.14 |
 |  | 0.14d | A plan-only run is never main's baseline | S | _From TASK-113 (PR #317); Phase 0's, listed here beside 0.14b; not a cutover gate_ | 0.14b |
-|  | 0.14c → TASK-114 | Every page is measured | M | _Owner, 2026-11-17; Phase 0's, listed here beside 0.13; not a cutover gate; finishes only once `LIGHTHOUSE_MODE` is back on_ | 0.14b |
+|  | 0.14c → TASK-114 | Every page is measured | M | _Owner, 2026-11-17; Phase 0's, listed here beside 0.13; pulled ahead of 1.26 with 0.13, which builds on it (D-172); finishes only once `LIGHTHOUSE_MODE` is back on_ | 0.14b |
 |  | 0.15 → TASK-134, TASK-135, TASK-136 | The browser suite runs by area, with a critical set always | L | _Owner, 2026-11-20 (PR #308; amends D-80, D-141, D-161); Phase 0's, listed here beside 0.13; not a cutover gate_ | — |
 |  | 1.31 → TASK-115 | Settle the Owner checklist before the books cutover | S | _Owner, 2026-11-14 (from TASK-084, PR #255); Check proposed_ | — |
-|  | 1.26 → TASK-061 | Cut the books over from the Sheets | M | _The books cutover since 2026-11-08 (D-128)_ | 1.25, 1.14c, 1.17b, 1.29, 1.31, and every open entry 1.25 names for `Books.xlsx`, with 4.4 and 5.17 (D-132, D-133) and what D-139 pulled ahead |
+|  | 1.26 → TASK-061 | Cut the books over from the Sheets | M | _The books cutover since 2026-11-08 (D-128)_ | 1.25, 1.14c, 1.17b, 1.29, 1.31, and every open entry 1.25 names for `Books.xlsx`, with 4.4 and 5.17 (D-132, D-133) and what D-139 and D-172 pulled ahead |
 
 # Next
 
@@ -479,8 +485,8 @@ with the task that first reads it.
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
 | ✅ | 4.4 → TASK-081, TASK-082, TASK-083 | Sync with Calibre, both ways: one command, by hand or weekly | M | _Pulled ahead of 1.26 (D-133)_ | 1.18, 1.21, 1.14c, 5.17 |
-|  | 4.4b → TASK-128 | A year-only Calibre date isn't rewritten every sync | S | _From TASK-082, TASK-083 (PR #267, PR #270), 2026-11-23; before the owner turns `CALIBRE_SYNC_READS` on at 1.26; Check proposed_ | 4.4 |
-|  | 4.6 → TASK-129 | Decide a waiting Calibre near spelling on the Calibre page | S | _From TASK-083 (PR #270); Check proposed_ | 4.4 |
+|  | 4.4b → TASK-128 | A year-only Calibre date isn't rewritten every sync | S | _From TASK-082, TASK-083 (PR #267, PR #270), 2026-11-23; pulled ahead of 1.26 (D-172): before the owner turns `CALIBRE_SYNC_READS` on; Check proposed_ | 4.4 |
+|  | 4.6 → TASK-129 | Decide a waiting Calibre near spelling on the Calibre page | S | _From TASK-083 (PR #270); pulled ahead of 1.26 (D-172); Check proposed_ | 4.4 |
 |  | 4.1 | Metron backfill | M |  | — |
 | ✅ | 4.2 → TASK-084 | Open Library and Hardcover backfill | M | _Pulled ahead of 1.26 (D-139)_ | — |
 | ✅ | 4.3 → TASK-085, TASK-086, TASK-087 | Covers in the UI | S |  | — |
@@ -508,7 +514,7 @@ with the task that first reads it.
 | ✅ | 5.15 → TASK-108, TASK-109, TASK-110, TASK-127, TASK-111 | Parked: put a book away, and review it on a schedule | M | _Pulled ahead of 1.26 (D-139)_ | 1.9, 1.17, 1.21, 2.2, 2.3 |
 | ✅ | 5.17 → TASK-092, TASK-093, TASK-094 | What you own: physical copies and audiobooks | M | _Pulled ahead of 1.26 (D-132)_ | 2.2e, 1.4, 1.21 |
 | ✅ | 5.17b → TASK-122, TASK-123 | Own it from Search and By hand | S | _From TASK-094 (PR #268)_ | 5.17 |
-|  | 5.18 → TASK-130 | A Parked book stays out of the plan and the listen queue, through every undo | S | _From TASK-127 and TASK-111 (PR #304, PR #311); Check proposed_ | 5.15 |
+|  | 5.18 → TASK-130 | A Parked book stays out of the plan and the listen queue, through every undo | S | _From TASK-127 and TASK-111 (PR #304, PR #311); pulled ahead of 1.26 (D-172); Check proposed_ | 5.15 |
 
 ## M18: Comic surfaces — Later
 
@@ -568,7 +574,7 @@ with the task that first reads it.
 **Demo at exit:** A malformed body answers 400; a sign-in stronger than one passcode; a Goodreads or StoryGraph import; the theme revisited once every screen exists.  
 **Features:** F-45, F-46, F-44, F-72  
 **Depends on:** M19, M20  
-**Order:** 6.9 last: it is a pass over every finished screen.
+**Order:** 6.9 last: it is a pass over every finished screen. 6.19, 6.21 and 6.23 are pulled ahead of 1.26 (D-172).
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -576,10 +582,11 @@ with the task that first reads it.
 |  | 6.13 | Better sign-in than one passcode (D-23) | M |  | — |
 |  | 6.6 | Goodreads and StoryGraph CSV import | M |  | — |
 |  | 6.18 | Drop `user_id`: the schema is single-user | L |  | — |
-|  | 6.19 → TASK-131, TASK-132 | Remove Open Library | S |  | 1.14b, 1.4f |
+|  | 6.19 → TASK-131, TASK-132 | Remove Open Library | S | _Pulled ahead of 1.26 (D-172)_ | 1.14b, 1.4f |
 |  | 6.20 | Last backup on Settings (proposed, from TASK-045) | S |  | 2.0 |
-|  | 6.21 → TASK-137 | Redesign where the book sits, with Claude Design | M |  | 2.2g, 5.12 |
-|  | 6.23 → TASK-126 | Design review with Claude Design: the new mediums, and what was drawn since the feel pass | M | _Owner, 2026-11-18; runs any time, ahead of 8.7, 9.0 and 10.0; Check proposed_ | — |
+|  | 6.21 → TASK-137 | Redesign where the book sits, with Claude Design | M | _Pulled ahead of 1.26 (D-172)_ | 2.2g, 5.12, 6.23 |
+|  | 6.23 → TASK-126 | Design review with Claude Design: the new mediums, and what was drawn since the feel pass | M | _Owner, 2026-11-18; runs any time, ahead of 8.7, 9.0 and 10.0; pulled ahead of 1.26 with 6.21, which starts from its drawing (D-172); Check proposed_ | — |
+|  | 6.22 | A row's `⋯` menu stays on screen | S | _From TASK-093 (PR #266); placed in M21 by the 2026-11-23 coverage recount; Check proposed_ | — |
 |  | 6.9 | Revisit the theme | M |  | — |
 
 ## M22: AI-assisted curation — Later

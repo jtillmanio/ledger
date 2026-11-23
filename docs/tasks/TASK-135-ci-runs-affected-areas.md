@@ -1,7 +1,7 @@
 ---
 id: TASK-135
 title: 0.15 The browser suite runs by area (2 of 3) — CI runs what a PR's paths can break
-status: Draft
+status: Ready
 depends_on: [TASK-134]
 size: M
 model: opus
@@ -19,7 +19,7 @@ A ready PR's browser suite runs only the areas its changed files can break, plus
 
 ## Context
 
-- Roadmap: `docs/05-roadmap.md` § 0.15 (owner, 2026-11-20; **amends D-80, D-141 and D-161**). Its **Check:** is AC-1, verbatim. Listed in `docs/06-tasklist.md` M9 beside 0.13; not a cutover gate.
+- Roadmap: `docs/05-roadmap.md` § 0.15 (owner, 2026-11-20; **amends D-80, D-141 and D-161**). Its **Check:** is AC-1, verbatim. Listed in `docs/06-tasklist.md` M9 beside 0.13; pulled ahead of 1.26 (D-172).
 - **Split, 2 of 3.** TASK-134 gave every spec an area, tagged the critical set and added the areas setting. This part is the map from paths to areas, the scope job and the e2e job, the nightly run, the git rules and the decision row. TASK-136 is the time budget by area.
 - **The map** (the entry): `scripts/lib/ci-scope.mjs` maps a changed path to areas. A medium's routes, components and specs select that medium. **Anything shared or unmapped selects every area:** `src/db/**`, `src/lib/**`, `etl/views.sql`, the shared components, `src/app/globals.css`, `src/proxy.ts`, `package.json` and the lockfile, Next and Playwright config, `test/e2e/helpers.ts`, `.github/**`. The map fails toward *all*, never toward *none*. The plan lists which `src/components/*` are a medium's and which are shared, and how a new component defaults (shared).
 - **What runs where:** a ready PR runs its areas at full scope (every project the tags say, D-161) plus the critical set at the core projects. A push to `main`, a PR labelled `e2e:full`, a PR that selects every area, and a scheduled nightly run on `main` run everything. A docs-only change still skips the suite (`isDocsOnly`, D-145).
