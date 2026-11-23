@@ -1,7 +1,7 @@
 ---
 id: TASK-129
 title: 4.6 Decide a waiting Calibre near spelling on the Calibre page
-status: Review
+status: Done
 depends_on: []
 size: M
 model: sonnet
