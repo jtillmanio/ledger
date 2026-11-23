@@ -569,6 +569,11 @@ describe("automatic runs wait, measure only the PR's head, and stop at a monthly
     // Twenty measured among the newest forty: no batch past them is read.
     expect(read.length).toBe(40);
     expect(Math.min(...read)).toBe(160); // the newest, not the first listed
+    // A cap inside a batch: the batch's extra runs are read, but the count
+    // never passes the cap (it reaches the PR comment as "N of cap").
+    read.length = 0;
+    expect(await countMeasured(runs, { cap: 7, jobsFor })).toBe(7);
+    expect(read.length).toBe(20);
     // Under the cap, every run is read and the count is exact.
     expect(await countMeasured(runs, { cap: 150, jobsFor })).toBe(100);
     // A cap of 0 reads nothing.

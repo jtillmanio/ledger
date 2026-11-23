@@ -97,7 +97,7 @@ Approved 2026-11-22 (owner: "approve plan, go with recommendations").
 
 _Filled by /implement-task. One line per round._
 
-- Verify R1 PASS (`7ec6a60`; perf.test.ts 13 new tests failed first, then 66/66) | CI R1 PASS (run 45028141638: tests, e2e full 10/10, Vercel) | Spec R1 APPROVE (3 non-blocking notes, placed in Follow-ups) | Claude PR review: no issues | Audit R1 CHANGES (AC-3 hand run UNPROVEN: a source-string pin) → `gates()` on fixtures | Verify R2 PASS (`32941e9`) | Audit R2 PASS (mutations killed; one gap: the cap skip's `return` unpinned) → pinned, checked by removing it (fails) | Verify R3 PASS | Spec R2 APPROVE (the fixes' diff and the close-out follow-ups check) | Owner dry run (run 45112285873): passed, but `plan` 3 min 19 s → revision 2 | Verify R4 PASS
+- Verify R1 PASS (`7ec6a60`; perf.test.ts 13 new tests failed first, then 66/66) | CI R1 PASS (run 45028141638: tests, e2e full 10/10, Vercel) | Spec R1 APPROVE (3 non-blocking notes, placed in Follow-ups) | Claude PR review: no issues | Audit R1 CHANGES (AC-3 hand run UNPROVEN: a source-string pin) → `gates()` on fixtures | Verify R2 PASS (`32941e9`) | Audit R2 PASS (mutations killed; one gap: the cap skip's `return` unpinned) → pinned, checked by removing it (fails) | Verify R3 PASS | Spec R2 APPROVE (the fixes' diff and the close-out follow-ups check) | Owner dry run (run 45112285873): passed, but `plan` 3 min 19 s → revision 2 | Verify R4 PASS (`a1a5260`; a books-dashboard test timed out under load, passed alone) | Spec R3 APPROVE | Audit R3 CHANGES (the cap clamp unproven: the only capped case ended on a batch boundary) → a mid-batch cap, checked by removing the clamp (fails)
 
 ## Blocked
 
