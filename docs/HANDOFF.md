@@ -251,7 +251,7 @@ queue at current pace.
 - **24 of 37 tracks** have never been started.
 - Typos surfaced: *The Lightning Theif*, *Olypmians*, *Dreden Files*, and
   *Restoration of Faith* dated 2910.
-- **No book API exposes word counts.** Goodreads never had it; Open Library and
+- **No book API exposes word counts.** Goodreads never had it; Hardcover and
   Google Books give page counts. Keep hand-entered values, estimate the rest at
   `pages × 275`, flag which is which in `books.word_count_source`.
 

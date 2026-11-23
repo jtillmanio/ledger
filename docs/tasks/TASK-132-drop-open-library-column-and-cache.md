@@ -1,7 +1,7 @@
 ---
 id: TASK-132
 title: 6.19 Remove Open Library (2 of 2) — the column, the cache table, the client and the documents
-status: In progress
+status: Review
 depends_on: [TASK-131]
 size: M
 model: opus
@@ -30,14 +30,14 @@ Open Library is gone from the app: its id column, its cache table and its client
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): the migration ships `drizzle/down/<tag>.sql` and passes an
+- [x] AC-1 (roadmap **Check:**, verbatim): the migration ships `drizzle/down/<tag>.sql` and passes an
   up → down → up test on the TEST database; `open_library`, `openlibrary` and
   `Open Library` appear nowhere in `src/` or `etl/*.py` outside `drizzle/`;
   `npm run test:all` is green.
-- [ ] AC-2: After the up migration on the TEST database, `books` has no `open_library_id` column and `open_library_cache` does not exist; after the down, both are back with their types, and the column's values for the rows the test seeded are restored as NULL (the down says it restores the shape, not the ids).
-- [ ] AC-3: Given a book with a `hardcover_id` and one with neither id, the Library's *metadata pending* marks only the second, read through every query that computed it.
-- [ ] AC-4: `docs/02-architecture.md`, `docs/03-data-model.md`, `docs/01-product.md`, `docs/HANDOFF.md`, `design/mockups.html` and `design/mockups-index.md` no longer name Open Library as a source of book data, search or covers (a history note that says it was removed is allowed). `.gitignore` and `.claude/rules/git.md` no longer list `etl/.openlibrary-cache.sqlite`.
-- [ ] AC-5: `src/db/export-tables.ts` no longer names `open_library_cache`, and its test still holds every table in `src/db/schema.ts` to one list.
+- [x] AC-2: After the up migration on the TEST database, `books` has no `open_library_id` column and `open_library_cache` does not exist; after the down, both are back with their types, and the column's values for the rows the test seeded are restored as NULL (the down says it restores the shape, not the ids).
+- [x] AC-3: Given a book with a `hardcover_id` and one with neither id, the Library's *metadata pending* marks only the second, read through every query that computed it.
+- [x] AC-4: `docs/02-architecture.md`, `docs/03-data-model.md`, `docs/01-product.md`, `docs/HANDOFF.md`, `design/mockups.html` and `design/mockups-index.md` no longer name Open Library as a source of book data, search or covers (a history note that says it was removed is allowed). `.gitignore` and `.claude/rules/git.md` no longer list `etl/.openlibrary-cache.sqlite`.
+- [x] AC-5: `src/db/export-tables.ts` no longer names `open_library_cache`, and its test still holds every table in `src/db/schema.ts` to one list.
 
 ## Out of scope
 
@@ -65,9 +65,11 @@ Open Library is gone from the app: its id column, its cache table and its client
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- (approved at plan) Before the Release that carries 0035: about 2,000 production books known only by an Open Library id turn *metadata pending*, and `Cover` / `RowCover` draw the pending box ahead of a known `cover_url` (about 1,750 such books on the 2026-11-23 extract, where the committed `book_details.csv` has 98 Hardcover rows). Run a full `npm run enrich:books` then extract (production is rebuildable until cutover) or the 4.2 backfill, and decide whether a pending book with a cover should draw it. → owner checklist
-- (approved at plan) `etl/.openlibrary-cache.sqlite` leaves `.gitignore`, so the owner's copy shows as untracked: delete it. → owner checklist
+- (approved at plan) Before the Release that carries 0035: about 2,000 production books known only by an Open Library id turn *metadata pending*, and `Cover` / `RowCover` draw the pending box ahead of a known `cover_url` (about 1,750 such books on the 2026-11-23 extract, where the committed `book_details.csv` has 98 Hardcover rows). Run a full `npm run enrich:books` then extract (production is rebuildable until cutover) or the 4.2 backfill, and decide whether a pending book with a cover should draw it. Schema review R1 (MINOR) added: run the Release at a quiet moment, since the old build reads the dropped column between migrate and promote. → `docs/OWNER-CHECKLIST.md` § Actions from follow-ups
+- (approved at plan) `etl/.openlibrary-cache.sqlite` leaves `.gitignore`, so the owner's copy shows as untracked: delete it. → `docs/OWNER-CHECKLIST.md` § Actions from follow-ups
 - (approved at plan) The e2e specs' `openLibrary()` helpers (`covers`, `follows`, `plan-picker`) open the Library page, not the source → not tracked: not Open Library, and `test/` is outside AC-1's grep
+- `docs/06-tasklist.md` line 162 still says "`open_library_cache` is dropped by 6.19" (spec review note) → not tracked: still true once this merges, and AC-4 doesn't list the file
+- CI R1's one failure, `plan-sheet.spec.ts:278` at w390-light: its `POST /api/books` got no response within 5s (trace: status -1; no lock wait or slow statement logged); it passed in every other project, 3/3 locally, and on the rerun → not tracked: a stalled request, not a test reading something that moves; it recurs only if CI's server stalls again
 
 ## Plan
 
@@ -98,13 +100,15 @@ Approved 2026-11-23 (owner pre-approved the recommended options). Schema change 
 
 _Filled by /implement-task. One line per round._
 
+Verify R1 PASS (634042f) | Schema R1 APPROVE (2 MINOR: the migrate→promote window, the lossy down → Follow-ups / accepted) | Spec R1 APPROVE (test:all = CI; notes: two word-count lines → reworded at close-out) | Audit R1 PASS (advisories: AC-3 can only fail on the dropped column; AC-4 manual) | CI R1 FAIL (plan-sheet.spec.ts:278, w390-light: POST /api/books stalled, no response; not reproduced 3/3) → rerun of the failed shard | CI R2 PASS (634042f, attempt 2, every project) | Close-out check APPROVE
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1
+- Review rounds: 1 (spec, schema), audit 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (the word-count lines in `docs/02-architecture.md` and `docs/HANDOFF.md`, files already in the plan, were reworded at close-out on the reviewers' and auditor's AC-4 note)

@@ -5452,7 +5452,7 @@ it is converted.
   `user_id` column; `user_id` appears nowhere in `src/` or `etl/` outside
   `drizzle/`; `npm run test:all` is green.
 
-- ☐ 6.19 **Remove Open Library** (D-94) · S. Owner, 2026-10-28. Once
+- ☑ 6.19 **Remove Open Library** (D-94) · S. Owner, 2026-10-28. Once
   Hardcover is in use (1.14b and 1.4f merged and the owner content with
   them). It removes `src/lib/openlibrary.ts` and its tests, the
   `open_library_cache` table, `books.open_library_id` (the *metadata pending*

@@ -586,7 +586,7 @@ with the task that first reads it.
 |  | 6.13 | Better sign-in than one passcode (D-23) | M |  | — |
 |  | 6.6 | Goodreads and StoryGraph CSV import | M |  | — |
 |  | 6.18 | Drop `user_id`: the schema is single-user | L |  | — |
-|  | 6.19 → TASK-131, TASK-132 | Remove Open Library | S | _Pulled ahead of 1.26 (D-172)_ | 1.14b, 1.4f |
+| ✅ | 6.19 → TASK-131, TASK-132 | Remove Open Library | S | _Pulled ahead of 1.26 (D-172)_ | 1.14b, 1.4f |
 |  | 6.20 | Last backup on Settings (proposed, from TASK-045) | S |  | 2.0 |
 |  | 6.21 → TASK-137 | Redesign where the book sits, with Claude Design | M | _Pulled ahead of 1.26 (D-172)_ | 2.2g, 5.12, 6.23 |
 |  | 6.23 → TASK-126 | Design review with Claude Design: the new mediums, and what was drawn since the feel pass | M | _Owner, 2026-11-18; runs any time, ahead of 8.7, 9.0 and 10.0; pulled ahead of 1.26 with 6.21, which starts from its drawing (D-172); Check proposed_ | — |

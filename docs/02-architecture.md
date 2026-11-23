@@ -632,7 +632,7 @@ D-73).
 
 ### Word counts — the honest answer
 
-No general book API exposes word counts. Goodreads never had it, Open Library
+No general book API exposes word counts. Goodreads never had it, Hardcover
 and Google Books give page counts, and publishers largely don't publish the
 figure. The options:
 
