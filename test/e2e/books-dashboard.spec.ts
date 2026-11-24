@@ -760,13 +760,35 @@ test.describe("next in what you follow as Reading (2.2d)", () => {
   });
 });
 
-// Task 2.2g (F-72, D-119, D-108): where the book sits. Thin rows under Now's band, one per level,
-// read / total from the progress views. Untagged tests run in every project, so their screenshots
-// are the feel pass's; the 834px frame is set by hand (no project has it).
-test.describe("where the book sits (2.2g)", () => {
+// Task 2.2g (F-72, D-119, D-108): where the book sits, one row per level, read / total from the progress
+// views. Task 6.21 (TASK-137, MR-D19) redrew it as frames E1–E6 of design/MR-E-Review-1.dc.html: a mono kind
+// key per row, each deeper level stepped in 10px, fixed meter and count columns, inside Now's band (under the
+// cover and text on the phone, in the text column from 768px). FEEL tests run at every width, light and dark;
+// the 834px frame is set by hand (no project has it).
+test.describe("where the book sits (2.2g, 6.21)", () => {
   const rowsOf = (page: Page) => page.locator(".now-where li");
   const names = (page: Page) => page.locator(".now-where-name");
+  const keys = (page: Page) => page.locator(".now-where-key");
   const figures = (page: Page) => page.locator(".now-where-n");
+  const box = async (selector: string, page: Page, n = 0) => (await page.locator(selector).nth(n).boundingBox())!;
+  /** The ladder's geometry (E1–E6): an 84px key column, each deeper key stepped in 10px, 52px meters, one name column, one count column. */
+  async function expectLadder(page: Page, depths: number[]) {
+    const pad = await keys(page).evaluateAll((els) => els.map((el) => parseFloat(getComputedStyle(el).paddingLeft)));
+    expect(pad, "each deeper level steps in 10px").toEqual(depths.map((d) => d * 10));
+    const columns = await rowsOf(page).evaluateAll((lis) => lis.map((li) => {
+      const r = (sel: string) => li.querySelector(sel)!.getBoundingClientRect();
+      return { key: r(".now-where-key").width, name: r(".now-where-name").left, meter: r(".emeter").width,
+        meterLeft: r(".emeter").left, count: r(".now-where-n").right };
+    }));
+    for (const c of columns) {
+      expect(c.key, "the key column is 84px").toBeCloseTo(84, 0);
+      expect(c.meter, "the meter is 52px at every width").toBeCloseTo(52, 0);
+    }
+    // One grid: every row's name, meter and count start or end on the same line, whatever its figure's length.
+    for (const k of ["name", "meterLeft", "count"] as const) {
+      expect(new Set(columns.map((c) => Math.round(c[k]))).size, `the ${k} column lines up`).toBe(1);
+    }
+  }
   /** The views' figures for the fixture's universe, series and subseries, as the rows write them. */
   const viewFigures = () => withSql(async (sql) => {
     const [u] = await sql`SELECT books_read::int AS r, books_listed::int AS t FROM universe_progress WHERE user_id = ${E2E_USER} AND universe_id = 'e2e-dash-uni'`;
@@ -777,11 +799,24 @@ test.describe("where the book sits (2.2g)", () => {
 
   test.beforeEach(() => seed({ reading: true }));
 
-  test("a book in a universe, a series and a subseries draws three rows in order, each read / total its view's, filled with --ready (AC-1, AC-4, AC-5)", FEEL, async ({ page }, info) => {
+  test("a book in a universe, a series and a subseries draws three rows in order, keyed and stepped in, each read / total its view's, filled with --ready (AC-1, AC-4, AC-5; TASK-137 AC-1, AC-4, AC-5)", FEEL, async ({ page }, info) => {
     await seedWhere();
     await open(page);
     await expect(rowsOf(page)).toHaveCount(3);
     await expect(names(page)).toHaveText([UNIVERSE_NAME, WSERIES_NAME, WSUB_NAME]);
+    // The key is a word for a screen reader, drawn in capitals (E1).
+    await expect(keys(page)).toHaveText(["Universe", "Series", "Subseries"]);
+    await expect(keys(page)).toHaveText(["UNIVERSE", "SERIES", "SUBSERIES"], { useInnerText: true });
+    await expectLadder(page, [0, 1, 2]);
+    // Each deeper key's elbow is a --rule-2 hairline, left and bottom, before its word (E1).
+    await expect(page.locator(".now-where-key .now-where-elbow")).toHaveCount(2);
+    const rule2 = await tokenColour(page, "--rule-2");
+    for (const elbow of await page.locator(".now-where-elbow").all()) {
+      const s = await computedStyle(elbow, ["border-left-color", "border-bottom-color", "border-left-width", "border-bottom-width"]);
+      expect(s).toEqual({ "border-left-color": rule2, "border-bottom-color": rule2, "border-left-width": "1px", "border-bottom-width": "1px" });
+    }
+    const [elbow1, key1] = [await box(".now-where-elbow", page), await box(".now-where-key", page, 1)];
+    expect(elbow1.x + elbow1.width, "the elbow sits in the key's step, before its word").toBeLessThanOrEqual(key1.x + 10 + 0.5);
     const want = await viewFigures();
     expect(want).toEqual(["1 / 4", "1 / 8", "1 / 4"]);
     await expect(figures(page)).toHaveText(want);
@@ -799,14 +834,36 @@ test.describe("where the book sits (2.2g)", () => {
     const eighth = (await page.locator(".now-where .emeter i").nth(1).boundingBox())!;
     expect(Math.abs(eighth.width - track.width / 8), "1 / 8 fills an eighth").toBeLessThanOrEqual(1);
 
-    // Under the band, above Next in (the series is followed as Reading), the rollup's type, not the hero's.
-    const where = (await page.locator(".now-where").boundingBox())!;
-    const band = (await page.locator(".now-band").boundingBox())!;
-    const next = (await page.locator(".now-next").boundingBox())!;
-    expect(where.y).toBeGreaterThanOrEqual(band.y + band.height - 1);
+    // Inside Now's band, above Next in (the series is followed as Reading). On the phone under the cover and
+    // the text, the band's whole width (E1); from 768px in the text column, under the page count, capped at
+    // --lens-max (E5, E6).
+    await expect(page.locator(".now-band > .now-where")).toHaveCount(1);
+    const where = await box(".now-where", page);
+    const band = await box(".now-band", page);
+    const cover = await box(".now-cover", page);
+    const body = await box(".now-body", page);
+    const next = await box(".now-next", page);
+    expect(where.y + where.height).toBeLessThanOrEqual(band.y + band.height + 1);
     expect(next.y).toBeGreaterThanOrEqual(where.y + where.height - 1);
-    const size = (selector: string) => page.locator(selector).first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-    expect(await size(".now-where-name")).toBeLessThan(await size(".now-name"));
+    if (page.viewportSize()!.width < 768) {
+      expect(where.y).toBeGreaterThanOrEqual(Math.max(cover.y + cover.height, body.y + body.height) - 1);
+      expect(Math.abs(where.x - cover.x), "the rows start where the cover does").toBeLessThanOrEqual(1);
+    } else {
+      expect(where.y).toBeGreaterThanOrEqual(body.y + body.height - 1);
+      expect(Math.abs(where.x - body.x), "the rows start in the text column").toBeLessThanOrEqual(1);
+      expect(where.x).toBeGreaterThanOrEqual(cover.x + cover.width);
+      expect(where.width).toBeLessThanOrEqual(480 + 0.5);
+    }
+    // The rollup's type, not the hero's: 12/16, the key 11px mono.
+    const style = (selector: string) => page.locator(selector).first().evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { size: parseFloat(s.fontSize), line: parseFloat(s.lineHeight), family: s.fontFamily };
+    });
+    expect(await style(".now-where-name")).toMatchObject({ size: 12, line: 16 });
+    const key = await style(".now-where-key");
+    expect(key.size).toBe(11);
+    expect(key.family).toBe((await style(".now-where-n")).family);
+    expect((await style(".now-where-name")).size).toBeLessThan((await style(".now-name")).size);
 
     // The five slots keep their order.
     const slots = await page.locator("main [data-slot]").evaluateAll((els) => els.map((el) => el.getAttribute("data-slot")));
@@ -856,6 +913,8 @@ test.describe("where the book sits (2.2g)", () => {
     await seedWhere({ universe: false, series: false, author: "reading" });
     await open(page);
     await expect(names(page)).toHaveText(["Dash Author One"]);
+    await expect(keys(page)).toHaveText(["AUTHOR"], { useInnerText: true });
+    await expectLadder(page, [0]);
     const [a] = await withSql((sql) => sql`SELECT books_read::int AS r, books_listed::int AS t FROM author_progress WHERE user_id = ${E2E_USER} AND author_id = 'e2e-dash-a1'`);
     await expect(figures(page)).toHaveText([`${a.r} / ${a.t}`]);
     await floor(page);
@@ -869,9 +928,15 @@ test.describe("where the book sits (2.2g)", () => {
     await withSql((sql) => sql`UPDATE books SET universe_id = NULL WHERE id LIKE 'e2e-dash-%'`);
     await open(page);
     await expect(names(page)).toHaveText(["Dash Author One", WSERIES_NAME, WSUB_NAME]);
+    // The author stands where the universe would, and the series and subseries step in under it (6.21).
+    await expect(keys(page)).toHaveText(["Author", "Series", "Subseries"]);
+    await expectLadder(page, [0, 1, 2]);
     await withSql((sql) => sql`UPDATE author_follows SET state = 'tracking' WHERE user_id = ${E2E_USER}`);
     await open(page);
     await expect(names(page)).toHaveText([WSERIES_NAME, WSUB_NAME]);
+    // With no outer level, the series is the outermost: it doesn't step in.
+    await expect(keys(page)).toHaveText(["Series", "Subseries"]);
+    await expectLadder(page, [0, 1]);
   });
 
   test("a level set to Not following still draws its row, with the same figure (AC-3)", ONCE, async ({ page }) => {
@@ -907,16 +972,25 @@ test.describe("where the book sits (2.2g)", () => {
     expect(await rowsOf(page).allInnerTexts()).toEqual(before);
   });
 
-  test("a long universe name wraps at 360px: no sideways scroll, the figure and meter stay whole (AC-5)", ONCE, async ({ page }) => {
-    await seedWhere({ universeName: `E2E Dash ${"Supercalifragilisticexpialidocious ".repeat(3)}Universe` });
+  test("a long universe name wraps at 360px: every level drawn, no sideways scroll, the key, figure and meter stay whole (AC-5; TASK-137 AC-3)", ONCE, async ({ page }) => {
+    const long = `E2E Dash ${"Supercalifragilisticexpialidocious ".repeat(3)}Universe`;
+    expect(long.length).toBeGreaterThanOrEqual(40);
+    await seedWhere({ universeName: long });
     await page.setViewportSize({ width: 360, height: 780 });
     await open(page);
     await expectNoHorizontalScroll(page);
-    const row = (await rowsOf(page).first().boundingBox())!;
-    const hero = (await page.locator(".now-hero").boundingBox())!;
-    expect(row.x + row.width).toBeLessThanOrEqual(hero.x + hero.width + 1);
-    expect((await page.locator(".now-where .emeter").first().boundingBox())!.width).toBeGreaterThanOrEqual(60);
+    await expect(names(page)).toHaveText([long, WSERIES_NAME, WSUB_NAME]);
+    await expect(keys(page)).toHaveText(["Universe", "Series", "Subseries"]);
+    await expectLadder(page, [0, 1, 2]);
+    const hero = await box(".now-hero", page);
+    for (const row of await rowsOf(page).all()) {
+      const r = (await row.boundingBox())!;
+      expect(r.x + r.width).toBeLessThanOrEqual(hero.x + hero.width + 1);
+    }
+    // The long name wraps rather than pushing its figure out: its link is taller than its one-line 24px box.
+    expect((await box(".now-where-name a", page)).height).toBeGreaterThan(24);
     await expect(figures(page).first()).toBeVisible();
+    await expect(figures(page).first()).toHaveText("1 / 4");
   });
 
   test("a full Up next shelf and the rows together: no sideways scroll at 360px (AC-1)", ONCE, async ({ page }) => {
@@ -940,8 +1014,9 @@ test.describe("where the book sits (2.2g)", () => {
     await open(page);
     await expect(rowsOf(page)).toHaveCount(3);
     await expectNoHorizontalScroll(page);
-    // From 768px the meter is 120px wide.
-    expect((await page.locator(".now-where .emeter").first().boundingBox())!.width).toBeCloseTo(120, 0);
+    // E5: the ladder in the text column, beside the cover, its meters 52px as on the phone.
+    await expectLadder(page, [0, 1, 2]);
+    expect((await box(".now-where", page)).x).toBeGreaterThanOrEqual((await box(".now-cover", page)).x + (await box(".now-cover", page)).width);
     await screenshot(page, info, "books-where-834");
   });
 

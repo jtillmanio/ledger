@@ -59,8 +59,9 @@ export function nowFoot(book: InHandBook, s: ReadingSettings, now = new Date()):
  * the page count in mono, and the foot. The title opens the book's sheet (task 3.5b). No page position, meter or sittings until 2.1b (Q1).
  * Under the band sits the book's status control (task 1.17b, D-131): its badge expands the
  * statuses and the date line, and *Reading* asks *Started*; no `⋯`, the dashboard has no row to act on.
- * *Where the book sits* (2.2g): thin rows under the band, one per level (universe, series,
- * subseries) with `read / total`; 2.1b's meter, when it lands, goes in the band above them.
+ * *Where the book sits* (2.2g, redrawn by 6.21): a ladder inside the band, one row per level (universe or
+ * author, series, subseries) with `read / total`; under the cover and text on the phone, in the text column
+ * from 768px. 2.1b's meter, when it lands, goes in the band above them.
  * *Next in* (2.2d): when the book is in something you follow as Reading, one grey line under
  * the band names the next book there and links to it, the Library row until 3.5's sheet.
  */
@@ -86,12 +87,12 @@ export default function BooksNow({ book, settings, next = null }: {
           <span className="grow" />
           {book.pages ? <span className="now-pages"><b className="mono">{book.pages.toLocaleString()}</b> pages</span> : null}
         </div>
+        <WhereItSits levels={book.levels} />
       </div>
       <div className="now-status">
         <BookStatus bookId={book.id} title={book.title} menu={false} glyph={false} status={book.status} listened={book.listened}
           startedOn={book.started_on} startPrecision={book.started_on_precision} />
       </div>
-      <WhereItSits levels={book.levels} />
       {next && (
         <Link href={libraryHref({ q: next.title })} prefetch={false} className="now-next">
           <span className="now-next-text">Next in {next.name}: {next.title}</span>

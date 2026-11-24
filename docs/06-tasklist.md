@@ -589,7 +589,7 @@ with the task that first reads it.
 |  | 6.18 | Drop `user_id`: the schema is single-user | L |  | — |
 | ✅ | 6.19 → TASK-131, TASK-132 | Remove Open Library | S | _Pulled ahead of 1.26 (D-172)_ | 1.14b, 1.4f |
 |  | 6.20 | Last backup on Settings (proposed, from TASK-045) | S |  | 2.0 |
-|  | 6.21 → TASK-137 | Redesign where the book sits, with Claude Design | M | _Pulled ahead of 1.26 (D-172)_ | 2.2g, 5.12, 6.23 |
+| ✅ | 6.21 → TASK-137 | Redesign where the book sits, with Claude Design | M | _Pulled ahead of 1.26 (D-172)_ | 2.2g, 5.12, 6.23 |
 | ✅ | 6.23 → TASK-126 | Design review with Claude Design: the new mediums, and what was drawn since the feel pass | M | _Owner, 2026-11-18; runs any time, ahead of 8.7, 9.0 and 10.0; pulled ahead of 1.26 with 6.21, which starts from its drawing (D-172); Check proposed_ | — |
 |  | 6.22 | A row's `⋯` menu stays on screen | S | _From TASK-093 (PR #266); placed in M21 by the 2026-11-23 coverage recount; Check proposed_ | — |
 |  | 6.24 → TASK-143, TASK-144, TASK-145, TASK-146 | Built screens follow the mediums review | M | _From TASK-126 (6.23, D-177); placed in M21 by the 2026-11-24 coverage recount; Check proposed_ | 6.23 |
