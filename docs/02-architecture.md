@@ -362,8 +362,9 @@ tables.
     the `@modal` intercept. An issue's page (task 3.5, TASK-080) is measured the
     same way from the small run's first issue: the full page loaded, the sheet
     its spine row opens tapped. Its ceilings start at the book page's (the same
-    `RouteSheet` and detail layout) until its first measured run writes them; with
-    no baseline yet, the growth check skips it by name. `/parked`'s tap starts on
+    `RouteSheet` and detail layout), unmeasured; with no baseline yet, the growth
+    check skips it by name. If its first measurement plus 25% comes out above
+    them, writing that is a raise and takes a decision, as any raise does. `/parked`'s tap starts on
     the Library's *Parked* filter. Unmeasured, with their reasons in the test: the
     two sheets' own intercept pages, and the series, a series', an author's and a universe's
     pages (5.9, 5.11), which roadmap 0.14e measures.
