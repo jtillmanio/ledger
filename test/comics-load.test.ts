@@ -34,7 +34,7 @@ const MIXED = {
   read_events: { books: "book_id IS NOT NULL", comics: "placement_id IS NOT NULL" },
   inbox: { books: "kind IS DISTINCT FROM 'comics'", comics: "kind = 'comics'" },
 } as const;
-const CACHES = ["metron_cache", "open_library_cache", "hardcover_cache"];
+const CACHES = ["metron_cache", "hardcover_cache"];
 
 type Rows = (string | number | boolean | null)[][];
 type Seed = Record<string, { header: string[]; rows: Rows }>;

@@ -2192,9 +2192,9 @@ export type AddBooksResult =
   | { ok: false; reason: "gone"; missing: string[] }
   | Refused;
 
-/** A book to create, with what Hardcover, Open Library or the typist said about it. */
+/** A book to create, with what Hardcover or the typist said about it. */
 export type BookRow = NewBook & {
-  hardcoverId?: number | null; openLibraryId?: string | null; coverUrl?: string | null; year?: number | null; pages?: number | null;
+  hardcoverId?: number | null; coverUrl?: string | null; year?: number | null; pages?: number | null;
   wordCount?: number | null; wordCountSource?: "stated" | "estimated" | null;
   /**
    * The Calibre sync (task 4.4): an author or series it already found by
@@ -2295,7 +2295,7 @@ export async function createBooks(tx: Tx, toCreate: BookRow[]): Promise<string[]
       subseriesId: b.subseriesId ?? null, subseriesPosition: b.subseriesPosition ?? null,
       // Undefined is the column's default (`Novel`).
       bookType: b.bookType,
-      hardcoverId: b.hardcoverId ?? null, openLibraryId: b.openLibraryId ?? null, coverUrl: b.coverUrl ?? null,
+      hardcoverId: b.hardcoverId ?? null, coverUrl: b.coverUrl ?? null,
       publishedYear: b.year ?? null, pageCount: b.pages ?? null,
       wordCount: b.wordCount ?? null, wordCountSource: b.wordCount == null ? null : b.wordCountSource ?? null,
       summary: b.summary ?? null, subjects: b.subjects ?? null,

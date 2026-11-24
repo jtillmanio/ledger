@@ -325,6 +325,22 @@ tick them.
       shelf there, every measured run fails `shelf` as not measured and turns
       the Lighthouse gate red. 0.14c measured it on a shelf made on its own
       preview (from TASK-114, 0.14c, PR #319).
+- [ ] Before the Release that carries migration 0035 (from TASK-132, 6.19,
+      PR #333): *metadata pending* is now `hardcover_id IS NULL`, and the
+      column that kept up to 2,000 live books out of it goes. Those books
+      (known only by 1.14's Open Library id) turn pending, and `Cover` /
+      `RowCover` draw the dashed pending box ahead of a cover the book has
+      (about 1,750 such books on the 2026-11-23 extract). Give them Hardcover
+      ids first: the real `npm run enrich:books` run above, then extract and
+      a rebuild (production is rebuildable until cutover), or the 4.2
+      backfill on live. Then decide whether a pending book with a known
+      cover should draw it (a 4.3 question; today pending wins). Run the
+      Release at a quiet moment: between its migrate and promote steps the
+      old build still reads the dropped column, so book pages error briefly
+      (the same window 0027 had).
+- [ ] Delete `etl/.openlibrary-cache.sqlite` from your main checkout (from
+      TASK-132, 6.19, PR #333). Nothing reads it, and `.gitignore` no longer
+      lists it, so it shows as untracked until it goes. Never commit it.
 
 ## Approvals from follow-ups
 

@@ -292,7 +292,6 @@ export const books = pgTable("books", {
   subjects: text("subjects").array(),
   // Not unique, like issues.metron_id: two records of one book can both match
   // until someone merges them.
-  openLibraryId: text("open_library_id"),
   hardcoverId: integer("hardcover_id"),
   // Calibre's #superseries is the universe, and its index the reading order
   // across series (task 1.18b, D-90).
@@ -691,18 +690,8 @@ export const metronCache = pgTable("metron_cache", {
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-// Open Library's answers to Add books' searches (task 1.4c, D-62), one row per
-// search, as metron_cache keeps Metron's. Open Library publishes no pace, so
-// nothing counts these rows; a 429's Retry-After is kept as the `hold` row.
-// Rebuildable, so not exported. Read by nothing since 1.4f (D-94); 6.19 drops it.
-export const openLibraryCache = pgTable("open_library_cache", {
-  key: text("key").primaryKey(),            // "search.json?q=the+blade+itself"
-  body: jsonb("body").notNull(),
-  fetchedAt: timestamp("fetched_at", { withTimezone: true }).defaultNow().notNull(),
-});
-
 // Hardcover's answers to Add books' searches (task 1.4f, D-94, D-62), one row
-// per search or ISBN, open_library_cache's shape. Fresh for 7 days; a 429's
+// per search or ISBN, metron_cache's shape. Fresh for 7 days; a 429's
 // Retry-After is kept as the `hold` row. Rebuildable, so not exported.
 export const hardcoverCache = pgTable("hardcover_cache", {
   key: text("key").primaryKey(),            // "search:piranesi", "isbn:9781526622426"

@@ -41,7 +41,6 @@ describe("columns", () => {
     ["books", "word_count_source", "text", "YES"],
     ["books", "page_count", "integer", "YES"],
     ["books", "cover_url", "text", "YES"],
-    ["books", "open_library_id", "text", "YES"],
     ["books", "hardcover_id", "integer", "YES"],
     ["book_status", "notes", "text", "YES"],
     ["reading_settings", "user_id", "text", "NO"],

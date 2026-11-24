@@ -1077,8 +1077,8 @@ deliberately.
 ### What this changes
 
 1. **`books` needs `summary` and `subjects`** — Calibre's comments and tags,
-   which the Calibre sync stores (task 3.5, TASK-078; Open Library is gone,
-   D-94). The genres stay Calibre's `#genre` (`book_genres`, D-98).
+   which the Calibre sync stores (task 3.5, TASK-078; Open Library was removed
+   in 6.19, D-94). The genres stay Calibre's `#genre` (`book_genres`, D-98).
 2. **The master list keeps inline status editing.** The sheet is for reading
    about an item; the list row is the fastest path to marking it read. Both
    exist and don't compete.
@@ -1133,7 +1133,7 @@ Small things, ordered by how often you'd feel their absence.
   skeletons with the same dimensions as the loaded telecard, run rows, plan rail
   and season rows, so nothing shifts when data lands; the shimmer is off under
   `prefers-reduced-motion`.
-- **Live-API states.** A Metron, TMDB or Open Library search shows *loading*,
+- **Live-API states.** A Metron, TMDB or Hardcover search shows *loading*,
   *rate-limited* (with the `Retry-After` countdown) and *error* lines, each
   `role="status"` and each offering **Type it instead**, so a stalled add is
   never silent and a retry does not hit the 20-requests-a-minute limit.
