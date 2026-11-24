@@ -1,7 +1,7 @@
 ---
 id: TASK-137
 title: 6.21 Redesign where the book sits, with Claude Design
-status: Review
+status: Done
 depends_on: [TASK-126]
 size: M
 model: opus
