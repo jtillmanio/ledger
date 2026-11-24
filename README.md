@@ -33,6 +33,7 @@ Every other document is reference. None of them need reading front to back.
 | **[05-roadmap.md](docs/05-roadmap.md)** | **The backlog.** Phases 0–10, every entry with a pass/fail check; the status source of truth | Every build session. One task at a time |
 | **[06-tasklist.md](docs/06-tasklist.md)** | **The build order.** Milestones M1–M26: which roadmap entries, in what order, and why | Picking the next sitting |
 | **[design/mockups.html](design/mockups.html)** | **40 annotated screens.** Authoritative for layout and copy | Building any screen. Open it in a browser |
+| **[Ledger canvas](https://claude.ai/artifact/KMTyE4DuUvZPYH4pbuHHCu)** and **[Ledger design system](https://claude.ai/artifact/4kWo7Lnryxsjr7H79dy9XH)** | **Where designs are drawn now.** Private claude.ai pages. The canvas holds the drawings (the feel pass and the specs); the design system holds the colours, fonts and rules a new drawing starts from. `design/` stays the record (D-1) | Drawing or reviewing a screen. Signed in to claude.ai; see [04-design.md](docs/04-design.md) § 1 |
 | **[DIAGRAMS.md](docs/DIAGRAMS.md)** | **Visual reference.** ERDs, derived layer, runtime, validation pipeline | Orienting to the schema or a data flow |
 | **[CLAUDE.md](CLAUDE.md)** | **Session context.** Auto-loaded by Claude Code | Never directly — it loads itself |
 
