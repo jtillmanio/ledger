@@ -393,7 +393,7 @@ sha256 matched the canvas's listing), and the rest came from the chat's
 attachments, as delivered. The owner gave Claude Code permission to copy them
 into the protected paths (2026-11-24).
 
-The review came back as eighteen canvas pages, not one: each part is split so
+The review came back as seventeen canvas pages, not one: each part is split so
 no board passes the canvas's 8,000px height limit. They keep their canvas
 names, which have no spaces, so `design/MR-Main.dc.html` is the review page
 the plan called `design/Ledger Mediums Review.dc.html`.
@@ -409,7 +409,7 @@ the plan called `design/Ledger Mediums Review.dc.html`.
 | `design/MR-D-Games-1.dc.html`, `-2` | Part D: games |
 | `design/MR-E-Review-1.dc.html`, `-2`, `-3` | Part E: the review of what was drawn after the feel pass, the six redraws and the six missing 834px frames |
 | `design/MR-F-Unbuilt-1.dc.html`, `-2` | Part F: Parked for every medium, comics' *Coming out* and editors, Activity, the offline write states, search on the phone |
-| `design/mr.css` | The stylesheet the eighteen pages link. They also link `ledger-feel-tokens.css` and `support.js`, already in `design/` |
+| `design/mr.css` | The stylesheet the seventeen pages link. They also link `ledger-feel-tokens.css` and `support.js`, already in `design/` |
 | `design/screenshots/mediums-review/` | 234 PNGs, every frame in dark and light: `phone/` (169, 2×), `tablet/` (25), `desktop/` (35), `spec/` (9). Every PNG the hand-off note names is here, and nothing else is |
 | `design/STYLE_GUIDE.md` | A new §17 (Mediums-Review: navigation, accents, watch, music, games, departures, decisions), with edits to §2.7 (the 1-rail telescope), §7 (cover shapes), §9 (the stepper), §10 (the changelog), §11, §14.5 and §14.6 |
 | `design/tokens.css` | `+ NEW` `--m-music` (`--t2`'s value) and `--m-games` (`--t1`'s), both themes, measured. Nothing else changes |
@@ -419,6 +419,16 @@ the plan called `design/Ledger Mediums Review.dc.html`.
 console errors, and parts A–F each open with their heading. Opened as a
 `file://` URL, `support.js`'s fetch of the page itself is blocked by the
 browser's file-origin rule, but the page still draws.
+
+**Not drawn.** The hand-off note's *Not drawn, and why* covers the tablet
+frames for music's and games' sheets and lists, and `add` and `moveplan` at
+834px. It doesn't say that **part F has no 834px frames**: parked, comics'
+*Coming out*, the two editors, Activity and the offline states are drawn at
+the phone and the desktop (and as spec frames) only. The same tablet rule
+applies (E12–E17: a sheet is the phone's, 640px wide and centred; a list is
+the phone's in the 32px column), so each entry that builds one of those
+screens draws its 834px frame in its own PR (standing rule 6). Found by the
+spec review at close-out; the owner can still send it back to the canvas.
 
 **Status.** The owner took every recommendation (2026-11-24): MR-D1…MR-D24
 are accepted and MR-Q1…MR-Q24 are answered as recommended. Both are recorded

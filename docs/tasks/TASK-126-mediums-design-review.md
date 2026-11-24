@@ -1,7 +1,7 @@
 ---
 id: TASK-126
 title: 6.23 Design review with Claude Design — the new mediums, and what was drawn since the feel pass
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -67,7 +67,7 @@ build from it.
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): the
+- [x] AC-1 (roadmap **Check:**, verbatim): the
   review page and its PNGs are in `design/` as the design tool delivered them,
   covering the prompt's parts A–F at phone, tablet and desktop, light and dark;
   `design/mockups-index.md` gains a section listing each `mockups.html` frame
@@ -75,22 +75,22 @@ build from it.
   log records where four and five media sit in the navigation and the answers
   to 8.7's three open questions; and each question the owner answered is a
   decisions row or a *From 6.23* note in the roadmap entry it changes.
-- [ ] AC-2: Before the owner pastes the prompt, its inventory matches `main`
+- [x] AC-2: Before the owner pastes the prompt, its inventory matches `main`
   that day. The plan step 1 grep lists every roadmap entry whose text says
   *not drawn yet*, *the mockup gains* or *the feel pass is silent*, and each
   one is in part E, in part F, or named in the PR as drawn since. The grep's
   output is in the PR.
-- [ ] AC-3: Opened in a browser with `design/support.js` beside it, the
+- [x] AC-3: Opened in a browser with `design/support.js` beside it, the
   delivered review page renders with no console errors and a heading for each
   of parts A–F. Every PNG the hand-off note names exists under
   `design/screenshots/` at that path.
-- [ ] AC-4: Each departure the design tool lists (MR-D1…) is marked accepted
+- [x] AC-4: Each departure the design tool lists (MR-D1…) is marked accepted
   or rejected in one decisions row, as D-40 lists D1–D14, and the new D-n rows
   continue the log's numbering with no gap and no reuse.
-- [ ] AC-5: `git diff main -- docs/05-roadmap.md` changes no **Check:** line,
+- [x] AC-5: `git diff main -- docs/05-roadmap.md` changes no **Check:** line,
   apart from 6.23's tick at close-out. Every other change is a *From 6.23*
   note or a tick.
-- [ ] AC-6: Nothing under `src/`, `test/`, `etl/` or `drizzle/` changes, and
+- [x] AC-6: Nothing under `src/`, `test/`, `etl/` or `drizzle/` changes, and
   `npm run verify:docs` passes on the branch.
 
 ## Out of scope
@@ -121,7 +121,7 @@ build from it.
 - `docs/05-roadmap.md`: *From 6.23* notes (6.23 and 6.21 first, on where the
   review runs) and 6.23's tick.
 - `docs/06-tasklist.md`: 6.23's Done cell at close-out.
-- Revision 3: `design/MR-*.dc.html` (18) and `design/mr.css` in place of one
+- Revision 3: `design/MR-*.dc.html` (17) and `design/mr.css` in place of one
   review page; `design/screenshots/mediums-review/` (234 PNGs);
   `docs/design-briefs/2026-11-mediums-handoff.md`; `src/app/globals.css` and
   `design/mockups.html` (the two new tokens);
@@ -151,6 +151,9 @@ build from it.
   `docs/05-roadmap.md` § each entry, *From 6.23 (2026-11-24, D-177)* note
 - 6.21's starting drawing is settled (frames E1–E6) →
   `docs/tasks/TASK-137-where-the-book-sits-redesign.md` § Context
+- Part F was drawn at the phone and the desktop only, with no 834px frames,
+  and the hand-off note doesn't say so (spec review) → `docs/design-briefs/2026-11-mediums-review.md` § Delivered: each building entry
+  draws its tablet frame by E12–E17's rule
 - 6.24 and 6.25 need task-list rows and task files (`/milestones`, then
   `/new-task 6.24 6.25`) → not tracked: the owner's next step, named in the PR
   and the final report
@@ -192,7 +195,7 @@ artifacts are the owner's to delete. Step 4 can now read the canvas and
 check the export against it.
 
 **Revision 3 (owner, 2026-11-24, at step 4).** Three things the delivery
-changed. (1) The review came back as eighteen canvas pages (`MR-Main`,
+changed. (1) The review came back as seventeen canvas pages (`MR-Main`,
 `MR-Handoff` and parts A–F split under the canvas's 8,000px height limit) plus
 `mr.css`, so they keep their canvas names in `design/` and `MR-Main.dc.html`
 is the page this plan called `Ledger Mediums Review.dc.html`. (2) The owner
@@ -265,7 +268,8 @@ AC-5 names.
 
 Plan R1 stale (main +43; Claude Design closing) → revision 1 (owner, the
 Ledger canvas) | Steps 1–2 done at `66d3001` | Verify R1 PASS (verify:docs) | CI R1 PASS
-Revision 2 (owner: canvas and design system rebuilt in the main account) | Verify R2 PASS (verify:docs)
+Revision 2 (owner: canvas and design system rebuilt in the main account) | Verify R2 PASS (verify:docs) | CI R2 PASS
+Revision 3 (delivery copied in; tokens adopted into globals.css) | Verify R3 PASS (verify.full: tsc, lint, test:no-e2e; e2e-guard.test.ts failed once on a Playwright transform-cache write in Temp, 45/45 on rerun) | Drift R1 merge as-is | Spec R1 CHANGES (6.9 note outside its entry; 6.23 note named the old file; Verify R3 unrecorded; part F has no 834px frames) → fixed, gap recorded in the brief § Delivered
 
 ## Blocked
 
@@ -273,7 +277,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
+- Verify rounds: 3 (one per plan revision; R3 with one environmental rerun)
+- Review rounds: spec 1 (CHANGES, fixed at close-out)
+- First-pass AC FAILs: 0 (AC-6 UNTESTED at review until Verify R3 was recorded)
 - Plan revisions after approval: 2 (the Ledger canvas; the canvas and design system rebuilt in the main account)

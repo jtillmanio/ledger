@@ -5635,7 +5635,7 @@ it is converted.
   claude.ai, not in standalone Claude Design, which closes by 2026-12-14
   (owner, TASK-126 plan revision 1). The canvas is the design tool this entry
   means. The review is its page `Mediums-Review`, delivered into the repo as
-  `design/Ledger Mediums Review.dc.html`. The inventory was refreshed at
+  `design/MR-Main.dc.html` (with sixteen boards). The inventory was refreshed at
   `66d3001`: `/progress`, Parked for books and the listen queue were drawn
   since, and moved from part F to part E.
   **Check:** (proposed; the owner agrees it by merging or edits it first) the
@@ -5746,10 +5746,11 @@ it is converted.
   > Do not give me one real proposal and two strawmen. Also tell me if the
   > honest answer is that the current palette should stay.
 
----
   *From 6.23 (2026-11-24, D-177):* two medium accents joined, `--m-music` and
   `--m-games`, measured in `design/STYLE_GUIDE.md` §17.2. Games is ΔE 13.4 from
   `--brand` in light (MR-Q5).
+
+---
 
 ## Phase 7 — AI-assisted curation (after Phase 4, not before)
 

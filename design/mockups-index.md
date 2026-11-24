@@ -252,7 +252,7 @@ The mockup re-rendered on the current tokens (palette 1c), with the control-stat
 
 ## Nov 2026, mediums review (D-177)
 
-The second design review is drawn in `design/MR-Main.dc.html` and the seventeen `design/MR-*.dc.html` boards beside it, not here, and every frame is also a PNG in `design/screenshots/mediums-review/` (dark and light; phone, tablet, desktop and spec). `design/MR-Handoff.dc.html` and `docs/design-briefs/2026-11-mediums-handoff.md` map each frame to its screen. Where the review draws a surface it beats this file on layout and copy (D-177, as D-40 did), so these frames are **superseded until their task redraws them** from the review, in the same PR (standing rule 6). Its covers are striped placeholders and its figures sample data (D-7).
+The second design review is drawn in `design/MR-Main.dc.html` and the sixteen `design/MR-*.dc.html` boards beside it, not here, and every frame is also a PNG in `design/screenshots/mediums-review/` (dark and light; phone, tablet, desktop and spec). `design/MR-Handoff.dc.html` and `docs/design-briefs/2026-11-mediums-handoff.md` map each frame to its screen. Where the review draws a surface it beats this file on layout and copy (D-177, as D-40 did), so these frames are **superseded until their task redraws them** from the review, in the same PR (standing rule 6). Its covers are striped placeholders and its figures sample data (D-7).
 
 | Frame here | Superseded by (Mediums-Review) | Redrawn by |
 |---|---|---|
