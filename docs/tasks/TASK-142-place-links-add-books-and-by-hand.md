@@ -1,0 +1,86 @@
+---
+id: TASK-142
+title: 5.9b Every other place line links its names (3 of 3) — Add books' results, and a gap row fills By hand
+status: Ready
+depends_on: [TASK-140, TASK-141]
+size: M
+model: sonnet
+autonomy: attended
+ui: true
+plan_status: none
+planned_at_commit:
+---
+
+# TASK-142 — 5.9b Every other place line links its names (3 of 3) — Add books' results, and a gap row fills By hand
+
+## Goal
+
+Add books' search results link a book's series, author and universe names, and a series page's gap row *Add* opens By hand with the series and its number already filled in.
+
+## Context
+
+- Roadmap: `docs/05-roadmap.md` § 5.9b Every other place line links its names (M17). Feature F-38. Its **Check:** is AC-1, verbatim; proposed, and agreed when merged.
+- **Split, 3 of 3.** TASK-140 and TASK-141 linked every other surface. **This part's merge ticks 5.9b**, with the other two merged first.
+- **Add books' results.** Search's results (`src/components/BookSearch.tsx`, answered by `POST /api/books/search`, `src/app/api/books/search/route.ts`) draw their place line through `BookPlace` (`src/components/BookPlace.tsx`) where the result is a book the Ledger holds; a result from Hardcover alone has no ids to link, and draws its names as text. The answer gains the ids it needs.
+- **A gap row fills By hand.** A series page's gap row *Add* (TASK-102; `src/components/SeriesBooks.tsx`, *task 5.9 decision 3*) opens Add books with Search holding the series' name (`/books/add?q=<name>`). Here it opens By hand with *Series* and *#* filled from the gap: `src/components/ByHand.tsx`, through `src/components/AddBooks.tsx` and a new parameter on `src/app/books/add/page.tsx` (which reads `shelf`, `q` and `note` today). The plan names the parameter and what Add books does with a series name it doesn't hold (the gap's series always exists, but the link may be shared).
+- **Byte budgets.** `/books/add` and `/books/series/[id]` are in `scripts/perf/budget.json` (0.14c; the series page from 0.14e, TASK-138, if it has merged); each stays within its ceiling.
+- Design: `design/mockups.html` §§ `add`, `series` (`design/mockups-index.md`): `a.plink` on a result, and By hand opened from a gap (`ui.redrawFiles`).
+- Rules: `.claude/rules/ui.md` (every add surface opens on its segmented control; here By hand is chosen by the link). UX floor: `docs/04-design.md` § 10. The UX floor. Decisions: D-83, D-94.
+
+## Acceptance criteria
+
+- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the clauses for Add books' results and the gap row, and the byte budgets of `/books/add` and the series page. TASK-140 and TASK-141 prove the rest, and this part's merge ticks 5.9b):
+on the Up next cards, the status rows, the plan screens, Top books, Coming
+out, Parked, Listen next, Add books' results, Now's *Next in* and the
+follow sheet's rows, a book's series name is a link named by the series
+alone to `/books/series/<id>`, and its author and universe names link to
+their pages; a book with no series draws no series link. A gap row's
+*Add* for #3 opens By hand with the series named and `3` in *#*. Every
+route it changes stays within its byte budget (`scripts/perf/budget.json`).
+Screenshots at 360px and 1280px.
+- [ ] AC-2: Given a search on Add books that returns a book the Ledger holds in a series and one only Hardcover has, the first result's series, author and universe names are links to their pages and the second's names are text with no link.
+- [ ] AC-3: Given a series with books #1, #2 and #4, when its gap row's *Add* for #3 is tapped, then Add books opens with By hand selected, *Series* holding the series' name and *#* holding `3`, focus in By hand's first empty field; saving adds the book at #3 and the series page's gap row is gone.
+- [ ] AC-4: Given `/books/add` opened with no new parameter, Search is selected and empty as before; given `?q=` alone, Search holds the text as before.
+- [ ] AC-5: Add books' results and By hand meet the UX floor (`docs/04-design.md` § 10. The UX floor): every link a real `<a>` with a name, link text 4.5:1 in both themes, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
+
+## Out of scope
+
+- The surfaces in TASK-140 and TASK-141.
+- Filling anything but *Series* and *#* (author, universe, title) from the gap.
+- Changing how Search ranks or matches results.
+
+## Files likely touched
+
+- `src/components/BookSearch.tsx`, `src/app/api/books/search/route.ts` — the results' links and ids.
+- `src/components/SeriesBooks.tsx` — the gap row's link.
+- `src/app/books/add/page.tsx`, `src/components/AddBooks.tsx`, `src/components/ByHand.tsx` — By hand opened and filled.
+- `design/mockups.html`, `design/mockups-index.md` — `add` and `series`.
+- `test/series-books.test.tsx`, `test/add-book-sheet.test.tsx`, `test/e2e/series.spec.ts`, `test/e2e/book-search.spec.ts` — AC-1 to AC-5.
+
+## Verification
+
+- Automated: `test/series-books.test.tsx` (the gap row's `href`); a component test for By hand's filled fields and AC-4; `test/e2e/series.spec.ts` for AC-3 end to end on the test database; `test/e2e/book-search.spec.ts` for AC-2 with axe; `test/perf.test.ts` still passes.
+- Manual: the ui-verifier opens a series with a gap at 360px and 1280px, taps *Add* → expected: By hand with the series and number filled; saves → the gap row is gone.
+
+## Follow-ups
+
+_Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+## Plan
+
+_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+
+## Review log
+
+_Filled by /implement-task. One line per round._
+
+## Blocked
+
+_Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
+
+## Metrics
+
+- Verify rounds:
+- Review rounds:
+- First-pass AC FAILs:
+- Plan revisions after approval:
