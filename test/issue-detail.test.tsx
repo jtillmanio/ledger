@@ -119,6 +119,12 @@ describe("dates (AC-4)", () => {
       .toEqual([["Cover date", "Feb 1981"]]);
   });
 
+  it("an issue with an on-sale date and no cover date renders Published alone", () => {
+    const doc = render(issue({ cover_date: null, store_date: "1980-11-04" }));
+    expect(rows(doc, ".issue-dates")).toEqual([["Published", "Nov 1980"]]);
+    expect(text(doc.querySelector(".detail-by"))).toBe("Days of Future Past, part two");
+  });
+
   it("an undated issue renders no Dates group and no —", () => {
     const doc = render(issue({ cover_date: null, store_date: null }));
     expect(doc.querySelector(".issue-dates")).toBeNull();
