@@ -5,11 +5,12 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  aggregateRoute, apiPath, automaticCandidates, baselinePr, baselineRun, capMarked, capMarkerName, capReached, COUNT_CONCURRENCY,
-  countMeasured, DEBOUNCE_SECONDS, DEFAULT_MONTHLY_CAP,
-  filesWithSecrets, findComment, gateProblems, gates, lighthouseArgs, listPages, MARKER, measurable, measureRan, measureRuns, median,
-  mergeMetrics, monthlyCap, monthStart, notHead, pagePattern, renderCapComment, renderComment, resolvedPath, scrubLhr, sessionCookie,
-  samePage, summariseLhr, unbudgeted, unchangedApp, unmeasuredPages, type LoadSummary, type MeasuredRoute, type RouteBudget,
+  aggregateRoute, apiPath, automaticCandidates, BASELINE_DAYS, baselineRun, capMarked, capMarkerName, capReached, ceilingsFrom,
+  COUNT_CONCURRENCY, countMeasured, DEBOUNCE_SECONDS, DEFAULT_MONTHLY_CAP, filesWithSecrets, findBaseline, findComment, gateProblems,
+  gates, GROWTH_LABEL, growthProblems, growthUnchecked, judge, lighthouseArgs, listPages, MARKER, measurable, measureRan, measureRuns,
+  median, mergeMetrics, monthlyCap, monthStart, notHead, ownJs, pagePattern, rejudgeTarget, renderCapComment, renderComment,
+  resolvedPath, scrubLhr, sessionCookie, samePage, sharedJs, sharedScripts, summariseLhr, unbudgeted, unchangedApp, unmeasuredPages,
+  type LoadSummary, type MeasuredRoute, type RouteBudget,
 } from "../scripts/perf/lib/perf.mjs";
 import { ROUTES } from "../scripts/perf/routes.mjs";
 
@@ -695,26 +696,358 @@ describe("secrets stay out of the reports", () => {
 });
 
 describe("main's last run", () => {
-  it("is the newest merged PR other than this one", () => {
+  it("is the newest merged PR other than this one", async () => {
     const pulls = [
-      { number: 50, merged_at: null },
-      { number: 48, merged_at: "2026-10-05T10:00:00Z" },
-      { number: 49, merged_at: "2026-10-06T10:00:00Z" },
+      { number: 50, merged_at: null, head: { ref: "b50", sha: "s50" } },
+      { number: 48, merged_at: "2026-10-05T10:00:00Z", head: { ref: "b48", sha: "s48" } },
+      { number: 49, merged_at: "2026-10-06T10:00:00Z", head: { ref: "b49", sha: "s49" } },
     ];
-    expect(baselinePr(pulls)?.number).toBe(49);
-    expect(baselinePr(pulls, [49])?.number).toBe(48);
-    expect(baselinePr([{ number: 50, merged_at: null }])).toBeNull();
+    const runsFor = async (pr: { number: number }) =>
+      [{ id: pr.number, status: "completed", conclusion: "success", created_at: "2026-10-01T00:00:00Z" }];
+    const jobsFor = async () => [{ name: "report", conclusion: "success" }];
+    const now = new Date("2026-10-07T00:00:00Z");
+    expect((await findBaseline({ pulls, runsFor, jobsFor, now }))?.pr.number).toBe(49);
+    expect((await findBaseline({ pulls, currentPrs: [49], runsFor, jobsFor, now }))?.pr.number).toBe(48);
+    expect(await findBaseline({ pulls: pulls.slice(0, 1), runsFor, jobsFor, now })).toBeNull();
   });
 
-  it("is that PR's newest green run", () => {
+  it("walks back past any number of unmeasured PRs, but no further than the numbers last (90 days)", async () => {
+    // 2026-11-23 merged twelve PRs; none was measured while LIGHTHOUSE_MODE was off.
+    const pulls = Array.from({ length: 15 }, (_, i) => ({
+      number: 330 - i, merged_at: `2026-11-23T${String(23 - i).padStart(2, "0")}:00:00Z`, head: { ref: `b${330 - i}`, sha: "s" },
+    }));
+    const runsFor = async (pr: { number: number; merged_at: string | null }) => (pr.number === 317
+      ? [{ id: 9, status: "completed", conclusion: "success", created_at: "2026-11-23T05:41:18Z" }] : []);
+    const jobsFor = async () => [{ name: "report", conclusion: "success" }];
+    expect(BASELINE_DAYS).toBe(90);
+    expect((await findBaseline({ pulls, runsFor, jobsFor, now: new Date("2026-11-24T00:00:00Z") }))?.pr.number).toBe(317);
+    // 91 days on, that run's numbers have expired: no baseline rather than a dead artifact.
+    expect(await findBaseline({ pulls, runsFor, jobsFor, now: new Date("2027-02-22T00:00:00Z") })).toBeNull();
+  });
+
+  const plan = { name: "plan", conclusion: "success" };
+  const reported = [plan, { name: "measure (comics)", conclusion: "success" }, { name: "report", conclusion: "success" }];
+  const skipped = [plan, { name: "measure", conclusion: "skipped" }, { name: "report", conclusion: "skipped" }];
+
+  it("is that PR's newest green run whose report job ran (0.14d)", () => {
     const runs = [
-      { id: 1, status: "completed", conclusion: "success", created_at: "2026-10-05T10:00:00Z" },
-      { id: 2, status: "completed", conclusion: "failure", created_at: "2026-10-05T11:00:00Z" },
-      { id: 3, status: "completed", conclusion: "success", created_at: "2026-10-05T12:00:00Z" },
-      { id: 4, status: "in_progress", conclusion: null, created_at: "2026-10-05T13:00:00Z" },
+      { id: 1, status: "completed", conclusion: "success", created_at: "2026-10-05T10:00:00Z", jobs: reported },
+      { id: 2, status: "completed", conclusion: "failure", created_at: "2026-10-05T11:00:00Z", jobs: reported },
+      { id: 3, status: "completed", conclusion: "success", created_at: "2026-10-05T12:00:00Z", jobs: reported },
+      { id: 4, status: "in_progress", conclusion: null, created_at: "2026-10-05T13:00:00Z", jobs: reported },
     ];
     expect(baselineRun(runs)?.id).toBe(3);
     expect(baselineRun(runs.slice(1, 2))).toBeNull();
+  });
+
+  it("passes over a newer green run that measured nothing (0.14d's Check)", () => {
+    const older = { id: 7, status: "completed", conclusion: "success", created_at: "2026-11-20T10:00:00Z", jobs: reported };
+    const newer = { id: 8, status: "completed", conclusion: "success", created_at: "2026-11-21T10:00:00Z", jobs: skipped };
+    expect(baselineRun([newer, older])?.id).toBe(7);
+    expect(baselineRun([newer])).toBeNull();
+  });
+
+  it("looks at every run of the newest merged PR, not only its head, and walks back past a PR with none", async () => {
+    // PR #319's hand runs were on two earlier commits; its head, a docs-only close-out, has no preview.
+    const pulls = [
+      { number: 329, merged_at: "2026-11-23T18:00:00Z", head: { ref: "task/0.15-docs-only", sha: "h329" } },
+      { number: 319, merged_at: "2026-11-23T14:21:12Z", head: { ref: "task/0.14c-measure-every-page", sha: "3b7f908" } },
+      { number: 318, merged_at: "2026-11-22T10:00:00Z", head: { ref: "task/older", sha: "h318" } },
+      { number: 340, merged_at: null, head: { ref: "task/open", sha: "h340" } },
+    ];
+    const runs: Record<string, { id: number; head_sha: string; status: string; conclusion: string; created_at: string }[]> = {
+      "task/0.15-docs-only": [],
+      "task/0.14c-measure-every-page": [
+        { id: 20, head_sha: "e49dc0f", status: "completed", conclusion: "success", created_at: "2026-11-23T13:29:58Z" },
+        { id: 19, head_sha: "cd5f93c", status: "completed", conclusion: "success", created_at: "2026-11-23T06:56:07Z" },
+        // After the merge: not main's.
+        { id: 21, head_sha: "x", status: "completed", conclusion: "success", created_at: "2026-11-24T00:00:00Z" },
+      ],
+      "task/older": [{ id: 9, head_sha: "h318", status: "completed", conclusion: "success", created_at: "2026-11-22T09:00:00Z" }],
+    };
+    const jobs: Record<number, typeof reported> = { 20: reported, 19: reported, 21: reported, 9: reported };
+    const read: string[] = [];
+    const found = await findBaseline({
+      pulls, currentPrs: [340], now: new Date("2026-11-24T12:00:00Z"),
+      runsFor: async (pr) => { read.push(pr.head.ref); return runs[pr.head.ref] ?? []; },
+      jobsFor: async (run) => jobs[run.id] ?? [],
+    });
+    expect(found?.pr.number).toBe(319);
+    expect(found?.run.id).toBe(20);
+    expect(read).toEqual(["task/0.15-docs-only", "task/0.14c-measure-every-page"]); // stops at the first PR with one
+    const none = await findBaseline({ pulls, currentPrs: [], runsFor: async () => [], jobsFor: async () => [] });
+    expect(none).toBeNull();
+  });
+
+  it("is what report.mjs baseline uses, reading each PR's runs on its branch", () => {
+    const src = readFileSync("scripts/perf/report.mjs", "utf8");
+    const body = src.slice(src.indexOf("async function baseline()"), src.indexOf("function load("));
+    expect(body).toMatch(/findBaseline\(\{/);
+    expect(body).toMatch(/lighthouse\.yml\/runs" \+\s+`\?branch=\$\{encodeURIComponent\(pr\.head\.ref\)\}/);
+    expect(body).not.toMatch(/head_sha=\$\{pr\.head\.sha\}/);
+  });
+});
+
+// ── Task 0.13 (D-142): the growth gate, the shared JS, other-origin requests ──
+
+describe("growth over main (task 0.13, D-142)", () => {
+  const base = (over: Partial<LoadSummary> = {}) => ({
+    pr: 319, at: "2026-11-23T13:29:58Z",
+    routes: { comics: aggregateRoute(route([load({ jsBytes: 140_000, docRscBytes: 20_000, requests: 30, ...over })])) },
+  });
+  const now = (over: Partial<LoadSummary> = {}) =>
+    ({ comics: aggregateRoute(route([load({ jsBytes: 140_000, docRscBytes: 20_000, requests: 30, ...over })])) });
+
+  it("fails a route 3,001 bytes of JS over the baseline, naming the route, the growth and the baseline's PR; 3,000 passes", () => {
+    const [p, ...rest] = growthProblems(now({ jsBytes: 143_001 }), base());
+    expect(rest).toEqual([]);
+    expect(p).toMatch(/^comics: JS grew by 3,001 bytes over main's last run \(PR #319: 140,000 → 143,001 bytes\)/);
+    expect(p).toMatch(/perf-growth/);
+    expect(growthProblems(now({ jsBytes: 143_000 }), base())).toEqual([]);
+  });
+
+  it("fails document + RSC growth only when it is over both 10% and 1,500 bytes (AC-2)", () => {
+    const doc = (was: number, grew: number) => growthProblems(now({ docRscBytes: was + grew }), base({ docRscBytes: was }));
+    expect(doc(14_000, 1_400)).toEqual([]); // 10%, 1,400 bytes
+    expect(doc(22_222, 2_000)).toEqual([]); // 9%, 2,000 bytes
+    const [p] = doc(14_545, 1_600); // 11%, 1,600 bytes
+    expect(p).toMatch(/^comics: document \+ RSC grew by 1,600 bytes \(11%\) over main's last run \(PR #319: 14,545 → 16,145 bytes\)/);
+    expect(doc(15_000, 1_500)).toEqual([]); // exactly 10% and 1,500: not over either
+  });
+
+  it("fails request growth at 4 and passes it at 3 (AC-2)", () => {
+    expect(growthProblems(now({ requests: 33 }), base())).toEqual([]);
+    expect(growthProblems(now({ requests: 34 }), base())[0]).toMatch(/^comics: requests grew by 4 over main's last run \(PR #319: 30 → 34\)/);
+  });
+
+  it("skips the check with no baseline, and the comment says so", () => {
+    expect(growthProblems(now({ jsBytes: 999_999 }), null)).toEqual([]);
+    const current = { url: BASE, sha: "abcdef1", lighthouse: "13.5.0", runs: 1, routes: now() };
+    const md = renderComment({ current, baseline: null, budget: BUDGET, problems: [], growth: judge({ gate: [], growth: [], labels: [] }) });
+    expect(md).toMatch(/Growth over main: not checked: no baseline/);
+  });
+
+  it("skips a route the baseline doesn't have, by name, and a route either side failed to measure", () => {
+    const shelf = aggregateRoute(route([load({ jsBytes: 900_000, landedOn: "/books/shelves/s-1" })], { path: "/books/shelves/s-1" }));
+    const routes = { ...now(), shelf };
+    expect(growthProblems(routes, base())).toEqual([]);
+    expect(growthUnchecked(routes, base())).toEqual(["shelf"]);
+    const failed = { comics: aggregateRoute(route([{ error: "Lighthouse exited 1" } as unknown as LoadSummary])) };
+    expect(growthProblems(failed, base())).toEqual([]);
+  });
+
+  it("the perf-growth label turns that failure into accepted growth in the comment", () => {
+    const growth = growthProblems(now({ jsBytes: 143_001 }), base());
+    const without = judge({ gate: ["comics: CLS 0.200 is 0.1 or more"], growth, labels: [] });
+    expect(without.problems).toEqual(["comics: CLS 0.200 is 0.1 or more", ...growth]);
+    expect(without.accepted).toEqual([]);
+    const withLabel = judge({ gate: [], growth, labels: [{ name: "perf-growth" }] });
+    expect(withLabel.problems).toEqual([]);
+    expect(withLabel.accepted).toEqual(growth);
+    expect(GROWTH_LABEL).toBe("perf-growth");
+    const current = { url: BASE, sha: "abcdef1", lighthouse: "13.5.0", runs: 1, routes: now({ jsBytes: 143_001 }) };
+    const md = renderComment({ current, baseline: base(), budget: BUDGET, problems: withLabel.problems, growth: withLabel });
+    expect(md).toContain("✅ within budget");
+    expect(md).toContain("**Accepted growth** (the `perf-growth` label):");
+    expect(md).toContain(`- ${growth[0]}`);
+    // Without the label the same growth fails the job.
+    const red = renderComment({ current, baseline: base(), budget: BUDGET, problems: without.problems, growth: without });
+    expect(red).toContain("❌ 2 problems");
+    expect(red).not.toContain("Accepted growth");
+  });
+
+  it("report() reads the PR's labels and fails on growth only without the label", () => {
+    const src = readFileSync("scripts/perf/report.mjs", "utf8");
+    const body = src.slice(src.indexOf("async function report()"), src.indexOf("const command ="));
+    expect(body).toMatch(/growthProblems\(current\.routes, baseline\)/);
+    expect(body).toMatch(/judge\(\{\s+gate: gateProblems\(current\.routes, budget, ROUTES\.map\(\(r\) => r\.id\), file\.shared\)/);
+    expect(body).toMatch(/labels: prs\.flatMap\(\(p\) => p\.labels \?\? \[\]\)/);
+    // The labels are read when the report runs, so a re-run of the job reads a label added since.
+    expect(body.indexOf("pullsFor(env.SHA)")).toBeLessThan(body.indexOf("judge({"));
+    expect(body).toMatch(/if \(judged\.problems\.length\)/);
+  });
+});
+
+describe("the shared JS is budgeted once (task 0.13)", () => {
+  const shell = { "/_next/static/chunks/framework.js": 100_000, "/_next/static/chunks/layout.js": 40_000 };
+  const r = (path: string, own: Record<string, number>, over: Partial<LoadSummary> = {}) => {
+    const scripts = { ...shell, ...own };
+    const jsBytes = Object.values(scripts).reduce((a, b) => a + b, 0);
+    return aggregateRoute(route([load({ landedOn: path, scripts, jsBytes, ...over })], { path }));
+  };
+  const routes = {
+    comics: r("/comics", { "/_next/static/chunks/comics.js": 12_000 }),
+    books: r("/books", { "/_next/static/chunks/books.js": 20_000 }),
+  };
+
+  it("finds the scripts every measured route loads, and splits each route's JS into shared and its own", () => {
+    expect(sharedScripts(routes)).toEqual(["/_next/static/chunks/framework.js", "/_next/static/chunks/layout.js"]);
+    expect(sharedJs(routes.comics, sharedScripts(routes))).toBe(140_000);
+    expect(ownJs(routes.comics, sharedScripts(routes))).toBe(12_000);
+    expect(ownJs(routes.books, sharedScripts(routes))).toBe(20_000);
+  });
+
+  it("gates the shared JS once and each route on its own JS", () => {
+    const budget = { comics: { jsBytes: 12_000 }, books: { jsBytes: 20_000 } };
+    expect(gateProblems(routes, budget, [], { jsBytes: 140_000 })).toEqual([]);
+    expect(gateProblems(routes, budget, [], { jsBytes: 139_999 }))
+      .toEqual([expect.stringMatching(/^shared JS: 140,000 bytes \(the 2 scripts every route loads\) is over the budget of 139,999 bytes/)]);
+    expect(gateProblems(routes, { ...budget, books: { jsBytes: 19_999 } }, [], { jsBytes: 140_000 }))
+      .toEqual([expect.stringMatching(/^books: JS of its own 20,000 bytes is over the budget of 19,999 bytes/)]);
+  });
+
+  it("budget.json holds the shared JS once, and every route only its own", () => {
+    const budget = JSON.parse(readFileSync("scripts/perf/budget.json", "utf8"));
+    expect(typeof budget.shared.jsBytes).toBe("number");
+    // A route's own JS is far less than the shared framework and layout it no longer carries.
+    for (const [id, b] of Object.entries(budget.routes as Record<string, RouteBudget>)) {
+      expect(b.jsBytes as number, id).toBeLessThan(budget.shared.jsBytes);
+    }
+    expect(budget.$comment).toMatch(/raised only with a decision \(D-n\)/);
+  });
+
+  it("the comment shows the shared JS against its budget", () => {
+    const current = { url: BASE, sha: "abcdef1", lighthouse: "13.5.0", runs: 1, routes };
+    const md = renderComment({ current, baseline: null, budget: { comics: { jsBytes: 12_000 } }, shared: { jsBytes: 150_000 }, problems: [] });
+    expect(md).toContain("Shared JS (the 2 scripts every route loads): 136.7 KB / 146.5 KB");
+    expect(md).toContain("| `/comics` | 11.7 KB / – | 11.7 KB / 11.7 KB |");
+  });
+
+  it("sets each ceiling at the measurement plus 25%: bytes up to the next 100, requests up to a whole number (AC-3)", () => {
+    const c = ceilingsFrom({ ...routes, comics: r("/comics", { "/_next/static/chunks/comics.js": 12_001 }, { docRscBytes: 20_001, requests: 31, a11y: 100 }) });
+    expect(c.shared).toEqual({ jsBytes: 175_000 });
+    expect(c.routes.comics).toEqual({ docRscBytes: 25_100, jsBytes: 15_100, requests: 39, a11y: 100 });
+    expect(c.lines).toContain("comics: document + RSC 20,001 → 25,100 · JS of its own 12,001 → 15,100 · requests 31 → 39");
+    expect(c.lines[0]).toBe("shared JS: 140,000 → 175,000");
+  });
+
+  it("never sets a ceiling with less room than one PR may grow (owner, plan gate)", () => {
+    // /login: no JS of its own, a small document. Plus 25% would leave it 0 and 863 bytes of room.
+    const login = r("/login", {}, { docRscBytes: 3_451, requests: 13, a11y: 100 });
+    const c = ceilingsFrom({ ...routes, login });
+    expect(c.routes.login).toEqual({ docRscBytes: 5_000, jsBytes: 3_000, requests: 17, a11y: 100 });
+    expect(c.lines).toContain("login: document + RSC 3,451 → 5,000 · JS of its own 0 → 3,000 · requests 13 → 17");
+  });
+
+  it("reports a route that was not measured instead of giving it a ceiling", () => {
+    const failed = aggregateRoute(route([{ error: "Lighthouse exited 1" } as unknown as LoadSummary], { path: "/watch" }));
+    const c = ceilingsFrom({ ...routes, watch: failed });
+    expect(c.routes.watch).toBeUndefined();
+    expect(c.lines).toContain("watch: not measured, so no ceiling");
+    // With budget.json's ceilings given, an unmeasured route keeps its own (live had no shelf, PR #332's run).
+    const kept = ceilingsFrom({ ...routes, watch: failed }, { watch: { docRscBytes: 8_400, jsBytes: 12_300, requests: 22, a11y: 100 } });
+    expect(kept.routes.watch).toEqual({ docRscBytes: 8_400, jsBytes: 12_300, requests: 22, a11y: 100 });
+    expect(kept.lines).toContain("watch: not measured, so it keeps its ceiling");
+  });
+});
+
+describe("only the app's requests count (task 0.13)", () => {
+  it("reports a request to another origin and counts it toward no budget", () => {
+    const s = summariseLhr(lhr({
+      path: "/books/list",
+      requests: [
+        { url: "/_next/static/chunks/a.js", type: "Script", size: 70_000 },
+        // An Open Library cover: three requests through archive.org.
+        { url: "https://covers.openlibrary.org/b/id/1-M.jpg", type: "Image", size: 0 },
+        { url: "https://archive.org/download/m_covers_0001/1-M.jpg", type: "Image", size: 0 },
+        { url: "https://ia800100.us.archive.org/1-M.jpg", type: "Image", size: 12_000 },
+      ],
+    }));
+    expect(s.requests).toBe(2);
+    expect(s.otherOriginRequests).toBe(3);
+    expect(s.scripts).toEqual({ "/_next/static/chunks/a.js": 70_000 });
+    const budget = { comics: { requests: 2 } };
+    expect(gateProblems({ comics: aggregateRoute(route([s], { path: "/books/list" })) }, budget)).toEqual([]);
+    const current = { url: BASE, sha: "abcdef1", lighthouse: "13.5.0", runs: 1, routes: { comics: aggregateRoute(route([s], { path: "/books/list" })) } };
+    expect(renderComment({ current, baseline: null, budget, problems: [] })).toContain("| 2 / 2 (+3 to other origins, not budgeted) |");
+  });
+});
+
+describe("adding the label re-reports without a push (task 0.13)", () => {
+  const yml = readFileSync(".github/workflows/lighthouse.yml", "utf8");
+  const jobText = (name: string) => {
+    const jobs = yml.slice(yml.indexOf("\njobs:\n"));
+    const start = jobs.indexOf(`\n  ${name}:\n`);
+    const next = jobs.slice(start + 1).search(/\n {2}[\w-]+:\n/);
+    return next === -1 ? jobs.slice(start) : jobs.slice(start, start + 1 + next);
+  };
+  const job = (name: string, conclusion: string | null) => ({ id: name.length, name, conclusion });
+
+  it("re-runs only the report job of the head's newest run that reported", () => {
+    const runs = [
+      { id: 3, status: "completed", created_at: "2026-11-24T12:00:00Z", jobs: [job("plan", "success"), job("report", "skipped")] },
+      { id: 2, status: "completed", created_at: "2026-11-24T11:00:00Z", jobs: [job("plan", "success"), job("measure (comics)", "success"), { id: 77, name: "report", conclusion: "failure" }] },
+      { id: 1, status: "completed", created_at: "2026-11-24T10:00:00Z", jobs: [job("plan", "success"), { id: 66, name: "report", conclusion: "success" }] },
+      { id: 4, status: "in_progress", created_at: "2026-11-24T13:00:00Z", jobs: [job("plan", "success"), { id: 88, name: "report", conclusion: null }] },
+    ];
+    expect(rejudgeTarget(runs)).toEqual({ run: 2, job: 77 });
+    expect(rejudgeTarget(runs.slice(0, 1))).toBeNull();
+  });
+
+  it("runs on the label, without the switch, and loads no page", () => {
+    expect(yml).toMatch(/\non:\n(?: {2}.*\n)*? {2}pull_request:\n {4}types: \[labeled, unlabeled\]\n/);
+    const rejudge = jobText("rejudge");
+    expect(rejudge).toMatch(/\n {4}if: github\.event_name == 'pull_request' && github\.event\.label\.name == 'perf-growth'\n/);
+    expect(rejudge).toMatch(/\n {6}actions: write\n/);
+    expect(rejudge).toMatch(/run: node scripts\/perf\/report\.mjs rejudge/);
+    expect(rejudge).toMatch(/HEAD_SHA: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+    expect(rejudge).not.toMatch(/measure\.mjs|login\.mjs|lighthouse\b.*--/);
+    // A re-run of the report job (a rejudge, or a re-run failed route) replaces the numbers it merged.
+    const report = jobText("report");
+    const upload = report.slice(report.indexOf("- name: Upload the metrics"), report.indexOf("- name: Find main's last run"));
+    expect(upload).toMatch(/\n {10}overwrite: true\n/);
+    expect(upload).not.toMatch(/run_attempt/);
+  });
+
+  it("report.mjs rejudge asks GitHub to re-run that one job", () => {
+    const src = readFileSync("scripts/perf/report.mjs", "utf8");
+    const body = src.slice(src.indexOf("async function rejudge()"), src.indexOf("/** Read a metrics.json"));
+    expect(body).toMatch(/rejudgeTarget\(/);
+    expect(body).toMatch(/actions\/jobs\/\$\{target\.job\}\/rerun`, \{ method: "POST" \}/);
+  });
+});
+
+describe("the numbers artifact lasts 90 days, the reports 14 (task 0.13, AC-5)", () => {
+  const yml = readFileSync(".github/workflows/lighthouse.yml", "utf8");
+  /** The retention of the upload step that names `artifact`. */
+  const retention = (artifact: string) => {
+    const at = yml.indexOf(`name: ${artifact}\n`);
+    expect(at, artifact).toBeGreaterThan(-1);
+    return Number(yml.slice(at).match(/retention-days: (\d+)/)![1]);
+  };
+
+  it("keeps lighthouse-metrics 90 days and every per-route artifact 14", () => {
+    expect(retention("lighthouse-metrics")).toBe(90);
+    expect(retention("lighthouse-reports-${{ matrix.route }}")).toBe(14);
+    expect(retention("lighthouse-metrics-${{ matrix.route }}")).toBe(14);
+  });
+});
+
+describe("the growth rule is documented (task 0.13)", () => {
+  const doc = readFileSync("docs/02-architecture.md", "utf8");
+  const section = doc.slice(doc.indexOf("- **Performance budget**"), doc.indexOf("- **Instrumentation.**"));
+
+  it("§ Performance budget keeps the limits and how a ceiling is raised, and links the history", () => {
+    const text = section.replace(/\s+/g, " ");
+    expect(text).toMatch(/more than 3,000 bytes/);
+    expect(text).toMatch(/10% and 1,500 bytes/);
+    expect(text).toMatch(/more than 3/);
+    expect(text).toMatch(/`perf-growth`/);
+    expect(text).toMatch(/raised only with a decision \(D-n\)/);
+    expect(section).toContain("docs/perf-budget-history.md");
+    // The raise history left the section.
+    expect(section).not.toMatch(/PR #(80|115|145|193|197|201|222|224)\b/);
+  });
+
+  it("docs/perf-budget-history.md holds every raise paragraph, PR #80 to #224", () => {
+    const history = readFileSync("docs/perf-budget-history.md", "utf8");
+    for (const pr of [80, 108, 115, 145, 193, 195, 197, 201, 206, 222, 224]) expect(history, `#${pr}`).toMatch(new RegExp(`PR #${pr}\\b`));
+  });
+
+  it("docs/GIT-PR.md says when to ask for Perf growth and that Claude never adds the label", () => {
+    const text = readFileSync("docs/GIT-PR.md", "utf8").replace(/\s+/g, " ");
+    expect(text).toMatch(/\*\*Perf growth\*\*/);
+    expect(text).toMatch(/Claude never adds (it|the label)/);
   });
 });
 
@@ -896,15 +1229,19 @@ describe("the route list (scripts/perf/routes.mjs)", () => {
     }
   });
 
-  it("is mirrored in the architecture's Performance budget", () => {
-    const budget = JSON.parse(readFileSync("scripts/perf/budget.json", "utf8")).routes;
+  it("is mirrored in the architecture's Performance budget, the shared JS on a row of its own", () => {
+    const file = JSON.parse(readFileSync("scripts/perf/budget.json", "utf8"));
+    const budget = file.routes;
     const doc = readFileSync("docs/02-architecture.md", "utf8");
     const table = doc.slice(doc.indexOf("<!-- perf-budget -->"), doc.indexOf("<!-- /perf-budget -->"));
     expect(table.length).toBeGreaterThan(0);
     const n = (v: unknown) => (typeof v === "number" ? v.toLocaleString("en-US") : "–");
+    expect(table).toContain(`| Shared JS (every route loads it) | – | ${n(file.shared.jsBytes)} | – | – |`);
     for (const r of ROUTES) {
       const b = budget[r.id];
       expect(table).toContain(`| \`${r.path}\` | ${n(b.docRscBytes)} | ${n(b.jsBytes)} | ${n(b.requests)} | ${n(b.a11y)} |`);
     }
+    // One row per route and the shared row: nothing left over from the old table.
+    expect(table.split("\n").filter((l) => /^\s*\| [`S]/.test(l))).toHaveLength(ROUTES.length + 1);
   });
 });

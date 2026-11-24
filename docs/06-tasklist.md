@@ -348,7 +348,7 @@ with the task that first reads it.
 | ✅ | 1.17b → TASK-058, TASK-059 | Dates when you start and finish, and on every read | M | _Owner, 2026-11-08 (D-131)_ | 1.17, 1.23 |
 | ✅ | 1.29 → TASK-060 | Refresh production's comics from `Comics.xlsx`, books untouched | M | _Owner, 2026-11-08 (D-128)_ | — |
 | ✅ | 1.30 → TASK-073 | Bring the Library and Now back under their JS budgets | M | _Owner, 2026-11-10 (PR #222)_ | 1.17b |
-|  | 0.13 → TASK-133 | Gate a preview on what its PR adds, not on a ceiling it must raise | M | _Owner, 2026-11-10 (D-142); Phase 0's, listed here beside 1.30; pulled ahead of 1.26 (D-172)_ | 1.30, 0.14c |
+| ✅ | 0.13 → TASK-133 | Gate a preview on what its PR adds, not on a ceiling it must raise | M | _Owner, 2026-11-10 (D-142); Phase 0's, listed here beside 1.30; pulled ahead of 1.26 (D-172)_ | 1.30, 0.14c |
 | ✅ | 0.14 → TASK-112 | A measured deploy costs a third of what it did | M | _Owner, 2026-11-17 (D-158); Phase 0's, listed here beside 0.13; pulled ahead of 1.26 (D-172)_ | — |
 | ✅ | 0.14b → TASK-113 | Automatic runs are debounced and capped | M | _Owner, 2026-11-17 (D-158); Phase 0's, listed here beside 0.13; not a cutover gate_ | 0.14 |
 |  | 0.14d | A plan-only run is never main's baseline | S | _From TASK-113 (PR #317); Phase 0's, listed here beside 0.14b; not a cutover gate_ | 0.14b |

@@ -324,7 +324,11 @@ tick them.
       first shelf `/books/shelves` lists, and each preview copies live: with no
       shelf there, every measured run fails `shelf` as not measured and turns
       the Lighthouse gate red. 0.14c measured it on a shelf made on its own
-      preview (from TASK-114, 0.14c, PR #319).
+      preview (from TASK-114, 0.14c, PR #319). Now it blocks 0.13 too: PR
+      #332's run 45328350484 failed `shelf` as not measured, and its second run
+      waits on a shelf. Claude couldn't make one on the preview, because the
+      preview's passcode is the repo secret, not `.env`'s (from TASK-133, 0.13,
+      PR #332).
 - [ ] Before the Release that carries migration 0035 (from TASK-132, 6.19,
       PR #333): *metadata pending* is now `hardcover_id IS NULL`, and the
       column that kept up to 2,000 live books out of it goes. Those books
@@ -341,6 +345,19 @@ tick them.
 - [ ] Delete `etl/.openlibrary-cache.sqlite` from your main checkout (from
       TASK-132, 6.19, PR #333). Nothing reads it, and `.gitignore` no longer
       lists it, so it shows as untracked until it goes. Never commit it.
+
+- [ ] After 0.13 merges, run its Check's throwaway branch: from `main`, add a
+      client import of 5 KB or more, *compressed* (JS counts as transferred),
+      to `/books` (or `/books/status`, `/book/[id]`: only those have more than
+      5 KB of room under their own-JS ceilings, so elsewhere the ceiling fails
+      too and the label can't turn it green). Open a PR, run
+      `gh workflow run lighthouse.yml --ref <branch>`: the job should fail
+      naming that route's JS growth over main's baseline (PR #332, unless
+      another measured PR merged since). Add `perf-growth`: a
+      `rejudge` run should re-run that run's `report` job green, with no push
+      and no new measure jobs. Then close the PR and delete the branch. The
+      Lighthouse workflow is enabled and the label exists since 2026-11-24
+      (from TASK-133, 0.13, PR #332).
 
 ## Approvals from follow-ups
 

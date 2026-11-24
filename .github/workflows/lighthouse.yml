@@ -18,12 +18,19 @@ name: Lighthouse
 # It fails only on what holds still between runs: a route handler (/api/*)
 # requested during a load or prefetch, bytes or requests over
 # scripts/perf/budget.json, CLS of 0.1 or more, accessibility under its recorded
-# score. Timings are reported against the last merged PR's run, never gated.
+# score, and (task 0.13, D-142) growth over main's last measured run: JS by more
+# than 3,000 bytes, document + RSC by more than 10% and 1,500 bytes, requests by
+# more than 3. The owner's `perf-growth` label accepts the growth; adding or
+# removing it re-runs only the head's last report job (rejudge), which loads no
+# page and is not a measured run. Timings are reported against main's last
+# measured run, never gated.
 #
 # Never production on its own: Release's smoke test owns it, and a pass there
 # reads the live database through the app. A hand run there is the owner's call
 # (allow_production). Reports are this run's artifacts for 14 days and go
 # nowhere else: they hold the rendered pages, the library and reading history.
+# The merged numbers (lighthouse-metrics, numbers only) are kept 90 days, so a
+# later PR nearly always finds a baseline.
 #
 # The switch (D-158). Every page load here is a server render on Vercel, and
 # each one's link prefetches render more: a measured deploy cost about 22 s of
@@ -58,6 +65,9 @@ name: Lighthouse
 # lighthouse.yml) and enable it to run by hand.
 on:
   deployment_status:
+  # The perf-growth label (task 0.13): rejudge only, never a measurement.
+  pull_request:
+    types: [labeled, unlabeled]
   workflow_dispatch:
     inputs:
       url:
@@ -274,20 +284,23 @@ jobs:
       - name: Merge the routes
         run: node scripts/perf/report.mjs merge "$RUNNER_TEMP/parts"
 
-      # Numbers only: what the next PR compares itself with.
+      # Numbers only: what the next PR compares itself with, kept 90 days (task
+      # 0.13). A re-run of this job (a rejudge, or re-running a failed route)
+      # replaces them with the numbers it merged.
       - name: Upload the metrics
         uses: actions/upload-artifact@v7
         with:
           name: lighthouse-metrics
           path: ${{ runner.temp }}/parts/metrics.json
-          retention-days: 14
+          retention-days: 90
+          overwrite: true
           if-no-files-found: error
 
       - name: Find main's last run
         id: baseline
         run: node scripts/perf/report.mjs baseline
 
-      # Gone after 14 days; the comment then says there is no baseline.
+      # Gone after 90 days; the comment then says there is no baseline.
       - name: Fetch its metrics
         if: steps.baseline.outputs.run_id
         continue-on-error: true
@@ -299,3 +312,25 @@ jobs:
           BASELINE_METRICS: ${{ runner.temp }}/baseline/metrics.json
           BASELINE_PR: ${{ steps.baseline.outputs.pr }}
         run: node scripts/perf/report.mjs report
+
+  # The owner added or removed the perf-growth label (task 0.13, D-142): the
+  # head's newest run that reported judges its numbers again, in place, so its
+  # check turns green (or red) with no new push. It loads no page, so it needs
+  # neither the switch nor a measured run under the monthly cap.
+  rejudge:
+    if: github.event_name == 'pull_request' && github.event.label.name == 'perf-growth'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v7
+        with: { ref: "${{ github.event.pull_request.head.sha }}" }
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .nvmrc }
+      - name: Re-run the head's last report
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/perf/report.mjs rejudge

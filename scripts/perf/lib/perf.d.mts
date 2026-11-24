@@ -20,6 +20,10 @@ export interface LoadSummary {
   docRscBytes: number;
   jsBytes: number;
   requests: number;
+  /** Requests to another origin: reported, never budgeted (task 0.13). Absent before 0.13. */
+  otherOriginRequests?: number;
+  /** The page's own scripts by path → bytes, the shared JS's input (task 0.13). Absent before 0.13. */
+  scripts?: Record<string, number>;
   apiRequests: string[];
   rscSent: number;
 }
@@ -36,6 +40,7 @@ export interface RouteResult {
   landedOn: (string | null)[];
   first: LoadSummary | null;
   median: Record<string, number | null>;
+  scripts: Record<string, number | null>;
   tap: { first: number | null; median: number | null; rscBytes: number | null };
   apiRequests: string[];
   rscSent: number;
@@ -48,20 +53,39 @@ export function apiPath(url: string): string | null;
 export function summariseLhr(lhr: any): LoadSummary;
 export function median(values: (number | null | undefined)[]): number | null;
 export function aggregateRoute(measured: MeasuredRoute): RouteResult;
+export type SharedBudget = { jsBytes?: number | null };
+export function sharedScripts(routes: Record<string, RouteResult>): string[];
+export function sharedJs(route: RouteResult, shared: string[]): number;
+export function ownJs(route: RouteResult, shared: string[]): number | null;
 export function gateProblems(
-  routes: Record<string, RouteResult>, budget: Record<string, RouteBudget>, expected?: string[]): string[];
+  routes: Record<string, RouteResult>, budget: Record<string, RouteBudget>, expected?: string[],
+  sharedBudget?: SharedBudget | null): string[];
 export function unbudgeted(routes: Record<string, RouteResult>, budget: Record<string, RouteBudget>): string[];
+export const GROWTH_LABEL: string;
+export const GROWTH: { jsBytes: number; docRscBytes: { bytes: number; share: number }; requests: number };
+export interface Baseline {
+  pr: number | string;
+  at: string;
+  routes: Record<string, { runs?: number; median?: Record<string, number | null>; tap?: { median?: number | null } }>;
+}
+export function growthUnchecked(routes: Record<string, RouteResult>, baseline: Baseline | null): string[];
+export function growthProblems(routes: Record<string, RouteResult>, baseline: Baseline | null): string[];
+export function judge(args: { gate: string[]; growth: string[]; labels: (string | { name?: string })[] | null | undefined }):
+  { problems: string[]; accepted: string[] };
+export function ceilingsFrom(routes: Record<string, RouteResult>, previous?: Record<string, RouteBudget>): {
+  shared: { jsBytes: number };
+  routes: Record<string, { docRscBytes: number; jsBytes: number; requests: number; a11y: number | null }>;
+  lines: string[];
+};
 export function fmt(v: number | null | undefined, unit: "bytes" | "ms" | "count"): string;
 export function renderComment(args: {
   current: { url: string; sha?: string; lighthouse?: string; runs?: number; routes: Record<string, RouteResult> };
-  baseline: {
-    pr: number;
-    at: string;
-    routes: Record<string, { median?: Record<string, number | null>; tap?: { median?: number | null } }>;
-  } | null;
+  baseline: Baseline | null;
   budget: Record<string, RouteBudget>;
   problems: string[];
   missingBudget?: string[];
+  shared?: SharedBudget | null;
+  growth?: { accepted: string[] } | null;
 }): string;
 export interface Metrics {
   url: string;
@@ -112,8 +136,22 @@ export function sessionCookie(setCookies: string[]): string | null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function scrubLhr(lhr: any, secrets: (string | undefined)[]): any;
 export function filesWithSecrets(files: { name: string; text: string }[], secrets: (string | undefined)[]): string[];
-export function baselinePr<T extends { number: number; merged_at: string | null }>(pulls: T[], currentPrs?: number[]): T | null;
-export function baselineRun<T extends { status: string; conclusion: string | null; created_at: string }>(runs: T[]): T | null;
+type Job = { id?: number; name: string; conclusion: string | null };
+export function baselineRun<T extends { status: string; conclusion: string | null; created_at: string; jobs?: Job[] }>(
+  runs: T[]): T | null;
+export function findBaseline<
+  P extends { number: number; merged_at: string | null; head: { ref: string; sha: string } },
+  R extends { status: string; conclusion: string | null; created_at: string },
+>(args: {
+  pulls: P[];
+  currentPrs?: number[];
+  runsFor: (pr: P) => Promise<R[]>;
+  jobsFor: (run: R) => Promise<Job[]>;
+  now?: Date;
+}): Promise<{ pr: P; run: R & { jobs: Job[] } } | null>;
+export const BASELINE_DAYS: number;
+export function rejudgeTarget(runs: { id: number; status: string; created_at: string; jobs?: Job[] }[]):
+  { run: number; job: number } | null;
 export function listPages(dir: string): string[];
 export function pagePattern(file: string): string;
 export function unmeasuredPages(args: { pages: string[]; routes: string[]; exempt: Record<string, string> }): string[];
