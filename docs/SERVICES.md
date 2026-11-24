@@ -154,9 +154,9 @@ to be changed in both.
   when the secret is missing.
 - **If it lapses:** the review job fails on authentication. Run
   `claude setup-token` and replace the secret.
-- **Design:** the [Ledger canvas](https://claude.ai/artifact/KMTyE4DuUvZPYH4pbuHHCu)
+- **Design:** the [Ledger canvas](https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH)
   (the drawings) and the
-  [Ledger design system](https://claude.ai/artifact/4kWo7Lnryxsjr7H79dy9XH)
+  [Ledger design system](https://claude.ai/artifact/2rUye3qEeu2arnmh85vFFj)
   (colours, fonts, rules), private claude.ai artifacts on the same account. No
   key: nothing in the repo calls them. They replace standalone Claude Design,
   which closes by 2026-12-14 ([04-design.md](04-design.md) § 1).

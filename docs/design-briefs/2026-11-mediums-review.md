@@ -1,35 +1,55 @@
 # Design review, November 2026: the new mediums, and everything since the feel pass
 
-The prompt for roadmap 6.23 (`docs/05-roadmap.md`), run by the owner in Claude
-Design. Claude Code checks the inventory below against `main` on the day it is
-run and cuts the roadmap excerpt (TASK-126's plan, steps 1–2). Then the owner
-pastes everything under **The prompt** into a new Claude Design project, with
-the files under **Attach**. What comes back is recorded by steps 4–6. Nothing here changes a
-design source on its own: `design/*.dc.html`, `design/STYLE_GUIDE.md`,
-`design/tokens.css` and `design/screenshots/**` change only through what the
-design tool delivers (`.claude/kit.json` `protectedPaths`).
+The prompt for roadmap 6.23 (`docs/05-roadmap.md`), run by the owner on the
+[Ledger canvas](https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH) in claude.ai,
+with the Ledger design system installed (`docs/04-design.md` § 1, *In
+Claude*). Standalone Claude Design closes by 2026-12-14, so the review is not
+run there (owner, 2026-11-24; TASK-126, plan revision 1). Claude Code checks
+the inventory below against `main` on the day it is run and cuts the roadmap
+excerpt (TASK-126's plan, steps 1–2). Then the owner starts a new chat in
+claude.ai, signed in to the account that owns the canvas, attaches the files
+under **Attach** with the composer's attach button, and pastes everything
+under **The prompt**. Its first lines name the canvas, so that chat draws on
+it. What comes back
+is recorded by steps 4–6. Nothing here changes a design source on its own:
+`design/*.dc.html`, `design/STYLE_GUIDE.md`, `design/tokens.css` and
+`design/screenshots/**` change only through what the design tool, the canvas,
+delivers (`.claude/kit.json` `protectedPaths`).
+
+**Names.** The canvas allows no spaces in a page name. The review is the
+canvas page `Mediums-Review`, and it comes into the repo as
+`design/Ledger Mediums Review.dc.html`, its repo name, the way the canvas's
+`Main` is `design/Ledger Feel Review.dc.html`. A component page it adds keeps
+its canvas name, which already has no spaces (`LedgerDesktop`, `LedgerNav`).
 
 ## Attach
 
+The canvas already holds the feel pass (`Main`, with `LedgerComics`),
+`LedgerDesktop`, `LedgerNav`, `Style-Guide`, `Telescope-Spec` and
+`Plan-Rail-Spec`, and the Ledger design system holds palette 1c, the fonts
+and the type scale. So attach only what it doesn't have:
+
 | File | Why the design tool needs it |
 |---|---|
-| `design/Ledger Feel Review.dc.html` and `design/support.js` | The October feel pass (D-40). The language this review extends. |
-| `design/LedgerDesktop.dc.html`, `design/LedgerNav.dc.html` | Desktop at 1024px and up, the 64px rail and the 224px sidebar. |
-| `design/STYLE_GUIDE.md` | Tokens, type, elevation and components (§1–§13); the feel pass's screens, copy and departures (§14–§16). |
-| `design/tokens.css` | Palette 1c, both themes, the values every frame must use. |
+| `design/STYLE_GUIDE.md` | The feel pass's screens, copy and departures (§14–§16), which the design system's README only summarises, and the §10 changelog the new §17 is listed in. |
+| `design/tokens.css` | Palette 1c as the repo has it, both themes, with the `+ NEW` and `~` marks a new token follows. |
 | `design/mockups.html` | Every screen as it stands, including the frames Claude Code drew after the feel pass (part E). Large: point at screens by their `data-id`. |
 | `design/mockups-index.md` | What each `data-id` holds, and what each frame was redrawn for. |
-| `design/screenshots/` (all three folders) | The feel pass as pictures, if the `.dc.html` pages do not render. |
-| `docs/04-design.md` § 10 | The UX floor every frame must meet. |
-| A roadmap excerpt: `docs/05-roadmap.md` Phases 8, 9 and 10, and the entries part F names | The behaviour behind each screen. 6.23's plan, step 1, cuts it with `scripts/task.ps1`. |
+| `docs/04-design.md` § 10 (cut to its own file, `ux-floor.md`) | The UX floor every frame must meet. |
+| `docs/design-briefs/2026-11-mediums-roadmap-excerpt.md` | The behaviour behind each screen: `docs/05-roadmap.md` Phases 8, 9 and 10 in full, then every entry parts A, E and F name. Cut by 6.23's plan, step 2, with `scripts/task.ps1`. |
+| `design/screenshots/` (all three folders) | Only if the canvas's pages don't render: the feel pass as pictures. |
 
 ## The prompt
 
+> Please work on my Ledger canvas: https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH
+> Add the review there as a new page, Mediums-Review, beside the Feel pass and Specs pages. The six files attached to this message are the current versions; where the canvas or anything else disagrees with them, they win.
+>
 > I'm handing you a design review, the second one on this app. You did the
-> first in October 2026: the feel pass, attached as `Ledger Feel Review.dc.html`
-> with its desktop pages, its style guide (§14–§16) and its tokens (palette 1c,
-> *After hours*). Please keep working in that language. This pass is not a new
-> look.
+> first in October 2026: the feel pass, the `Main` page on this canvas, with
+> its desktop pages (`LedgerDesktop`, `LedgerNav`), its style guide (§14–§16,
+> attached as `STYLE_GUIDE.md`) and its tokens (palette 1c, *After hours*: the
+> Ledger design system installed here, and the attached `tokens.css`). Please
+> keep working in that language. This pass is not a new look.
 >
 > **The app.** The Ledger is my personal media tracker. It's single-user, and
 > an Android phone at 360–412px is the main device: design every screen there
@@ -79,8 +99,8 @@ design tool delivers (`.claude/kit.json` `protectedPaths`).
 >   consistent between frames (one show is mid-season everywhere it appears).
 >
 > **What I want back.**
-> 1. A review page in the format of the first one, `Ledger Mediums
->    Review.dc.html`, in parts A–F below. Each part opens with what it is
+> 1. A new page on this canvas, `Mediums-Review`, in the format of `Main`,
+>    in parts A–F below. Each part opens with what it is
 >    solving, then its frames: phone (390, and 360 wherever width is tight),
 >    tablet (834) and desktop (1280, and 1024 where the icon rail changes the
 >    layout), in **dark and light**. Each frame is labelled with its screen and
@@ -110,7 +130,7 @@ design tool delivers (`.claude/kit.json` `protectedPaths`).
 > under *More*), plus your recommendation. Then draw the same five in the
 > tablet rail's media switch and in the desktop sidebar and icon rail. Say
 > what `/` opens (today it is whichever medium I touched last) and where the
-> media-wide pages go: Inbox, *In the middle of* (part F) and Activity (part
+> media-wide pages go: Inbox, *In the middle of* (part E) and Activity (part
 > F). Show the music accent and the games accent beside the existing medium
 > accents. They must stay at least ΔE2000 15 from green, amber and red in
 > both themes.
@@ -235,24 +255,51 @@ design tool delivers (`.claude/kit.json` `protectedPaths`).
 >   This is also roadmap 6.21's question: how universe, author, series and
 >   subseries read in Now and on the tablet and desktop heroes, including a
 >   long universe name, a book on three levels and a book on none. Please
->   give it its own frames.
+>   give it its own frames. Also on `bdash`: the plan strip *Between books*
+>   draws as the plan rail on its side, and *Review 3 parked →* under the
+>   *Coming out* line when the parked review is due.
 > - `blist`, the Library: sort, *Unlisted*, start and finish dates, the
 >   *Listening* status and the headphones glyph, what I own (*Physical ·
->   Audiobook · Ebook*), the DNF closing card (*Why did you stop?*). Also the
->   genre chip row, which is built but never drawn: top-level genres, grey
->   with text, one row scrolling sideways.
+>   Audiobook · Ebook*), the DNF closing card (*Why did you stop?*), *Park*
+>   on the status control with the *Parked · N* chip and a parked row,
+>   *Queue to listen* in a row's `⋯`, and the author, universe and series as
+>   links to their pages. Also the genre chip row, which is built but never
+>   drawn: top-level genres, grey with text, one row scrolling sideways.
 > - `status`: *Finished* on each in-flight book row, *Reading* then
->   *Listening*, Up next grouped by genre, and a stopped book's reason.
+>   *Listening*, Up next grouped by genre, a stopped book's reason, the
+>   *Listen next* queue after the plan (its handle and *Move to top · Move
+>   up · Remove from Listen next*), and Done's *All · Listened* chips. Its
+>   empty slates for comics and books are in `states`.
+> - `progress`, *In the middle of · Completed*: books and comics on one page,
+>   chips per medium, nested rows, *On hold* collapsed. Say how it grows when
+>   shows, franchises, artists and games join it, and where it sits in part
+>   A's navigation (beside Inbox; its rail entry is after Inbox today).
+> - `author` (an author's page and a universe's, *By series* or *In order*,
+>   with the follow control) and `bookdetail`, the book sheet: *Your record*'s
+>   writes (*Listen next*, *Park*, the *Owned* toggles, *Notes* edited in
+>   place), *Move* and *Shelves* opening their sheet in place of the book's
+>   with a back control, and the names linking to their pages.
+> - `parked`, the parked review, books only: *Keep parked · Plan… ·
+>   Unlisted*, *Pick it back up* for a book parked mid-read, *Done
+>   reviewing*; with the *Parked review* row heading Inbox (`capture`) and
+>   the *Review parked items* cadence in `settings`. Part F asks how it
+>   reads for every medium.
 > - `follow` (the *Follow…* sheet: *Reading · Tracking · Not following* per
 >   level) and `finishoffer` (the finish toast's *Now reading* chips and *Keep
 >   going?*).
 > - `thisorthat` and `top`: ranking a book on finishing it, and every year's
 >   top ten.
 > - `releases` (books coming out), `series` (the series list and a series'
->   own page, with gap rows like *#6 not in your library · Add*), `shelves`,
->   `plan` (the planning sheet: *Plan this quarter…*, *Accept as a stretch
->   year*), `add` (search as you type, owned copies, *Coming out*, *New
->   shelf…*), `calibre` (the sync log) and `settings`.
+>   own page, with gap rows like *#6 not in your library · Add*), `shelves`
+>   (with *Remove from shelf* in a row's `⋯` and its undo toast), `plan` (the
+>   plan rail, and the planning sheet: *Plan this quarter…*, *Accept as a
+>   stretch year*), `rebalance` (the rebalance sheet and the settled stretch
+>   year), `moveplan` (its header naming the book's place), `add` (Hardcover
+>   search as you type, a result's place line, owned copies and *Add to
+>   Physical copy*, *Queue to listen*, *Coming out*, *New shelf…*), `calibre`
+>   (the sync log, with *Merge · Keep separate* on a waiting near spelling)
+>   and `settings`.
+> - `states`: the empty slates of the comics and books status tabs.
 > - The tab row under the phone media bar (part A changes its context).
 > - The stepper: its number can now be typed as well as stepped (a button
 >   that opens a numeric input) and a held − or + repeats. Style guide §9
@@ -262,23 +309,16 @@ design tool delivers (`.claude/kit.json` `protectedPaths`).
 >
 > **F. Designed by nobody yet.** These are planned or half-built features,
 > beyond the mediums, with no drawing at all:
-> - `/progress`, *In the middle of · Completed*, one page for every medium:
->   a chip per medium, then series, universes, authors I follow, ordered
->   shelves, runs and tracks, and later shows, franchises, artists and games.
->   It sits in the media-wide part of the navigation beside Inbox.
-> - **Parked**, for every medium: *not now, but not gone*. The *Park* verb on
->   the status control, the dashboard's one-line mention, `/parked`, and the
->   monthly or quarterly review, row by row: *Keep parked · Up next ·
->   Someday*, and the medium's own wording.
-> - The listen queue for audiobooks: *Listen next* on books Up next, *Queue to
->   listen* on the book sheet and row, and a *Listened* chip on Done.
+> - **Parked**, for every medium: *not now, but not gone*. Books' is drawn
+>   (part E, `parked`). Draw the review when more than one medium has
+>   something parked (a group per medium, or one list), each medium's wording
+>   of the verbs, and the *Park* verb and the dashboard's one-line mention on
+>   watch, music and games.
 > - Comics: *Coming out* for the runs I follow (`/comics/releases`, a Metron
 >   check I start, accepted issues reviewed before they're added); editing a
 >   run's prerequisites, with the cycle error naming the runs in the loop
 >   (`newrun`); and the volume map editor (which *Captain America #1* means
 >   in this run).
-> - Books: taking a book off a shelf (the row's `⋯`, *Remove from shelf*, the
->   undo toast), and *Add to Physical copy* from a search result.
 > - Activity, `/activity`: every finished read, newest first, by month under
 >   year headings with the year's totals, with filters by medium and year and
 >   undated reads under *No date*.
@@ -294,7 +334,9 @@ design tool delivers (`.claude/kit.json` `protectedPaths`).
 
 ## Inventory, as written
 
-Checked against `main` at `5c47fd7` (2026-11-18). Part E lists the frames
+Checked against `main` at `5c47fd7` (2026-11-18), and again at `66d3001`
+(2026-11-24, TASK-126 plan step 1; *Refreshed 2026-11-24* below says what
+moved). Part E lists the frames
 `design/mockups-index.md` records as drawn by a task after 2026-10-06. Part F
 lists the roadmap entries whose text says *not drawn yet*, *the mockup gains*
 or *the feel pass is silent* and whose drawing is not in `design/mockups.html`.
@@ -313,5 +355,83 @@ Then read each hit's entry (`scripts/task.ps1 <id>`) and compare it with
 | B | 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 8.10; 5.15 for Parked |
 | C | 9.0, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7 |
 | D | 10.0, 10.2, 10.3, 10.4, 10.5, 10.6; 10.1 for the two play styles |
-| E | 1.17, 1.17b, 1.21, 1.22, 1.23, 2.0b, 2.2c–2.2j, 2.10b, 3.4b, 4.4, 4.5, 4.5b, 5.1, 5.5, 5.7, 5.9, 5.17; 6.21 |
-| F | 5.12, 5.14, 5.15, 5.8, 3.3, 3.9, 5.1b, 5.17b, 6.17, 6.4, 6.1 |
+| E | 1.4f, 1.9, 1.17, 1.17b, 1.21, 1.22, 1.23, 2.0b, 2.2, 2.2b–2.2j, 2.2l, 2.3, 2.7, 2.10b, 3.4b, 3.5b, 4.4, 4.5, 4.5b, 4.6, 5.1, 5.1b, 5.5, 5.7, 5.9, 5.11, 5.12, 5.14, 5.15, 5.17, 5.17b; 6.21 |
+| F | 5.15 (beyond books), 5.8, 3.3, 3.9, 6.17, 6.4, 6.1 |
+
+### Refreshed 2026-11-24
+
+The grep at `66d3001` (TASK-126 plan step 1) hits 29 lines in 28 entries.
+Each one is now in part E or F, or drawn or settled already:
+
+| Entry | Tick | Where it is |
+|---|---|---|
+| 1.17b, 2.0b, 2.2c, 2.2d, 2.2e, 2.2f, 2.2g, 2.2h, 2.2i, 2.2j, 2.10b | ☑ | Part E (each one's *not drawn yet* predates its own drawing) |
+| 2.2 | ☑ | Part E (`bdash`). Its *the feel pass is silent* question (the capacity card, *Place them*) was settled by D-147 and D-148: `/books/plan` only |
+| 5.1b, 5.7, 5.9, 5.12, 5.15, 5.17, 5.17b | ☑ | Part E. 5.1b, 5.12, 5.15 and 5.17b moved here from F: drawn since `5c47fd7` |
+| 6.4 | ☐ | Part F (offline writes, `states`) |
+| 3.3, 3.9, 5.8 | ☐ | Part F (comics) |
+| 8.8, 9.0, 10.0, 10.6 | ☐ | Parts B, C, D |
+| 6.23 | ☐ | This review |
+
+Since `5c47fd7`, these tasks drew frames into `design/mockups.html`
+(`design/mockups-index.md`): 2.2l, 3.5b, 4.6, 5.1b, 5.11, 5.12, 5.14,
+5.15, 5.17b. So 5.12 (`progress`), 5.14 (the listen queue), 5.1b and 5.17b
+left part F for part E, Parked stays in F only beyond books, and 2.2l, 3.5b,
+4.6 and 5.11 (`author`, new) joined part E. Four frames drawn after
+2026-10-06 that the first inventory missed also joined part E: 1.4f (`add`'s
+Hardcover search), 1.9 and 2.3 (the status empty slates in `states`), 2.2b
+(the plan rail on `plan` and `bdash`) and 2.7 (`rebalance`).
+
+## Delivered
+
+2026-11-24, drawn in a claude.ai chat on the
+[Ledger canvas](https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH), page
+*Mediums-Review*, with the Ledger design system installed. The prompt was
+pasted as written above, with the six files under **Attach**. TASK-126's plan
+step 4 recorded it. The page files came from the canvas byte for byte (their
+sha256 matched the canvas's listing), and the rest came from the chat's
+attachments, as delivered. The owner gave Claude Code permission to copy them
+into the protected paths (2026-11-24).
+
+The review came back as seventeen canvas pages, not one: each part is split so
+no board passes the canvas's 8,000px height limit. They keep their canvas
+names, which have no spaces, so `design/MR-Main.dc.html` is the review page
+the plan called `design/Ledger Mediums Review.dc.html`.
+
+| Now at | What it is |
+|---|---|
+| `design/MR-Main.dc.html` | The entry: the summary, departures MR-D1…MR-D24, decisions MR-Q1…MR-Q24, and the two new tokens measured |
+| `design/MR-Handoff.dc.html` | Every frame mapped to the screen it redraws or adds, with its PNG |
+| `design/MR-A-Navigation-1.dc.html`, `-2` | Part A: navigation for five media, the rejected options, the tablet rail, the sidebar and the icon rail, the medium accents |
+| `design/MR-B1-Watch-dashboard-1.dc.html`, `-2` | Part B: `/watch` at every width with 8.7's three conflicts resolved, and watch status with its empty states |
+| `design/MR-B2-Watch-screens-1.dc.html`, `-2` | Part B: the list and saved views, the film, show and season sheets, add, franchises, shelves, the person page |
+| `design/MR-C-Music-1.dc.html`, `-2` | Part C: music |
+| `design/MR-D-Games-1.dc.html`, `-2` | Part D: games |
+| `design/MR-E-Review-1.dc.html`, `-2`, `-3` | Part E: the review of what was drawn after the feel pass, the six redraws and the six missing 834px frames |
+| `design/MR-F-Unbuilt-1.dc.html`, `-2` | Part F: Parked for every medium, comics' *Coming out* and editors, Activity, the offline write states, search on the phone |
+| `design/mr.css` | The stylesheet the seventeen pages link. They also link `ledger-feel-tokens.css` and `support.js`, already in `design/` |
+| `design/screenshots/mediums-review/` | 234 PNGs, every frame in dark and light: `phone/` (169, 2×), `tablet/` (25), `desktop/` (35), `spec/` (9). Every PNG the hand-off note names is here, and nothing else is |
+| `design/STYLE_GUIDE.md` | A new §17 (Mediums-Review: navigation, accents, watch, music, games, departures, decisions), with edits to §2.7 (the 1-rail telescope), §7 (cover shapes), §9 (the stepper), §10 (the changelog), §11, §14.5 and §14.6 |
+| `design/tokens.css` | `+ NEW` `--m-music` (`--t2`'s value) and `--m-games` (`--t1`'s), both themes, measured. Nothing else changes |
+| `docs/design-briefs/2026-11-mediums-handoff.md` | The hand-off note for Claude Code: how to use the frames, the order that avoids rework, the shared components to build once, frame → screen, and what isn't drawn |
+
+**Rendering.** Served over HTTP from `design/`, every page renders with no
+console errors, and parts A–F each open with their heading. Opened as a
+`file://` URL, `support.js`'s fetch of the page itself is blocked by the
+browser's file-origin rule, but the page still draws.
+
+**Not drawn.** The hand-off note's *Not drawn, and why* covers the tablet
+frames for music's and games' sheets and lists, and `add` and `moveplan` at
+834px. It doesn't say that **part F has no 834px frames**: parked, comics'
+*Coming out*, the two editors, Activity and the offline states are drawn at
+the phone and the desktop (and as spec frames) only. The same tablet rule
+applies (E12–E17: a sheet is the phone's, 640px wide and centred; a list is
+the phone's in the 32px column), so each entry that builds one of those
+screens draws its 834px frame in its own PR (standing rule 6). Found by the
+spec review at close-out; the owner can still send it back to the canvas.
+
+**Status.** The owner took every recommendation (2026-11-24): MR-D1…MR-D24
+are accepted and MR-Q1…MR-Q24 are answered as recommended. Both are recorded
+in `docs/review/decisions.md` (D-177 to D-182). The two new tokens also joined
+`src/app/globals.css` and `design/mockups.html` in the same PR, because the token
+check holds `design/tokens.css` and `globals.css` equal (owner, 2026-11-24).

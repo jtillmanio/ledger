@@ -3642,6 +3642,10 @@ drawn as a short path (the `path` component: *X-Men → Excalibur → X-Men*).
 `--danger` marks only the rejected control and its message; nothing was written.
 The mockup's `newrun` gains an edit-mode frame and a cycle-error frame.
 
+*From 6.23 (2026-11-24, D-177):* frame F7 in `design/MR-F-Unbuilt-1.dc.html`
+draws editing a run's *Read first*, with the loop error naming the runs in it.
+It supersedes `newrun`'s prerequisites (`design/mockups-index.md` § *Nov 2026,
+mediums review*).
 **Check:** test asserts adding A→B when B→A exists is rejected with a clear
 message, and that adding A→D when D→C→B→A exists (a four-run cycle, soft edges
 included) is rejected naming all four.
@@ -4124,6 +4128,8 @@ and after cutover it can no longer be edited as a CSV.
   (`.claude/rules/schema.md`).
 - The mockup gains the screen (standing rule 6).
 
+*From 6.23 (2026-11-24, D-177):* frame F8 in `design/MR-F-Unbuilt-1.dc.html`
+draws the volume map editor, under Settings.
 **Check:** `Captain America #1` typed into a run with a run-scoped rule to 2018
 pre-selects `Captain America (2018) #1` marked *from the volume map*; the same
 label in another run, with only an any-run rule to 1998, pre-selects 1998; with
@@ -4882,6 +4888,10 @@ it is converted.
     and rail gain *Coming out* under Comics; add `/comics/releases` to
     the route table (architecture § Routes and data access); the mockup gains the screen and its empty state
     (*Follow a series from a run's ⋯ menu*).
+  - *From 6.23 (2026-11-24, D-177):* frames F5 and F6 in
+    `design/MR-F-Unbuilt-1.dc.html` draw `/comics/releases` and reviewing a
+    Metron check before anything is added. The check runs only when you tap
+    *Check now* (MR-Q21).
   - **Check:** with a recorded Metron fixture, *Check now* for one followed
     series stores its three upcoming issues and writes nothing to `issues`;
     accepting one through the review creates exactly one `issues` row (with
@@ -5175,6 +5185,10 @@ it is converted.
   - **Not drawn yet.** The mockup gains `/parked`, the *Park* verb on the
     status control and the dashboard line, at phone, tablet and desktop
     widths, before they are built; `design/mockups-index.md` lists them.
+  - *From 6.23 (2026-11-24, D-177):* the parked review covers every medium, one
+    group each, on one cadence (D-182, frames F1–F4 in
+    `design/MR-F-Unbuilt-1.dc.html`). Each medium's own entry adds its group
+    (8.8, 9.3, 10.3).
   - **Check (proposed):** `npm test`: parking the 2nd of 3 books in 2027 Q1
     writes `parked`, removes its plan row and leaves Q1 at ordinals 1–2, and
     Undo restores `to_read` at position 2. A parked book is absent from
@@ -5344,6 +5358,9 @@ it is converted.
   `design/mockups-index.md` still draw and describe the phone bar's Search icon
   where D-113 put Settings' gear. Redraw the bar with the gear (and this
   trigger wherever Search lands on the phone) when this is built.
+  *From 6.23 (2026-11-24, D-177):* frame F16 in `design/MR-F-Unbuilt-2.dc.html`
+  draws search on the phone: *Search everything*, verbs first, opened from the
+  bar (D-178). The bar's button is 6.25's.
 
 - ☐ 6.2 Stats and year in review — depends on 1.5 and 2.1b · L
   Five charts per product § Metrics: books/year with plan overlaid, genre mix
@@ -5367,6 +5384,10 @@ it is converted.
   save #141, kept offline · Retry*); `queued → online` shows *Synced ✓* for 2s,
   the pill's dot cross-fading amber to green. The mockup's `states` gains three
   frames: failed, retrying, undone while queued.
+  *From 6.23 (2026-11-24, D-177):* frames F11–F15 in
+  `design/MR-F-Unbuilt-2.dc.html` draw the offline strip and sync pill's three
+  new states: retrying (amber, with a countdown), failed (a grey ×) and undone
+  while queued (MR-D22). They supersede `states`' offline frame.
 
 - ☐ 6.8 Events page with your read-it/skip verdicts · S
 
@@ -5469,6 +5490,11 @@ it is converted.
   - Filters by medium and year. Undated reads sit at the foot, under *No date*.
   - The sidebar gains *Activity*. Rows come from an `activity_log` view;
     nothing is stored.
+  - *From 6.23 (2026-11-24, D-177):* frames F9 and F10 in
+    `design/MR-F-Unbuilt-2.dc.html` draw `/activity`: by month under year
+    headings with each year's totals, medium chips, and undated reads in one *No
+    date* group at the end (MR-Q20). It sits in the tab row after *Progress*
+    (D-178).
   - **Check:** a book read in two different years appears in both (D-65); six
     marks in one run on one day render as one row with the range; undated reads
     come last; each year's book total equals `books_by_year`'s.
@@ -5550,6 +5576,15 @@ it is converted.
   *From 6.23 (2026-11-18):* the mediums review's part E asks for these frames
   (`docs/design-briefs/2026-11-mediums-review.md`, `bdash`). If the owner picks one
   there, this entry starts from that drawing.
+  *From 6.23 (2026-11-24, TASK-126):* standalone Claude Design closes by
+  2026-12-14, so "the design tool" here is the
+  [Ledger canvas](https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH) in
+  claude.ai, with the Ledger design system (`docs/04-design.md` § 1, *In
+  Claude*). A page drawn there comes into `design/` under its repo name.
+  *From 6.23 (2026-11-24, D-177):* the owner took the review's recommendation,
+  so this entry starts from frames E1–E6 in `design/MR-E-Review-1.dc.html`: an
+  84px mono kind key per level, an indent for each deeper level, and fixed meter
+  and count columns (MR-D19, `design/STYLE_GUIDE.md` §17.8).
   **Check:** (proposed; the owner agrees it by merging or edits it first) the
   design tool's frames cover phone, tablet and desktop, light and dark, the owner
   picks one, and Now and `/progress` match it; 2.2g's own Check still passes with
@@ -5568,7 +5603,7 @@ it is converted.
   a row at the top still opens downward; arrow keys, Esc and Tab behave as
   before.
 
-- ☐ 6.23 **Design review with Claude Design: the new mediums, and what was
+- ☑ 6.23 **Design review with Claude Design: the new mediums, and what was
   drawn since the feel pass** · M. Owner, 2026-11-18 (owner: *write a prompt
   to do a design review for the new mediums … also include any other design
   that hasn't been done. Even if development is done, this can be a design
@@ -5595,6 +5630,14 @@ it is converted.
     and doesn't build: 9.0's and 10.0's Checks (*the mockup gains each
     screen*) stay with them, and so does `src/app/globals.css` following any
     new token.
+  *From 6.23 (2026-11-24, TASK-126):* it runs on the
+  [Ledger canvas](https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH) in
+  claude.ai, not in standalone Claude Design, which closes by 2026-12-14
+  (owner, TASK-126 plan revision 1). The canvas is the design tool this entry
+  means. The review is its page `Mediums-Review`, delivered into the repo as
+  `design/MR-Main.dc.html` (with sixteen boards). The inventory was refreshed at
+  `66d3001`: `/progress`, Parked for books and the listen queue were drawn
+  since, and moved from part F to part E.
   **Check:** (proposed; the owner agrees it by merging or edits it first) the
   review page and its PNGs are in `design/` as the design tool delivered them,
   covering the prompt's parts A–F at phone, tablet and desktop, light and dark;
@@ -5603,6 +5646,54 @@ it is converted.
   log records where four and five media sit in the navigation and the answers
   to 8.7's three open questions; and each question the owner answered is a
   decisions row or a *From 6.23* note in the roadmap entry it changes.
+
+- ☐ 6.24 **Built screens follow the mediums review** · M. From 6.23 (TASK-126,
+  D-177). The review held most of what was drawn after the feel pass and
+  redrew four built screens; the owner accepted each departure. *Remove from
+  Listen next* is grey, as *Remove from shelf* is (MR-D16, frame E8). The
+  finish toast keeps one *Now reading* chip and *+N · Follow…*, and *Keep
+  going?* moves into the *Follow…* sheet, where *Rank it* keeps its row
+  (MR-D17, MR-Q19, frame E10; amends 2.2h). The batch and finish sheets'
+  steppers sit on `--sunk`, as §9 says (MR-D18, MR-Q18, frame E11). The
+  Library at the phone puts *Owned* and *Sort* in dropdown chips on one row
+  and draws the genre row (MR-D20, frame E7). Every phone bar's U+26B2 or text
+  gear is the drawn icon. The mockup gains the review's 834px frames for
+  `bookdetail`, `thisorthat`, `top`, `rebalance`, `moveplan`, `calibre` and
+  `settings` (E12–E17). Frames in `design/MR-E-Review-1.dc.html` to `-3`;
+  STYLE_GUIDE §17.8.
+  **Check:** (proposed; the owner agrees it by merging or edits it first)
+  browser test at 360px, light and dark: *Remove from Listen next* resolves to
+  no `--danger` colour; finishing a book in a series shows one *Now reading*
+  chip and *+N · Follow…*, and *Keep going?* is in the *Follow…* sheet; the
+  batch and finish sheets' stepper buttons resolve to `--sunk`; the Library
+  shows *Owned* and *Sort* as dropdown chips in one row and the genre row, and
+  nothing scrolls sideways; `design/mockups.html`'s `blist`, `status`,
+  `finishoffer`, `batch` and `settings` frames are redrawn from the review and
+  it gains the six 834px frames.
+
+- ☐ 6.25 **Navigation for four and five media** · M. From 6.23 (TASK-126,
+  D-178). The three-media phone bar is at its width limit, so this lands
+  before 9.0 adds a fourth medium. On the phone the bar reads *Ledger* · the
+  current medium as a 44px button that opens the **Switch medium** sheet, then
+  a 44px search button and the gear; the thumb bar's search slot goes, and
+  the tab row ends with a divider and the across-media items (*Inbox*,
+  *Progress*, and *Activity* once 6.17 builds it). The 834px rail's well lists
+  every medium by name; the 1024px icon rail has one switch button with a
+  menu; the 1280px sidebar lists every medium with the current one expanded,
+  an *Across media* group, and *Search · Ctrl K* under the wordmark, and the
+  desktop page headers drop their *Search* verb. Settings → Appearance gains
+  *Start on* (*Last used*, or a medium) for what `/` opens (MR-D7). Frames
+  A5–A10 in `design/MR-A-Navigation-1.dc.html` and `-2`; STYLE_GUIDE §17.1.
+  **Check:** (proposed; the owner agrees it by merging or edits it first)
+  browser test, light and dark: at 360px the bar shows the current medium as a
+  44px button whose sheet lists every built medium with the current one
+  `aria-current`, a 44px search button and the gear, nothing scrolls sideways,
+  and no dashboard's thumb bar has a search slot; the tab row ends with a
+  divider, *Inbox* and *Progress*; at 834px the rail names every medium; at
+  1024px the switch button opens a menu of every medium that arrows, Esc and
+  focus return work in; at 1280px the sidebar lists every medium with the
+  current one expanded and an *Across media* group; with *Start on* set to
+  Books, `/` opens `/books`; axe reports no new violations at each width.
 
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M
@@ -5654,6 +5745,10 @@ it is converted.
   >
   > Do not give me one real proposal and two strawmen. Also tell me if the
   > honest answer is that the current palette should stay.
+
+  *From 6.23 (2026-11-24, D-177):* two medium accents joined, `--m-music` and
+  `--m-games`, measured in `design/STYLE_GUIDE.md` §17.2. Games is ΔE 13.4 from
+  `--brand` in light (MR-Q5).
 
 ---
 
@@ -5887,6 +5982,10 @@ submitted) and `?note=`, and the add resolves that note in its own transaction
 row needs one (a schema question for this task's plan) (from TASK-009, 1.4b,
 PR #80).
 
+*From 6.23 (2026-11-24, D-177):* frames B25 and B26 in
+`design/MR-B2-Watch-screens-2.dc.html` draw search across films and shows with
+*Watched through*, and the TMDB error as a grey × with *Save to inbox*. They
+supersede `watchadd`.
 **Check:** test that adding a show with 2 seasons creates 1 `titles` row and 2
 `seasons` rows from a single TMDB call, and that re-adding updates rather than
 duplicating. With TMDB mocked to fail, *Save to inbox* writes one inbox row of
@@ -5943,6 +6042,10 @@ stored URLs and a URL is the wrong place for a list of title ids. Proposed:
 `watch_view_titles(view_id, title_id, kind IN ('added', 'removed'))`, both in
 the export. Membership is computed in the query, never stored.
 
+*From 6.23 (2026-11-24, D-177):* frames B16–B19 in
+`design/MR-B2-Watch-screens-1.dc.html` draw the list, saved views with titles
+added by hand and a collapsed *Removed*, *Add these to a shelf…*, and the
+desktop filter rail. The season is the unit everywhere (D-179).
 **Check:** test that marking every season watched flips the show's derived state
 to `watched` with nothing written to `title_status`; that marking one of three
 gives `watching` with `next_season = 2`; and that a film with no seasons still
@@ -5965,6 +6068,11 @@ the list when arrived at from the list, a full page on direct load or refresh.
 Show detail includes the season list with per-season status, and every sheet
 shows its rewatch history from 8.3's `watch_events`. design §13; mockups "Show detail — seasons".
 
+*From 6.23 (2026-11-24, D-177):* frames B20–B24 in
+`design/MR-B2-Watch-screens-1.dc.html` draw the film, show and season sheets,
+the season sheet opening in place with *‹ Show*, and a stale *Where to watch*.
+The status control's *Dropped* and *Park* fill grey when chosen (MR-D24). They
+supersede `titledetail`.
 **Check:** test that the back button dismisses the sheet and restores list
 scroll position; that a direct visit to `/watch/tv-1396` renders the full page;
 and that the sheet renders from cached `titles` and `seasons` with no TMDB call.
@@ -5981,6 +6089,9 @@ tree it reorders; child rows are links (`<a class="row" href="/watch/[id]">`);
 a title with a null `chronology_ordinal` shows in an *unplaced in chronology*
 group when Chronological is chosen.
 
+*From 6.23 (2026-11-24, D-177):* frames B28 and B29 in
+`design/MR-B2-Watch-screens-2.dc.html` draw *Release · Chronological* and the
+*unplaced in chronology* group. They supersede `franchise`.
 **Check:** test that adding a film in a TMDB collection offers to create or join
 that franchise; that a hand-made franchise accepts both a film and a show; and
 that `franchise_progress` counts a fully-watched show as watched via
@@ -6038,6 +6149,12 @@ the desktop header. Give `ThumbBar` (`src/components/ThumbBar.tsx`) its watch
 configuration here: slot 1 *Mark S2 watched* (the season-level verb above),
 slot 2 *+ Add*, slot 3 search.
 
+*From 6.23 (2026-11-24, D-177):* frames B1–B6 in
+`design/MR-B1-Watch-dashboard-1.dc.html` (and B27, the first run) draw `/watch`
+at every width. D-179 settles the three conflicts above: the season is the unit
+(*Mark S4 watched*), Up next has no Reorder (*All · Film · TV*), and Position
+reads franchise → seasons, with the 1-rail variant for a show in no franchise.
+Situation is *Paused* (MR-Q7). They supersede `watchlist` and `watchempty`.
 **Check:** test that a show with season 1 watched and season 2 watching appears
 once in Now and not in Up next; that a show with every season watched appears in
 neither; that the genre filter narrows the queue without changing its order; and
@@ -6070,6 +6187,12 @@ three tabs, never under the dashboard's derived *Paused*, and it comes back in
 5.15's review (*Keep parked · To watch · Off the watchlist*). Whether it is a
 `title_status` value or a row of its own is a question for 8.1's plan gate.
 
+*From 6.23 (2026-11-24, D-177):* frames B7–B15 in
+`design/MR-B1-Watch-dashboard-2.dc.html` draw In flight (*Watching*, *Films*,
+*Waiting for a new season*: MR-D15), Up next oldest first, Done with *Stopped*,
+and each tab's empty slate. A caught-up show with a new season returns to
+*Watching* with a toast (MR-Q8). Progress gains franchises and shows (MR-D23,
+frame E9), and *Park* joins the one parked review (D-182).
 **Check:** a show with 1 of 3 seasons watched is in In flight only; a show with
 all seasons watched is in Done with nothing written to `title_status`; a
 dropped film appears only under Stopped; the genre filter narrows Up next
@@ -6100,6 +6223,9 @@ on a person page, once 8.10 lands) adds every shown title to a new or existing t
 shelf, in the list's order. It is one write with one undo. After that, the
 shelf is yours and doesn't follow the filter.
 
+*From 6.23 (2026-11-24, D-177):* frames B30 and B18 in
+`design/MR-B2-Watch-screens-*.dc.html` draw watch shelves and *Add these to a
+shelf…*.
 **Check:** test that a book cannot be added to a title shelf, and vice versa.
 A shelf holding a film and a show renders both, in shelf order, each with its
 note. *Add these to a shelf…* on a list filtered to three titles adds three
@@ -6131,6 +6257,9 @@ TMDB (ui.md). The pattern is 5.8's *Checked 3 days ago · Check now*.
     from JustWatch, and attribution is its condition.
 - A daily cron for either refresh is a later option, with 7.6.
 
+*From 6.23 (2026-11-24, D-177):* frames B8 and B22 draw the new-season toast and
+*Where to watch* greyed and struck through after 30 days. Both refresh only on
+*Check now*, never when a page renders (MR-Q22).
 **Check:** with recorded fixtures:
 - a show TMDB now lists with 3 seasons, where 2 were stored, gains one
   `seasons` row, keeps its season statuses, and goes from `caught_up` to
@@ -6157,6 +6286,8 @@ maintain by hand (data model 2.5d).
   page into a shelf (8.6).
 - Studios and networks get 8.3's filters and saved views, not pages.
 
+*From 6.23 (2026-11-24, D-177):* frame B31 in
+`design/MR-B2-Watch-screens-2.dc.html` draws the person page.
 **Check:** a person credited as director on two listed films and as cast on
 one show renders three rows under two roles. A name on a film's sheet links to
 the page. Opening the page makes no TMDB call, and *Their other work* makes
@@ -6198,6 +6329,11 @@ The screens, phone, tablet and desktop, in the mockup:
 design tool first. This entry then draws the mockup's frames from that review,
 and the media-bar decision is 6.23's decisions row.
 
+*From 6.23 (2026-11-24, D-177):* the review is in. Music is drawn in
+`design/MR-C-Music-1.dc.html` and `-2` (frames C1–C20), and navigation for four
+and five media is D-178, which 6.25 builds before this entry. This Check's
+mockup frames are drawn from those frames. The accent is `--m-music` (`--t2`'s
+values).
 **Check:** the mockup gains each screen at phone, tablet and desktop widths,
 `design/mockups-index.md` lists them, and the media-bar decision is in the
 decisions log.
@@ -6240,6 +6376,9 @@ Depends on 9.1.
   screen offers *Save to inbox*. The inbox has no Music kind yet: that is a
   schema question for this task's plan.
 
+*From 6.23 (2026-11-24, D-177):* frames C17–C19 in `design/MR-C-Music-2.dc.html`
+draw artists with MusicBrainz's disambiguation, trimming the albums on follow,
+and the error with *Save to inbox*.
 **Check:** adding an artist with 12 release groups creates 12 albums and makes
 no recording requests; adding them again updates without duplicating; a
 mocked failure offers *Save to inbox*.
@@ -6252,6 +6391,10 @@ discography by year with each album's status, and `listened / listed` derived.
 An album can be parked (5.15, D-105): off To listen until 5.15's review; its
 value is asked with `album_status` at 9.1's plan gate.
 
+*From 6.23 (2026-11-24, D-177):* frame C11 in `design/MR-C-Music-2.dc.html`
+draws the album sheet. Marking an album listened marks every unmarked track
+listened, and skipped tracks stay skipped (MR-Q9). *Park* joins the one parked
+review (D-182).
 **Check:** marking an album listened twice appends two events and leaves one
 status row, and `artist_progress` counts the album once.
 
@@ -6270,6 +6413,10 @@ Depends on 9.2 (owner: *for specific artists, rank each song*).
 - A recording on several albums is one song, ranked once (dedupe by recording
   MBID).
 
+*From 6.23 (2026-11-24, D-177):* frames C13–C16 in `design/MR-C-Music-2.dc.html`
+draw *This or that* for songs, resuming a half-ranked album, *Move to…* and
+handles. There is one ranking across every artist, viewed by artist or year
+(MR-Q12).
 **Check:** ranking five songs through the sorter, with scripted answers, gives
 the expected order in at most 8 picks. Stopping and reopening resumes with the
 placed songs kept. Ordinals stay contiguous after a song is unranked.
@@ -6280,6 +6427,9 @@ stored. Per album: its ranked songs' median rank, how many of them are in your
 top 10 and top 25, and how many of its songs are ranked. The artist page can
 sort its albums by it.
 
+*From 6.23 (2026-11-24, D-177):* frame C10 in `design/MR-C-Music-2.dc.html`
+draws the artist page sorted by *Favourites* (median rank, songs in your top 10,
+songs ranked).
 **Check:** a fixture ranking in which album A holds ranks 1–3 and album B
 ranks 4–8 orders A first. An album with unranked songs counts only its ranked
 ones, and says *4 of 11 ranked*.
@@ -6297,6 +6447,10 @@ its plan gate.
 
 Nothing is stored beyond what 9.1 defines.
 
+*From 6.23 (2026-11-24, D-177):* frames C1–C8 in `design/MR-C-Music-1.dc.html`
+draw the dashboard, with square covers (MR-D12) and a lens of one cell per track
+(MR-D13), Up next's *All · New* (MR-Q10), a grey discography rail (MR-Q11), and
+status with *Artists · listening* (MR-D15). Progress gains artists (MR-D23).
 **Check:** an album with one listen is in Done, not Up next; an artist
 followed as `listening` with two albums to listen shows in In flight and both
 albums in Up next; tab counts equal row counts; the feel-pass screenshots.
@@ -6340,6 +6494,9 @@ current endpoint list and terms at plan time**: they changed twice in 2026.
   app works only while its owner has Spotify Premium: confirm that before
   the plan.
 
+*From 6.23 (2026-11-24, D-177):* frames C20 and C7 draw the review list of
+Spotify follows, where nothing is guessed, and *Added from your Spotify
+follows*.
 **Check (proposed):** against recorded fixtures: a followed Spotify artist
 whose MusicBrainz record links to it becomes one `want` follow, and one with
 no link lands in the review list with no follow. A release group dated after
@@ -6393,6 +6550,10 @@ and in the sidebar, and draw at phone, tablet and desktop:
 *From 6.23 (2026-11-18):* the mediums review's parts A and D draw these in the
 design tool first, and this entry draws the mockup's frames from that review.
 
+*From 6.23 (2026-11-24, D-177):* the review is in. Games are drawn in
+`design/MR-D-Games-1.dc.html` and `-2` (frames D1–D18); navigation is D-178,
+which 6.25 builds; the accent is `--m-games` (`--t1`'s values). This Check's
+mockup frames are drawn from those frames.
 **Check:** the mockup gains each screen at phone, tablet and desktop widths,
 `design/mockups-index.md` lists them, and where Games sits in the navigation
 is in the decisions log.
@@ -6424,6 +6585,11 @@ data model 2.22 for the games shape. Proposed:
   the same PR. Every new table except the cache goes in
   `src/db/export-tables.ts`.
 
+*From 6.23 (2026-11-24, D-177):* hours are logged by hand and measured against
+the time-to-beat estimate chosen per game, main story by default, with no
+account sync (D-181). Covers are 2:3 with IGDB's art cropped (MR-Q23), and a
+set-aside rotation game never reaches Done (MR-Q15). Each is a column question
+for this entry's plan gate.
 **Check (proposed):** a recorded IGDB fixture parses into a `games` row with
 its genres, its time to beat, and a `game_releases` row per platform with its
 date precision. A `rotation` game set to `finished` is refused, and a
@@ -6451,6 +6617,9 @@ first and marked.
   *Save to inbox*. The inbox has no Games kind yet: a schema question for the
   plan, as in 9.2.
 
+*From 6.23 (2026-11-24, D-177):* frames D14–D16 in `design/MR-D-Games-2.dc.html`
+draw your platforms first, the platform and play-style questions, and the IGDB
+error.
 **Check (proposed):** adding a game with releases on three platforms, one of
 them owned, offers only that one and writes one `games` row, one
 `game_status` row with the platform and play style, and a queue position at
@@ -6471,6 +6640,10 @@ middle of and completed), named at its plan gate:
   has no end. A game with no IGDB estimate says *no estimate* and is left out
   of the sum, never counted as zero.
 
+*From 6.23 (2026-11-24, D-177):* frames D3 and D8–D13 draw *Log time*,
+*Playing*, *In rotation*, a collapsed *Set aside* (MR-Q15), the queue and its
+total, grouping, and the game sheet with grey stop states (MR-D24). Progress
+gains game series (MR-D23), and *Park* joins the one parked review (D-182).
 **Check (proposed):** finishing a through game appends one `play_events` row
 and moves it to Done; a rotation game set aside stays out of Done; starting
 queued #2 of 3 leaves positions 1–2, and its undo restores the order; the
@@ -6492,6 +6665,8 @@ those release dates*.
   end of the queue if you said so when you added it.
 - The dashboard's situation slot (10.0) shows the next three to come out.
 
+*From 6.23 (2026-11-24, D-177):* frames D17 and D1s draw *Coming out* at IGDB's
+precision, with a moved date marked *was Feb 2027*.
 **Check (proposed):** a game dated next month on your platform is listed
 under its month, and the same game dated last week is under *Out now*. A
 refresh that moves its date from February to May lists it under May with
@@ -6504,6 +6679,9 @@ Depends on 10.0, 10.3 and 10.4. `/games` in 10.0's design, from the views
 rules apply as for every dashboard: no red, every meter fills with
 `--ready`.
 
+*From 6.23 (2026-11-24, D-177):* frames D1–D7 in `design/MR-D-Games-1.dc.html`
+draw the dashboard, with the time-to-beat bar in Position (MR-D14, D-181) and
+*Log time* as the thumb bar's first slot (D-180).
 **Check (proposed):** with a fixture of one game playing, two in rotation,
 four queued and two coming out, each slot shows them as 10.0 draws; an empty
 ledger shows the search; the feel-pass screenshots at each width.
@@ -6532,6 +6710,8 @@ grouping (`tracks`). The queue the owner asked for in the same intake is
 - The mockup gains the games shelves and the grouped status list beside
   10.0's screens, at phone, tablet and desktop widths.
 
+*From 6.23 (2026-11-24, D-177):* frames D18 and D10 draw game shelves, *Your
+platforms* in Settings, and the queue grouped by platform.
 **Check (proposed):** a game cannot be added to a books or titles shelf, nor
 a book to a games shelf. Grouping three games on two platforms renders two
 groups counting 2 and 1 and writes nothing. *Add these to a shelf…* on a list

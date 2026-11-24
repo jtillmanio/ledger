@@ -1,4 +1,7 @@
-/* ══ Ledger tokens — feel pass v2 (2026-10-05) ════════════════════════════
+/* ══ Ledger tokens — feel pass v2 (2026-10-05) + Mediums-Review (2026-11-24) ══
+   2026-11-24: + NEW --m-music and --m-games, both themes (STYLE_GUIDE §17.2,
+   MR-D6). Nothing else changes value or name.
+   ─────────────────────────────────────────────────────────────────────────
    Supersedes the 2026-09-30 file (kept at design/archive/tokens-2026-09-30.css).
    Drop-in for src/app/globals.css: every existing name is kept.
    "+ NEW" = addition · "~" = changed value (see STYLE_GUIDE.md §10, §15).
@@ -37,6 +40,8 @@
   --g1:var(--t1); --g2:var(--t2); --g3:var(--t3); --g4:var(--t4);
   --g5:var(--t5); --g6:var(--t6); --g7:var(--t7); --g8:var(--t8);
   --m-comics:#7c3aed; --m-books:#0e7490; --m-watch:#be185d;
+  --m-music:#a21caf;   /* + NEW = --t2 · ΔE ready 47.4 · blocked 51.0 · danger 34.0 · 3:1 ≥ 5.21 on every surface */
+  --m-games:#2563eb;   /* + NEW = --t1 · ΔE ready 45.5 · blocked 52.4 · danger 44.0 · 3:1 ≥ 4.26 on every surface (brand 13.4: MR-Q5) */
   /* elevation — light: soft warm drop shadows */
   --sh-1:0 1px 2px rgba(20,16,10,.05);
   --sh-2:0 1px 2px rgba(20,16,10,.06),0 10px 28px -12px rgba(20,16,10,.22);
@@ -122,6 +127,8 @@
   --t1:#6f9bff; --t2:#e879f9; --t3:#a3e635; --t4:#fde047;
   --t5:#a98aee; --t6:#4fb3cc; --t7:#e878ab; --t8:#8a96a6;
   --m-comics:#a98aee; --m-books:#4fb3cc; --m-watch:#e878ab;
+  --m-music:#e879f9;   /* + NEW = --t2 · ΔE ready 53.7 · blocked 55.4 · danger 30.8 · 3:1 ≥ 6.42 on every surface */
+  --m-games:#6f9bff;   /* + NEW = --t1 · ΔE ready 51.5 · blocked 52.1 · danger 41.1 · 3:1 ≥ 5.87 on every surface */
   --sh-1:inset 0 1px 0 rgba(255,255,255,.04);
   --sh-2:inset 0 1px 0 rgba(255,255,255,.06),0 10px 28px -12px rgba(0,0,0,.75);
   --sh-3:inset 0 1px 0 rgba(255,255,255,.06),0 24px 56px -12px rgba(0,0,0,.85);
