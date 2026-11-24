@@ -808,7 +808,15 @@ test.describe("where the book sits (2.2g, 6.21)", () => {
     await expect(keys(page)).toHaveText(["Universe", "Series", "Subseries"]);
     await expect(keys(page)).toHaveText(["UNIVERSE", "SERIES", "SUBSERIES"], { useInnerText: true });
     await expectLadder(page, [0, 1, 2]);
+    // Each deeper key's elbow is a --rule-2 hairline, left and bottom, before its word (E1).
     await expect(page.locator(".now-where-key .now-where-elbow")).toHaveCount(2);
+    const rule2 = await tokenColour(page, "--rule-2");
+    for (const elbow of await page.locator(".now-where-elbow").all()) {
+      const s = await computedStyle(elbow, ["border-left-color", "border-bottom-color", "border-left-width", "border-bottom-width"]);
+      expect(s).toEqual({ "border-left-color": rule2, "border-bottom-color": rule2, "border-left-width": "1px", "border-bottom-width": "1px" });
+    }
+    const [elbow1, key1] = [await box(".now-where-elbow", page), await box(".now-where-key", page, 1)];
+    expect(elbow1.x + elbow1.width, "the elbow sits in the key's step, before its word").toBeLessThanOrEqual(key1.x + 10 + 0.5);
     const want = await viewFigures();
     expect(want).toEqual(["1 / 4", "1 / 8", "1 / 4"]);
     await expect(figures(page)).toHaveText(want);
