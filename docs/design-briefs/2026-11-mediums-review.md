@@ -6,8 +6,11 @@ with the Ledger design system installed (`docs/04-design.md` § 1, *In
 Claude*). Standalone Claude Design closes by 2026-12-14, so the review is not
 run there (owner, 2026-11-24; TASK-126, plan revision 1). Claude Code checks
 the inventory below against `main` on the day it is run and cuts the roadmap
-excerpt (TASK-126's plan, steps 1–2). Then the owner pastes everything under
-**The prompt** into the canvas, with the files under **Attach**. What comes back
+excerpt (TASK-126's plan, steps 1–2). Then the owner starts a new chat in
+claude.ai, signed in to the account that owns the canvas, attaches the files
+under **Attach** with the composer's attach button, and pastes everything
+under **The prompt**. Its first lines name the canvas, so that chat draws on
+it. What comes back
 is recorded by steps 4–6. Nothing here changes a design source on its own:
 `design/*.dc.html`, `design/STYLE_GUIDE.md`, `design/tokens.css` and
 `design/screenshots/**` change only through what the design tool, the canvas,
@@ -32,12 +35,15 @@ and the type scale. So attach only what it doesn't have:
 | `design/tokens.css` | Palette 1c as the repo has it, both themes, with the `+ NEW` and `~` marks a new token follows. |
 | `design/mockups.html` | Every screen as it stands, including the frames Claude Code drew after the feel pass (part E). Large: point at screens by their `data-id`. |
 | `design/mockups-index.md` | What each `data-id` holds, and what each frame was redrawn for. |
-| `docs/04-design.md` § 10 | The UX floor every frame must meet. |
+| `docs/04-design.md` § 10 (cut to its own file, `ux-floor.md`) | The UX floor every frame must meet. |
 | `docs/design-briefs/2026-11-mediums-roadmap-excerpt.md` | The behaviour behind each screen: `docs/05-roadmap.md` Phases 8, 9 and 10 in full, then every entry parts A, E and F name. Cut by 6.23's plan, step 2, with `scripts/task.ps1`. |
 | `design/screenshots/` (all three folders) | Only if the canvas's pages don't render: the feel pass as pictures. |
 
 ## The prompt
 
+> Please work on my Ledger canvas: https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH
+> Add the review there as a new page, Mediums-Review, beside the Feel pass and Specs pages. The six files attached to this message are the current versions; where the canvas or anything else disagrees with them, they win.
+>
 > I'm handing you a design review, the second one on this app. You did the
 > first in October 2026: the feel pass, the `Main` page on this canvas, with
 > its desktop pages (`LedgerDesktop`, `LedgerNav`), its style guide (§14–§16,
