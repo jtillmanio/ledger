@@ -1,7 +1,7 @@
 ---
 id: TASK-143
 title: 6.24 Built screens follow the mediums review (1 of 4) — the capped finish toast
-status: Draft
+status: Ready
 depends_on: []
 size: M
 model: opus

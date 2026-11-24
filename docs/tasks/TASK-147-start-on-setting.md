@@ -1,7 +1,7 @@
 ---
 id: TASK-147
 title: 6.25 Navigation for four and five media (1 of 3) — Start on, for what / opens
-status: Draft
+status: Ready
 depends_on: []
 size: M
 model: sonnet

@@ -1,7 +1,7 @@
 ---
 id: TASK-146
 title: 6.24 Built screens follow the mediums review (4 of 4) — the mockup's settings frame, gear icons and six 834px frames
-status: Draft
+status: Ready
 depends_on: [TASK-143, TASK-144, TASK-145]
 size: S
 model: sonnet

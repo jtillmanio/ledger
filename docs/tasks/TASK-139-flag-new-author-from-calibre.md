@@ -1,7 +1,7 @@
 ---
 id: TASK-139
 title: 4.6b Flag a book the sync created under a new author
-status: Draft
+status: Ready
 depends_on: []
 size: M
 model: opus

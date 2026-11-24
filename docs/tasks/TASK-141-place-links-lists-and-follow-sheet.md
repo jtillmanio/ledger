@@ -1,7 +1,7 @@
 ---
 id: TASK-141
 title: 5.9b Every other place line links its names (2 of 3) — the status rows, lists and follow sheet
-status: Draft
+status: Ready
 depends_on: [TASK-140]
 size: M
 model: sonnet

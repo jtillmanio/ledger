@@ -1,7 +1,7 @@
 ---
 id: TASK-140
 title: 5.9b Every other place line links its names (1 of 3) — the dashboard and the plan screens
-status: Draft
+status: Ready
 depends_on: []
 size: M
 model: sonnet

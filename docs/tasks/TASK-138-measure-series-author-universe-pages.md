@@ -1,7 +1,7 @@
 ---
 id: TASK-138
 title: 0.14e Series, author and universe pages are measured
-status: Draft
+status: Ready
 depends_on: []
 size: S
 model: sonnet

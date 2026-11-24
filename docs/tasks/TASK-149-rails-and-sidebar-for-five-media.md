@@ -1,7 +1,7 @@
 ---
 id: TASK-149
 title: 6.25 Navigation for four and five media (3 of 3) — the tablet rail, the icon rail's menu and the sidebar
-status: Draft
+status: Ready
 depends_on: [TASK-147, TASK-148]
 size: M
 model: opus
