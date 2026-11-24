@@ -44,7 +44,7 @@ holds the shared JS once and `test/perf.test.ts` holds the table in
 adding the label turns the job green with no new push. The job passes on this
 entry's own PR, and `lighthouse-metrics` is kept 90 days.
 - [x] AC-2: On fixture metrics, document + RSC growth fails only when it is over both 10% and 1,500 bytes (10% and 1,400 bytes passes, 9% and 2,000 bytes passes, 11% and 1,600 bytes fails), and request growth fails at 4 and passes at 3.
-- [ ] AC-3: Every ceiling in `budget.json` is this entry's preview measurement plus 25% (rounded as the plan says), written in the PR body as measured → ceiling per id, and `budget.json`'s `$comment` and § Performance budget say a ceiling is raised only with a decision (D-n).
+- [ ] AC-3: Every ceiling in `budget.json` is this entry's preview measurement plus 25%, or plus one PR's growth limit where that is larger (D-175; reworded by the owner at close-out, 2026-11-24), rounded as the plan says, written in the PR body as measured → ceiling per id, and `budget.json`'s `$comment` and § Performance budget say a ceiling is raised only with a decision (D-n).
 - [x] AC-4: § Performance budget keeps the table, the growth limits and how a ceiling is raised, and links `docs/perf-budget-history.md`, which holds every raise paragraph from PR #80 to #224 as it was. `docs/GIT-PR.md` says when to ask for **Perf growth** and that Claude never adds the label.
 - [x] AC-5: The per-route reports' artifacts keep 14 days; only `lighthouse-metrics` changes to 90 (both read from `lighthouse.yml` in a test).
 

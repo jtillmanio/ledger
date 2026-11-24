@@ -244,7 +244,8 @@ route handler check, CLS and accessibility stay as 0.10 built them.
 - **Ceilings are loose, and raised by decision.** `scripts/perf/budget.json`
   holds the shared JS once (the scripts every measured route loads) and, per
   route, only that route's own JS, document + RSC and requests. Each is the
-  measurement on this entry's preview plus 25%. A ceiling is raised only with a
+  measurement on this entry's preview plus 25%, or plus one PR's growth limit
+  where that is larger (D-175). A ceiling is raised only with a
   decision (D-n), not in a feature's PR.
 - **Only the app's requests count.** Requests to another origin (cover images
   and their redirects) are reported, not budgeted. Document + RSC bytes already
