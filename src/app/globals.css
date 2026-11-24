@@ -2380,16 +2380,29 @@ section[data-plan="year"] h2.group-head{color:var(--blocked)}
 .now-next-go{flex:none;margin-left:auto;color:var(--muted);font-size:1rem}
 @media (hover:hover) and (pointer:fine){ .now-next:hover .now-next-text{text-decoration:underline} }
 .now-next:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring)}
-/* Task 2.2g (D-119): where the book sits. Thin stacked rows under Now's band, above *Next in*: the name,
-   a meter filled with --ready, and read / total in mono. The rollup's size (--fs-caption), never the hero's.
-   Its track needs its own outline: --sunk alone is under 3:1 on --surface, --faint-deco is not. */
-.now-where{list-style:none;margin:0;padding:12px 16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
-.now-where li{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(7ch,max-content);align-items:center;column-gap:12px;
+/* Task 2.2g (D-119), redrawn by 6.21 (MR-D19, frames E1–E6 of MR-E-Review-1; STYLE_GUIDE §17.8): where the
+   book sits, a ladder inside Now's band, above *Next in*. One grid for every row (each li a subgrid), so the
+   columns hold whatever a figure's length: an 84px mono kind key, the name (wraps), a 52px meter filled with
+   --ready, and read / total in mono, right-aligned. The rollup's size (--fs-caption), never the hero's. Each
+   deeper level's key steps in 10px, a --rule-2 hairline elbow before it. The meter's track needs its own
+   outline: --sunk alone is under 3:1 on --surface, --faint-deco is not.
+   On the phone the band wraps it onto a whole row of its own, under the cover and the text (E1); from 768px
+   it sits in the text column (below). */
+.now-band:has(>.now-where){flex-wrap:wrap;row-gap:12px}
+.now-where{flex:0 0 100%;min-width:0;list-style:none;margin:0;padding:0;display:grid;
+  grid-template-columns:84px minmax(0,1fr) 52px minmax(44px,max-content);column-gap:8px;row-gap:4px;
   font:var(--fs-caption) var(--sans);color:var(--ink-2)}
-.now-where-name{min-width:0;overflow-wrap:anywhere}
-.now-where .emeter{display:block;height:6px;border-radius:var(--r-full);background:var(--sunk);
+.now-where li{grid-column:1/-1;display:grid;grid-template-columns:subgrid;align-items:center;min-height:24px}
+.now-where-key{position:relative;font:500 var(--fs-kicker) var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.now-where li[data-depth="1"] .now-where-key{padding-left:10px}
+.now-where li[data-depth="2"] .now-where-key{padding-left:20px}
+.now-where-elbow{position:absolute;top:-2px;left:2px;width:6px;height:10px;border-left:1px solid var(--rule-2);
+  border-bottom:1px solid var(--rule-2);border-bottom-left-radius:3px}
+.now-where li[data-depth="2"] .now-where-elbow{left:12px}
+.now-where-name{min-width:0;overflow-wrap:anywhere;color:var(--ink)}
+.now-where .emeter{display:block;height:5px;border-radius:var(--r-full);background:var(--sunk);
   box-shadow:inset 0 0 0 1px var(--faint-deco);overflow:hidden}
-.now-where .emeter i{display:block;height:100%;background:var(--ready)}
+.now-where .emeter i{display:block;height:100%;border-radius:var(--r-full);background:var(--ready)}
 .now-where-n{text-align:right;color:var(--ink-2)}
 /* *Or keep going*: under the offer. Below the tablet a whole row before Pick something else, its
    basis spanning the -20px margins as that link's does. */
@@ -2487,8 +2500,13 @@ section[data-plan="year"] h2.group-head{color:var(--blocked)}
   .pick-else{flex:0 0 auto;margin:0;padding:0 4px;border-top:0;white-space:nowrap}
   .keep-going{order:1;margin:14px -20px -14px}
   .now-next{padding:8px 20px}
-  .now-where{padding:12px 20px}
-  .now-where li{grid-template-columns:minmax(0,1fr) 120px minmax(7ch,max-content)}
+  /* Where the book sits from 768px (E5, E6): the text column, under the page count, capped at --lens-max;
+     the cover spans the text and the rows. With no rows the band stays as it was. */
+  .now-band:has(>.now-where){display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto 1fr;row-gap:12px}
+  .now-band:has(>.now-where) .now-cover{grid-row:1/3}
+  .now-band:has(>.now-where) .now-body .grow{display:none}
+  .now-band:has(>.now-where) .now-pages{margin-top:6px}
+  .now-where{grid-column:2;align-self:start;max-width:var(--lens-max)}
   .qcard{padding:20px}
 }
 @media (min-width:768px) and (max-width:1023px){

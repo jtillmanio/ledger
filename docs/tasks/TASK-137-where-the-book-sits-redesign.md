@@ -1,14 +1,14 @@
 ---
 id: TASK-137
 title: 6.21 Redesign where the book sits, with Claude Design
-status: Ready
+status: In progress
 depends_on: [TASK-126]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 9c82957
 ---
 
 # TASK-137 — 6.21 Redesign where the book sits, with Claude Design
@@ -62,9 +62,41 @@ How a book's universe, author, series and subseries read in Now, on the tablet a
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The drawing gives each meter `role="img"` with a percentage; the build keeps it `aria-hidden`, since the `read / total` beside it is the text a screen reader reads (approved at plan).
+- E1–E6 don't draw 1.17b's status control under the band: the frames are crops, not a decision to drop it; it stays where it is (approved at plan).
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-24.
+
+**The drawing.** Frames E1–E6 in `design/MR-E-Review-1.dc.html` (delivered by TASK-126, PR #336; D-177; MR-D19; `design/STYLE_GUIDE.md` §17.8; PNGs `design/screenshots/mediums-review/{phone,tablet,desktop}/E1`–`E6-{dark,light}.png`). Each level gains an 84px mono kind key (UNIVERSE, SERIES, SUBSERIES, AUTHOR; `500 11px/14px` mono, `.06em`, `--muted`), each deeper level's key indented 10px with a `--rule-2` hairline elbow; the name (wraps; links as built); a fixed 52px meter (5px, `--sunk` track, `--faint-deco` ring, `--ready` fill); `read / total` in mono, right-aligned, in a fixed column (44px in the drawing). 12/16 type. On the tablet and desktop the rows sit in the hero's text column, capped at `--lens-max`. `/progress` is **held** (§17.8; `design/mockups-index.md` sends E9 to 8.8, 9.6 and 10.3): no code change there.
+
+**Steps**
+1. `src/components/WhereItSits.tsx`: a kind key per row (text *Universe*, *Series*, *Subseries*, *Author*, capitals by CSS so a screen reader reads a word); depth = the row's place in the list (`data-depth`), an `aria-hidden` elbow on depth ≥ 1; the meter stays `aria-hidden` (the figure is the text).
+2. `src/components/BooksNow.tsx`: the rows move inside `.now-band`, after `.now-body`. Phone: a second grid row under the cover and text. From 768px: the text column, under the page count, the cover spanning both rows. The status control, *Next in* and the foot stay where they are (their frames are out of scope).
+3. `src/app/globals.css`: `.now-where` rewritten to one grid, `84px minmax(0,1fr) 52px minmax(44px,max-content)`, each `li` a subgrid so a longer count can't misalign the columns; the 64px and 120px meter widths go; from 768px `max-width:var(--lens-max)`. Tokens only.
+4. `design/mockups.html` § `bdash`: the rows on the 390, 834 and desktop reading frames and the listening frame redrawn to the ladder. `design/mockups-index.md`: the `bdash` row says so (E1–E6, MR-D19), its pending-redraw row is cleared, and the `progress` row notes it was checked against the drawing and holds.
+5. Loading (AC-5): `src/app/books/loading.tsx` unchanged, as TASK-056 argued: the skeleton can't know 0–3 rows, it is `/books`' only Suspense fallback, so the rows arrive in the same commit as the hero and replace the skeleton's nodes rather than shift them; Lighthouse's CLS gate on the preview checks it.
+
+**Files**
+- `src/components/WhereItSits.tsx` — the kind key, depth, elbow.
+- `src/components/BooksNow.tsx` — the rows into the band.
+- `src/app/globals.css` — the ladder's columns and type, the text column from 768px.
+- `design/mockups.html`, `design/mockups-index.md` — `bdash` redrawn; `progress` held.
+- `test/books-dashboard.test.ts`, `test/e2e/books-dashboard.spec.ts` — 2.2g's row and order assertions rewritten; AC-3 to AC-5.
+- `test/e2e/progress.spec.ts` — not changed: `/progress` is held and its tests already prove AC-4 and AC-5 there.
+
+**Test strategy**
+- AC-1 (2.2g's Check rewritten): `books-dashboard.spec.ts` § *where the book sits*: keys read UNIVERSE › SERIES › SUBSERIES in order, each step 10px further right; author row keyed AUTHOR; one row for a series alone; none for an unfollowed standalone and Between books; five slots in order.
+- AC-2: the PR names the file and frames; the mockup and index diff.
+- AC-3: the long-universe (≥ 40 chars) test at 360px asserts every level drawn and no sideways scroll; *a book on none* draws no `.now-where`.
+- AC-4: figures equal the views' (existing `viewFigures`), every fill `--ready` in light and dark (the FEEL tests run in every project), meter 52px at every width, the count column's right edges aligned.
+- AC-5: `floor()` (axe, contrast, targets) and screenshots at every project width, light and dark; the rows inside `.now-band`, under `.now-body` on the phone and beside the cover from 768px.
+- Unit (`books-dashboard.test.ts`): keys in order, `data-depth` 0/1/2, an elbow only on depth ≥ 1, no hex.
+
+**Risks**: subgrid support (Chromium 117+, every target browser); the tablet grid must not stretch the cover off 2:3 (the existing `align-self:flex-start` concern).
+
+**Follow-ups** (approved at plan): see § Follow-ups.
 
 ## Review log
 

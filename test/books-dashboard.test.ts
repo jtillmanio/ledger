@@ -640,6 +640,41 @@ describe("Where the book sits (2.2g): the rows' markup", () => {
     // Each link is named by its level's name, and the figure beside it stays text.
     expect([...doc.querySelectorAll("a")].map((a) => a.textContent)).toEqual(["Cosmere", "Brandon Sanderson", "Mistborn"]);
   });
+
+  // Task 6.21 (TASK-137, MR-D19, frames E1–E6): the ladder. Each row opens on its kind key, a word the CSS sets
+  // in capitals; each deeper level steps in once more, with a hairline elbow that says nothing to a screen reader.
+  it("keys each row by its kind, outermost first, and steps each deeper level in once, with an elbow (AC-1)", async () => {
+    const { Window } = await import("happy-dom");
+    const rows = async (levels: Parameters<typeof html>[0]) => {
+      const doc = new Window().document;
+      doc.body.innerHTML = await html(levels);
+      return [...doc.querySelectorAll(".now-where li")].map((li) => ({
+        key: li.querySelector(".now-where-key")?.textContent ?? null,
+        depth: li.getAttribute("data-depth"),
+        elbow: li.querySelectorAll('.now-where-key .now-where-elbow[aria-hidden="true"]').length,
+        meter: li.querySelector('.emeter[aria-hidden="true"]') !== null,
+      }));
+    };
+    expect(await rows([
+      { kind: "universe", id: "cosmere", name: "Cosmere", read: 9, total: 31 },
+      { kind: "series", id: "mistborn", name: "Mistborn", read: 4, total: 7 },
+      { kind: "subseries", id: "era-2", name: "Era Two", read: 0, total: 4 },
+    ])).toEqual([
+      { key: "Universe", depth: "0", elbow: 0, meter: true },
+      { key: "Series", depth: "1", elbow: 1, meter: true },
+      { key: "Subseries", depth: "2", elbow: 1, meter: true },
+    ]);
+    // The author stands where the universe would; a series alone is the outermost level, so it steps in not at all.
+    expect(await rows([
+      { kind: "author", id: "andy-weir", name: "Andy Weir", read: 2, total: 3 },
+      { kind: "series", id: "s", name: "Series S", read: 1, total: 4 },
+    ])).toEqual([
+      { key: "Author", depth: "0", elbow: 0, meter: true },
+      { key: "Series", depth: "1", elbow: 1, meter: true },
+    ]);
+    expect(await rows([{ kind: "series", id: "s", name: "Series S", read: 1, total: 4 }]))
+      .toEqual([{ key: "Series", depth: "0", elbow: 0, meter: true }]);
+  });
 });
 
 describe("Coming out on the rollup slot (task 5.7, TASK-100, AC-4)", () => {
