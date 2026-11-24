@@ -357,7 +357,7 @@ Nothing in this entry turns `LIGHTHOUSE_MODE` on.
 
 ---
 
-### ☐ 0.14d A plan-only run is never main's baseline · S
+### ☑ 0.14d A plan-only run is never main's baseline · S
 From TASK-113 (0.14b, PR #317). The report compares a PR with main's last run:
 `baselineRun` in `scripts/perf/lib/perf.mjs` takes the newest green
 `lighthouse.yml` run on the last merged PR's head. Since 0.14b, more runs end
@@ -368,6 +368,11 @@ there is no baseline, though an earlier run on the same head measured.
 
 - **The baseline is a run whose `report` job ran**, read from the run's jobs
   (the `report` job concluded success), not just the run's conclusion.
+- *Absorbed by TASK-133 (0.13, PR #332), at the owner's plan gate:*
+  `baselineRun` reads the `report` job, and `findBaseline` also reads every
+  commit of the merged PR, not just its head (a docs-only close-out never has a
+  preview), walking back past unmeasured PRs for 90 days. The Check is
+  `test/perf.test.ts` › "passes over a newer green run that measured nothing".
 
 **Check:** `test/perf.test.ts` feeds `baselineRun` a merged PR's head with an
 older green run whose `report` job ran and a newer green run whose `measure`

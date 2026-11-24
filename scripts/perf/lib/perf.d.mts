@@ -72,7 +72,7 @@ export function growthUnchecked(routes: Record<string, RouteResult>, baseline: B
 export function growthProblems(routes: Record<string, RouteResult>, baseline: Baseline | null): string[];
 export function judge(args: { gate: string[]; growth: string[]; labels: (string | { name?: string })[] | null | undefined }):
   { problems: string[]; accepted: string[] };
-export function ceilingsFrom(routes: Record<string, RouteResult>): {
+export function ceilingsFrom(routes: Record<string, RouteResult>, previous?: Record<string, RouteBudget>): {
   shared: { jsBytes: number };
   routes: Record<string, { docRscBytes: number; jsBytes: number; requests: number; a11y: number | null }>;
   lines: string[];

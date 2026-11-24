@@ -934,6 +934,10 @@ describe("the shared JS is budgeted once (task 0.13)", () => {
     const c = ceilingsFrom({ ...routes, watch: failed });
     expect(c.routes.watch).toBeUndefined();
     expect(c.lines).toContain("watch: not measured, so no ceiling");
+    // With budget.json's ceilings given, an unmeasured route keeps its own (live had no shelf, PR #332's run).
+    const kept = ceilingsFrom({ ...routes, watch: failed }, { watch: { docRscBytes: 8_400, jsBytes: 12_300, requests: 22, a11y: 100 } });
+    expect(kept.routes.watch).toEqual({ docRscBytes: 8_400, jsBytes: 12_300, requests: 22, a11y: 100 });
+    expect(kept.lines).toContain("watch: not measured, so it keeps its ceiling");
   });
 });
 

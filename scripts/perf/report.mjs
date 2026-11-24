@@ -266,11 +266,11 @@ async function rejudge() {
 
 /** budget.json's ceilings from one run's numbers, printed, or written with --write. */
 function ceilings(file, write) {
-  const c = ceilingsFrom(load(file).routes);
-  for (const line of c.lines) console.log(line);
-  if (!write) return;
   const path = new URL("./budget.json", import.meta.url);
   const old = JSON.parse(readFileSync(path, "utf8"));
+  const c = ceilingsFrom(load(file).routes, old.routes);
+  for (const line of c.lines) console.log(line);
+  if (!write) return;
   // The route list's order, one route a line, as the file has always been laid out.
   const ids = [...ROUTES.map((r) => r.id).filter((id) => c.routes[id]), ...Object.keys(c.routes).filter((id) => !ROUTES.some((r) => r.id === id))];
   const one = (o) => JSON.stringify(o).replace(/^\{/, "{ ").replace(/\}$/, " }").replace(/,"/g, ', "').replace(/":/g, '": ');

@@ -366,9 +366,10 @@ export function judge({ gate, growth, labels }) {
  * with 1 KB of its own JS would otherwise have 250 bytes of room under a
  * 3,000-byte limit; owner, plan gate 2026-11-23). Bytes are rounded up to the
  * next 100, requests to a whole number; accessibility is the score measured.
- * `lines` is "measured → ceiling" per id, for the PR body.
+ * `lines` is "measured → ceiling" per id, for the PR body. A route the run
+ * didn't measure keeps its ceiling from `previous` (budget.json's routes).
  */
-export function ceilingsFrom(routes) {
+export function ceilingsFrom(routes, previous = {}) {
   const shared = sharedScripts(routes);
   const up = (v, step) => Math.max(0, Math.ceil(v / step - 1e-9) * step);
   const ceil = (v, grow, step) => up(Math.max(v * 1.25, v + grow), step);
@@ -378,7 +379,12 @@ export function ceilingsFrom(routes) {
   const out = { shared: { jsBytes: sharedCeil }, routes: {}, lines: [`shared JS: ${n(sharedNow)} → ${n(sharedCeil)}`] };
   for (const [id, r] of Object.entries(routes)) {
     if (!measuredRoute(r)) {
-      out.lines.push(`${id}: not measured, so no ceiling`);
+      if (previous[id]) {
+        out.routes[id] = { ...previous[id] };
+        out.lines.push(`${id}: not measured, so it keeps its ceiling`);
+      } else {
+        out.lines.push(`${id}: not measured, so no ceiling`);
+      }
       continue;
     }
     const doc = r.median.docRscBytes;

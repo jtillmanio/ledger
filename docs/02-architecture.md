@@ -314,8 +314,8 @@ tables.
     this table to it). The shared JS, the scripts every measured route loads
     (the framework and layout chunks, about 150 KB), is one number; each
     route's JS is only its own. Each ceiling is a measurement plus 25%, never
-    less than the measurement plus one PR's growth limit (a route with 1 KB of
-    its own JS would otherwise have 250 bytes of room), bytes rounded up to
+    less than the measurement plus one PR's growth limit (D-175: a route with
+    1 KB of its own JS would otherwise have 250 bytes of room), bytes rounded up to
     the next 100 and requests to a whole number, written by `node
     scripts/perf/report.mjs ceilings <metrics.json> --write`; the
     accessibility score is the one measured. A ceiling is raised only with a
@@ -327,29 +327,29 @@ tables.
     | Route | Document + RSC bytes | JS bytes | Requests | Accessibility ≥ |
     |---|---|---|---|---|
     | Shared JS (every route loads it) | – | 187,800 | – | – |
-    | `/login` | 5,000 | 3,000 | 17 | 100 |
-    | `/comics` | 17,100 | 15,500 | 24 | 100 |
-    | `/comics/runs` | 46,600 | 4,200 | 22 | 100 |
+    | `/login` | 5,100 | 3,000 | 17 | 100 |
+    | `/comics` | 17,200 | 15,500 | 24 | 100 |
+    | `/comics/runs` | 46,400 | 4,200 | 22 | 100 |
     | `/comics/status` | 9,300 | 9,600 | 23 | 100 |
-    | `/books/status` | 10,300 | 29,700 | 25 | 100 |
-    | `/progress` | 12,800 | 5,100 | 24 | 100 |
-    | `/parked` | 8,600 | 15,200 | 24 | 100 |
-    | `/comics/bendis-disassembled` | 12,800 | 17,400 | 23 | 100 |
-    | `/comics/busiek-avengers` | 21,000 | 17,400 | 23 | 100 |
-    | `/books` | 12,100 | 31,900 | 28 | 100 |
-    | `/books/list` | 86,800 | 19,700 | 24 | 100 |
+    | `/books/status` | 10,500 | 29,800 | 25 | 100 |
+    | `/progress` | 12,800 | 5,000 | 24 | 100 |
+    | `/parked` | 8,600 | 15,100 | 24 | 100 |
+    | `/comics/bendis-disassembled` | 12,900 | 17,300 | 23 | 100 |
+    | `/comics/busiek-avengers` | 20,900 | 17,400 | 23 | 100 |
+    | `/books` | 12,000 | 32,000 | 28 | 100 |
+    | `/books/list` | 87,400 | 19,800 | 24 | 100 |
     | `/books/plan` | 12,100 | 25,200 | 28 | 100 |
     | `/inbox` | 9,100 | 5,900 | 23 | 100 |
-    | `/settings` | 10,100 | 21,400 | 25 | 100 |
-    | `/watch` | 8,400 | 12,300 | 22 | 100 |
+    | `/settings` | 10,000 | 21,400 | 25 | 100 |
+    | `/watch` | 8,400 | 12,400 | 22 | 100 |
     | `/books/releases` | 10,100 | 8,000 | 23 | 100 |
-    | `/books/shelves` | 10,500 | 5,300 | 23 | 100 |
+    | `/books/shelves` | 10,300 | 5,300 | 23 | 100 |
     | `/books/shelves/[id]` | 11,600 | 11,900 | 25 | 100 |
-    | `/books/add` | 11,100 | 23,300 | 23 | 100 |
-    | `/books/top` | 12,000 | 10,000 | 24 | 100 |
-    | `/book/[id]` | 11,300 | 28,900 | 27 | 100 |
-    | `/comics/bendis-disassembled/add` | 26,500 | 17,200 | 22 | 100 |
-    | `/settings/calibre` | 9,700 | 15,900 | 25 | 100 |
+    | `/books/add` | 11,200 | 23,300 | 23 | 100 |
+    | `/books/top` | 12,100 | 10,000 | 24 | 100 |
+    | `/book/[id]` | 11,000 | 28,900 | 27 | 100 |
+    | `/comics/bendis-disassembled/add` | 26,400 | 17,200 | 22 | 100 |
+    | `/settings/calibre` | 9,800 | 16,600 | 25 | 100 |
     <!-- /perf-budget -->
 
     How the routes are measured, as 0.14c and earlier tasks set it: a
