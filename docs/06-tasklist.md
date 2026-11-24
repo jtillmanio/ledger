@@ -19,9 +19,9 @@ milestone._
 
 | Milestones | Scope | Roadmap phases | Entries |
 |---|---|---|---|
-| M1–M9 | **MVP: the books cutover** (1.26, D-128). Every MVP feature in [01-product.md § Feature index](01-product.md#feature-index) | 0, 1 (but 1.28), and 2.11a, plus what 1.25 names for `Books.xlsx` and the owner pulled ahead | 58 |
-| M10–M15 | **Next:** the pace engine, the comics dashboard, editing, and the comics cutover (1.28, in M13) | 2, 3, and 1.28 | 41 |
-| M16–M26 | **Later:** enrichment, the remaining surfaces, polish, AI curation, watch, music and games | 4–10, and 6.2b in M12 | 75 |
+| M1–M9 | **MVP: the books cutover** (1.26, D-128). Every MVP feature in [01-product.md § Feature index](01-product.md#feature-index) | 0, 1 (but 1.28), and 2.11a, plus what 1.25 names for `Books.xlsx` and the owner pulled ahead | 68 |
+| M10–M15 | **Next:** the pace engine, the comics dashboard, editing, and the comics cutover (1.28, in M13) | 2, 3, and 1.28 | 48 |
+| M16–M26 | **Later:** enrichment, the remaining surfaces, polish, AI curation, watch, music and games | 4–10, and 6.2b in M12 | 86 |
 
 - **M1–M9 are START-HERE's sittings under one numbering.** M1 and M2 are
   sittings 1–2 (Phase 0) with the Phase 0 work that came after them; M3–M9 are
@@ -64,12 +64,12 @@ milestone._
 
 | Check | Result |
 |---|---|
-| MVP features in an MVP milestone | 21/22 (F-01–F-20, F-58); F-73 sits in M17, pulled ahead of 1.26 (D-132) |
+| MVP features in an MVP milestone | 33 MVP features: 21 in M1–M9 (F-01–F-20, F-58); 12 sit in later milestones with their MVP entries pulled ahead of 1.26: F-73 (D-132), and F-23, F-31, F-33, F-34, F-59, F-60, F-65, F-66, F-68, F-74 and F-75 (D-139) |
 | Next and Later features scheduled | 19/19 Next, 34/34 Later |
-| Roadmap entries in exactly one milestone | 195/195 (recounted 2026-11-23; 6.22 placed in M21 the same day). 1.24 keeps its row, done another way, with no entry |
-| Roadmap entries serving a feature | 195/195 (recounted 2026-11-23, when twenty sub-entries and Phase 6 entries were mapped to their features) |
+| Roadmap entries in exactly one milestone | 202/202 (recounted 2026-11-24; 6.24 and 6.25 placed in M21 the same day). 1.24 keeps its row, done another way, with no entry |
+| Roadmap entries serving a feature | 202/202 (recounted 2026-11-24, when 4.6b, 5.9b, 6.24 and 6.25 were mapped to their features) |
 | MVP screens built by a task | `spine`, `range`, `batch`, `bulk`, `addsearch`, `apistates`, `add`, `blist`, `capture`, `queue`, `status`, `moveplan` (levels only), and the shell around `home`, `bdash` and `watchlist` (1.8); the dashboards' contents are M10 and M12 |
-| Tables | 46/46 built (`src/db/schema.ts`, migrations through `0034`; recounted 2026-11-23), each in *Entities → tasks* with what made it; every proposed table has its entry (below) |
+| Tables | 45/45 built (`src/db/schema.ts`, migrations through `0035`; recounted 2026-11-24, after 6.19 dropped `open_library_cache`), each in *Entities → tasks* with what made it; every proposed table has its entry (below) |
 
 ### Features → milestones
 
@@ -79,7 +79,7 @@ milestone._
 | F-02 Both workbooks migrated, rebuildable until cutover | MVP (then Next) | 0.3, 0.4, 0.5, 0.6, 0.7, 1.25, 1.29, 1.26, 1.28, 1.27, 1.31 | M1, M9, M13 |
 | F-03 Tested, released by hand, backed up | MVP | 0.1, 0.2, 0.11, 0.12, 0.15, 0.16, 6.20 | M1, M6, M2, M9, M21 |
 | F-04 Fast on a phone | MVP | 0.9, 0.10, 1.8d, 1.30, 0.13, 0.14, 0.14b, 0.14c, 0.14d, 0.14e | M2, M6, M9 |
-| F-05 One shell for three media | MVP | 1.8a, 1.8c, 1.8, 1.8e, 1.8b | M6 |
+| F-05 One shell for three media | MVP (then Later) | 1.8a, 1.8c, 1.8, 1.8e, 1.8b, 6.25 | M6, M21 |
 | F-06 Mark an issue read, in this run | MVP | 0.8a, 0.8b, 1.2 | M2, M3 |
 | F-07 Mark a range, adopt prior reads | MVP | 1.1 | M3 |
 | F-08 Resume where I stopped | MVP | 1.6 | M3 |
@@ -97,7 +97,7 @@ milestone._
 | F-20 Follow series, authors and universes | MVP (then Later) | 1.15, 5.11, 5.12 | M8, M17 |
 | F-21 The pace engine | Next (then Later) | 2.0, 2.0b, 2.1, 2.1b, 6.12 | M10, M20 |
 | F-22 Books dashboard and the plan rail | Next | 2.2, 2.2b, 2.2k | M10 |
-| F-23 Plan editing and rebalance | Next | 2.3, 2.7, 2.8, 2.10 | M11 |
+| F-23 Plan editing and rebalance | MVP (D-139) | 2.3, 2.7, 2.8, 2.10 | M11 |
 | F-24 Comics dashboard and the telescope | Next | 2.5, 2.5b, 2.4 | M12 |
 | F-25 Unlock cost, leverage and the frontier | Next | 2.6, 6.2b | M12 |
 | F-26 Run list by track and block | Next | 2.9 | M12 |
@@ -105,20 +105,20 @@ milestone._
 | F-28 Edit the catalog in place | Next | 3.1, 3.2, 3.7, 3.8 | M13 |
 | F-29 Detail sheets | Next (then Later) | 3.5, 8.4, 3.5b, 3.5c, 3.5d | M14, M23 |
 | F-30 Eras and spine v2 | Next | 3.6, 3.6b, 3.6c | M14 |
-| F-31 Ratings, notes and DNF | Next (then Later) | 3.4, 5.4, 5.5 | M14, M18, M17 |
+| F-31 Ratings, notes and DNF | MVP (3.4, 5.5; D-139), then Later (5.4) | 3.4, 5.4, 5.5 | M14, M18, M17 |
 | F-32 Adding at scale | Next | 3.10, 3.11, 3.12 | M15 |
-| F-33 Metadata backfill and covers | Later | 4.1, 4.2, 4.3, 4.4, 4.4b, 4.6 | M16 |
-| F-34 Shelves with context | Later | 5.1, 8.6, 5.1b | M17, M24 |
+| F-33 Metadata backfill and covers | MVP (4.2, 4.4; D-133, D-139), then Later (4.1, 4.3) | 4.1, 4.2, 4.3, 4.4, 4.4b, 4.6, 4.6b | M16 |
+| F-34 Shelves with context | MVP (5.1, D-139), then Later (8.6) | 5.1, 8.6, 5.1b | M17, M24 |
 | F-35 Tracks page | Later | 5.2 | M18 |
 | F-36 Editions: collected in | Later | 5.6, 5.10 | M18 |
 | F-37 Coming out | Later | 5.7, 5.8 | M17, M18 |
-| F-38 Series pages | Later | 5.9, 5.13 | M17, M18 |
+| F-38 Series pages | Later | 5.9, 5.9b, 5.13 | M17, M18 |
 | F-39 Search and the verb palette | Later | 6.1 | M19 |
 | F-40 Stats and the activity log | Later | 6.2, 6.17 | M19 |
 | F-41 Offline and the keyboard | Later | 6.4, 6.5 | M20 |
 | F-42 Prerequisite graph and events | Later | 6.3, 6.8 | M19 |
 | F-43 Choosing from the master list | Later | 6.10 | M19 |
-| F-44 Appearance | Later | 6.11, 6.14, 6.15, 6.9, 6.23 | M20, M21 |
+| F-44 Appearance | Later | 6.11, 6.14, 6.15, 6.9, 6.23, 6.24 | M20, M21 |
 | F-45 Hardening | Later | 6.13, 6.16, 6.18, 6.22 | M21 |
 | F-46 Import from Goodreads or StoryGraph | Later | 6.6 | M21 |
 | F-47 AI review and drafting | Later | 7.1, 7.2, 7.3, 7.4, 7.5 | M22 |
@@ -133,23 +133,23 @@ milestone._
 | F-56 Song ranking and favourite albums | Later | 9.4, 9.5 | M25 |
 | F-57 Music dashboard and status | Later | 9.6 | M25 |
 | F-58 Audiobooks | MVP | 1.23 | M9 |
-| F-59 A queue to listen next | Later | 5.14 | M17 |
-| F-60 Rank a book as I finish it, and every year's top ten | Next | 3.4b, 3.4c | M14 |
+| F-59 A queue to listen next | MVP (D-139) | 5.14 | M17 |
+| F-60 Rank a book as I finish it, and every year's top ten | MVP (D-139) | 3.4b, 3.4c | M14 |
 | F-61 New albums from the artists I follow on Spotify | Later | 9.7 | M25 |
 | F-62 Games: search, a queue, by my platforms | Later | 10.0, 10.1, 10.2, 10.3 | M26 |
 | F-63 Games coming out | Later | 10.4 | M26 |
 | F-64 Games dashboard | Later | 10.5 | M26 |
-| F-65 Plan a year or a quarter, with suggestions | Next | 2.10b | M11 |
-| F-66 Parked, and its review | Later | 5.15, 5.16, 8.8, 9.3, 10.1, 5.18 | M17, M18 (then M24–M26) |
+| F-65 Plan a year or a quarter, with suggestions | MVP (D-139) | 2.10b | M11 |
+| F-66 Parked, and its review | MVP (5.15, D-139), then Later (5.16, 8.8, 9.3, 10.1) | 5.15, 5.16, 8.8, 9.3, 10.1, 5.18 | M17, M18 (then M24–M26) |
 | F-67 Game shelves | Later | 10.6 | M26 |
-| F-68 Follow what I'm reading, and see what's next in it | Next | 2.2c, 2.2h, 2.2d, 2.10b | M10, M11 |
+| F-68 Follow what I'm reading, and see what's next in it | MVP (D-139) | 2.2c, 2.2h, 2.2d, 2.10b | M10, M11 |
 | F-69 In the middle of, and completed | Later | 5.12, 8.8, 9.6, 10.3 | M17 (then M24–M26) |
 | F-70 The Library, sorted | Next | 2.2e | M10 |
 | F-71 Every screen from a phone | Next | 2.2i | M10 |
 | F-72 Where the book sits | Next (then Later) | 2.2g, 6.21 | M10, M21 |
 | F-73 What I own: physical copies and audiobooks | MVP (D-132) | 5.17, 5.17b | M17, pulled ahead of 1.26 |
-| F-74 On deck by genre | Later | 4.5b, 4.5 | M16 |
-| F-75 The universe and series on every book row | Next | 2.2j, 2.2l | M10 |
+| F-74 On deck by genre | MVP (D-139) | 4.5b, 4.5 | M16 |
+| F-75 The universe and series on every book row | MVP (D-139) | 2.2j, 2.2l | M10 |
 
 ### Entities → tasks
 
@@ -159,7 +159,7 @@ milestone._
 | `blocks` | migration `0002` (ahead of 0.3) |
 | `run_issues`, `creators`, `issue_credits` | 0.7 (`0003`) |
 | `eras`, `reading_settings`, `shelves`, `shelf_books`, `volume_rules` | 0.3 (`0005`); `volume_rules` is loaded by 1.12, `eras` edited by 3.6, `reading_settings` by 2.0, shelves by 5.1 |
-| `metron_cache`, `open_library_cache` | 1.3b (`0008`), 1.4c (`0009`); `open_library_cache` is dropped by 6.19 |
+| `metron_cache`, `open_library_cache` | 1.3b (`0008`), 1.4c (`0009`); `open_library_cache` dropped by 6.19 (`0035`) |
 | `book_subseries` | 1.18b (`0016`) |
 | `book_genres` | 1.18c (`0017`) |
 | `hardcover_cache` | 1.14b (`0018`) |
@@ -480,7 +480,7 @@ with the task that first reads it.
 ## M16: Enrichment and covers — Later
 
 **Goal:** Metadata below every label, and real covers.  
-**Demo at exit:** After cutover, Metron, Open Library and Hardcover fill the catalog without touching a hand value; covers show on spine rows and dashboards.  
+**Demo at exit:** After cutover, Metron and Hardcover fill the catalog without touching a hand value; covers show on spine rows and dashboards.  
 **Features:** F-33, F-74  
 **Depends on:** Cutover, but 4.4, 4.2, 4.5 and 4.5b, which are built before it (D-133, D-139)  
 **Order:** 4.4 → 4.1 → 4.2 → 4.3. A prerequisite for M22. 4.4 is pulled ahead of 1.26 (D-133): from the books cutover it is the only way Calibre's changes come in, and it needs nothing else in this milestone. 4.2, 4.5 and 4.5b are pulled ahead too (D-139); 4.5 (from 1.18c) needs only 1.18c, and 4.5b needs 4.5. 4.1 and 4.3 come after the switch.
@@ -577,9 +577,9 @@ with the task that first reads it.
 
 **Goal:** Hardening and the last pass.  
 **Demo at exit:** A malformed body answers 400; a sign-in stronger than one passcode; a Goodreads or StoryGraph import; the theme revisited once every screen exists.  
-**Features:** F-45, F-46, F-44, F-72  
+**Features:** F-45, F-46, F-44, F-72, F-05  
 **Depends on:** M19, M20  
-**Order:** 6.9 last: it is a pass over every finished screen. 6.19, 6.21 and 6.23 are pulled ahead of 1.26 (D-172).
+**Order:** 6.9 last: it is a pass over every finished screen. 6.19, 6.21 and 6.23 are pulled ahead of 1.26 (D-172). 6.24 and 6.25 follow 6.23's review (D-177, D-178); 6.25 lands before 9.0 adds a fourth medium.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -592,6 +592,8 @@ with the task that first reads it.
 |  | 6.21 → TASK-137 | Redesign where the book sits, with Claude Design | M | _Pulled ahead of 1.26 (D-172)_ | 2.2g, 5.12, 6.23 |
 | ✅ | 6.23 → TASK-126 | Design review with Claude Design: the new mediums, and what was drawn since the feel pass | M | _Owner, 2026-11-18; runs any time, ahead of 8.7, 9.0 and 10.0; pulled ahead of 1.26 with 6.21, which starts from its drawing (D-172); Check proposed_ | — |
 |  | 6.22 | A row's `⋯` menu stays on screen | S | _From TASK-093 (PR #266); placed in M21 by the 2026-11-23 coverage recount; Check proposed_ | — |
+|  | 6.24 | Built screens follow the mediums review | M | _From TASK-126 (6.23, D-177); placed in M21 by the 2026-11-24 coverage recount; Check proposed_ | 6.23 |
+|  | 6.25 | Navigation for four and five media | M | _From TASK-126 (6.23, D-178); before 9.0; placed in M21 by the 2026-11-24 coverage recount; Check proposed_ | 6.23 |
 |  | 6.9 | Revisit the theme | M |  | — |
 
 ## M22: AI-assisted curation — Later
@@ -655,7 +657,7 @@ with the task that first reads it.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
-|  | 9.0 | Music in the shell, designed | M |  | — |
+|  | 9.0 | Music in the shell, designed | M |  | 6.25 |
 |  | 9.1 | Schema and MusicBrainz client | M |  | 9.0 |
 |  | 9.2 | Search and add an artist, with the discography | M |  | 9.1 |
 |  | 9.3 | Albums: listened, rated, logged | S |  | 9.2 |
