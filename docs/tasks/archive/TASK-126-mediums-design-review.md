@@ -1,7 +1,7 @@
 ---
 id: TASK-126
 title: 6.23 Design review with Claude Design — the new mediums, and what was drawn since the feel pass
-status: Review
+status: Done
 depends_on: []
 size: M
 model: opus
