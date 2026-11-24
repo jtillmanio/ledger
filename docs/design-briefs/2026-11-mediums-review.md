@@ -381,3 +381,47 @@ left part F for part E, Parked stays in F only beyond books, and 2.2l, 3.5b,
 2026-10-06 that the first inventory missed also joined part E: 1.4f (`add`'s
 Hardcover search), 1.9 and 2.3 (the status empty slates in `states`), 2.2b
 (the plan rail on `plan` and `bdash`) and 2.7 (`rebalance`).
+
+## Delivered
+
+2026-11-24, drawn in a claude.ai chat on the
+[Ledger canvas](https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH), page
+*Mediums-Review*, with the Ledger design system installed. The prompt was
+pasted as written above, with the six files under **Attach**. TASK-126's plan
+step 4 recorded it. The page files came from the canvas byte for byte (their
+sha256 matched the canvas's listing), and the rest came from the chat's
+attachments, as delivered. The owner gave Claude Code permission to copy them
+into the protected paths (2026-11-24).
+
+The review came back as eighteen canvas pages, not one: each part is split so
+no board passes the canvas's 8,000px height limit. They keep their canvas
+names, which have no spaces, so `design/MR-Main.dc.html` is the review page
+the plan called `design/Ledger Mediums Review.dc.html`.
+
+| Now at | What it is |
+|---|---|
+| `design/MR-Main.dc.html` | The entry: the summary, departures MR-D1…MR-D24, decisions MR-Q1…MR-Q24, and the two new tokens measured |
+| `design/MR-Handoff.dc.html` | Every frame mapped to the screen it redraws or adds, with its PNG |
+| `design/MR-A-Navigation-1.dc.html`, `-2` | Part A: navigation for five media, the rejected options, the tablet rail, the sidebar and the icon rail, the medium accents |
+| `design/MR-B1-Watch-dashboard-1.dc.html`, `-2` | Part B: `/watch` at every width with 8.7's three conflicts resolved, and watch status with its empty states |
+| `design/MR-B2-Watch-screens-1.dc.html`, `-2` | Part B: the list and saved views, the film, show and season sheets, add, franchises, shelves, the person page |
+| `design/MR-C-Music-1.dc.html`, `-2` | Part C: music |
+| `design/MR-D-Games-1.dc.html`, `-2` | Part D: games |
+| `design/MR-E-Review-1.dc.html`, `-2`, `-3` | Part E: the review of what was drawn after the feel pass, the six redraws and the six missing 834px frames |
+| `design/MR-F-Unbuilt-1.dc.html`, `-2` | Part F: Parked for every medium, comics' *Coming out* and editors, Activity, the offline write states, search on the phone |
+| `design/mr.css` | The stylesheet the eighteen pages link. They also link `ledger-feel-tokens.css` and `support.js`, already in `design/` |
+| `design/screenshots/mediums-review/` | 234 PNGs, every frame in dark and light: `phone/` (169, 2×), `tablet/` (25), `desktop/` (35), `spec/` (9). Every PNG the hand-off note names is here, and nothing else is |
+| `design/STYLE_GUIDE.md` | A new §17 (Mediums-Review: navigation, accents, watch, music, games, departures, decisions), with edits to §2.7 (the 1-rail telescope), §7 (cover shapes), §9 (the stepper), §10 (the changelog), §11, §14.5 and §14.6 |
+| `design/tokens.css` | `+ NEW` `--m-music` (`--t2`'s value) and `--m-games` (`--t1`'s), both themes, measured. Nothing else changes |
+| `docs/design-briefs/2026-11-mediums-handoff.md` | The hand-off note for Claude Code: how to use the frames, the order that avoids rework, the shared components to build once, frame → screen, and what isn't drawn |
+
+**Rendering.** Served over HTTP from `design/`, every page renders with no
+console errors, and parts A–F each open with their heading. Opened as a
+`file://` URL, `support.js`'s fetch of the page itself is blocked by the
+browser's file-origin rule, but the page still draws.
+
+**Status.** The owner took every recommendation (2026-11-24): MR-D1…MR-D24
+are accepted and MR-Q1…MR-Q24 are answered as recommended. Both are recorded
+in `docs/review/decisions.md` (D-177 to D-182). The two new tokens also joined
+`src/app/globals.css` and `design/mockups.html` in the same PR, because the token
+check holds `design/tokens.css` and `globals.css` equal (owner, 2026-11-24).

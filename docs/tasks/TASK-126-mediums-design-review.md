@@ -121,6 +121,11 @@ build from it.
 - `docs/05-roadmap.md`: *From 6.23* notes (6.23 and 6.21 first, on where the
   review runs) and 6.23's tick.
 - `docs/06-tasklist.md`: 6.23's Done cell at close-out.
+- Revision 3: `design/MR-*.dc.html` (18) and `design/mr.css` in place of one
+  review page; `design/screenshots/mediums-review/` (234 PNGs);
+  `docs/design-briefs/2026-11-mediums-handoff.md`; `src/app/globals.css` and
+  `design/mockups.html` (the two new tokens);
+  `docs/tasks/TASK-137-where-the-book-sits-redesign.md` (its drawing settled).
 
 ## Verification
 
@@ -133,7 +138,28 @@ build from it.
 
 ## Follow-ups
 
-_Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+- The built screens the review redrew (MR-D16 *Remove from Listen next* grey,
+  MR-D17 the capped finish toast, MR-D18 steppers on `--sunk`, MR-D20 the
+  Library's phone chips, the drawn gear) and the six missing 834px mockup
+  frames (owner, 2026-11-24: "do we need a task…") → `docs/05-roadmap.md` § 6.24
+- Navigation for four and five media (D-178: the medium switcher, search in
+  the phone bar, the tab row's across-media tail, the tablet rail, sidebar and
+  icon rail, *Start on*), needed before 9.0 adds a fourth medium →
+  `docs/05-roadmap.md` § 6.25
+- Each watch, music, games and backlog entry the review draws for (3.3, 3.9,
+  5.8, 5.15, 6.1, 6.4, 6.9, 6.17, 6.21, 8.2–8.10, 9.0, 9.2–9.7, 10.0–10.6) →
+  `docs/05-roadmap.md` § each entry, *From 6.23 (2026-11-24, D-177)* note
+- 6.21's starting drawing is settled (frames E1–E6) →
+  `docs/tasks/TASK-137-where-the-book-sits-redesign.md` § Context
+- 6.24 and 6.25 need task-list rows and task files (`/milestones`, then
+  `/new-task 6.24 6.25`) → not tracked: the owner's next step, named in the PR
+  and the final report
+- The old canvas and design system in the owner's second claude.ai account,
+  and the *Migrated Design* canvas, are no longer used → not tracked: the
+  owner deletes them in claude.ai; nothing in the repo links them
+- The worktree's Playwright wants browser build 1255 and only 1254 is
+  installed; the render check ran on 1254 → not tracked: `npx playwright
+  install chromium` (CLAUDE.md, *Commands*) fixes it on the owner's machine
 
 ## Plan
 
@@ -164,6 +190,25 @@ at `66d3001`. Their links are swapped in `README.md`, `docs/04-design.md` § 1,
 files outside the plan's list, changed for this revision only. The old
 artifacts are the owner's to delete. Step 4 can now read the canvas and
 check the export against it.
+
+**Revision 3 (owner, 2026-11-24, at step 4).** Three things the delivery
+changed. (1) The review came back as eighteen canvas pages (`MR-Main`,
+`MR-Handoff` and parts A–F split under the canvas's 8,000px height limit) plus
+`mr.css`, so they keep their canvas names in `design/` and `MR-Main.dc.html`
+is the page this plan called `Ledger Mediums Review.dc.html`. (2) The owner
+gave Claude Code permission to copy the delivery into the protected paths
+itself, byte for byte, instead of placing it by hand. (3) The delivered
+`design/tokens.css` adds `--m-music` and `--m-games`, and
+`scripts/check-tokens.mjs` (in `test:no-e2e`) fails unless `globals.css`
+holds every `tokens.css` token. The owner chose to adopt the two tokens now
+in `src/app/globals.css` and `design/mockups.html` (3 and 2 lines, nothing
+uses them yet): an exception to AC-6's *nothing under `src/`* for those lines
+only, recorded in D-177. With `src/` changed, the branch runs `verify.full`,
+not `verify:docs`, and CI runs every browser area. The owner also took every
+MR-Q recommendation and accepted every MR-D ("take every recommendation"), and
+asked for the built screens the review redrew to get their own work: two new
+roadmap entries, 6.24 and 6.25 (Follow-ups), beside the *From 6.23* notes
+AC-5 names.
 
 1. **Refresh the inventory (Claude Code).** On an up-to-date `main`, list the
    roadmap entries whose text says *not drawn yet*, *the mockup gains* or *the

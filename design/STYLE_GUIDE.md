@@ -1,6 +1,6 @@
 # Ledger — Style Guide & Data Presentation (Step 3)
 
-**Status:** design proposal, 2026-09-30. **Updated 2026-10-05 by the feel pass** (decision D-40): palette 1c *After hours* (the owner's pick), IBM Plex Sans, Plex Mono and Newsreader, cover-led dashboards, mark-read feedback, and completion screens. The changes are folded into each section and listed in §10, with the new material in §14–§16. **Updated 2026-10-06:** desktop layouts at 1024px and up (§14.6, FP-D15…FP-D18, new layout tokens in §10). Nothing here touches `src/`. The 2026-09-30 text is kept at `design/archive/STYLE_GUIDE-2026-09-30.md`.
+**Status:** design proposal, 2026-09-30. **Updated 2026-10-05 by the feel pass** (decision D-40): palette 1c *After hours* (the owner's pick), IBM Plex Sans, Plex Mono and Newsreader, cover-led dashboards, mark-read feedback, and completion screens. The changes are folded into each section and listed in §10, with the new material in §14–§16. **Updated 2026-10-06:** desktop layouts at 1024px and up (§14.6, FP-D15…FP-D18, new layout tokens in §10). **Updated 2026-11-24 by the Mediums-Review** (design review 2): navigation for five media, watch finished, music and games designed, the post-feel-pass drawings reviewed, and the unbuilt features drawn. New material is §17; edits to §2.7, §7, §9, §14.5 and §14.6 are listed in §10. Nothing here touches `src/`. The 2026-09-30 text is kept at `design/archive/STYLE_GUIDE-2026-09-30.md`.
 
 **Files in `design/`:**
 
@@ -17,6 +17,8 @@
 | `LedgerNav.dc.html` | The desktop sidebar (224px, 1280+) and icon rail (64px, 1024–1279) that the desktop frames import. |
 | `ledger-feel-tokens.css` | All three palettes (1a, 1b, 1c) × dark and light, in oklch. These are the reference values; `tokens.css` carries 1c as hex; 1a and 1b are in `handoff/palette-swaps.css`. |
 | `handoff/` | The Claude Code package as delivered: prompt, checklist, D-40 draft, palette swaps (1a, 1b) and the contrast report. |
+| `Mediums-Review` (canvas page) | **Design review 2 (2026-11-24).** `MR-Main` (summary, MR-D, MR-Q, tokens), `MR-Handoff`, and parts A–F as `MR-A-*` … `MR-F-*`, every frame in dark and light. Components in `mr.css`. |
+| `screenshots/mediums-review/` | PNGs of every Mediums-Review frame: `phone/` (2×), `tablet/`, `desktop/`, `spec/`, each `{frame}-{dark,light}.png`. `HANDOFF.md` maps each to its screen. |
 | `screenshots/` | PNG screenshots of every palette 1c frame: `phone/` (22 at 390 × 844, 2×), `tablet/` (2 at 768 × 1024) and `desktop/` (14 at 1280 × 900 and 1024 × 768). Its README maps each to its task. |
 
 **Precedence.** `design/mockups.html` wins on layout and copy, and `globals.css` wins on token values. Every place this guide departs from either is listed in §12 *Proposed deviations*. The feel-pass departures FP-D1…FP-D14 (§16) were accepted by the owner on 2026-10-05, and FP-D15…FP-D18 (desktop, 2026-10-06) are adopted unless rejected; where any of them touch layout or copy they override `mockups.html`.
@@ -124,6 +126,7 @@ Candidates are tried longest first and the first that fits is used. Fit means `c
 |---|---|
 | **3-rail** (A1.1) | TRACK, bracket, BLOCK, bracket, RUN, ticks and head pill, legend, then the ladder (3 rows). |
 | **2-rail** (A2.1, `data-rails="2"`) | The BLOCK rail and its bracket are removed. TRACK brackets straight to RUN with **the same bracket depth, cell height, gap, radius, tick rule and type** as 3-rail, so the component reads as shorter, not broken. The track rail's last cell is the italic *no block* group holding the 9 block-less runs, and it is the head cell. The ladder drops its BLOCK row entirely (no empty row, same row rhythm), and TRACK's meta reads *no block · 2 runs*. The same 2-rail geometry serves watch (franchise → show → seasons). |
+| **1-rail** (Nov 2026, MR-D10, `data-rails="1"`) | Watch only: a show in no franchise. The run-height rail of its seasons alone, with no bracket and no coarse rail. The ladder keeps a FRAN row reading *In no franchise* so the shape is explained, not missing. Music uses the 2-rail form (discography → album). |
 | **Unnamed block** (A1.2) | The ladder's BLOCK row reads *block 3 · unnamed* with a 24px **Name it** button. The track cell label is `block 3`. It is not an error and not amber. |
 | **Empty** (A2.2, `data-state="empty"`) | The track rail only: no head, no brackets, no run rail, no legend. The ladder shows TRACK (`81 / 2,180 read`, the track's own blocks) and NEXT. One primary button, **Start the top of Up next**. When the queue is empty too, the button reads *Pick from N ready runs* (M-11). |
 | **Dense** (A1.4) | 641 issues. Ticks are computed (20 on phone, 5 on desktop), and the pill uses the label (`118 / 641 · X-Men (2019) #8`). Floored neighbours (4 and 22 issues) carry dots. |
@@ -410,7 +413,7 @@ The tightest pairs are `--t3` against `--ready`: 15.6 light and 15.2 dark. Any l
 | `telecard` | 1px inset `--rule`; 3px identity stripe | 16 | 16 phone / 20 desk | `--sh-1` (was `--sh-2`) |
 | `hero` (Now slot) | 1px inset `--rule`; art band on `--art` | **20** (`--r-hero`) | 16 phone / 20 tablet | `--sh-1` |
 | `hero` next-issue strip | none: a **tonal** well (§4.1) in `--raise` | 8 (`--r-md`) | 8 | none. In the spine hero above *Resume*, and in the sticky `dk-rail` hero on desktop (§9) |
-| `cover` | none; `--sh-cover` | 4 (`--r-cover`) | — | 2:3. Hero 112 (150 from 768px, 168 from 1280px) · shelf 112 · dashboard row 36 · stack 30. A spine row stays 28×42 (`--cv-row-*`, D13) |
+| `cover` | none; `--sh-cover` | 4 (`--r-cover`) | — | 2:3. Hero 112 (150 from 768px, 168 from 1280px) · shelf 112 · dashboard row 36 · stack 30. A spine row stays 28×42 (`--cv-row-*`, D13). **Nov 2026 (MR-D12):** album covers are square at the same widths (row 44 × 44); a watch still is 16:9 (200px tall on the phone, 320 × 180 on the tablet); game covers use the 2:3 box, IGDB art cropped |
 | `shelf` | none; horizontal scroll with `scroll-snap-type:x mandatory`, bleeding to the frame edge (at 1024px and up it stops at main's edge and gains ‹ › paging for fine pointers, FP-D18) | — | 2 × 16 | Each card: cover, position chip on `--overlay`, 2-line title, mono meta, the readiness badge unchanged |
 | `lens` (*This stretch*) | cells as telescope cells | 3 | — | 24 cells, one per issue, around the head. Run-relative, never catalogue-relative (FP-D3) |
 | `sheet` | 1px inset `--rule-2`; grab 36×4 `--rule-2` | 16 (top) | 6 / 14 / 14 | `--overlay` + `--sh-3` over `--scrim` |
@@ -447,15 +450,18 @@ The tightest pairs are `--t3` against `--ready`: 15.6 light and 15.2 dark. Any l
   - Primary slot `flex:1`, 44px (48 on tablet), `--r-lg` 12 (FP-D10), `--brand` / `--on-brand`, text truncates with ellipsis.
   - **The mark answers back** (P2, FP-D7). The full sequence is in §14.3.
   - `+ batch` secondary: 44px, 1px `--rule-2`.
-  - Search: 44×44 with a drawn magnifier, replacing the U+26B2 glyph.
+  - ~~Search: 44×44 with a drawn magnifier, replacing the U+26B2 glyph.~~ **Retired (Nov 2026, MR-D2):** search lives in the phone bar, left of the gear, on every screen (§17.1). The thumb bar holds the mark verb and at most one secondary.
+  - Per medium: comics *Mark #141 read · + batch*; books *Log progress · ✓ Finished*; watch *Mark S4 watched · + Add*; music *Mark Sempiternal listened · + Add*; games *Log time · ✓ Finished*.
   - Desktop dashboards keep header buttons (DN-2 a). The spine and krakoa keep the bottom bar.
 - **Status tablist.** Links with `role="tab"`, 44px tall, counts in mono 11. The selected tab is `--ink` 600 with a 2px `--m-*` underline; the others are `--muted` 500. The underline slides between tabs (150ms).
 - **Segmented control.** A raised pill (`--surface` + `--sh-1`) on a `--sunk` track, 32px (44 hit). Proposed deviation D4.
 - **Chips.** Filter-on is neutral inverse (`--ink` / `--page`), filter-off is surface plus a ring, hover goes to `--raise` with a `--faint-deco` ring.
-- **Switch.** 36×20, on = `--brand` track with an `--on-brand` knob, off = `--sunk` with a `--faint-deco` ring and a `--muted` knob; `role="switch"`, 44px row. **Stepper:** `role="group"`, 32px buttons on `--sunk`, `<output>` mono.
+- **Switch.** 36×20, on = `--brand` track with an `--on-brand` knob, off = `--sunk` with a `--faint-deco` ring and a `--muted` knob; `role="switch"`, 44px row.
+- **Stepper** (rewritten Nov 2026, MR-D18, task 2.0b). `role="group"` on a `--sunk` track with the 1px `--rule` ring (D2), everywhere, sheets included. − and + are 32px `--surface` buttons. The number is a button named for its row (*Edit minutes a day*), mono; a tap swaps it for a numeric input of the same box (`inputmode="numeric"`, `--brand` 1.5px ring); Enter or blur saves, Esc restores. Holding − or + repeats after 400ms, then every 80ms, and stops at the bounds; the held button keeps a 1.5px `--brand` ring while it repeats. The number is typed or stepped: both are first-class.
+- **Status control** (Nov 2026, MR-D24). A filled button group on `--sunk`. The chosen state fills `--brand` / `--on-brand`, except a stop (*DNF*, *Dropped*, *Skipped*, *Set aside*) or *Park*, which fills `--ink-2` / `--page`: stopping and parking are not warnings and not position.
 - **Toast.** `--toast-bg` / `--toast-ink`, with Undo in `--toast-link` 700. A second line in `--toast-muted` mono 12/16 carries the run count (*46 of 381 in Uncanny X-Men*). `role="status"`. A 2px `--brand` countdown bar runs along the bottom edge over 8s and pauses on hover or focus.
 - **Skeletons.** The loaded geometry exactly (row 78px with a 36×54 cover, title 12px, meter 5px) in `--sunk`. The shimmer is off under reduced motion.
-- **Sync pill.** A 6px dot (`--ready` online; `--blocked` offline or queued) plus `--ink-2` text. The offline strip is `--blocked-soft` with a `--blocked` ring.
+- **Sync pill.** A 6px dot (`--ready` online; `--blocked` offline or queued) plus `--ink-2` text. The offline strip is `--blocked-soft` with a `--blocked` ring. **Nov 2026 (MR-D22)** adds three states: *retrying* (amber strip, *sending 3 · retrying in 12 s*, mono countdown, a quiet *Now*), *failed* (a `--raise` strip with a grey ×, naming the write and the row's real state, with *Retry*), and *undone while queued* (grey, *Undone before it synced. Nothing was sent.*). Amber only while something is held. The icon rail keeps the dot and puts the words in its name and tooltip.
 - **Rate-limited status line.** Amber, because it is held: a countdown in mono and **Type it instead**.
 - **API error status line.** Neutral surface with a grey × glyph. It is not red: nothing destructive happened.
 - **Empty slate.** `--raise` panel, a 15/20 title, a 13/18 reason, and exactly one primary action.
@@ -498,6 +504,13 @@ The tightest pairs are `--t3` against `--ready`: 15.6 light and 15.2 dark. Any l
 ---
 
 ## 10. Changelog — additions and changed values
+
+### 2026-11-24 · Mediums-Review (design review 2, §17)
+
+- **Added** (`+ NEW`): `--m-music` (`#a21caf` light, `#e879f9` dark, = `--t2`) and `--m-games` (`#2563eb` light, `#6f9bff` dark, = `--t1`). Measured in §17.2.
+- **Edited:** §2.7 (the 1-rail variant), §7 `cover` (square album covers, 16:9 stills), §9 Thumb bar (search slot retired; per-medium verbs), §9 Stepper (typed and held; `--sunk` everywhere), §9 Status control (new), §9 Sync pill (three states), §14.5 Rail (five media), §14.6 Sidebar, Icon rail and Header (superseded by §17.1).
+- **Unchanged:** every other token value and name, the four colour meanings, the five slots, the three status tabs, the telescope and plan-rail geometry.
+- **Departures:** MR-D1…MR-D24 (§17.9). **Decisions for the owner:** MR-Q1…MR-Q24 (§17.10).
 
 ### 2026-10-06 · desktop, 1024px and up (§14.6)
 
@@ -568,7 +581,7 @@ theme: { extend: {
     reading:{ DEFAULT:'var(--reading)', soft:'var(--reading-soft)' },
     danger:{ DEFAULT:'var(--danger)', soft:'var(--danger-soft)', on:'var(--on-danger)' },
     t:{1:'var(--t1)',2:'var(--t2)',3:'var(--t3)',4:'var(--t4)',5:'var(--t5)',6:'var(--t6)',7:'var(--t7)',8:'var(--t8)'},
-    m:{ comics:'var(--m-comics)', books:'var(--m-books)', watch:'var(--m-watch)' },
+    m:{ comics:'var(--m-comics)', books:'var(--m-books)', watch:'var(--m-watch)', music:'var(--m-music)', games:'var(--m-games)' },
   },
   borderRadius:{ cell:'3px', sm:'6px', md:'8px', lg:'12px', xl:'16px' },
   spacing:{ 0.5:'2px', 1:'4px', 1.5:'6px', 2:'8px', 3:'12px', 4:'16px', 5:'20px', 6:'24px', 8:'32px', 10:'40px' },
@@ -692,7 +705,7 @@ Announced through the toast (`role="status"`). Under `prefers-reduced-motion`, e
 
 ### 14.5 Tablet, 768–1023px (D-33)
 
-- **Rail.** A 72px rail on `--surface` with a right `--rule`. Each item is a 56px target, with a 20px icon in a 48 × 28 pill over an 11px label. The current item has a `--raise` pill and a 3px `--m-comics` bar, the same hue rule as the tab underline. Search and Settings sit at the foot. There are no tooltips.
+- **Rail.** A 72px rail on `--surface` with a right `--rule`. Each item is a 56px target, with a 20px icon in a 48 × 28 pill over an 11px label. The current item has a `--raise` pill and a 3px `--m-*` bar, the same hue rule as the tab underline. Search and Settings sit at the foot. There are no tooltips. **Nov 2026 (MR-D5):** under the *L*, a `--sunk` well holds all five media (58 × 46 each, 18px icon over its 11px name, the current one a raised `--surface` pill); after the medium's items and a rule come Inbox, Progress and Activity. Below about 1010px tall the middle scrolls and the foot stays.
 - **Column.** One content column with 32px padding, and h1 40/44.
 - **Hero.** Horizontal: a 150 × 225 cover, with the number (56/60), story, run and the lens to its right. *Since Tuesday* and *Also reading* share one row, split in two.
 - **Shelf.** 5 covers visible, with a 16px gap.
@@ -706,10 +719,10 @@ Interaction follows the pointer, not the width (D-33).
 
 Drawn in `Ledger Feel Review.dc.html` §11, at 1280 × 900 and 1024 × 768, palette 1c, dark and light. /watch is not drawn yet.
 
-- **Sidebar.** 1280px and up: 224px (`--side-w`) on glass over `--page`, with a right `--rule`. From the top: the wordmark (display italic 24), the media switch (a three-way segmented well on `--sunk`, current segment `--surface` + `--sh-1`), the medium's items (comics: Dashboard · Status · Runs · Tracks · Add; books: Dashboard · Status · Plan · Shelves · Top · Add), a `--line` rule, the global **Inbox** with a mono count, and the sync pill in the footer. Items are 40px tall, with a neutral 20px icon and a 14px label. The current item gets `--raise` and the 3px `--m-*` bar (the same hue rule as the tablet rail). Icons are never track hues.
-- **Icon rail.** 1024–1279px: 64px (`--rail-w`), the same order. The media switch becomes a vertical well of three icons, items are 44 × 40, the Inbox count becomes a badge on its icon, and sync shrinks to its dot. Every item has an `aria-label` and a tooltip (`--overlay`, `--sh-2`, `--rule-2` ring, 12px to the right) that shows on hover after `--dur-4` and straight away on focus-visible.
+- **Sidebar.** *(Superseded Nov 2026 by §17.1, MR-D4: the media switch is a list of five with the current medium open; Search · Ctrl K sits under the wordmark; Inbox, Progress and Activity form an* Across media *group.)* 1280px and up: 224px (`--side-w`) on glass over `--page`, with a right `--rule`. From the top: the wordmark (display italic 24), the media switch (a three-way segmented well on `--sunk`, current segment `--surface` + `--sh-1`), the medium's items (comics: Dashboard · Status · Runs · Tracks · Add; books: Dashboard · Status · Plan · Shelves · Top · Add), a `--line` rule, the global **Inbox** with a mono count, and the sync pill in the footer. Items are 40px tall, with a neutral 20px icon and a 14px label. The current item gets `--raise` and the 3px `--m-*` bar (the same hue rule as the tablet rail). Icons are never track hues.
+- **Icon rail.** *(Nov 2026, MR-D5: the well of media becomes one switch button with a flyout of five; see §17.1.)* 1024–1279px: 64px (`--rail-w`), the same order. The media switch becomes a vertical well of three icons, items are 44 × 40, the Inbox count becomes a badge on its icon, and sync shrinks to its dot. Every item has an `aria-label` and a tooltip (`--overlay`, `--sh-2`, `--rule-2` ring, 12px to the right) that shows on hover after `--dur-4` and straight away on focus-visible.
 - **Column.** A content box of max 1056px (`--content-max`) with 32px padding, centred in the space beside the nav, never pinned to it. Inside: main `minmax(0,1fr)` plus the side rail, 304px with a 32px gap at 1280+ (main = 656) and 280px with a 24px gap at 1024–1279 (main = 592). h1 40/44 (`--fs-title-desk`).
-- **Header.** A sticky glass band holding the h1 and the dashboard verbs, primary last (D-25): comics *Search · + batch · Mark #141 read*; books *Search · Finished it · Log pages*; empty states *Search · Start {next}*. 44px, `--r-md`. The primary names the issue or book. A long title truncates and keeps the full text in its accessible name. The lede scrolls under the band. The *N in inbox* chip goes (FP-D16).
+- **Header.** *(Nov 2026, MR-D4: the* Search *verb leaves the header; search is in the sidebar and the icon rail.)* A sticky glass band holding the h1 and the dashboard verbs, primary last (D-25): comics *Search · + batch · Mark #141 read*; books *Search · Finished it · Log pages*; empty states *Search · Start {next}*. 44px, `--r-md`. The primary names the issue or book. A long title truncates and keeps the full text in its accessible name. The lede scrolls under the band. The *N in inbox* chip goes (FP-D16).
 - **Hero.** Horizontal, as on the tablet. Cover 168 × 252 at 1280+ (`--cover-hero`), 150 × 225 at 1024–1279. Padding and gap 24/28 at 1280, 20/24 at 1024. Number 56/60 (`--fs-hero-num-desk`), and the books title 32/36 (`--fs-hero-name-desk`). The hero is never wider than main. The lens and the books meter are capped at 480px (`--lens-max`), about 18px per cell. *Since Tuesday* and *Also reading* split the footer 1 : 1; Also reading stays in Now.
 - **Shelf.** One scrolling row, contained in main (FP-D18). Four full covers plus 80px at 1024, five plus 16px at 1280. ‹ › buttons page by the visible count, only under `(hover:hover) and (pointer:fine)` and only when the row overflows.
 - **Telescope.** Desktop sizes (from 900px). W = main − 2 × 20 − 72 = 544 at 1280 and 480 at 1024. `allocate()` is unchanged. Ticks use niceStep: 5 here, with a major tick every 25. The ladder is three columns.
@@ -765,3 +778,154 @@ These are numbered D1–D14 in `Ledger Feel Review.dc.html` §9 and prefixed FP-
 | **FP-D16** | *(new, 2026-10-06, desktop)* The *6 in inbox* chip next to the h1 is dropped at 1024px and up. Reason: D-33 puts a global Inbox (N) in the sidebar, and two counts for the same thing would compete with the header verbs. Phone and tablet keep the chip. |
 | **FP-D17** | *(new, 2026-10-06, desktop)* The completion art band (FP-D11, FP-D14) is contained in the 720px run column with `--r-xl` corners, instead of running full-bleed. Reason: across 1056px or more, a full-bleed band is a wall of tone around a small cover, and the sidebar clips one side of it. Phone and tablet stay full-bleed. |
 | **FP-D18** | *(new, 2026-10-06, desktop)* The Up next shelf stops at main's edge instead of bleeding (FP-D2). Reason: a bleed would run under the side rail. The partial last cover still shows that the row scrolls, and ‹ › paging is added for fine pointers. |
+
+---
+
+## 17. Mediums-Review — five media (2026-11-24)
+
+Drawn on the `Mediums-Review` page of the Ledger canvas (`MR-Main`, `MR-A-*` … `MR-F-*`, `MR-Handoff`), palette 1c, every frame dark and light. Phones 390 × 844 (360 where width is tight), tablet 834 × 1112, desktop 1280 × 900 and 1024 × 768. The feel pass's language is unchanged: this section extends it to music and games, finishes watch, and records the changes the review makes. Where a frame here and `mockups.html` disagree, the frame wins until its task redraws the mockup in the same PR (D-40's rule, extended).
+
+### 17.1 Navigation for five media
+
+**The rule.** Where all five media fit with their names (the tablet rail, the 1280px sidebar), all five are always one tap away. Where they don't (the phone bar, the 1024px icon rail), the current medium is a button that switches it. A medium's own screens stay one tap away everywhere.
+
+| Layout | Media | The medium's screens | Across media | Search |
+|---|---|---|---|---|
+| Phone (< 768) | Bar: *Ledger* · the current medium as a 44px button with a chevron, underlined in its `--m-*` (`aria-haspopup="dialog"`). It opens the **Switch medium** sheet: five rows, each its icon, name, the medium's Now in a few words and a mono count; the current one `aria-current` with a grey check. | The sticky tab row, unchanged | The tab row's end, after a 1px `--rule-2` divider: *Inbox* (mono count) · *Progress* · *Activity* | The bar, a 44px magnifier left of the 44px gear; opens *Search everything* (full-height sheet) |
+| Tablet (768–1023) | The rail's `--sunk` well: all five, 58 × 46, icon over 11px name, current = raised `--surface` pill | Rail items, 56px targets | After a rule: Inbox (badge), Progress, Activity | Rail foot |
+| Icon rail (1024–1279) | One 48 × 44 button: the current medium's icon and a chevron; opens a menu of five (`role="menu"`, arrows, Esc, focus returns) | Icon items with tooltips | After a rule, as icons | An icon above the switch |
+| Sidebar (1280+) | *Media*: a list of five, 36px rows; the current one open (`aria-expanded`) with its items nested under it (34px, current = `--raise` + 3px `--m-*` bar); the others one-line links to their dashboards | Nested under the current medium | *Across media*: Inbox (mono count), Progress, Activity | *Search · Ctrl K* under the wordmark |
+
+**Width at 360px.** 16 + 62 (wordmark) + 8 + 86 (*Comics ▾*, the longest) + 44 + 44 + 4 = 264px, leaving 96px whatever the medium.
+
+**Items per medium.** Comics: Dashboard · Status · Runs · Tracks · Coming out · Add. Books: Dashboard · Status · Library · Plan · Shelves · Series · Top · Coming out · Add. Watch: Dashboard · Status · List · Franchises · Shelves · Add. Music: Dashboard · Status · Artists · Songs · Add. Games: Dashboard · Status · Coming out · Shelves · Add.
+
+**`/`** redirects to the dashboard of the medium used last (unchanged). Settings → Appearance → *Start on* (*Last used* by default, or a medium) overrides it. With nothing used yet it opens `/comics`.
+
+**Desktop header.** The dashboard verbs keep D-25's order, primary last, without *Search* (it is in the sidebar and rail).
+
+### 17.2 Medium accents
+
+The accent marks which medium a tab underline, rail bar or unit badge belongs to, always beside its name. It never fills, never means state, and never meets a meter.
+
+| Token | Light | Dark | ΔE2000 ready · blocked · danger (light / dark) | ΔE to brand · comics · books · watch (light / dark) | Contrast as a 3:1 indicator on page · surface · raise · sunk · overlay |
+|---|---|---|---|---|---|
+| `--m-music` + NEW | `#a21caf` | `#e879f9` | 47.4 · 51.0 · 34.0 / 53.7 · 55.4 · 30.8 | 37.3 · 12.2 · 37.3 · 19.6 / 45.7 · 12.3 · 38.2 · 15.1 | light 5.76 · 6.32 · 6.01 · 5.21 · 6.32 · dark 8.02 · 7.45 · 6.79 · 8.22 · 6.42 |
+| `--m-games` + NEW | `#2563eb` | `#6f9bff` | 45.5 · 52.4 · 44.0 / 51.5 · 52.1 · 41.1 | 13.4 · 15.1 · 18.0 · 36.5 / 20.5 · 15.5 · 20.1 · 33.7 | light 4.71 · 5.17 · 4.91 · 4.26 · 5.17 · dark 7.34 · 6.81 · 6.22 · 7.52 · 5.87 |
+
+Measured from the hex values (sRGB, WCAG 2.x, ΔE2000 in CIELAB). Both clear the floor of 15 against every functional colour with a wide margin (lowest 30.8). Music vs games is 25.4 / 27.7. The two closest pairs, music vs comics (12.2) and games vs brand in light (13.4), are not legibility problems because an accent is never the only thing naming a medium; the second is MR-Q5. They reuse `--t2` and `--t1` as `--m-comics`, `--m-books` and `--m-watch` reuse `--t5`, `--t6` and `--t7`, so §6's identity table already covers them.
+
+### 17.3 Watch
+
+- **Unit.** The season. Nothing tracks episodes. The hero number is the season (`S4`, `--fs-hero-num` mono); the count is *3 of 5 seasons watched*; the verb is *Mark S4 watched*. No lens: Position already draws every season.
+- **Now.** A 16:9 still (200px tall on the phone; 320 × 180 beside the text on the tablet and desktop), *Up now*, the show in Newsreader, the season number, its service, episode count and year, the count, the start, and *Where to watch* as a grey link. *Also* holds the second show in flight with a 32px verb.
+- **Up next.** Posters (2:3), oldest added first, no Reorder; the slot's control is *All · Film · TV*.
+- **Position.** Franchise → series: the coarse rail is the franchise's titles in release order (a film counts 1, a show its seasons), marked by the franchise's identity hue as the card's 3px stripe and a swatch beside *Franchise · release order*; the fine rail is the show's seasons. Unit badge *seasons*. A show in no franchise draws the 1-rail variant (§2.7).
+- **Situation** *Paused* (FP-D12). **Rollup** films · seasons · shows finished. TMDB and JustWatch attribution in the footer.
+- **Status.** In flight: *Watching* (shows with seasons left, each with its season verb), *Films* started, *Waiting for a new season* (grey rows with a grey `returning` badge and no verb; its foot carries *Checked 3 days ago · Check now*). Up next: oldest added first, the Film/TV control and grey genre chips. Done: by year, rating in mono; *Stopped* holds dropped titles with a grey `dropped` badge and their reason.
+- **List and saved views.** Rows: title; *Directed by* / *Created by* with the person linked; mono *year · network or studio · length*. A saved view is a named filter plus titles added by hand (grey `added` tag) minus titles removed (*Removed from this view · N*, collapsed, each with *Put back*). *Add these N to a shelf…* acts on what the filter shows.
+- **Sheets.** Film and show sheets carry the status control (*To watch · Watching · Watched · Dropped · Park*), rating, note, shelves, *Where to watch*, history. A show lists its seasons as tick rows (date, rating), each opening the season sheet in place with *‹ Show*. *Where to watch* older than 30 days turns `--faint`, the provider struck through, with *out of date · Check now*. *Check for new seasons* is a check you start; a new season moves the show back to *Watching* with a toast naming it.
+- **Add.** One search across films and shows after three characters and a pause; *Watched through* (*none · S1 · S2 · S3*) on a show; the TMDB error is the grey × with *Save to inbox*.
+
+### 17.4 Music
+
+- **Unit.** The album. *Mark Sempiternal listened* marks every unmarked track listened; a skipped track stays skipped (MR-Q9). Album covers are square.
+- **Now.** The cover, *Up now*, the album, the artist (link) and year, length in mono, and the **album lens**: one cell per track (listened `--ready`, the next one ringed `--brand` with `--halo`, skipped the dashed inset), with *6 of 11 listened · 1 skipped · next: …*.
+- **Up next.** Albums from followed artists, oldest added first; control *All · New*; *Added from your Spotify follows* under a synced album; an announced album is a neutral placeholder with a grey *Coming Mar 14*.
+- **Position.** Two rails: *Discography · release order* (cells sized by track count, measured against the release types you chose) over the album's tracks. **Situation** *Artists to get into*. **Rollup** albums · new artists · relistens.
+- **Artist page.** Count and meter against the chosen release types (studio albums by default; EPs, singles, live and compilations are chips); *Listening · Following · Not following*; rows with status (glyph + text), rating and a ⋯ with *Not for me* (collapsed at the foot); sort by year or *Favourites* (median rank, songs in your top 10, songs ranked).
+- **Song ranker.** As `thisorthat`: two button cards, *Pick 3 of at most 8*, grey *Skip*; resuming keeps placed songs. The list: one ranking across artists, handles for a fine pointer, *Move to…* (a numeric field with *Top · Up one · Down one*) for touch and keyboard.
+- **Add and Spotify.** Artists with MusicBrainz's disambiguation; adding follows and lists albums to trim. Spotify follows without exactly one match wait under *Needs you* (*Choose* or *Search*); nothing is guessed.
+
+### 17.5 Games
+
+- **Two kinds, your call.** *Play through*: Want → Playing → Finished or Dropped. *In rotation*: Want → In rotation → Set aside; never Done. The status control changes with the kind.
+- **Now.** What you are playing (cover, title, platform and kind in mono, hours logged), *Also* for a second play-through, and *In rotation* as a smaller group of three with no verbs.
+- **Up next.** The stored queue, numbered, with *Reorder* (FP-D2), and *N to play through · about H h*.
+- **Position: the time-to-beat bar** (new). A 28px rail scaled to the completionist estimate; logged hours fill `--ready`; 1.5px dashed `--ink-2` rules at the other two estimates; the 2px `--ink` head marker at the logged total; mono tick numbers under it; unit badge *hours*. The ladder: GAME (logged) and LEFT (*about 9 h of the main story · 25 h with extras*). It measures against the estimate you chose for the game (main by default).
+- **Situation** the next three coming out at IGDB's precision, a moved date with *was Feb 2027* in `--faint`. **Rollup** finished · hours logged · in rotation.
+- **Thumb bar** *Log time* (a sheet with a half-hour stepper and the total it will make) · *✓ Finished*.
+- **Status.** In flight: *Playing*, *In rotation*, and *Set aside* collapsed. Up next: the queue with handles (fine pointer) and a row menu (*Move to top · Move up · Move down · Move to… · Someday*); the total counts play-through games only, a rotation game says *no total* and a game without an estimate *no estimate*, both `--faint`. Group by *None · Platform · Genre · Play style*, each group head with its count and hours. Done by year, *Stopped* for dropped.
+- **Add.** Results with year, genres and platforms (yours first, bold with ✓); adding asks which of your platforms (one the game isn't on is `aria-disabled` with the reason), *Play through · In rotation* (a grey suggestion), and *Up next · Someday*. An unreleased game goes to Coming out.
+
+### 17.6 The same everywhere
+
+- **Status screens.** Every medium keeps *In flight · Up next · Done*, counts in mono, the `--m-*` underline; *Stopped* collapses at the foot of Done. Each tab's empty state is one `--raise` slate with one primary.
+- **Empty first screens** (watch, music, games) are a full-width 52px search field and one line of help; music adds *Connect Spotify* as a secondary in a tonal well.
+- **Errors from TMDB, MusicBrainz and IGDB** are the grey × line, then a slate with *Save to inbox* as the one primary.
+- **Attribution** sits at the foot of every page that shows outside data, in 12px `--muted` above a `--line`.
+
+### 17.7 Parked, Progress, Activity, offline, search
+
+- **Parked** is one review at `/parked`, a group per medium in nav order, longest parked first. Verbs, all grey, one write with Undo each: keep (*Keep parked*), bring back (*Plan…* for books, *Up next* elsewhere; *Pick it back up* for something parked mid-way), let go (*Unlisted*, *Let it go*, *Off my list*, *Not for me*). One cadence in Settings; *Done reviewing* records it. Each dashboard's rollup shows *Review N parked →* while it is due; the Inbox's *Parked review* row counts every medium.
+- **Progress** grows by kind: franchise and show (watch), artist (music), game series (games). Chips *All · Books · Comics · Watch · Music · Games* scroll.
+- **Activity** (`/activity`): every finished thing, newest first, by month under year headings with the year's totals per medium in mono; medium chips and a year; undated reads in one *No date* group at the end.
+- **Search on the phone:** *Search everything*, verbs first, then results by medium, your library only.
+
+### 17.8 Review of the post-feel-pass drawings
+
+Held: `progress`, `author`, `bookdetail`, `parked`, `follow`, `thisorthat`, `top`, `releases`, `series`, `shelves`, `plan`, `rebalance`, `moveplan`, `add`, `calibre`, `states`. Held with changes: `bdash` (6.21 levels, MR-D19), `blist` (genre row, dropdown chips, MR-D20), `status` (*Remove from Listen next* grey, MR-D16), `finishoffer` (capped toast, MR-D17), `settings` (stepper, Start on, Spotify, platforms), the tab row (part A), the stepper (MR-D18). 834px frames added: `bookdetail`, `thisorthat`, `top`, `rebalance` (and `moveplan` by its rule), `calibre`, `settings`. Every phone bar's U+26B2 or text gear becomes the drawn icon (§9 already required it).
+
+**Where the book sits (6.21).** Under the hero band, above *Next in*: one row per level, outermost first (universe, else the author followed as Reading; series; subseries), at most three. Columns: an 84px mono kind key (UNIVERSE, SERIES, SUBSERIES, AUTHOR; each deeper level's key indented 10px with a hairline elbow), the name (wraps; universe, series and author are links), a 52px meter (`--sunk` track, `--faint-deco` ring, `--ready` fill) and `read / total` in mono, right-aligned. 12/16 type. A level the book lacks draws nothing; a book on none draws no block. On the tablet and desktop it sits in the hero's text column, capped at `--lens-max`.
+
+### 17.9 Departures (MR-D)
+
+Adopted unless the owner rejects them.
+
+| # | Departure | Changes | Frames |
+|---|---|---|---|
+| **MR-D1** | The phone media bar’s three media links become one medium button (*Books ▾*) that opens a *Switch medium* sheet listing all five. | mockups phone bar (D-120) | A5, A6 |
+| **MR-D2** | Search returns to the phone bar, left of the gear, and opens global search; the thumb bar’s search slot is retired on every dashboard. | §9 Thumb bar; FP frames | A5, F16 |
+| **MR-D3** | The tab row gains *Activity* after *Progress*, and a 1px divider before the across-media group. | task 2.2i tab row | A7 |
+| **MR-D4** | The desktop sidebar’s three-way media well becomes a list of five media with the current one expanded; *Search · Ctrl K* sits under the wordmark; the every-medium-expanded sidebar in later mockups is retired; dashboard headers drop their *Search* verb at 1024px and up. | §14.6 Sidebar, Header; LedgerNav | A9 |
+| **MR-D5** | The 1024px icon rail’s media well becomes one switch button with a flyout of five; the tablet rail’s well holds all five with names. | §14.5, §14.6 Icon rail | A8, A10 |
+| **MR-D6** | Two new tokens: `--m-music` (= `--t2`) and `--m-games` (= `--t1`), both themes. | tokens.css, §6 | A11 |
+| **MR-D7** | Settings → Appearance gains *Start on* (*Last used* by default, or a medium) for what `/` opens. | settings | E17 |
+| **MR-D8** | Watch Now: the season is the unit. The per-episode strip and *S4 E3* go, with no lens in their place; the hero number is *S4*; the verb is *Mark S4 watched*. | Feel Review §5; §14.1 Watch | B1–B6 |
+| **MR-D9** | Watch Up next: *Reorder* is removed; the slot’s control is *All · Film · TV*; the shelf is oldest added first and says so. | Feel Review §5; FP-D2 for watch | B1–B6 |
+| **MR-D10** | The telescope gains a 1-rail variant (a show in no franchise). Watch’s coarse rail is the franchise in release order, marked by its hue as a 3px stripe and swatch; the unit badge reads *seasons*. | §2.7 Variants; Feel Review §5 | B1, B2 |
+| **MR-D11** | The watch desktop keeps the telescope in main, in slot order, where the mockup moved it to the rail. | watchlist desktop note | B5, B6 |
+| **MR-D12** | Album covers are square at the cover width tokens (112, 150, 168; 44 in rows); watch stills are 16:9; game covers use the 2:3 boxes, IGDB art cropped. | §7 cover; §4.3 | B, C, D |
+| **MR-D13** | Music’s Now lens is one cell per track; a skipped track reuses the read-elsewhere dashed inset (grey, never red). | FP-D3 lens | C1 |
+| **MR-D14** | Games’ Position is a new component, the time-to-beat bar: scaled to completionist, logged hours in `--ready`, dashed rules at the other estimates, the head marker at the logged total. | §1 Position drawn; new | D1s |
+| **MR-D15** | Status tabs for watch, music and games gain medium groups: *Waiting for a new season* and *Films* (watch), *Artists · listening* (music), *In rotation* and a collapsed *Set aside* (games), all inside *In flight*. | status | B7, C6, D8 |
+| **MR-D16** | *Remove from Listen next* is grey, not red, matching *Remove from shelf*. | status (task 5.14) | E8 |
+| **MR-D17** | The finish toast keeps one *Now reading* chip plus *+N · Follow…*; *Keep going?* moves into the Follow… sheet; *Rank it* keeps its row. | finishoffer; thisorthat | E10 |
+| **MR-D18** | The stepper’s number can be typed and a held button repeats (§9 rewritten); steppers sit on `--sunk` in sheets too, so the batch and finish sheets are redrawn from `--raise`. | §9 Stepper; batch, finish sheets | E11 |
+| **MR-D19** | *Where the book sits* gains the ladder’s mono kind keys, an indent per level and fixed meter and count columns. | bdash (2.2g, 6.21) | E1–E6 |
+| **MR-D20** | Library at the phone: *Owned* and *Sort* become dropdown chips on one row; the genre chip row is drawn. | blist | E7 |
+| **MR-D21** | The parked review covers every medium, grouped by medium in nav order, with one cadence; the Inbox row and the dashboards’ line follow. | parked, capture, settings | F1–F4 |
+| **MR-D22** | The offline strip and sync pill gain three states: retrying (amber, held, with a countdown), failed (grey ×, the row shows its real state) and undone while queued (grey). | §9 Sync pill; states | F11–F15 |
+| **MR-D23** | Progress grows by kind (franchise, show, artist, game series) and its chips run to five media. | progress | E9 |
+| **MR-D24** | Status controls for watch, music and games fill *Dropped*, *Skipped*, *Set aside* and *Park* grey when chosen, as books’ DNF and Park. | blist status control | B20, C11, D13 |
+
+### 17.10 Decisions for the owner (MR-Q)
+
+Each is drawn as recommended.
+
+| # | Question | Recommendation | Considered |
+|---|---|---|---|
+| **MR-Q1** | How do five media fit the phone bar? | A medium switcher: *Books ▾* in the bar, a sheet with all five (A5, A6). | Five text tabs with no wordmark (A2): no room for search or a sixth. Icons with the current one named (A3): four of five are icons alone and the bar reflows. Three + More (A4): two media hidden for good. A bottom nav: the thumb bar owns the bottom. Swiping between media: undiscoverable and fights the shelves’ sideways scroll. |
+| **MR-Q2** | What does `/` open? | The medium you used last (unchanged), plus a *Start on* setting. | Always one medium. A cross-media *Today* page: a sixth dashboard that breaks the five slots and repeats Progress. |
+| **MR-Q3** | Where do Inbox, Progress and Activity live? | The tab row’s end after a divider; the sidebar’s *Across media* group; the rails after a rule. | Inside the Switch medium sheet only (hides Inbox’s count); a sixth pseudo-medium called Ledger in the switcher. |
+| **MR-Q4** | Where is search on the phone? | In the bar, every screen; retire the thumb bar’s slot. | Both (two buttons for one thing); the thumb bar only (screens without a thumb bar lose search). |
+| **MR-Q5** | Which accents for music and games? | `--t2` fuchsia and `--t1` blue. Games vs `--brand` is 13.4 in light, and is always shown beside its name. | Indigo `#4143c7` / `#8696f5`: 18.2 from brand, but 9.8 from comics. Plum `#7b38a3` / `#c88ef1`: 6.3 from comics in dark. Teal: 13.2 from ready. |
+| **MR-Q6** | Does watch get a stored queue? | No: oldest added first, filtered by Film/TV and genre. | A watch queue with Reorder, like comics’; a single *Tonight* pin. |
+| **MR-Q7** | What fills watch’s Situation slot? | *Paused*, as the feel pass drew it (FP-D12). | The mockup’s *What’s reachable* counts (seasons ready, shows never started, films waiting). |
+| **MR-Q8** | Where does a caught-up show go when a new season appears? | Back to In flight under *Watching*, with a toast naming the season. | Up next (as a new title would). |
+| **MR-Q9** | What does marking an album listened do to its tracks? | Marks every unmarked track listened; skipped tracks stay skipped. | Album status independent of tracks; require every track first. |
+| **MR-Q10** | What is the control on music’s Up next? | *All · New* (released in the last 90 days). | An artist filter; a stored queue with Reorder. |
+| **MR-Q11** | Do artists get a hue on the discography rail? | No: grey, since one artist’s rail has nothing to tell apart. | A `--t*` per artist, as franchises have. |
+| **MR-Q12** | What is the song ranking’s scope? | One list across every artist, viewable by artist or year. | One ranking per year (books’ Top); one per artist. |
+| **MR-Q13** | Where do a game’s hours come from? | You log them (*Log time*, a stepper). | Percent complete; a Steam or PSN sync (accounts, an outside call, and partial coverage); no hours, Position as estimate only. |
+| **MR-Q14** | Which time-to-beat estimate measures a game? | Your choice per game, main by default. | One global setting. |
+| **MR-Q15** | Where do set-aside rotation games go? | A collapsed *Set aside* group at the foot of In flight. | Done’s *Stopped* (but they never finish); not listed anywhere. |
+| **MR-Q16** | How does the parked review read with several media? | One review, a group per medium. | One list by age, mixed media; a separate review per medium. |
+| **MR-Q17** | One parked cadence or one per medium? | One. | Per medium (five settings for one habit). |
+| **MR-Q18** | Steppers on `--sunk` or `--raise`? | `--sunk`, as §9 says, sheets included. | `--raise`, as the batch and finish sheets are drawn. |
+| **MR-Q19** | Cap the finish toast? | Yes: one chip and *+N · Follow…*. | Keep it as built; move the offer to a sheet that opens after the finish. |
+| **MR-Q20** | Where do undated reads go in Activity? | One *No date* group at the very end. | A *No date* group in every year. |
+| **MR-Q21** | When does the Metron check for comics releases run? | Only when you tap *Check now*. | A weekly background job (still never at render). |
+| **MR-Q22** | How does *Where to watch* refresh? | Only on *Check now*; greyed after 30 days. | On opening the sheet: an outside call when a page renders, which the rules forbid. |
+| **MR-Q23** | Game cover shape? | 2:3, IGDB art cropped a little. | A 3:4 box and new cover tokens. |
+| **MR-Q24** | Rule check: is *Log time* a “mark verb”? | Yes: the thumb bar’s first slot is the medium’s commonest write. For games that is logging time, not finishing. | Make *✓ Finished* primary and *Log time* secondary, which keeps the rule literal and buries the daily action. |

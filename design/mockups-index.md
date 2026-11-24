@@ -249,3 +249,37 @@ The mockup re-rendered on the current tokens (palette 1c), with the control-stat
 | `path` | `path-phone-dark.png` | `path-desk-dark.png` |
 | `session` | `session-phone-dark.png` | `session-desk-dark.png` |
 | `palette` | `palette-phone-dark.png` | `palette-desk-dark.png` |
+
+## Nov 2026, mediums review (D-177)
+
+The second design review is drawn in `design/MR-Main.dc.html` and the seventeen `design/MR-*.dc.html` boards beside it, not here, and every frame is also a PNG in `design/screenshots/mediums-review/` (dark and light; phone, tablet, desktop and spec). `design/MR-Handoff.dc.html` and `docs/design-briefs/2026-11-mediums-handoff.md` map each frame to its screen. Where the review draws a surface it beats this file on layout and copy (D-177, as D-40 did), so these frames are **superseded until their task redraws them** from the review, in the same PR (standing rule 6). Its covers are striped placeholders and its figures sample data (D-7).
+
+| Frame here | Superseded by (Mediums-Review) | Redrawn by |
+|---|---|---|
+| The phone media bar and tab row on every phone frame | A5–A7, `MR-A-Navigation-1`: the medium button, the *Switch medium* sheet, search left of the gear, *Activity* after *Progress* (D-178) | 6.25 |
+| The tablet rail and the desktop sidebar and icon rail on every 834px and desktop frame | A8–A10, `MR-A-Navigation-2` (D-178) | 6.25 |
+| `palette` (phone) | F16, `MR-F-Unbuilt-2`: search from the phone bar | 6.1 (the bar's search button: 6.25) |
+| `watchlist` | B1–B6, `MR-B1-Watch-dashboard-1`: the season as the unit, no Reorder, franchise → seasons (D-179) | 8.7 |
+| `watchempty` | B27, `MR-B2-Watch-screens-2` | 8.7 |
+| `status` (watch notes), `states` (watch's empty slates) | B7–B15, `MR-B1-Watch-dashboard-2` | 8.8 |
+| `titledetail` | B20–B24, `MR-B2-Watch-screens-1`: film, show and season sheets; a stale *Where to watch* | 8.4 (*Where to watch*, *Check for new seasons*: 8.9) |
+| `watchadd` | B25–B26, `MR-B2-Watch-screens-2`: *Watched through*; the TMDB error as a grey × with *Save to inbox* | 8.2 |
+| `franchise` | B28–B29, `MR-B2-Watch-screens-2` | 8.5 |
+| — (new) the watch list and saved views; shelves; the person page | B16–B19 · B30, B18 · B31 | 8.3 · 8.6 · 8.10 |
+| — (new) music | C1–C20, `MR-C-Music-1`, `-2` | 9.0 (the mockup frames), then 9.2–9.7 |
+| — (new) games; `settings`' *Your platforms* | D1–D18, `MR-D-Games-1`, `-2` | 10.0 (the mockup frames), then 10.2–10.6 |
+| `bdash` (*where the book sits*) | E1–E6, `MR-E-Review-1`: the kind keys, an indent per level, fixed meter and count columns (MR-D19) | 6.21 |
+| `blist` (phone) | E7, `MR-E-Review-2`: *Owned* and *Sort* as dropdown chips, the genre row (MR-D20) | 6.24 |
+| `status` (books *Listen next*) | E8, `MR-E-Review-2`: *Remove from Listen next* grey (MR-D16) | 6.24 |
+| `finishoffer` | E10, `MR-E-Review-2`: one *Now reading* chip and *+N · Follow…* (MR-D17) | 6.24 |
+| `settings`, `batch`, the books finish sheet (the stepper) | E11, `MR-E-Review-2`: typed and held, on `--sunk` in sheets too (MR-D18) | 6.24 |
+| — (new 834px frames) `bookdetail`, `thisorthat`, `top`, `rebalance`, `moveplan`, `calibre`, `settings` | E12–E17, `MR-E-Review-3` | 6.24 (*Start on* in E17: 6.25) |
+| `progress` | E9, `MR-E-Review-2`: Progress by kind across five media (MR-D23) | 8.8, 9.6, 10.3, each as its medium joins |
+| `parked`, `capture`, `settings` (*Parked*) | F1–F4, `MR-F-Unbuilt-1`: one review for every medium (D-182) | 8.8, 9.3, 10.3, each as its medium gains *Park* (D-105) |
+| — (new) `/comics/releases` and the Metron check | F5–F6, `MR-F-Unbuilt-1` | 5.8 |
+| `newrun` (prerequisites) | F7, `MR-F-Unbuilt-1`: *Read first* with the loop error | 3.3 |
+| — (new) the volume map editor | F8, `MR-F-Unbuilt-1` | 3.9 |
+| — (new) `/activity` | F9–F10, `MR-F-Unbuilt-2` | 6.17 |
+| `states` (offline) | F11–F15, `MR-F-Unbuilt-2`: retrying, failed, undone while queued (MR-D22) | 6.4 |
+
+Held as drawn (STYLE_GUIDE §17.8): `progress`, `author`, `bookdetail`, `parked`, `follow`, `thisorthat`, `top`, `releases`, `series`, `shelves`, `plan`, `rebalance`, `moveplan`, `add`, `calibre`, `states`, apart from the rows above. Every phone bar's U+26B2 or text gear becomes the drawn icon, which §9 already required (6.24, 6.25).
