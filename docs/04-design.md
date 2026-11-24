@@ -58,6 +58,18 @@ from public CDNs, so they need a network connection (the app itself makes no
 external requests: its fonts are self-hosted). The hub links to the two spec
 pages; the feel pass is `Ledger Feel Review.dc.html`.
 
+**In Claude.** Standalone Claude Design (claude.ai/design) closes by
+2026-12-14. Its work now lives in two claude.ai artifacts, private to the
+owner's account:
+
+| Artifact | What it holds |
+|---|---|
+| [Ledger canvas](https://claude.ai/artifact/KMTyE4DuUvZPYH4pbuHHCu) | The drawings: every `.dc.html` page above, on two pages (*Feel pass*, *Specs*). Unchanged, except that four names lose their spaces, which the canvas doesn't allow: `Main` (the feel review), `Style-Guide`, `Telescope-Spec`, `Plan-Rail-Spec`. New design reviews are drawn here |
+| [Ledger design system](https://claude.ai/artifact/4kWo7Lnryxsjr7H79dy9XH) | The rules a new drawing starts from: palette 1c in both themes, the three self-hosted fonts, the type scale, spacing, radii and shadows, and a README of the colour meanings, copy and components. Built from `src/app/globals.css` and this blueprint at `ab28b7d`; no components |
+
+The files in `design/` still win (D-1). A page drawn or changed on the canvas
+comes into `design/` as delivered, under its repo name.
+
 The older design files keep their roles: `design/mockups.html` (v4) for every
 screen's layout and copy, `design/mockups-index.md` for its screen ids and the
 *Not shown* list, and `docs/review/UI_AUDIT_REPORT.md` as the Sept 18 audit that

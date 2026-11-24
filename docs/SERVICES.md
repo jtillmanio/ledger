@@ -24,7 +24,7 @@ variables were not checked from here: compare them by hand with
 | [Neon](#neon) | Postgres: production, development, test, one branch per PR preview | Neon project `ledger` | Connection strings; `NEON_API_KEY` | Free (10 branches; suspends after 5 idle minutes) | In use |
 | [Vercel](#vercel) | Hosting, a preview per PR | Team `justin-tillman`, project `ledger` | `VERCEL_TOKEN`; `VERCEL_AUTOMATION_BYPASS_SECRET` | Hobby (non-commercial) | In use |
 | [Cloudflare R2](#cloudflare-r2) | Nightly database dumps | Cloudflare account, bucket `ledger-backups` | `R2_BACKUPS_ACCESS_KEY_ID` + `R2_BACKUPS_SECRET_ACCESS_KEY` | Free tier (10 GB; 90 dumps of ~1 MB) | In use |
-| [Anthropic](#anthropic-claude) | Claude Code locally; Claude's PR review and `@claude` in Actions | Your Claude subscription | `CLAUDE_CODE_OAUTH_TOKEN` | Subscription | In use |
+| [Anthropic](#anthropic-claude) | Claude Code locally; Claude's PR review and `@claude` in Actions; the design canvas and design system (claude.ai artifacts) | Your Claude subscription | `CLAUDE_CODE_OAUTH_TOKEN` | Subscription | In use |
 | [Metron](#metron) | Comics metadata backfill; *Add issues* search | metron.cloud account | `METRON_USERNAME` + `METRON_PASSWORD` (or `METRON_API_TOKEN`) | Free: 20 a minute, 5,000 a day | In use |
 | [Hardcover](#hardcover) | Book metadata, replacing Open Library (D-94) | hardcover.app account | `HARDCOVER_API_TOKEN` | Free: 60 a minute, 5,000 a day | In use (ETL, 1.14b; *Add books* search, 1.4f) |
 | [Open Library](#open-library) | Nothing: *Add books* and the ETL ask Hardcover (D-94) | None | None | Free | Retired (6.19) |
@@ -154,6 +154,12 @@ to be changed in both.
   when the secret is missing.
 - **If it lapses:** the review job fails on authentication. Run
   `claude setup-token` and replace the secret.
+- **Design:** the [Ledger canvas](https://claude.ai/artifact/KMTyE4DuUvZPYH4pbuHHCu)
+  (the drawings) and the
+  [Ledger design system](https://claude.ai/artifact/4kWo7Lnryxsjr7H79dy9XH)
+  (colours, fonts, rules), private claude.ai artifacts on the same account. No
+  key: nothing in the repo calls them. They replace standalone Claude Design,
+  which closes by 2026-12-14 ([04-design.md](04-design.md) § 1).
 
 ## Metron
 
