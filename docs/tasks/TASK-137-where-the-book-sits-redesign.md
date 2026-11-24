@@ -1,7 +1,7 @@
 ---
 id: TASK-137
 title: 6.21 Redesign where the book sits, with Claude Design
-status: In progress
+status: Review
 depends_on: [TASK-126]
 size: M
 model: opus
@@ -29,13 +29,13 @@ How a book's universe, author, series and subseries read in Now, on the tablet a
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): the design tool's frames cover phone, tablet and desktop, light and dark, the owner
+- [x] AC-1 (roadmap **Check:**, verbatim): the design tool's frames cover phone, tablet and desktop, light and dark, the owner
   picks one, and Now and `/progress` match it; 2.2g's own Check still passes with
   its row and order assertions rewritten to the chosen drawing.
-- [ ] AC-2: The PR names the chosen drawing's file and frame ids, and `design/mockups.html` § `bdash` and § `progress`, with their `design/mockups-index.md` rows, are redrawn to match it.
-- [ ] AC-3: Given a book in a universe with a long name (at least 40 characters), a series and a subseries, Now shows every level the drawing shows, and nothing scrolls sideways at 360px; given a book on no level, Now draws what the drawing draws for none (rows absent, or the drawing's empty treatment).
-- [ ] AC-4: Every `read / total` shown equals its progress view's figures, and every meter's fill resolves to `--ready` in both themes, on Now and on `/progress`.
-- [ ] AC-5: Now's rows and `/progress`'s nested rows meet the UX floor (`docs/04-design.md` § 10. The UX floor): the loading state holds their space or the plan says why no layout shift goes over budget, text 4.5:1 and meter tracks 3:1 in both themes, reduced motion respected, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-2: The PR names the chosen drawing's file and frame ids, and `design/mockups.html` § `bdash` and § `progress`, with their `design/mockups-index.md` rows, are redrawn to match it.
+- [x] AC-3: Given a book in a universe with a long name (at least 40 characters), a series and a subseries, Now shows every level the drawing shows, and nothing scrolls sideways at 360px; given a book on no level, Now draws what the drawing draws for none (rows absent, or the drawing's empty treatment).
+- [x] AC-4: Every `read / total` shown equals its progress view's figures, and every meter's fill resolves to `--ready` in both themes, on Now and on `/progress`.
+- [x] AC-5: Now's rows and `/progress`'s nested rows meet the UX floor (`docs/04-design.md` § 10. The UX floor): the loading state holds their space or the plan says why no layout shift goes over budget, text 4.5:1 and meter tracks 3:1 in both themes, reduced motion respected, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -62,8 +62,10 @@ How a book's universe, author, series and subseries read in Now, on the tablet a
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The drawing gives each meter `role="img"` with a percentage; the build keeps it `aria-hidden`, since the `read / total` beside it is the text a screen reader reads (approved at plan).
-- E1–E6 don't draw 1.17b's status control under the band: the frames are crops, not a decision to drop it; it stays where it is (approved at plan).
+- The drawing gives each meter `role="img"` with a percentage; the build keeps it `aria-hidden`, since the `read / total` beside it is the text a screen reader reads (approved at plan) → not tracked: deliberate, the figure is the accessible text (as 2.2g built it)
+- E1–E6 don't draw 1.17b's status control under the band: the frames are crops, not a decision to drop it; it stays where it is (approved at plan) → not tracked: no change intended; §17.8 changes `bdash` only by MR-D19
+- E1–E6 draw the rest of the hero more compactly than the build: the page count small and grey (the build's 32px figure is the feel pass's), *Next in* and the foot in the text column at 834px and up, the band on `--art` (ui-verifier R1) → not tracked: §17.8 holds `bdash` apart from MR-D19's levels, so these are the frames' rendering, not departures; the `--art` band is already 4.2/4.3's (`globals.css` § Now)
+- ui-verifier R1 could not show a universe or author row in the development data (no book in hand is in a universe or by an author followed as Reading); it set Mort to Reading for the walk and put it back → not tracked: the universe and author rows are proven by `test/e2e/books-dashboard.spec.ts` at every width, light and dark
 
 ## Plan
 
@@ -102,13 +104,17 @@ Approved by the owner 2026-11-24.
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS (touched spec PASS at w390, w768, w1280, and w360, w412, w1024 with `--full`) | PR #339 opened ready | CI R1 PASS (every project, 10 shards; Vercel PASS)
+- Spec R1 APPROVE | Audit R1 CHANGES (minor: the loading clause rests on the plan's argument, as AC-5 allows; no motion added; the elbow's hairline unchecked) → elbow assertion added | Verify R2 PASS
+- UI R1 PASS (360–1280, light and dark; series and subseries rows on a dev book set to Reading and put back; `/progress` unchanged; 0 console errors) | schema-reviewer n/a (no schema, views or queries)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1 (spec, audit, UI)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0

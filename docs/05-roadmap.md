@@ -5564,7 +5564,7 @@ it is converted.
   with no dump or an unreachable bucket it shows `unknown`, and the page still
   renders.
 
-- ☐ 6.21 **Redesign where the book sits, with Claude Design** · M. Owner
+- ☑ 6.21 **Redesign where the book sits, with Claude Design** · M. Owner
   intake, 2026-11-05 (owner: *stacked meters in Now with a subsequent future
   task to redesign it with Claude Design*). D-119. Depends on 2.2g and 5.12.
   2.2g's rows are a working version. This takes them to the design tool with
