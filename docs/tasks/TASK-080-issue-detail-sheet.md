@@ -1,7 +1,7 @@
 ---
 id: TASK-080
 title: 3.5 Detail sheets (3 of 3) — the issue sheet, every run that places it
-status: In progress
+status: Review
 depends_on: [TASK-078, TASK-079]
 size: M
 model: opus
@@ -33,7 +33,7 @@ Tapping an issue opens a sheet with its story, credits and dates, and every run 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the issue clauses: three runs listed with one read, marking a second writes exactly one `issue_progress` row, one sheet in the DOM after *Why blocked?* (as settled at the plan gate), *Cover date* in `Mon YYYY`, and no *Dates* group for an undated issue. TASK-079 proves the book clauses): test that the back button dismisses the sheet and restores list
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the issue clauses: three runs listed with one read, marking a second writes exactly one `issue_progress` row, one sheet in the DOM after *Why blocked?* (as settled at the plan gate), *Cover date* in `Mon YYYY`, and no *Dates* group for an undated issue. TASK-079 proves the book clauses): test that the back button dismisses the sheet and restores list
 scroll position; that a direct visit to `/books/{id}` renders the full page;
 that a book with no summary renders without a layout shift; and that the sheet
 and the master list's inline editor write status through the same code path.
@@ -43,11 +43,11 @@ read, and that marking a second from the sheet writes exactly one
 exactly one sheet in the DOM, and Back returns to the issue sheet. An issue
 with a `cover_date` renders *Cover date* in `Mon YYYY`. An undated issue
 renders no *Dates* group and no `—`.
-- [ ] AC-2: Given an issue placed in three runs and read in one, opened from one of the unread runs, *Your record* lists three rows, the read one with a green tick and its date, the other two grey rings, the opening run marked *this run*; pressing one unread row's toggle sets `aria-pressed="true"`, writes one `issue_progress` row for that placement and no other, and its undo removes it.
-- [ ] AC-3: An issue whose cover artist is its penciller renders no Cover row; one with a different cover artist renders it; one with no inker credit renders no Inker row; Colorist and Letterer render only inside the *More credits* disclosure.
-- [ ] AC-4: An issue with `cover_date` 1981-01-01 renders *Cover date* `Jan 1981`; an undated one renders no *Dates* group and no `—`; *Published* renders only when a store date exists and differs.
-- [ ] AC-5: Loading `/comics/{runId}/{issueId}` directly renders the full page; from the run detail the sheet opens over the spine and Back returns to the spine at its scroll position with focus on the row that opened it.
-- [ ] AC-6: The issue sheet and full page meet the UX floor (`docs/04-design.md` § 10. The UX floor): loading and error states drawn; each placement toggle is a real button named with its run and position, 44px on the phone; the *More credits* disclosure is a real button with `aria-expanded`; read state carries a glyph and text, not colour alone; text 4.5:1 in both themes; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark.
+- [x] AC-2: Given an issue placed in three runs and read in one, opened from one of the unread runs, *Your record* lists three rows, the read one with a green tick and its date, the other two grey rings, the opening run marked *this run*; pressing one unread row's toggle sets `aria-pressed="true"`, writes one `issue_progress` row for that placement and no other, and its undo removes it.
+- [x] AC-3: An issue whose cover artist is its penciller renders no Cover row; one with a different cover artist renders it; one with no inker credit renders no Inker row; Colorist and Letterer render only inside the *More credits* disclosure.
+- [x] AC-4: An issue with `cover_date` 1981-01-01 renders *Cover date* `Jan 1981`; an undated one renders no *Dates* group and no `—`; *Published* renders only when a store date exists and differs.
+- [x] AC-5: Loading `/comics/{runId}/{issueId}` directly renders the full page; from the run detail the sheet opens over the spine and Back returns to the spine at its scroll position with focus on the row that opened it.
+- [x] AC-6: The issue sheet and full page meet the UX floor (`docs/04-design.md` § 10. The UX floor): loading and error states drawn; each placement toggle is a real button named with its run and position, 44px on the phone; the *More credits* disclosure is a real button with `aria-expanded`; read state carries a glyph and text, not colour alone; text 4.5:1 in both themes; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark.
 
 ## Out of scope
 
@@ -73,12 +73,18 @@ renders no *Dates* group and no `—`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Candidate decision: the Check's *Why blocked?* clause (one sheet in the DOM, Back returns to the issue sheet) is proven by 2.6, which builds that sheet as a pane in the issue sheet's dialog (D-171); 3.5 ticks on this part's merge (approved at plan)
-- 2.6: *Why blocked?* opened from inside the issue sheet is a pane (D-171), and 2.6's test proves 3.5's clause (approved at plan)
-- The cover → hero morph (`view-transition-name: cover-{id}`) for both sheets: Next 16 offers it only through React's experimental `<ViewTransition>` and `experimental.viewTransition`; a new phase-3 roadmap item (approved at plan)
-- *Collected in* on the issue sheet needs `edition_issues` (5.6); until then the section isn't drawn (approved at plan)
-- DNF grey in the status editor: issues have no status editor, so nothing to draw (approved at plan)
-- The master list's collapsed row: it is the books Library's, which already opens the book sheet (TASK-079) (approved at plan)
+- Candidate decision: the Check's *Why blocked?* clause (one sheet in the DOM, Back returns to the issue sheet) is proven by 2.6, which builds that sheet as a pane in the issue sheet's dialog (D-171); 3.5 ticks on this part's merge → docs/review/decisions.md § D-176 (approved at plan)
+- 2.6: *Why blocked?* opened from inside the issue sheet is a pane (D-171), and 2.6's test proves 3.5's clause → docs/05-roadmap.md § 2.6 (approved at plan)
+- The cover → hero morph (`view-transition-name: cover-{id}`) for both sheets: Next 16 offers it only through React's experimental `<ViewTransition>` and `experimental.viewTransition` → docs/05-roadmap.md § 3.5d (new; its Check is proposed) and docs/06-tasklist.md § M14 (approved at plan)
+- *Collected in* on the issue sheet needs `edition_issues` (5.6); until then the section isn't drawn → docs/05-roadmap.md § 5.6 (approved at plan)
+- DNF grey in the status editor: issues have no status editor, so nothing to draw → not tracked: nothing to build for issues (approved at plan)
+- The master list's collapsed row: it is the books Library's, which already opens the book sheet (TASK-079) → not tracked: already done by TASK-079 (approved at plan)
+- The sheet's *issue n of N* is the placement's stored sequence over the run's live count, so after a removal (which doesn't renumber) it can read *issue 400 of 381* (schema-reviewer, round 1) → not tracked: kept on purpose; it is the number the run's own spine row shows (`.iseq`)
+- The `issue` route's perf ceilings start at the book page's numbers, unmeasured; a first measurement above them is a raise and needs a decision (spec-reviewer, round 2) → not tracked: stated in docs/02-architecture.md § Performance budget, where the first measured run will be read
+- In the route sheet at 1280px, Tab from the last control stays on it rather than wrapping to the first (ui-verifier; nothing outside the dialog takes focus). The frame is `RouteSheet`'s, shared with the book sheet → docs/05-roadmap.md § 3.5c
+- The grab handle is 24px tall, under 44px (ui-verifier) → not tracked: as drawn (STYLE_GUIDE § 7's 36×4 handle with a 24px hit area; the close is 44px), the same as the book sheet's
+- An unknown issue's not-found page answers HTTP 200 on a direct load in dev (ui-verifier) → not tracked: Next streams `notFound()` after the route's `loading.tsx`, as the book route does; the page shown is the 404
+- Optional test gaps the test audit named: a route's `loading.tsx` using the skeleton and its error boundary on a thrown query are proven as markup only → not tracked: accepted as is (the same depth as the book sheet's, TASK-079)
 
 ## Plan
 
@@ -114,13 +120,21 @@ Approved 2026-11-23 (owner: "approve plan with recommendations").
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 FAIL (1: `e2e-shards.test.ts`, the new spec untimed tipped the 8-shard plan to 1.037) → fixed (shard-times estimates) | Verify R2 PASS | e2e `w390-light` R1 FAIL (a locator bug in the spec) → R2 PASS
+- Spec R1 CHANGES (the spine's label link under 24px) | Schema R1 APPROVE (3 MINOR: placeholder runs, credit sort, sequence vs live count) | Claude PR review: no issues
+- CI R1 FAIL (`issue-detail.spec.ts:121`, w390-light, w390-touch, w768-light: a production build scrolled the spine to the top when the sheet opened) → fixed (`scroll={false}`, reproduced and proven on `test:e2e:build`) | Verify R3 PASS, R4 PASS | CI R2 PASS
+- Audit R1 PASS (one optional case added: Published with no cover date)
+- Drift: main moved (0.13 #332, deps #331), merge conflicts in `budget.json` and `docs/02-architecture.md` (0.13's new budget format) → rebased, `issue` takes the book page's new-format ceilings | Verify R5 PASS (+ the spec, 10/10)
+- Spec R2 APPROVE (a note: a first measurement above the starting ceilings is a raise → said in § Performance budget) | Schema R2 APPROVE | CI R3 PASS (rebased head)
+- UI R1 PASS (all six viewports, light and dark; the manual check on the dev database, every mark undone; 0 console errors; 3 minor notes → Follow-ups)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 5 (R1 failed: shard balance)
+- Review rounds: 2 (spec, schema), 1 test audit
+- First-pass AC FAILs: 1 (AC-6: the spine link under 24px); CI found 1 more (AC-5 on a production build)
+- Plan revisions after approval: 1 (the shift-click on the label, the perf guard entries, shard-times estimates)

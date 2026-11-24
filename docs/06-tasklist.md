@@ -103,7 +103,7 @@ milestone._
 | F-26 Run list by track and block | Next | 2.9 | M12 |
 | F-27 Run and block completion | Next | 2.12 | M12 |
 | F-28 Edit the catalog in place | Next | 3.1, 3.2, 3.7, 3.8 | M13 |
-| F-29 Detail sheets | Next (then Later) | 3.5, 8.4, 3.5b, 3.5c | M14, M23 |
+| F-29 Detail sheets | Next (then Later) | 3.5, 8.4, 3.5b, 3.5c, 3.5d | M14, M23 |
 | F-30 Eras and spine v2 | Next | 3.6, 3.6b, 3.6c | M14 |
 | F-31 Ratings, notes and DNF | Next (then Later) | 3.4, 5.4, 5.5 | M14, M18, M17 |
 | F-32 Adding at scale | Next | 3.10, 3.11, 3.12 | M15 |
@@ -450,9 +450,10 @@ with the task that first reads it.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
-|  | 3.5 → TASK-078, TASK-079, TASK-080 | Detail sheets — books and issues | M |  | — |
+| ✅ | 3.5 → TASK-078, TASK-079, TASK-080 | Detail sheets — books and issues | M |  | — |
 | ✅ | 3.5b → TASK-118, TASK-119, TASK-120 | The book sheet's own writes | M | _Split from TASK-079 (PR #275)_ | 3.5 |
 |  | 3.5c | The book sheet follows its own writes | S | _From TASK-119 (PR #318)_ | 3.5b |
+|  | 3.5d | The cover morphs into the sheet's hero | S | _From TASK-080 (PR #334)_ | 3.5 |
 | ✅ | 3.4 → TASK-074 | Book ratings and top-books reorder | S |  | — |
 | ✅ | 3.4b → TASK-075, TASK-076, TASK-091, TASK-077 | Rank a book when you finish it, and every year's top ten | M | _Pulled ahead of 1.26 (D-139)_ | 3.4, 1.5 |
 | ✅ | 3.4c → TASK-121 | A re-dated read leaves its old year's ranking | S | _From TASK-077 (PR #260)_ | 3.4b |
