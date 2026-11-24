@@ -4845,7 +4845,7 @@ it is converted.
     calls Metron (the mocked client counts calls). A mocked 429 renders the
     rate-limited line and makes no second request before `Retry-After`.
 
-- ☐ 5.9 **Series page from `series_progress`** · M. Coverage check,
+- ☑ 5.9 **Series page from `series_progress`** · M. Coverage check,
   2026-10-08; product B6 (the workbook's Series tab). The view has existed
   since the first load and nothing shows it. `/books/series`: every series
   with its author, `books_read / total_books` in mono and an `.emeter` filled
@@ -4873,6 +4873,35 @@ it is converted.
     shows only that series' books. A series holding positions 1, 2 and 4 of 4
     renders a gap row for #3, and a series name in a list row links to its
     page. Screenshot at 360px, 834px and 1280px.
+
+- ☐ 5.9b **Every other place line links its names** · M. *From TASK-125
+  (5.9, PR #330):* 5.9 linked the series, author and universe names in the
+  Library rows, *where the book sits*, the *On deck* rows and the book sheet,
+  through `BookPlace` (`src/components/BookPlace.tsx`), and listed the rest
+  here (approved at its plan, 2026-11-23). Depends on 5.9, 5.11.
+  - **The rest of the place lines.** The Up next cards (`PlanShelf`), the
+    status rows (`StatusBookRow`), the plan screens (`PlanQuarter`,
+    `PlanQuarterRows`, `PlanSheet`, `PlanPicker`), Top books, Coming out,
+    Parked, Listen next, Add books' search results, Now's *Next in* and the
+    follow sheet's rows still print the names as text. Each draws its place
+    line through `BookPlace` (a plain `<a>` where a route's byte budget is
+    tight, `<Link prefetch={false}>` elsewhere); the queries behind them gain
+    `author_id`, `universe_id` and `series_id`, and the mockup draws `a.plink`
+    on each.
+  - **A gap row fills By hand.** A series page's gap row *Add* (TASK-102)
+    opens Add books with Search holding the series' name
+    (`/books/add?q=<name>`). By hand could open with *Series* and *#* filled
+    from the gap: `src/components/ByHand.tsx`, through `AddBooks.tsx` and a
+    new parameter on `src/app/books/add/page.tsx`.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first)
+    on the Up next cards, the status rows, the plan screens, Top books, Coming
+    out, Parked, Listen next, Add books' results, Now's *Next in* and the
+    follow sheet's rows, a book's series name is a link named by the series
+    alone to `/books/series/<id>`, and its author and universe names link to
+    their pages; a book with no series draws no series link. A gap row's
+    *Add* for #3 opens By hand with the series named and `3` in *#*. Every
+    route it changes stays within its byte budget (`scripts/perf/budget.json`).
+    Screenshots at 360px and 1280px.
 
 - ☐ 5.10 **Editions: collected and read** · M. Coverage check, 2026-10-08;
   product § The owner's list's *Master* row. Depends on 5.6. The workbook's Master tab (178

@@ -18,10 +18,6 @@ vi.mock("@/db/queries", () => ({
   listBooks: queries.listBooks,
   TO_READ_LEVELS: ["quarter", "year", "on_deck", "someday"],
   OWNED_FILTERS: ["physical", "audio", "ebook", "none"],
-  // 41 series: more than the page shows, so the Show all link is drawn.
-  seriesProgress: async () => Array.from({ length: 41 }, (_, i) => ({
-    series_id: `s${i}`, name: `Series ${i}`, author: null, books_read: 0, total_books: 1, pct: 0,
-  })),
   // The genres of the listed books (task 4.5): not the old hard-coded ten.
   listCounts: async () => ({
     unlisted: 3,
@@ -60,7 +56,7 @@ describe("the Library page (AC-3, AC-4)", () => {
     expect(queries.listBooks).toHaveBeenLastCalledWith("test-user", expect.objectContaining({ sort: "series", dir: "asc" }));
   });
 
-  it("keeps sort and dir on every chip and on Show all, whichever filter is chosen", async () => {
+  it("keeps sort and dir on every chip, whichever filter is chosen", async () => {
     const { doc } = await render({ status: "to_read", level: "quarter", q: "the", sort: "length", dir: "asc" });
     // The reverse link is the one that changes the direction: it is checked on its own below.
     const chips = [...doc.querySelectorAll<HTMLAnchorElement>("a.chip")].filter((a) => !a.closest(".sort"))
@@ -73,8 +69,6 @@ describe("the Library page (AC-3, AC-4)", () => {
       expect(p.get("sort"), href).toBe("length");
       expect(p.get("dir"), href).toBe("asc");
     }
-    const all = hrefs(doc).find((h) => h.includes("series=all"))!;
-    expect(new URL(all, "http://x").searchParams.get("sort")).toBe("length");
     // The filters a chip sets are still its own: the To read level chips keep to_read.
     expect(chips).toContain("/books/list?status=to_read&level=quarter&sort=length&dir=asc");
   });
@@ -111,6 +105,51 @@ describe("the Library page (AC-3, AC-4)", () => {
     }]);
     const { doc } = await render({});
     expect(doc.querySelector(".row-meta")?.textContent).toContain("~202k");
+  });
+
+  // Task 5.9, 3 of 3 (TASK-125, AC-2, AC-4): a row's author, universe and series are plain anchors to their
+  // pages (the leanest markup, as the title's), the series' named by the series and its #n after it, then the
+  // genre and what you own as text; and the foot's forty series rows are one link to every series.
+  it("links a row's author, universe and series to their pages, then prints the genre and what you own", async () => {
+    queries.listBooks.mockResolvedValueOnce([{
+      id: "m4", title: "The Alloy of Law", author: "Brandon Sanderson", author_id: "brandon-sanderson",
+      universe: "Cosmere", universe_id: "cosmere", series: "Mistborn", series_id: "mistborn", series_position: 4,
+      genre: "Epic Fantasy", word_count: null, word_count_source: null, cover_url: null, pending: false,
+      status: "to_read", read_year: null, plan_year: null, finished_on: null, finished_on_precision: "none",
+      started_on: null, started_on_precision: "none", days_taken: null, rating: null, reads: 0, listens: 0,
+      owned: ["physical", "ebook"], total: 1,
+    }]);
+    const { doc } = await render({});
+    const sub = doc.querySelector(".book-row .row-sub")!;
+    expect(sub.textContent).toBe("Brandon Sanderson · Cosmere · Mistborn #4 · Epic Fantasy · Physical · Ebook");
+    expect([...sub.querySelectorAll("a")].map((a) => [a.textContent, a.getAttribute("href"), a.attributes.length])).toEqual([
+      ["Brandon Sanderson", "/books/authors/brandon-sanderson", 1],
+      ["Cosmere", "/books/universes/cosmere", 1],
+      ["Mistborn", "/books/series/mistborn", 1],
+    ]);
+  });
+
+  it("prints a row with no place as its genre alone, with no leading dot and no link", async () => {
+    queries.listBooks.mockResolvedValueOnce([{
+      id: "x", title: "Loose", author: null, author_id: null, universe: null, universe_id: null, series: null,
+      series_id: null, series_position: null, genre: "Horror", word_count: null, word_count_source: null,
+      cover_url: null, pending: false, status: "to_read", read_year: null, plan_year: null, finished_on: null,
+      finished_on_precision: "none", started_on: null, started_on_precision: "none", days_taken: null, rating: null,
+      reads: 0, listens: 0, owned: [], total: 1,
+    }]);
+    const { doc } = await render({});
+    const sub = doc.querySelector(".book-row .row-sub")!;
+    expect(sub.textContent).toBe("Horror");
+    expect(sub.querySelectorAll("a")).toHaveLength(0);
+  });
+
+  it("ends with one link to every series, in place of the old Series section and its Show all", async () => {
+    const { doc } = await render({ sort: "length" });
+    expect([...doc.querySelectorAll("h2")].map((h) => h.textContent)).not.toContain(expect.stringMatching(/^Series/));
+    const foot = doc.querySelector(".list-series-line a")!;
+    expect(foot.getAttribute("href")).toBe("/books/series");
+    expect(foot.textContent).toBe("All series →");
+    expect(doc.querySelector('a[href*="series=all"]')).toBeNull();
   });
 });
 
@@ -213,7 +252,7 @@ describe("the Library's Owned filter (task 5.17, AC-3)", () => {
     expect(named("Physical").getAttribute("href")).toBe("/books/list?status=read&sort=title");
 
     // Every other link into the Library keeps owned=physical: the status chips, the genres, the other
-    // Owned chips (with their own value), the reverse link and Show all.
+    // Owned chips (with their own value) and the reverse link.
     const others = hrefs(doc).filter((h) => h !== "/books/list?sort=title" && h !== "/books/list?status=read&sort=title");
     expect(others.length).toBeGreaterThanOrEqual(11);
     for (const href of others) {
@@ -224,7 +263,6 @@ describe("the Library's Owned filter (task 5.17, AC-3)", () => {
     expect(others).toContain("/books/list?status=to_read&owned=physical&sort=title");
     expect(others).toContain("/books/list?status=read&genre=Fantasy&owned=physical&sort=title");
     expect(others).toContain("/books/list?status=read&owned=audio&sort=title");
-    expect(others).toContain("/books/list?status=read&owned=physical&series=all&sort=title");
     expect(doc.querySelector<HTMLAnchorElement>(".sort a")!.getAttribute("href"))
       .toBe("/books/list?status=read&owned=physical&sort=title&dir=desc");
   });

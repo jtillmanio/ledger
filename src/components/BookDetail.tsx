@@ -1,4 +1,5 @@
 import BookNote from "@/components/BookNote";
+import BookPlace from "@/components/BookPlace";
 import { PlanMove, ShelvesEdit } from "@/components/BookSheetActions";
 import BookStatus from "@/components/BookStatus";
 import { Bar } from "@/components/Skeleton";
@@ -10,7 +11,7 @@ import ReadAgain from "@/components/ReadAgain";
 import { SheetHeading } from "@/components/RouteSheet";
 import type { BookDetail as Book, HistoryRead } from "@/db/queries";
 import {
-  bookPlace, dayWhen, listenGlyph, ownedWords, placeTag, readDays, readSummary,
+  bookPlace, dayWhen, listenGlyph, ownedWords, placeParts, placeTag, readDays, readSummary, subParts,
 } from "@/lib/format";
 import { LISTEN_NEXT, queueable } from "@/lib/status-tabs";
 
@@ -98,7 +99,8 @@ function Paragraphs({ text }: { text: string }) {
  *   place, so the sections under it never move.
  * - **Details**: published, pages, the word count with its `stated` or
  *   `estimated` flag (an estimate drawn with a `~` and the dotted edge, 2.10),
- *   series (plain text until 5.9's series page), subjects. A fact the book
+ *   series (its universe and series each a link to its page, as the hero's
+ *   author and place line are; task 5.9, TASK-125), subjects. A fact the book
  *   doesn't have is left out, never a `—`.
  * - **Your record**: the Library's own status control, open (`BookStatus`,
  *   one write path, design § 13 *What this changes* 2), whose date line is the
@@ -138,9 +140,13 @@ export default function BookDetail({ book: b, as }: { book: Book; as: "sheet" | 
         </span>
         <div className="detail-meta">
           <SheetHeading className="detail-title">{b.title}</SheetHeading>
-          {b.author && <p className="detail-by">{b.author}</p>}
+          {/* The author, universe and series each link to their pages (tasks 5.9, 5.11; TASK-125). */}
+          {b.author && <p className="detail-by"><BookPlace parts={subParts({ ...b, universe: null, series: null })} /></p>}
           {(place || b.published_year) && (
-            <p className="detail-place">{[place, b.published_year].filter(Boolean).join(" · ")}</p>
+            <p className="detail-place">
+              <BookPlace parts={placeParts(b)} />
+              {b.published_year ? `${place ? " · " : ""}${b.published_year}` : null}
+            </p>
           )}
           {((toRead && plan) || b.genre || glyph) && (
             <p className="detail-tags">
@@ -170,7 +176,7 @@ export default function BookDetail({ book: b, as }: { book: Book; as: "sheet" | 
             {b.word_count_source && <span className="bdg dn">{b.word_count_source}</span>}
           </Fact>
         )}
-        {place && <Fact k="Series"><span className="v">{place}</span></Fact>}
+        {place && <Fact k="Series"><span className="v"><BookPlace parts={placeParts(b)} /></span></Fact>}
         {b.subjects?.length ? <Fact k="Subjects"><span className="v plain">{b.subjects.join(", ")}</span></Fact> : null}
       </div>
 

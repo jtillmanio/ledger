@@ -612,10 +612,33 @@ describe("Where the book sits (2.2g): the rows' markup", () => {
     const out = await html([{ kind: "series", id: "s", name: "Series S", read: 1, total: 4 }]);
     expect(out).toContain("1 / 4");
     expect(out).toContain("width:25%");
-    expect(out).toContain('class="now-where-name">Series S<');
+    expect(out).toMatch(/class="now-where-name"><a [^>]*>Series S<\/a>/);
     expect(out).toMatch(/<span class="emeter" aria-hidden="true">/);
     expect(out).toContain('aria-label="Where this book sits"');
     expect(out).not.toMatch(/danger|style="[^"]*#/);
+  });
+
+  // Task 5.9, 3 of 3 (TASK-125, AC-2): the series row is a link to the series' page, named by the series; the
+  // universe and the author link to theirs (5.11); a subseries has no page, so its name is text.
+  it("links the universe, author and series names to their pages; a subseries stays text (AC-2)", async () => {
+    const out = await html([
+      { kind: "universe", id: "cosmere", name: "Cosmere", read: 3, total: 30 },
+      { kind: "author", id: "brandon-sanderson", name: "Brandon Sanderson", read: 3, total: 40 },
+      { kind: "series", id: "mistborn", name: "Mistborn", read: 3, total: 7 },
+      { kind: "subseries", id: "era-1", name: "Era One", read: 3, total: 3 },
+    ]);
+    const { Window } = await import("happy-dom");
+    const doc = new Window().document;
+    doc.body.innerHTML = out;
+    const names = [...doc.querySelectorAll(".now-where-name")];
+    expect(names.map((n) => [n.textContent, n.querySelector("a")?.getAttribute("href") ?? null])).toEqual([
+      ["Cosmere", "/books/universes/cosmere"],
+      ["Brandon Sanderson", "/books/authors/brandon-sanderson"],
+      ["Mistborn", "/books/series/mistborn"],
+      ["Era One", null],
+    ]);
+    // Each link is named by its level's name, and the figure beside it stays text.
+    expect([...doc.querySelectorAll("a")].map((a) => a.textContent)).toEqual(["Cosmere", "Brandon Sanderson", "Mistborn"]);
   });
 });
 
