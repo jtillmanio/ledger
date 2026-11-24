@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import AddBooksButton from "@/components/AddBooksButton";
+import BookPlace from "@/components/BookPlace";
 import { ArtCover } from "@/components/Cover";
 import EmptySlate from "@/components/EmptySlate";
 import { bookHref } from "@/components/StatusBookRow";
 import { useShelfPager } from "@/components/useShelfPager";
 import type { ShelfBook } from "@/db/queries";
-import { bookSub, wordsK } from "@/lib/format";
+import { bookSub, subParts, wordsK } from "@/lib/format";
 import { BOOKS_NEXT_HREF } from "@/lib/status-tabs";
 
 /**
@@ -58,7 +59,7 @@ export default function PlanShelf({ rows, period, quarter }: { rows: ShelfBook[]
                 <span className="sr-only">{b.ordinal}. </span>
                 <Link href={bookHref(b.id)} scroll={false} prefetch={false} className="card-link">{b.title}</Link>
               </span>
-              {bookSub(b) && <span className="card-sub">{bookSub(b)}</span>}
+              {bookSub(b) && <span className="card-sub"><BookPlace parts={subParts(b)} /></span>}
               <span className="card-meta mono">
                 {[b.pages && `${b.pages} pp`, wordsK(b.words)].filter(Boolean).join(" · ")}
               </span>

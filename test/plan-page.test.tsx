@@ -158,6 +158,113 @@ describe("a row names the author, the universe, then the series and number (task
   });
 });
 
+// Task 5.9b, 1 of 3 (TASK-140, F-38, D-134; AC-2, AC-3): the plan screens' place lines link their names, as the
+// Library's do (5.9): the open quarter's rows, the planning sheet's suggestion rows and the picker's header.
+// The queries carry the ids; a surface with none (Add books' By hand, Parked's Plan) draws its line as text.
+describe("the plan screens link a book's author, universe and series (task 5.9b, TASK-140)", () => {
+  const AU = "/books/authors/au";
+  const ALL = [["Ursula Fixture", AU], ["Fixture Universe", "/books/universes/un"], ["The Fixture Cycle", "/books/series/se"]];
+  type Anchored = { querySelectorAll(s: string): Iterable<{ textContent: string | null; getAttribute(n: string): string | null }> };
+  const links = (root: Anchored | null | undefined) =>
+    [...(root?.querySelectorAll("a") ?? [])].map((a) => [a.textContent, a.getAttribute("href")]);
+
+  beforeEach(async () => {
+    await sql`TRUNCATE book_universes CASCADE`;
+    await seed([
+      ...MIXED,
+      { id: "od", title: "Ondeck", period: "on_deck", ordinal: null, words: 100_000, author: "au", series: "se", position: 3 },
+    ]);
+    await sql`INSERT INTO book_universes (id, name) VALUES ('un', 'Fixture Universe')`;
+    await sql`UPDATE books SET universe_id = 'un' WHERE id IN ('z', 'od')`;
+    // Mike is a standalone by the author: no series, no universe.
+    await sql`UPDATE books SET author_id = 'au' WHERE id = 'm'`;
+  });
+
+  it("planRows, planBook and planSuggestions carry the ids; null for what a book has none of", async () => {
+    const rows = await q.planRows(USER, 2027);
+    const ids = (r: { authorId: string | null; seriesId: string | null; universeId: string | null }) =>
+      [r.authorId, r.seriesId, r.universeId];
+    expect(ids(rows.find((r) => r.id === "z")!)).toEqual(["au", "se", "un"]);
+    expect(ids(rows.find((r) => r.id === "m")!)).toEqual(["au", null, null]);
+    expect(ids(rows.find((r) => r.id === "k")!)).toEqual([null, null, null]);
+    const book = (await q.planBook(USER, "z"))!;
+    expect([book.author_id, book.series_id, book.universe_id]).toEqual(["au", "se", "un"]);
+    const standalone = (await q.planBook(USER, "m"))!;
+    expect([standalone.author_id, standalone.series_id, standalone.universe_id]).toEqual(["au", null, null]);
+    const sug = (await q.planSuggestions(USER, "2027-Q4", "2027-05-10")).find((s) => s.id === "od")!;
+    expect(ids(sug)).toEqual(["au", "se", "un"]);
+  });
+
+  it("a soft-deleted book is no row and no planBook (Hard rule 4)", async () => {
+    await sql`UPDATE books SET deleted_at = now() WHERE id IN ('z', 'od')`;
+    expect((await q.planRows(USER, 2027)).some((r) => r.id === "z")).toBe(false);
+    expect(await q.planBook(USER, "z")).toBeNull();
+    expect((await q.planSuggestions(USER, "2027-Q4", "2027-05-10")).some((s) => s.id === "od")).toBe(false);
+  });
+
+  it("the open quarter's rows link the three names, and a standalone's author alone (AC-2, AC-3)", async () => {
+    const { doc } = await page();
+    const z = doc.querySelector('.plan-row[data-book="z"] .row-sub');
+    expect(z?.textContent).toBe("Ursula Fixture · Fixture Universe · The Fixture Cycle #2");
+    expect(links(z)).toEqual(ALL);
+    const m = doc.querySelector('.plan-row[data-book="m"] .row-sub');
+    expect(m?.textContent).toBe("Ursula Fixture");
+    expect(links(m)).toEqual([["Ursula Fixture", AU]]);
+    // A book with no author, series or universe draws an empty line, as before.
+    expect(doc.querySelector('.plan-row[data-book="k"] .row-sub')?.textContent).toBe("");
+    // The row's own control is a sibling, never wrapping a place link (AC-4).
+    expect(doc.querySelectorAll(".plan-row a a")).toHaveLength(0);
+    expect(doc.querySelector('.plan-row[data-book="z"] button.plan-move')).not.toBeNull();
+  });
+
+  it("the planning sheet's suggestion row links them too (AC-2)", async () => {
+    const { Row } = await import("../src/components/PlanSheet");
+    const s = (await q.planSuggestions(USER, "2027-Q4", "2027-05-10")).find((x) => x.id === "od")!;
+    const html = renderToStaticMarkup(createElement("ul", null, createElement(Row, {
+      s, target: "2027-Q4", year: 2027, isYear: false, placed: undefined, busy: false, error: undefined,
+      onPlace: () => {}, onUndo: () => {}, onHide: () => {},
+    })));
+    const window = new Window();
+    window.document.body.innerHTML = html;
+    const sub = window.document.querySelector(".ps-sub");
+    expect(sub?.textContent).toBe("Ursula Fixture · Fixture Universe · The Fixture Cycle #3");
+    expect(links(sub)).toEqual(ALL);
+    // A suggestion with no series or universe: the author link alone, the line unchanged.
+    const bare = renderToStaticMarkup(createElement("ul", null, createElement(Row, {
+      s: { ...s, universe: null, universeId: null, series: null, seriesId: null, seriesPosition: null },
+      target: "2027-Q4", year: 2027, isYear: false, placed: undefined, busy: false, error: undefined,
+      onPlace: () => {}, onUndo: () => {}, onHide: () => {},
+    })));
+    window.document.body.innerHTML = bare;
+    expect(window.document.querySelector(".ps-sub")?.textContent).toBe("Ursula Fixture");
+    expect(links(window.document.querySelector(".ps-sub"))).toEqual([["Ursula Fixture", AU]]);
+  });
+
+  it("the picker's header links them when it has the ids, and is text when it has none (AC-2, AC-3)", async () => {
+    const { PlanPickerBody } = await import("../src/components/PlanPicker");
+    const head = (book: Record<string, unknown>) => {
+      const window = new Window();
+      window.document.body.innerHTML = renderToStaticMarkup(createElement(PlanPickerBody, {
+        book: { words: 100_000, estimated: false, ...book } as never, verb: "Move", onConfirm: async () => null, onCancel: () => {},
+      }));
+      return window.document.querySelector(".pp-by");
+    };
+    const full = { author: "Ursula Fixture", universe: "Fixture Universe", series: "The Fixture Cycle", series_position: 2 };
+    const linked = head({ ...full, author_id: "au", universe_id: "un", series_id: "se" });
+    expect(linked?.textContent).toBe("Ursula Fixture · Fixture Universe · The Fixture Cycle #2 · 100k words");
+    expect(links(linked)).toEqual(ALL);
+    const plain = head(full);
+    expect(plain?.textContent).toBe("Ursula Fixture · Fixture Universe · The Fixture Cycle #2 · 100k words");
+    expect(links(plain)).toEqual([]);
+    // A standalone: the author link and the count, no series or universe link.
+    const solo = head({ author: "Ursula Fixture", author_id: "au" });
+    expect(solo?.textContent).toBe("Ursula Fixture · 100k words");
+    expect(links(solo)).toEqual([["Ursula Fixture", AU]]);
+    // No place and no author: the count alone, as before.
+    expect(head({ author: null })?.textContent).toBe("100k words");
+  });
+});
+
 // Task 4.5 (AC-5, D-98): a book's hue is its Calibre top-level genre's family, else --g8 (since
 // TASK-089 there is no workbook genre to fall back on), and the rail and the open quarter's rows draw
 // it from the same genres.

@@ -704,6 +704,10 @@ test.describe("next in what you follow as Reading (2.2d)", () => {
     await expect(keep.getByRole("list", { name: "Or keep going" }).getByRole("listitem")).toHaveCount(1);
     await expect(keep.locator(".keep-title")).toHaveText([SAGA[2]]);
     await expect(keep.locator(".keep-why")).toHaveText([`Next in ${SAGA_NAME} · 2 of 4 read`]);
+    // 5.9b: the reason's name is a link to its page, named by the name alone; the Start button stays a button.
+    await expect(keep.locator(".keep-why").getByRole("link", { name: SAGA_NAME, exact: true }))
+      .toHaveAttribute("href", "/books/series/e2e-dash-saga");
+    await expect(keep.getByRole("link")).toHaveCount(1);
     const start = keep.getByRole("button", { name: `Start ${SAGA[2]}` });
     await expect(start).toBeVisible();
     expect((await start.boundingBox())!.height, "Start is 44px or more").toBeGreaterThanOrEqual(44);
@@ -727,27 +731,45 @@ test.describe("next in what you follow as Reading (2.2d)", () => {
     await expect(page.locator(".now-name")).toHaveText(SAGA[2]);
     expect(await status()).toEqual([{ status: "reading", started_on_precision: "exact" }]);
     // Now, reading book 3, names book 4 as next.
-    await expect(page.locator(".now-next")).toHaveAccessibleName(`Next in ${SAGA_NAME}: ${SAGA[3]}`);
+    await expect(page.locator(".now-next-text")).toHaveText(`Next in ${SAGA_NAME}: ${SAGA[3]}`);
     await page.locator(".toast").getByRole("button", { name: "Undo" }).click();
     await expect(page.locator(".between-title")).toHaveText("Between books.");
     await expect(page.locator(".keep-going .keep-title")).toHaveText([SAGA[2]]);
     expect(await status()).toEqual([{ status: "to_read", started_on_precision: "none" }]);
   });
 
-  test("reading book 2, Now shows one Next in line naming book 3, a link to it (AC-1, AC-4)", FEEL, async ({ page }, info) => {
+  test("reading book 2, Now shows one Next in line: the series' name and book 3's title, two links (AC-1, AC-4; 5.9b)", FEEL, async ({ page }, info) => {
     await seed({ reading: true });
     await seedSaga({ twoInHand: true });
     await open(page);
     await expect(page.locator(".now-name")).toHaveText(SAGA[1]);
-    const next = page.locator(".now-hero").getByRole("link", { name: `Next in ${SAGA_NAME}: ${SAGA[2]}` });
     await expect(page.locator(".now-next")).toHaveCount(1);
-    await expect(next).toHaveAttribute("href", `/books/list?q=${encodeURIComponent(SAGA[2]).replace(/%20/g, "+")}`);
-    expect((await next.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await expect(page.locator(".now-next-text")).toHaveText(`Next in ${SAGA_NAME}: ${SAGA[2]}`);
+    // The follow's name links to its page and the title to the book's sheet (3.5b); each is named by its text alone.
+    const name = page.locator(".now-next").getByRole("link", { name: SAGA_NAME, exact: true });
+    const title = page.locator(".now-next").getByRole("link", { name: SAGA[2], exact: true });
+    await expect(name).toHaveAttribute("href", "/books/series/e2e-dash-saga");
+    await expect(title).toHaveAttribute("href", `/book/${sagaId(3)}`);
+    await expect(page.locator(".now-next").getByRole("link")).toHaveCount(2);
+    expect((await page.locator(".now-next").boundingBox())!.height, "the line is 44px or more").toBeGreaterThanOrEqual(44);
+    for (const link of [name, title]) expect((await link.boundingBox())!.height, "each link is 24px or more").toBeGreaterThanOrEqual(24);
     expect((await computedStyle(page.locator(".now-next-text"), ["color"])).color).toBe(await tokenColour(page, "--ink-2"));
     // Nothing to keep going with while a book is in hand.
     await expect(page.locator(".keep-going")).toHaveCount(0);
     await floor(page);
     await screenshot(page, info, "books-next-in");
+  });
+
+  test("Next in's name opens the series, and its title opens the book's sheet, not the series (AC-4; 5.9b)", ONCE, async ({ page }) => {
+    await seed({ reading: true });
+    await seedSaga({ twoInHand: true });
+    await open(page);
+    await page.locator(".now-next").getByRole("link", { name: SAGA_NAME, exact: true }).click();
+    await expect(page).toHaveURL(/\/books\/series\/e2e-dash-saga$/);
+    await page.goBack();
+    await hydrated(primary(page));
+    await page.locator(".now-next").getByRole("link", { name: SAGA[2], exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/book/${sagaId(3)}$`));
   });
 
   test("with nothing followed as Reading, there is no Next in and no Or keep going", ONCE, async ({ page }) => {
@@ -1087,6 +1109,70 @@ test.describe("the book's place on its row (2.2j)", () => {
     await expect(cardLine(page, COVENANT_BOOK)).toHaveText(COVENANT_LINE);
     await floor(page);
     await screenshot(page, info, "2.2j-books-up-next");
+  });
+
+  // Task 5.9b, 1 of 3 (TASK-140, F-38, AC-1, AC-2, AC-3, AC-5): the Up next cards' names are links.
+  const hrefsOf = (line: ReturnType<Page["locator"]>) =>
+    line.getByRole("link").evaluateAll((as) => as.map((a) => [a.textContent, a.getAttribute("href")]));
+  const ALLOY_LINKS = [
+    ["Brandon Sanderson", "/books/authors/e2e-dash-place-au"], ["Cosmere", "/books/universes/e2e-dash-place-uni"],
+    ["Mistborn", "/books/series/e2e-dash-place-mist"],
+  ];
+
+  test("the Up next cards link the author, universe and series; a book with no series draws no series link (AC-1, AC-2, AC-3, AC-5)", FEEL, async ({ page }, info) => {
+    // Three is a standalone by an author: its card has the author link and nothing else.
+    await withSql((sql) => sql`UPDATE books SET author_id = 'e2e-dash-a1' WHERE id = 'e2e-dash-3'`);
+    await planPlace();
+    await open(page);
+    expect(await hrefsOf(cardLine(page, ALLOY))).toEqual(ALLOY_LINKS);
+    // The series link is named by the series alone: the #4 is outside it.
+    await expect(cardLine(page, ALLOY).getByRole("link", { name: "Mistborn", exact: true })).toBeVisible();
+    expect(await hrefsOf(cardLine(page, COVENANT_BOOK))).toEqual([
+      ["Stephen R. Donaldson", "/books/authors/e2e-dash-place-sd"], [COVENANT, "/books/series/e2e-dash-place-cov"],
+    ]);
+    await expect(cardLine(page, THREE)).toHaveText("Dash Author One");
+    expect(await hrefsOf(cardLine(page, THREE))).toEqual([["Dash Author One", "/books/authors/e2e-dash-a1"]]);
+    // A book with no author, series or universe has no line at all, as before.
+    await expect(page.locator('[data-slot="next"] .card', { hasText: ONE }).locator(".card-sub")).toHaveCount(0);
+    // The card's own link is still the title alone, and no place link sits inside it.
+    await expect(page.locator('[data-slot="next"] .card', { hasText: ALLOY }).locator("a a")).toHaveCount(0);
+    await expect(page.locator('[data-slot="next"] .card', { hasText: ALLOY }).locator(".card-title").getByRole("link"))
+      .toHaveAttribute("href", "/book/e2e-dash-place-alloy");
+    await floor(page);
+    await screenshot(page, info, "5.9b-books-up-next-links");
+  });
+
+  test("a place link opens its page and the card's title still opens the book (AC-4)", ONCE, async ({ page }) => {
+    await planPlace();
+    await open(page);
+    const alloy = () => page.locator('[data-slot="next"] .card', { hasText: ALLOY });
+    for (const [name, url] of [
+      ["Brandon Sanderson", /\/books\/authors\/e2e-dash-place-au$/],
+      ["Cosmere", /\/books\/universes\/e2e-dash-place-uni/],
+      ["Mistborn", /\/books\/series\/e2e-dash-place-mist$/],
+    ] as const) {
+      await alloy().locator(".card-sub").getByRole("link", { name, exact: true }).click();
+      await expect(page).toHaveURL(url);
+      await page.goBack();
+      await hydrated(primary(page));
+    }
+    await alloy().locator(".card-title").getByRole("link").click();
+    await expect(page).toHaveURL(/\/book\/e2e-dash-place-alloy$/);
+  });
+
+  test("the status tab's Up next rows link their names the same way (AC-1, AC-2, AC-5)", FEEL, async ({ page }, info) => {
+    await planPlace();
+    await page.goto("/books/status?tab=next");
+    const line = page.locator(".qplace", { hasText: "Mistborn" });
+    await expect(line).toHaveText(ALLOY_LINE);
+    expect(await hrefsOf(line)).toEqual(ALLOY_LINKS);
+    for (const link of await line.getByRole("link").all()) {
+      expect((await link.boundingBox())!.height, "each link is 24px or more").toBeGreaterThanOrEqual(24);
+    }
+    await expectNoHorizontalScroll(page);
+    await expectNoAxeViolations(page, AXE);
+    expect(await contrastFailures(page)).toEqual([]);
+    await screenshot(page, info, "5.9b-status-up-next-links");
   });
 
   test("the same book reads the same line on its status tab and in the Library (AC-1)", ONCE, async ({ page }) => {
