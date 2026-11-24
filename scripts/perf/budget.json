@@ -23,6 +23,7 @@
     "books-add": { "docRscBytes": 11200, "jsBytes": 23300, "requests": 23, "a11y": 100 },
     "top": { "docRscBytes": 12100, "jsBytes": 10000, "requests": 24, "a11y": 100 },
     "book": { "docRscBytes": 11000, "jsBytes": 28900, "requests": 27, "a11y": 100 },
+    "issue": { "docRscBytes": 11000, "jsBytes": 28900, "requests": 27, "a11y": 100 },
     "run-add": { "docRscBytes": 26400, "jsBytes": 17200, "requests": 22, "a11y": 100 },
     "calibre": { "docRscBytes": 9800, "jsBytes": 16600, "requests": 25, "a11y": 100 }
   }

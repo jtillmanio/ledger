@@ -1,6 +1,7 @@
 // Task 0.8b: the spine row. Read state is per run (data model 2.14), so a row
 // whose issue is read in another run is unread here and says where it was read,
 // in grey: green means read *here* (CLAUDE.md, design/mockups.html "Run detail").
+// Task 3.5 (TASK-080): the row's label and the hint's +N link to the issue sheet.
 import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -85,12 +86,23 @@ describe("the read-elsewhere hint", () => {
     expect((await spine("b")).row("Issue b2")).not.toContain('class="seen"');
   });
 
-  it("names one run and offers +N as a button past it", async () => {
+  it("names one run and offers +N past it, a link to the issue sheet with every run (task 3.5)", async () => {
     await markRead(sql, USER, "a", "x", { precision: "none" });
     await markRead(sql, USER, "c", "x", { precision: "none" });
     const row = (await spine("b")).row("Issue x");
     expect(row).toMatch(/read in Run [ac]/);
-    expect(row).toMatch(/<button[^>]*class="seen-more"[^>]*aria-expanded="false"[^>]*>\+1<\/button>/);
+    expect(row).toMatch(
+      /<a class="seen-more" aria-label="\+1 more: every run with Issue x" href="\/comics\/b\/issue\/x">\+1<\/a>/);
+    // The sheet lists them now: no disclosure in place.
+    expect(row).not.toContain("seen-others");
+    expect(row).not.toMatch(/<button[^>]*class="seen-more"/);
+  });
+
+  it("every row's label is a link to its issue sheet from this run (task 3.5)", async () => {
+    const { rows } = await spine("b");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toContain('<div class="lbl"><a href="/comics/b/issue/b2">Issue b2</a></div>');
+    expect(rows[1]).toContain('<div class="lbl"><a href="/comics/b/issue/x">Issue x</a></div>');
   });
 
   it("dates the hint by its precision", async () => {

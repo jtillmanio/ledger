@@ -1,14 +1,14 @@
 ---
 id: TASK-080
 title: 3.5 Detail sheets (3 of 3) — the issue sheet, every run that places it
-status: Ready
+status: In progress
 depends_on: [TASK-078, TASK-079]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 77d8dd8
 ---
 
 # TASK-080 — 3.5 Detail sheets (3 of 3) — the issue sheet, every run that places it
@@ -73,9 +73,42 @@ renders no *Dates* group and no `—`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Candidate decision: the Check's *Why blocked?* clause (one sheet in the DOM, Back returns to the issue sheet) is proven by 2.6, which builds that sheet as a pane in the issue sheet's dialog (D-171); 3.5 ticks on this part's merge (approved at plan)
+- 2.6: *Why blocked?* opened from inside the issue sheet is a pane (D-171), and 2.6's test proves 3.5's clause (approved at plan)
+- The cover → hero morph (`view-transition-name: cover-{id}`) for both sheets: Next 16 offers it only through React's experimental `<ViewTransition>` and `experimental.viewTransition`; a new phase-3 roadmap item (approved at plan)
+- *Collected in* on the issue sheet needs `edition_issues` (5.6); until then the section isn't drawn (approved at plan)
+- DNF grey in the status editor: issues have no status editor, so nothing to draw (approved at plan)
+- The master list's collapsed row: it is the books Library's, which already opens the book sheet (TASK-079) (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-23 (owner: "approve plan with recommendations").
+
+**Route (D-157).** `/comics/[runId]/issue/[issueId]`: no static sibling beside the `issue` segment, so `/comics/x/add` is never caught, and the run you came from is in the URL (*this run*). The Check's `/comics/{runId}/{issueId}` is read as this route. An issue the run doesn't place (live), or an unknown or removed issue, is not found.
+
+**Steps**
+1. `issueDetail(userId, runId, issueId)` in `src/db/queries.ts`: the issue's facts (label, story title, story arc, cover and store dates, cover URL, pending), its credits by role (name order), and every live placement (run id and title, sequence, the run's live placement count, placement id, read state and `readWhen` date, `this`), *this run* first then by run title. Null when the issue is gone or the run doesn't place it.
+2. `src/components/IssueDetail.tsx` (server): hero (cover, label as `SheetHeading`, story title · cover date, an `arc · …` tag per arc, *in N runs*); *Dates* (*Cover date* `Mon YYYY`; *Published* only when a store date exists and its month differs; neither → no group, no `—`); *Credits* (Writer, Penciller = `artist`, Inker only when present, Cover only when its names differ from the penciller's; Colorist and Letterer under *More credits*); *Your record*. Plus `IssueDetailSkeleton`.
+3. `src/components/IssueRecord.tsx` (client): one row per placement, a ✓ (`--ready`) or ○ (grey) glyph with text, *this run* marked, a `aria-pressed` button named `Mark read in <run>, issue n of N` (44px on the phone) through `markPlacement` (the spine's one write path and undo), `router.refresh()` on save and undo so the spine behind follows. No *mark all*. Also `MoreCredits`, a real `aria-expanded` button.
+4. Routes: `src/app/@modal/(.)comics/[runId]/issue/[issueId]/` `layout.tsx` (`RouteSheet label="Issue"`), `page.tsx`, `loading.tsx`, `error.tsx`; `src/app/comics/[runId]/issue/[issueId]/` `page.tsx`, `loading.tsx`, `error.tsx`.
+5. `src/components/IssueRow.tsx`: each row's label links to the sheet (its click doesn't set a range anchor), and the `+N` is a link to it (design § 14 *Run detail*), replacing the in-place disclosure.
+6. `src/app/globals.css`: the record rows, glyphs, toggle size, disclosure, label link.
+7. Companions of a new route: `scripts/perf/routes.mjs` + `scripts/perf/budget.json` (an `issue` route, resolved from the small run); `scripts/lib/ci-scope.mjs` (`@modal/(.)comics/` → comics, `IssueDetail`/`IssueRecord` comics components, `RouteSheet` shared now both media use it).
+
+**Files outside "Files likely touched"**: the route's `layout/loading/error` files, `IssueRecord.tsx`, `globals.css`, `scripts/perf/routes.mjs`, `scripts/perf/budget.json`, `scripts/lib/ci-scope.mjs` (+ `test/ci-scope.test.ts` if it pins the lists), `test/issue-detail-query.test.ts`. The route moved off `[issueId]` directly (D-157). `design/mockups.html` is not redrawn: the spine's `+N` and label look the same; only the element behind them changes.
+
+**Test strategy**
+- AC-1 (issue clauses), AC-2: `test/e2e/issue-detail.spec.ts` "an issue in three runs read in one lists three rows…", "marking a second run writes exactly one issue_progress row, and Undo removes it"; `test/issue-detail-query.test.ts` (three runs, one read, positions, this run, soft-deleted placement left out, not-found cases). The *Why blocked?* clause: carried to 2.6 (decision at plan).
+- AC-3, AC-4: `test/issue-detail.test.tsx` (credits rows, disclosure; Cover date `Jan 1981`, undated → no Dates and no `—`, Published only when it differs); AC-4 also in the e2e spec.
+- AC-5: e2e "a direct load is the full page", "from the spine the sheet opens; Back returns to the spine's scroll with focus on the row link".
+- AC-6: e2e floor test (loading and error drawn, toggle names and 44px, `aria-expanded`, glyph + text, contrast, axe, screenshots 360/834/1280 light and dark); `test/issue-detail.test.tsx` for the skeleton and error markup.
+- `test/spine.test.tsx`: the label and `+N` link to `/comics/{run}/issue/{issue}`.
+
+**Plan revision 1 (Phase 2)**: the label link would have swallowed a mouse shift-click that finishes a range, so a shift-click on it with a fine pointer goes to the row (`IssueRow.tsx`), proved by a new test in `test/range-sheet.test.tsx` (a file outside the list). The perf guard also needed the sheet's intercept listed as unmeasured in `test/perf.test.ts` and the route's row in `docs/02-architecture.md`'s Performance budget table (`test/perf.test.ts` mirrors it), and the new spec estimated times in `test/e2e/shard-times.json` (as PR #313 did), since `test/e2e-shards.test.ts` prices an untimed spec at 15 s per project and the 8-shard plan tipped past 3%.
+
+**Risks**: the intercept with a dynamic `[runId]` ahead of a static `issue` segment (proven in the e2e spec, and `/comics/x/add` checked still to load); undo after the sheet closed refreshes the spine through the router.
+
+**Size**: about 20 files, over the split threshold; kept whole on the owner's approval: it is already 3 of 3, seven are thin route wrappers, the perf and CI entries must ship with the route, and a sheet with no spine link can't be reached.
 
 ## Review log
 

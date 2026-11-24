@@ -481,6 +481,74 @@ function runPrereqs(userId: string, runId: string) {
   `;
 }
 
+/** One run that places an issue, as the issue sheet's *Your record* lists it (task 3.5, TASK-080). */
+export type IssuePlacement = {
+  placement_id: number; run_id: string; run_title: string;
+  /** Its reading position in that run, and how many live placements the run has: *issue 45 of 381*. */
+  sequence: number; run_total: number;
+  /** Read in that run (data model 2.14), and when: `readWhen`'s *Mar 2025*, null for an undated read. */
+  completed: boolean; read_when: string | null;
+  /** The run the sheet was opened from: *this run*. */
+  this_run: boolean;
+};
+
+export type IssueCredit = { role: "writer" | "artist" | "inker" | "colorist" | "letterer" | "cover"; name: string };
+
+export type IssueDetail = {
+  id: string; run_id: string; label: string; story_title: string | null; story_arc: string | null;
+  /** Calendar days as stored (`YYYY-MM-DD`); null when undated. */
+  cover_date: string | null; store_date: string | null;
+  cover_url: string | null; pending: boolean;
+  /** Every credit, writer, artist, inker, colorist, letterer, cover, then by name: the sheet picks which it shows. */
+  credits: IssueCredit[];
+  /** Every live run that places it, the opening run first, then by title. */
+  placements: IssuePlacement[];
+};
+
+/**
+ * One live issue as the issue sheet draws it (task 3.5, TASK-080; docs/04-design.md § 13): its
+ * facts, its credits and every live run that places it, with its position and its read state in that
+ * run (data model 2.14: read state is the placement's, so a read in one run reads nothing in
+ * another). `runId` is the run the sheet was opened from. Null when the issue is unknown or removed,
+ * or that run doesn't place it (a removed placement or run counts as none): the route's not-found.
+ */
+export async function issueDetail(userId: string, runId: string, issueId: string): Promise<IssueDetail | null> {
+  const [[issue], placements, credits] = await Promise.all([
+    sql<Omit<IssueDetail, "run_id" | "credits" | "placements">[]>`
+      SELECT i.id, i.label, i.story_title, i.story_arc, i.cover_date::text AS cover_date,
+             i.store_date::text AS store_date, i.cover_url, (i.metron_id IS NULL) AS pending
+      FROM issues i
+      WHERE i.id = ${issueId} AND i.deleted_at IS NULL
+        AND EXISTS (SELECT 1 FROM live_run_issues ri JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL
+                    WHERE ri.issue_id = i.id AND ri.run_id = ${runId})
+    `,
+    sql<(Omit<IssuePlacement, "read_when"> & { completed_at: Date | null; precision: Precision })[]>`
+      SELECT ri.id AS placement_id, ri.run_id, r.title AS run_title, ri.sequence,
+             (SELECT COUNT(*)::int FROM live_run_issues t WHERE t.run_id = ri.run_id) AS run_total,
+             (p.placement_id IS NOT NULL) AS completed, p.completed_at,
+             COALESCE(p.completed_at_precision, 'none') AS precision,
+             (ri.run_id = ${runId}) AS this_run
+      FROM live_run_issues ri
+      JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL
+      LEFT JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
+      WHERE ri.issue_id = ${issueId}
+      ORDER BY (ri.run_id = ${runId}) DESC, r.title, ri.run_id
+    `,
+    sql<IssueCredit[]>`
+      SELECT ic.role, c.name
+      FROM issue_credits ic
+      JOIN creators c ON c.id = ic.creator_id
+      WHERE ic.issue_id = ${issueId}
+      ORDER BY array_position(ARRAY['writer', 'artist', 'inker', 'colorist', 'letterer', 'cover'], ic.role), c.name
+    `,
+  ]);
+  if (!issue) return null;
+  return {
+    ...issue, run_id: runId, credits: [...credits],
+    placements: placements.map(({ completed_at, precision, ...p }) => ({ ...p, read_when: readWhen(completed_at, precision) })),
+  };
+}
+
 /** Distinct issues in the catalog and how many are read. A crossover placed in
  * three runs counts once, so this is not a sum of runs or tracks; it is read
  * once any of its live placements is (data model 2.14). */

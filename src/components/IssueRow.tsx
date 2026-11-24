@@ -369,10 +369,18 @@ export default function RunSpine({
               <i />
             </button>
             <div className="ib">
-              <div className="lbl">{issue.label}</div>
+              {/* The issue sheet, from this run (task 3.5). Following it is not a click on the row (a range
+                  anchor); a shift-click with a mouse is the row's, finishing a range as anywhere else on it. */}
+              <div className="lbl">
+                <Link href={issueHref(runId, issue.id)} onClick={(e) => {
+                  if (fine && e.shiftKey) e.preventDefault();
+                  else e.stopPropagation();
+                }}>{issue.label}</Link>
+              </div>
               {issue.notes && <div className="inote">{issue.notes}</div>}
               {!issue.completed && issue.read_elsewhere.length > 0 && (
-                <Seen runs={issue.read_elsewhere} when={issue.read_elsewhere_when} />
+                <Seen runs={issue.read_elsewhere} when={issue.read_elsewhere_when}
+                  label={issue.label} href={issueHref(runId, issue.id)} />
               )}
               {issue.pending && <Pending />}
             </div>
@@ -474,40 +482,30 @@ function mark(rows: Issue[], next: { placementId: number; completed: boolean }) 
   return rows.map((r) => (r.placement_id === next.placementId ? { ...r, completed: next.completed } : r));
 }
 
+/** The issue sheet, opened from run `runId` (task 3.5, D-157: its own `issue` segment, clear of `/add`). */
+function issueHref(runId: string, issueId: string) {
+  return `/comics/${encodeURIComponent(runId)}/issue/${encodeURIComponent(issueId)}`;
+}
+
 /**
  * Read in another run: a hint, grey and dashed, never green, because green
  * means read *here*. It never ticks the row. Hidden once the row is read here.
  *
- * Past one run, +N discloses the others in place. Task 3.5 turns it into the
- * link to the issue sheet, which lists every placement and its state.
+ * Past one run, +N is a link to the issue sheet (task 3.5; design § 14, *Run
+ * detail*), which lists every placement and its state in that run.
  */
-function Seen({ runs, when }: { runs: string[]; when: string | null }) {
-  const [open, setOpen] = useState(false);
-  const listId = useId();
+function Seen({ runs, when, label, href }: { runs: string[]; when: string | null; label: string; href: string }) {
   const [first, ...others] = runs;
   return (
-    <>
-      <span className="seen">
-        <span className="sr-only">Previously </span>
-        {`read in ${first}${when ? ` · ${when}` : ""}`}
-        {others.length > 0 && (
-          <button
-            type="button"
-            className="seen-more"
-            aria-expanded={open}
-            aria-controls={listId}
-            aria-label={others.length === 1 ? "Show the other run" : `Show the ${others.length} other runs`}
-            onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
-          >
-            {`+${others.length}`}
-          </button>
-        )}
-      </span>
+    <span className="seen">
+      <span className="sr-only">Previously </span>
+      {`read in ${first}${when ? ` · ${when}` : ""}`}
       {others.length > 0 && (
-        <ul className="seen-others" id={listId} hidden={!open}>
-          {others.map((title, n) => <li key={n}>{`read in ${title}`}</li>)}
-        </ul>
+        <Link className="seen-more" aria-label={`+${others.length} more: every run with ${label}`} href={href}
+          onClick={(e) => e.stopPropagation()}>
+          {`+${others.length}`}
+        </Link>
       )}
-    </>
+    </span>
   );
 }
