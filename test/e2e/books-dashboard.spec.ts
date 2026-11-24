@@ -1164,6 +1164,8 @@ test.describe("the book's place on its row (2.2j)", () => {
     await planPlace();
     await page.goto("/books/status?tab=next");
     const line = page.locator(".qplace", { hasText: "Mistborn" });
+    // Visible first: a streamed page holds its content in a hidden node until it swaps in, and a role query skips it.
+    await expect(line).toBeVisible();
     await expect(line).toHaveText(ALLOY_LINE);
     expect(await hrefsOf(line)).toEqual(ALLOY_LINKS);
     for (const link of await line.getByRole("link").all()) {
