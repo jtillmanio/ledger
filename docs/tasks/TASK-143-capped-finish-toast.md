@@ -1,7 +1,7 @@
 ---
 id: TASK-143
 title: 6.24 Built screens follow the mediums review (1 of 4) — the capped finish toast
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -30,7 +30,7 @@ Finishing a book in a series shows a short toast: one *Now reading* chip and *+N
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves *finishing a book in a series shows one Now reading chip and +N · Follow…, and Keep going? is in the Follow… sheet*. TASK-144 to TASK-146 prove the rest):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves *finishing a book in a series shows one Now reading chip and +N · Follow…, and Keep going? is in the Follow… sheet*. TASK-144 to TASK-146 prove the rest):
 browser test at 360px, light and dark: *Remove from Listen next* resolves to
 no `--danger` colour; finishing a book in a series shows one *Now reading*
 chip and *+N · Follow…*, and *Keep going?* is in the *Follow…* sheet; the
@@ -39,11 +39,11 @@ shows *Owned* and *Sort* as dropdown chips in one row and the genre row, and
 nothing scrolls sideways; `design/mockups.html`'s `blist`, `status`,
 `finishoffer`, `batch` and `settings` frames are redrawn from the review and
 it gains the six 834px frames.
-- [ ] AC-2: Given a finish that follows three things and offers two to keep going, the toast shows exactly one *Now reading* chip and one *+N · Follow…* button whose N is the count the plan fixes; opening *Follow…* lists the other follows and the *Keep going?* offers, each taking writes what its chip wrote before.
-- [ ] AC-3: Given a finish that follows exactly one thing and offers nothing, the toast shows its one *Now reading* chip and no *+N · Follow…*.
-- [ ] AC-4: Taking a chip in the toast or in the sheet commits the finish as before (the finish's undo window closes), a failed chip shows Retry and changes nothing, and *Rank it in 2026* still opens *This or that*.
-- [ ] AC-5: The toast and the *Follow…* sheet meet the UX floor (`docs/04-design.md` § 10. The UX floor): every chip and button a real control with a name and at least 44px tall in the toast, focus moves into the sheet and returns to *+N · Follow…* on close, reduced motion respected, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
-- [ ] AC-6: `design/mockups.html` § `finishoffer` is redrawn from E10 and its `design/mockups-index.md` row says so.
+- [x] AC-2: Given a finish that follows three things and offers two to keep going, the toast shows exactly one *Now reading* chip and one *+N · Follow…* button whose N is the count the plan fixes; opening *Follow…* lists the other follows and the *Keep going?* offers, each taking writes what its chip wrote before.
+- [x] AC-3: Given a finish that follows exactly one thing and offers nothing, the toast shows its one *Now reading* chip and no *+N · Follow…*.
+- [x] AC-4: Taking a chip in the toast or in the sheet commits the finish as before (the finish's undo window closes), a failed chip shows Retry and changes nothing, and *Rank it in 2026* still opens *This or that*.
+- [x] AC-5: The toast and the *Follow…* sheet meet the UX floor (`docs/04-design.md` § 10. The UX floor): every chip and button a real control with a name and at least 44px tall in the toast, focus moves into the sheet and returns to *+N · Follow…* on close, reduced motion respected, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-6: `design/mockups.html` § `finishoffer` is redrawn from E10 and its `design/mockups-index.md` row says so.
 
 ## Out of scope
 
@@ -63,14 +63,21 @@ it gains the six 834px frames.
 ## Verification
 
 - Automated: `test/undo.test.tsx` (AC-2 to AC-4, the chips and the counts); `test/e2e/follows.spec.ts` at 360px, light and dark, with axe (AC-1's clause, AC-5).
-- Manual: the ui-verifier finishes a book in a followed series on the dev database and walks the toast and *Follow…* → expected: one chip, *+N · Follow…*, *Keep going?* in the sheet; the data is left as found (undo the finish).
+- Manual: the ui-verifier sets a book in a series to *Reading*, then finishes it, on the dev database (a finish follows only from Reading or Listening, 2.2h), and walks the toast and *Follow…* → expected: one chip, *+N · Follow…*, *Keep going?* in the sheet; the data is left as found (undo the finish).
 
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- A decision amending D-117 and D-108: the finish toast is capped at one *Now reading* chip, the narrowest followed, plus *+N · Follow…*, N counting every chip the sheet holds that the toast doesn't; *Keep going?* lives in the sheet (approved at plan; the wording is asked at close-out, `decisions: propose`).
-- E10's note says the toast keeps "the narrowest thing the finish followed" while its frame draws the series beside a subseries; the build follows the note (owner, plan gate) (approved at plan).
+- Candidate decision: the finish toast is capped at one *Now reading* chip, the narrowest followed, plus *+N · Follow…*, N counting every chip the toast hides; *Keep going?* lives in the sheet as chips above its rows → docs/review/decisions.md § D-183 (approved at close-out; D-108 and D-117 marked *Amended by D-183*)
+- E10's note says the toast keeps the narrowest thing the finish followed while its frame draws the series beside a subseries → not tracked: settled by the owner at the plan gate (the note) and recorded in D-183
+- D-183 leaves two other mockup places drawing *Keep going?* in the toast: `status`'s In flight *Finished* toast (`design/mockups.html`, `design/mockups-index.md`'s `status` row) and `thisorthat`'s note → docs/tasks/TASK-144-grey-remove-and-sunk-steppers.md § Context
+- `test/e2e/follows.spec.ts:189` (2.2c's sheet test) read `computedStyle(["backgroundColor"])`, which answers `""`, so its *not --danger* check could never fail → not tracked: done in this PR (plan revision 2)
+- Two differences from E10 the cap leaves open: at 360–412px a long kept chip pushes *+N · Follow…* onto its own line (three chip rows where E10's note says two), and the *Now reading* label is sentence case where E10 draws uppercase mono → docs/tasks/TASK-146-mockup-settings-and-834-frames.md § Context
+- This task's Verification said to finish *a book in a followed series*; a finish follows only from Reading or Listening (2.2h) → docs/tasks/TASK-143-capped-finish-toast.md § Verification (fixed in this PR)
+- The ui-verifier's walk left the dev database changed: a stray read (24 Nov 2026) on *A Court of Wings and Ruin* and *The Dry*, both back at To read; *The Fires of December*'s series (Hoid's Travails) and subseries (Secret Projects) stored `off` where they were probably no row → not tracked: the owner said to leave it (the dev database is disposable; the next rebuild resets it)
+- A radio change in the sheet pushes a plain follow toast, so the toast drops the finish's other chips (they stay in the sheet) → not tracked: accepted at the plan gate (a plan risk)
+- At phone and tablet widths the toast covers the lower part of the open sheet → not tracked: the sheet scrolls and D-144's `--toast-clear` keeps its buttons clear, as for any toast over a sheet before 6.24
 
 ## Plan
 
@@ -95,9 +102,13 @@ Answers at the plan gate (owner, 2026-11-24): the toast keeps the **narrowest** 
 
 **Revision 1 (Phase 2, a test file only):** `test/e2e/status.spec.ts`'s In flight *Finished* test asserted the toast's *Keep going?* group, which the cap moves into the sheet; it now asserts *+1 · Follow…*. Found by grepping `test/` for the strings the diff changes, as `.claude/project/implement-task.md` asks.
 
+**Revision 2 (close-out, a test file only; owner: "fix it here"):** `test/e2e/follows.spec.ts:189`, 2.2c's sheet test, read `computedStyle(["backgroundColor"])`, which `getPropertyValue` answers with `""`; it reads `background-color` now and asserts the checked option is `--brand`, never `--danger`. The same bug, fixed in this task's own tests at spec review R1.
+
 ## Review log
 
 _Filled by /implement-task. One line per round._
+
+- Verify R1 PASS | CI R1 PASS (2271e1e) | Spec R1 CHANGES (AC-5: the sheet checked only at 360px) → fixed (245d2e5) | Verify R2 PASS | Spec R2 APPROVE | CI R2 PASS (245d2e5) | Audit R1 PASS (AC-3 a boundary guard, behaviour unchanged) | UI R1 PASS AC-1 to AC-5 (dev database left changed; owner: leave it) | Plan revision 2 (follows.spec.ts:189) → Verify R3 PASS | Follow-ups check R1 CHANGES (TASK-144 placement missing) → R2 APPROVE | Drift R1 update first (behind #339; both changed mockups.html, mockups-index.md, globals.css) → rebased | Verify R4 PASS (with follows, markup and mockup-tablet specs)
 
 ## Blocked
 
@@ -105,7 +116,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 2 (spec), 1 (audit), 1 (UI)
+- First-pass AC FAILs: 1 (AC-5, the sheet untested past 360px)
+- Plan revisions after approval: 2 (test files only)

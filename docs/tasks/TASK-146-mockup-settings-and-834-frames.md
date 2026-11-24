@@ -28,6 +28,7 @@ planned_at_commit:
 - **Design files are read, never edited:** `design/*.dc.html` and `design/STYLE_GUIDE.md` are in `protectedPaths`. Only `design/mockups.html` and `design/mockups-index.md` change (`ui.redrawFiles`). The mockup's own tokens and classes are used (`design/tokens.css`); its covers are placeholders and figures sample data (D-7).
 - **The mockup has a test:** `test/e2e/mockup-tablet.spec.ts` (and `test/e2e/markup.spec.ts`) check the mockup's frames; new 834px frames must pass them.
 - Decisions: D-7, D-40, D-177.
+- *From TASK-143 (6.24, PR #340), open question for the plan:* two differences from E10 that the capped finish toast left open, for the owner to settle against `design/MR-E-Review-2.dc.html` E10 (and `design/mockups.html` § `finishoffer`, redrawn in PR #340): (a) at 360–412px a long kept chip (*Discworld - Death · subseries ×*) pushes *+N · Follow…* onto its own line, so the toast can have three chip rows (*Rank it*, the chip, *+N*) where E10's note says two at most; (b) the toast's *Now reading* label is small sentence case, as built since 2.2h, where E10 draws an uppercase mono label. Either may need a `src/components/ToastOffer.tsx` or `src/app/globals.css` change beside the frame (owner, at TASK-143's close-out).
 
 ## Acceptance criteria
 

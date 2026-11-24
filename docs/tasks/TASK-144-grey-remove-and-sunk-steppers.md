@@ -25,6 +25,7 @@ planned_at_commit:
 - **Steppers on `--sunk`** (MR-D18, MR-Q18, frame E11; `design/STYLE_GUIDE.md` §9 and §17.9): the batch sheet (`src/components/BatchSheet.tsx`, its `.stepper` group *How many issues*) and the finish sheet's year stepper (`src/components/FinishDate.tsx`, `.stepper`) are drawn from `--raise` today; they move to `--sunk`, as `src/components/Stepper.tsx` (Settings) already is. The `.stepper` rules are in `src/app/globals.css`.
 - Design: `design/mockups.html` §§ `status` (books *Listen next*) and `batch`, and the books finish sheet, redrawn from E8 and E11 (`ui.redrawFiles`; `design/mockups-index.md` lists them as 6.24's). `settings`' stepper is TASK-146's frame.
 - Rules: hard rule 6 (tokens only; only *Remove* and *Drop* may be red, and the review chose grey here). UX floor: `docs/04-design.md` § 10. The UX floor. Decisions: D-177.
+- *From TASK-143 (6.24, PR #340):* D-183 moved *Keep going?* out of the finish toast into the *Follow…* sheet, and PR #340 redrew only `finishoffer`. Two other places in the mockup still draw or describe it in the toast: `status`'s In flight *Finished* toast (`design/mockups.html`, the 2.2f frame's `.kg` *Keep going?* group; `design/mockups-index.md`'s `status` row, *the toast with Keep going?*) and `thisorthat`'s note (*Rank it* "above *Now reading* and *Keep going?*"). This task redraws `status`, so it can redraw that toast capped as `finishoffer` now draws it (one *Now reading* chip and *+N · Follow…*); `thisorthat`'s note needs the same words.
 
 ## Acceptance criteria
 

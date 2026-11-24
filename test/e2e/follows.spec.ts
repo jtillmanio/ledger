@@ -186,8 +186,10 @@ test("Follow… opens a sheet headed by the title, each grouping checked as stor
 
   await atLeast(sheet.locator(".opts .opt"), 24);
   // Nothing red: the checked option is --brand, never --danger.
-  const { backgroundColor } = await computedStyle(checked(3), ["backgroundColor"]);
-  expect(backgroundColor).not.toBe(await tokenColour(page, "--danger"));
+  // `computedStyle` takes CSS names: a camelCase one read "" and the check could never fail (TASK-143).
+  const { "background-color": fill } = await computedStyle(checked(3), ["background-color"]);
+  expect(fill).toBe(await tokenColour(page, "--brand"));
+  expect(fill).not.toBe(await tokenColour(page, "--danger"));
 
   // Tab stays inside the sheet.
   for (let i = 0; i < 20; i++) await page.keyboard.press("Tab");
