@@ -98,6 +98,7 @@ const MEDIUM_ROUTES = [
   [/^src\/app\/api\/(?:runs|queue|metron)\//, "comics", "a comics API route"],
   [/^src\/app\/(?:books|book|parked|settings\/calibre)\//, "books", "a books route"],
   [/^src\/app\/@modal\/\(\.\)book\//, "books", "a books route"],
+  [/^src\/app\/@modal\/\(\.\)comics\//, "comics", "a comics route"],
   [/^src\/app\/api\/(?:calibre|follows|listen-queue|parked|plan)\//, "books", "a books API route"],
   [/^src\/app\/watch\//, "watch", "a watch route"],
 ];
@@ -110,13 +111,13 @@ const MEDIUM_ROUTES = [
  * StartBook are only the books routes' too, but shared specs check them.
  */
 export const MEDIUM_COMPONENTS = {
-  comics: ["AddIssues", "InsertPreview", "IssueRow", "IssueSearch", "NextStrip", "QueueBadge", "QueueButton", "QueueList", "QueueShelf", "RunChip"],
+  comics: ["AddIssues", "InsertPreview", "IssueDetail", "IssueRecord", "IssueRow", "IssueSearch", "NextStrip", "QueueBadge", "QueueButton", "QueueList", "QueueShelf", "RunChip"],
   books: [
     "BetweenBooks", "BlockPopover", "BookDetail", "BookListSearch", "BookNote", "BookSheetActions", "BookShelves", "BookSort",
     "CalibreSyncLine", "ComingOutLine", "FinishBook", "GotIt", "GroupingBooks", "InlineText", "ListenNext", "OnDeckRow",
     "ParkedDone", "ParkedReviewLine", "ParkedRow", "PlaceThem", "PlanQuarter", "PlanQuarterRows", "PlanRail", "PlanSheet",
     "PlanShelf", "QuarterStrip", "QueueListen", "RailDrag", "RailStackSheet", "ReadAgain", "RebalanceSheet", "ReleaseDate",
-    "RouteSheet", "SeriesBooks", "SeriesList", "SheetLinks", "ShelfBooks", "ShelfList", "TopBooks", "YearDecision",
+    "SeriesBooks", "SeriesList", "SheetLinks", "ShelfBooks", "ShelfList", "TopBooks", "YearDecision",
   ],
 };
 

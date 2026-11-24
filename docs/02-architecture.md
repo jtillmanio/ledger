@@ -350,6 +350,7 @@ tables.
     | `/book/[id]` | 11,000 | 28,900 | 27 | 100 |
     | `/comics/bendis-disassembled/add` | 26,400 | 17,200 | 22 | 100 |
     | `/settings/calibre` | 9,800 | 16,600 | 25 | 100 |
+    | `/comics/[runId]/issue/[issueId]` | 11,000 | 28,900 | 27 | 100 |
     <!-- /perf-budget -->
 
     How the routes are measured, as 0.14c and earlier tasks set it: a
@@ -358,9 +359,14 @@ tables.
     and log the path they chose; when live has none, the route fails as not
     measured. A book's page is measured both ways under one id: the Lighthouse
     load is the full page, and the tap is the sheet a Library row opens through
-    the `@modal` intercept. `/parked`'s tap starts on the Library's *Parked*
-    filter. Unmeasured, with their reasons in the test: the sheet's own
-    intercept page, and the series, a series', an author's and a universe's
+    the `@modal` intercept. An issue's page (task 3.5, TASK-080) is measured the
+    same way from the small run's first issue: the full page loaded, the sheet
+    its spine row opens tapped. Its ceilings start at the book page's (the same
+    `RouteSheet` and detail layout), unmeasured; with no baseline yet, the growth
+    check skips it by name. If its first measurement plus 25% comes out above
+    them, writing that is a raise and takes a decision, as any raise does. `/parked`'s tap starts on
+    the Library's *Parked* filter. Unmeasured, with their reasons in the test: the
+    two sheets' own intercept pages, and the series, a series', an author's and a universe's
     pages (5.9, 5.11), which roadmap 0.14e measures.
 
     How each number got here, and every raise under the rule before 0.13 (PR

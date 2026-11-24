@@ -3161,6 +3161,15 @@ queue list draw a blocked run's badge from `run_queue_state.blocked_by`, the
 `run_ancestors` gives the transitive count, the badge reads that, and on the
 shelf it becomes the *Why held?* button the feel pass draws.
 
+*From TASK-080 (3.5, PR #334; D-176):* 3.5's Check also asks that opening *Why
+blocked?* from inside an issue sheet leaves exactly one sheet in the DOM and
+that Back returns to the issue sheet. That clause is this entry's to prove,
+since it builds the sheet. Opened from inside the issue sheet (a blocked run's
+badge on a *Your record* row, `src/components/IssueRecord.tsx`), *Why blocked?*
+is a pane in the issue sheet's dialog (`RouteSheet`'s `useRoutePane`, D-171),
+not a second route sheet; its browser test opens it there and asserts one
+`[role="dialog"]`, and that Back shows the issue sheet again.
+
 **Check:** relational, not literal (D-7). On a purpose-built fixture — A ← B ← C
 plus one soft edge — `run_unlock_cost(A)` equals A's unread placements plus B's
 and C's; a run with no prerequisites costs exactly its own unread count; marking
@@ -3637,7 +3646,7 @@ The mockup's `newrun` gains an edit-mode frame and a cycle-error frame.
 message, and that adding A→D when D→C→B→A exists (a four-run cycle, soft edges
 included) is rejected naming all four.
 
-### ☐ 3.5 Detail sheets — books and issues · M
+### ☑ 3.5 Detail sheets — books and issues · M
 `/books/[id]` and `/comics/[runId]/[issueId]` as **intercepted routes**: a
 bottom sheet on phone and tablet and a centred modal on desktop when arrived at from a
 list, a full page on direct load or refresh. Not a hover preview — hover does
@@ -3781,12 +3790,36 @@ in a UI walk:
   (`BooksNow.tsx`, "the Library row until 3.5's sheet"). `NextIn` carries the
   book's id, so it can link to `/book/{id}` as the hero's title now does.
 
+*From TASK-080 (3.5, PR #334; ui-verifier):* in the route sheet at 1280px, Tab
+from the last control stayed on it instead of wrapping to the first (nothing
+outside the dialog took focus). The trap is `RouteSheet`'s `useSheetFocus`,
+shared by the book and issue sheets; check it wraps both ways.
+
 **Check:** (proposed; the owner agrees it by merging or edits it first) in the
 browser (0.11), choosing *Listening* on a to-read book's sheet hides *Planned
 for*, *Move* and *Queue to listen* without a reload, and its Undo brings them
 back; a book second in Listen next shows *#2 in Listen next* on its sheet, and
 *Remove* deletes its one `listen_queue` row, closing the gap, with an Undo that
 puts it back at 2; axe passes; screenshots at 360px and 1280px.
+
+### ☐ 3.5d The cover morphs into the sheet's hero · S
+*From TASK-080 (3.5, part 3, PR #334; left out at its plan gate).* 3.5 named it
+a progressive enhancement and neither sheet built it: a row's cover morphs into
+the sheet's hero cover through the View Transitions API
+(`view-transition-name: cover-{id}`), the book's from a Library or dashboard
+row, the issue's from its spine row; without support, or under reduced motion,
+the sheets enter as they do now. Next 16 offers it only through React's
+experimental `<ViewTransition>` and `experimental.viewTransition` in
+`next.config.ts` (`node_modules/next/dist/docs/01-app/02-guides/view-transitions.md`),
+a flag that reaches every route, so it is built once for both sheets.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) in the
+browser (0.11), opening a book from the Library and an issue from its spine
+runs one view transition whose old and new elements are the row's cover and the
+sheet's hero (`view-transition-name: cover-{id}`); Back runs it in reverse; with
+`prefers-reduced-motion: reduce`, or with no `document.startViewTransition`,
+none runs and the sheet opens as before; the rest of the sheets' tests pass
+unchanged.
 
 ### ☑ 3.4 Book ratings and top-books reorder · S
 Rating, notes, and the top-books rank reorder. **Status and finish date moved to
@@ -4779,6 +4812,12 @@ it is converted.
   or the row resolves to `--ready` or `--danger`.
 
 - ☐ 5.6 `edition_issues` parser: `"Avengers #500-503 and Avengers Finale"` into join rows · M
+  *From TASK-080 (3.5, PR #334):* the issue sheet's *Collected in* (mockup
+  `issuedetail`, design § 13) is not drawn until these rows exist: nothing says
+  which editions collect an issue. Once they do, `issueDetail`
+  (`src/db/queries.ts`) answers them and `IssueDetail.tsx` draws the section
+  after *Your record*, each edition with its type and an *owned* badge from
+  `edition_progress.collected`.
 
 - ☑ 5.7 **Books coming out** · M. D-35; product B1, B5; Review N UX-N26.
   Depends on 1.4c and 1.8. `/books/releases`: the books you want when they

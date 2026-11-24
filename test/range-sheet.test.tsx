@@ -107,6 +107,18 @@ describe("selecting a range with a fine pointer (UX-N17)", () => {
     expect(dialog()!.textContent).toContain("Run #5 through Run #22");
   });
 
+  it("a shift-click that lands on a row's label link finishes the range, and doesn't follow the link (task 3.5)", async () => {
+    render(rows(30));
+    await click(body(5));
+    const link = row(22).querySelector(".lbl a")!;
+    expect(link.getAttribute("href")).toBe("/comics/r/issue/i22");
+    let followed = true;
+    container.addEventListener("click", (e) => { followed = !e.defaultPrevented; }, { once: true });
+    await click(link, { shiftKey: true });
+    expect(followed).toBe(false);
+    expect(heading()).toBe("Mark 18 issues read");
+  });
+
   it("Esc clears the anchor", async () => {
     render(rows(10));
     await click(body(3));

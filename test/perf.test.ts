@@ -1058,6 +1058,8 @@ describe("the growth rule is documented (task 0.13)", () => {
  */
 const UNMEASURED: Record<string, string> = {
   "/@modal/(.)book/[id]": "the book sheet, an intercept with no URL of its own: the book route's tap opens it from the Library",
+  "/@modal/(.)comics/[runId]/issue/[issueId]":
+    "the issue sheet, an intercept with no URL of its own: the issue route's tap opens it from a run's spine (task 3.5)",
   "/books/series": "drawn by 5.9, outside 0.14c's eight: its route and budget are roadmap 0.14e",
   "/books/series/[id]": "drawn by 5.9, outside 0.14c's eight: its route and budget are roadmap 0.14e",
   "/books/authors/[id]": "drawn by 5.11, outside 0.14c's eight: its route and budget are roadmap 0.14e",

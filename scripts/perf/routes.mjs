@@ -79,6 +79,17 @@ export const ROUTES = [
       paints: '[role="dialog"] .detail[data-detail]:not([aria-busy]) [data-sheet-heading]',
     },
   },
+  // An issue's page (task 3.5, TASK-080): the small run's first issue. As with the book, the Lighthouse load is
+  // the full page and the tap is the sheet over the run's spine (the @modal intercept), so it waits for the
+  // loaded issue's heading in the sheet, as "book" does.
+  {
+    id: "issue", path: "/comics/[runId]/issue/[issueId]", signedIn: true,
+    resolve: { from: "/comics/bendis-disassembled", selector: '.iss .lbl a[href*="/issue/"]' },
+    tap: {
+      from: "/comics/bendis-disassembled", selector: '.iss .lbl a[href*="/issue/"]',
+      paints: '[role="dialog"] .detail[data-detail]:not([aria-busy]) [data-sheet-heading]',
+    },
+  },
   // A run's Add (task 1.3c), from the run's own *Add issues*; the small run, by its authored slug.
   {
     id: "run-add", path: "/comics/bendis-disassembled/add", signedIn: true,
