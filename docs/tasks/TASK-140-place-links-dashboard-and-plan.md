@@ -1,14 +1,14 @@
 ---
 id: TASK-140
 title: 5.9b Every other place line links its names (1 of 3) — the dashboard and the plan screens
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 99eb2e5
 ---
 
 # TASK-140 — 5.9b Every other place line links its names (1 of 3) — the dashboard and the plan screens
@@ -66,9 +66,42 @@ Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- `booksUpNext` now carries `author_id`, `series_id` and `universe_id` (step 1), so TASK-141's On deck and bare-year `StatusBookRow` rows on Up next need no query change for them (approved at plan) → `docs/tasks/TASK-141-place-links-lists-and-follow-sheet.md` § Context
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-24 ("go with recommendations"): *Next in* split into two links, *Or keep going*'s reason linked, the task kept whole (attended).
+
+**Steps**
+
+1. **Queries** (`src/db/queries.ts`): `author_id`, `series_id`, `universe_id` on `booksUpNext` (`PlannedBook`, which feeds `PlanQuarter`), `planRows` (`PlanRow`), `planSuggestions` (`PlanSuggestion`) and `planBook` (`PlanBook`); the follow's entity id on `booksInHand`'s `next_in` JSON (`NextIn`) and on `keepGoing` (`KeepGoing`). `quarterShelf` already has the three. Each book read keeps `b.deleted_at IS NULL` (directly or through `plan_period`, `plan_book_words`).
+2. **Up next cards** (`src/components/PlanShelf.tsx`): `.card-sub` draws `<BookPlace parts={subParts(b)} />`; the title stays the card's one link to the book.
+3. **Plan screens**: `PlanQuarter` `.qplace` (Up next on `/books/status`), `PlanQuarterRows` `.row-sub` (`/books/plan`), `PlanSheet`'s row `.ps-sub`, `PlanPicker`'s header `.pp-by` each draw `BookPlace`. The picker in Add books and Parked passes no ids, so its line stays text (`partHref` null).
+4. **Now's *Next in*** (`src/components/BooksNow.tsx`): the one Library-search link becomes two links in the same 44px line: *Next in* [the follow's name → its series, universe or author page; a subseries, which has no page, stays text]: [the title → `/book/<id>`, the book's sheet, as 3.5b's other titles]. The `›` stays, decorative.
+5. ***Or keep going*** (`src/components/BetweenBooks.tsx`): each reason's name, *Next in* [Red Rising] · 3 of 6 read, links to its page the same way (subseries and shelf text). The offer's author line stays text.
+6. **Styles** (`src/app/globals.css`): `.card-sub a`, `.qplace a`, `.ps-sub a`, `.pp-by a`, the *Next in* and *Or keep going* names join the place-links rule (underlined, the line's ink, `--faint` underline, focus ring); the card's 11px line gets padding that makes a 24px box; nothing red, tokens only.
+7. **Mockup** (`design/mockups.html`, `design/mockups-index.md`): `a.plink` on the `bdash` Up next cards, *Next in* (two links) and *Or keep going* reasons, the `plan` rows and planning-sheet rows, the `moveplan` header, the `status` Up next quarter rows; the index notes say so.
+
+**Link form.** `<Link prefetch={false}>` (BookPlace's default) on every surface: none draws more than a quarter's rows, and each route already loads Link. Ceilings (document + RSC): `books` 12,000, `plan` 12,100, `books-status` 10,500; a PR may grow a route by 10% and 1,500 bytes (D-142, D-175). If Lighthouse shows a route over, that route takes `plain`.
+
+**Files**
+
+- `src/db/queries.ts` — the ids (step 1).
+- `src/components/PlanShelf.tsx`, `BooksNow.tsx`, `BetweenBooks.tsx` — the dashboard (steps 2, 4, 5).
+- `src/components/PlanQuarter.tsx`, `PlanQuarterRows.tsx`, `PlanSheet.tsx`, `PlanPicker.tsx` — the plan screens (step 3).
+- `src/app/globals.css` — not in *Files likely touched*: the new containers' link styles and 24px targets (step 6).
+- `design/mockups.html`, `design/mockups-index.md` — step 7.
+- Tests: `test/books-dashboard.test.ts`, `test/plan-page.test.tsx`, `test/e2e/books-dashboard.spec.ts`, `test/e2e/plan-sheet.spec.ts`; any query test that pins these rows' columns (grep first).
+
+**Test strategy**
+
+- AC-2, AC-3 (component tests): `test/books-dashboard.test.ts` renders `PlanShelf`, `BooksNow` (*Next in*), `BetweenBooks` (*Or keep going*) and `PlanQuarter`; `test/plan-page.test.tsx` renders `PlanQuarterRows`, `PlanSheet`'s row and `PlanPicker`'s header. Each with a *Cosmere · Mistborn #4* book (three links: the series named *Mistborn* alone to `/books/series/<id>`, `/books/authors/<id>`, `/books/universes/<id>`) and a standalone book (the author link only, the line's text unchanged). Query tests: the ids on `booksUpNext`, `planRows`, `planSuggestions`, `planBook`, `booksInHand`'s `next_in` and `keepGoing`, against the seeded test database.
+- AC-1, AC-4, AC-5 (browser): `test/e2e/books-dashboard.spec.ts`: the cards, *Next in* and the status Up next tab: the link names and targets; clicking a place link opens its page, not the book; the card's title (and *Next in*'s title) still opens the book's sheet; axe, 24px targets, 4.5:1 in both themes; screenshots at every width, light and dark (360 and 1280 among them). `test/e2e/plan-sheet.spec.ts`: the plan rows, the planning sheet's rows and the picker header, the same checks. `test/perf.test.ts` still passes; Lighthouse on the PR when `LIGHTHOUSE_MODE` is on.
+- Manual: the ui-verifier taps a series, an author and a universe on `/books` and `/books/plan` at 360 and 1280.
+
+**Risks.** The 24px box on an 11px line without moving the card's layout; Lighthouse measures only while its switch is on, else the byte budgets are checked after merge.
+
+**Size.** 10 source files plus `globals.css`, over the split policy's 8; already part 1 of 3 and each edit small, so kept whole, attended (owner, at plan).
 
 ## Review log
 
