@@ -218,7 +218,7 @@ build was skipped builds it. A docs-only push after a build is still skipped.
 *(Check proposed by task 1.4's close-out; the owner agrees it by merging PR #76
 or edits it first.)*
 
-### ☐ 0.13 Gate a preview on what its PR adds, not on a ceiling it must raise · M
+### ☑ 0.13 Gate a preview on what its PR adds, not on a ceiling it must raise · M
 Owner, 2026-11-10 (D-142). 0.10 set each route's budget at its measurement
 plus 20%. Since then seven PRs have raised them (#115, #147, #193, #197, #201, #222, #224),
 the last three by about 5%, under 1% and 51 bytes, so the next feature starts

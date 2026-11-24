@@ -1,7 +1,7 @@
 ---
 id: TASK-133
 title: 0.13 Gate a preview on what its PR adds, not on a ceiling it must raise
-status: Review
+status: Done
 depends_on: [TASK-114]
 size: M
 model: opus
@@ -33,7 +33,7 @@ A preview's Lighthouse job fails when its PR grows a route's weight over main's,
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `test/perf.test.ts` covers the growth gate on fixture metrics: a route 3,001
+- [x] AC-1 (roadmap **Check:**, verbatim; the throwaway branch runs after merge, docs/OWNER-CHECKLIST.md § Actions from follow-ups): `test/perf.test.ts` covers the growth gate on fixture metrics: a route 3,001
 bytes of JS over the baseline fails, naming the route, the growth and the
 baseline's PR, and 3,000 passes; the `perf-growth` label turns that failure into
 accepted growth in the comment; no baseline skips the check and the comment says
@@ -44,7 +44,7 @@ holds the shared JS once and `test/perf.test.ts` holds the table in
 adding the label turns the job green with no new push. The job passes on this
 entry's own PR, and `lighthouse-metrics` is kept 90 days.
 - [x] AC-2: On fixture metrics, document + RSC growth fails only when it is over both 10% and 1,500 bytes (10% and 1,400 bytes passes, 9% and 2,000 bytes passes, 11% and 1,600 bytes fails), and request growth fails at 4 and passes at 3.
-- [ ] AC-3: Every ceiling in `budget.json` is this entry's preview measurement plus 25%, or plus one PR's growth limit where that is larger (D-175; reworded by the owner at close-out, 2026-11-24), rounded as the plan says, written in the PR body as measured → ceiling per id, and `budget.json`'s `$comment` and § Performance budget say a ceiling is raised only with a decision (D-n).
+- [x] AC-3: Every ceiling in `budget.json` is this entry's preview measurement plus 25%, or plus one PR's growth limit where that is larger (D-175; reworded by the owner at close-out, 2026-11-24), rounded as the plan says, written in the PR body as measured → ceiling per id, and `budget.json`'s `$comment` and § Performance budget say a ceiling is raised only with a decision (D-n).
 - [x] AC-4: § Performance budget keeps the table, the growth limits and how a ceiling is raised, and links `docs/perf-budget-history.md`, which holds every raise paragraph from PR #80 to #224 as it was. `docs/GIT-PR.md` says when to ask for **Perf growth** and that Claude never adds the label.
 - [x] AC-5: The per-route reports' artifacts keep 14 days; only `lighthouse-metrics` changes to 90 (both read from `lighthouse.yml` in a test).
 
@@ -93,7 +93,7 @@ Approved at the plan gate, 2026-11-23. The owner folded the baseline fix into th
 4. Baseline (0.14d, widened): `baselineRun(runs)` takes runs with their jobs and returns the newest whose `report` job concluded success; `findBaseline` walks the merged PRs newest first, reading each one's runs on its branch up to its merge, past PRs with no such run, as far back as `lighthouse-metrics` lasts (90 days, `BASELINE_DAYS`). *(Revision 2, spec review R1: it stopped after 10 PRs, and 12 merged on 2026-11-23 alone without a measured run.)*
 5. Label re-report: `pull_request: [labeled, unlabeled]` for `perf-growth` runs a `rejudge` job (`report.mjs rejudge`, `actions: write`) that re-runs only the `report` job of the head commit's newest run whose `report` ran (`rejudgeTarget`). Same run, no new load, not counted against the cap. The report job's metrics upload overwrites on a re-run (`overwrite: true`), so a re-run of a failed route stores the full numbers. *(Revision 2, spec review R1: this replaced an attempt-1-only upload, which would have kept attempt 1's partial numbers.)*
 6. `lighthouse-metrics` kept 90 days; the per-route artifacts stay 14.
-7. `report.mjs ceilings <metrics.json> [--write]` prints (or writes) `budget.json` from a run (`ceilingsFrom`): the larger of measurement × 1.25 and measurement + D-142's growth limit (JS 3,000, document + RSC 1,500, requests 3), bytes up to the next 100, requests up to a whole number, accessibility as measured. Applied from this PR's own preview (hand run 45328350484, head d79fde0); `shelf` wasn't measured there (live has no shelf), so it keeps the same rule applied to PR #319's 2026-11-23 hand run (run 45184508856). *(Revision 1, owner 2026-11-23: on #319's reports a route's own JS is 0–25.5 KB, so a strict +25% left `/login` 0 bytes and `/comics/runs` 292 of room, under the 3,000 one PR may grow.)*
+7. `report.mjs ceilings <metrics.json> [--write]` prints (or writes) `budget.json` from a run (`ceilingsFrom`): the larger of measurement × 1.25 and measurement + D-142's growth limit (JS 3,000, document + RSC 1,500, requests 3), bytes up to the next 100, requests up to a whole number, accessibility as measured. Applied from this PR's own preview (hand run 45328350484, head d79fde0); `shelf` wasn't measured there (live had no shelf), so after the owner added one its ceiling came from the second hand run (45333997034, head 22c6515). *(Revision 1, owner 2026-11-23: on #319's reports a route's own JS is 0–25.5 KB, so a strict +25% left `/login` 0 bytes and `/comics/runs` 292 of room, under the 3,000 one PR may grow.)*
 8. Docs: § Performance budget keeps the table, the growth limits, how a ceiling is raised (a decision, D-n) and the rules still in force; every paragraph after the table moves verbatim to `docs/perf-budget-history.md`, linked. `budget.json` `$comment`; `docs/GIT-PR.md` **Perf growth**; `docs/COMMANDS.md` the `ceilings` command.
 9. Measured runs, started by the owner (D-158): a hand run on this branch → apply `ceilings` → push → a second run passes. After merge: the throwaway branch's 5 KB import, then the label.
 
@@ -110,6 +110,7 @@ _Filled by /implement-task. One line per round._
 - Verify R1 FAIL(1: `test/reading-log.test.tsx` flake, untouched; 3 of 3 alone) → R2 PASS | CI R1 PASS (8dd3e42)
 - Spec R1 APPROVE (3 risks: 10-PR look-back, attempt-1 upload, throwaway route) → fixed (d79fde0) | Verify R3 PASS | CI R2 PASS | Audit R1 PASS (21 of 111 fail on base) | Spec R2 CHANGES (PLAN GAP: step 5 wording) → plan revision 2
 - Lighthouse hand run 45328350484 (owner approved): every new ceiling held; FAIL shelf not measured (live has no shelf), settings JS +3,996 over PR #280 (main's growth since 2026-11-17) → ceilings written from it; `ceilingsFrom` keeps an unmeasured route's ceiling | Verify R4 PASS
+- Lighthouse hand run 45333997034 (owner added a shelf): every ceiling held, shelf measured; FAIL books JS +3,375 and settings JS +4,111 over PR #280 (main's growth since 2026-11-17) → `perf-growth` added by Claude on the owner's instruction, for this PR only → rejudge 45334400578 re-ran the report: same run, attempt 2, green, no measure job re-run | shelf ceiling set from it
 - Schema review not run: no migration, schema, view, query or ETL change. UI review not run: no UI change.
 
 ## Blocked
