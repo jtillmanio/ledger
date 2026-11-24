@@ -254,6 +254,28 @@ test("More credits is a real button that opens Colorist and Letterer in place (A
   await expect(page.locator(".issue-more-credits .v")).toHaveText(["E2E Glynis Wein", "E2E Tom Orzechowski"]);
 });
 
+test("the spine's links into the sheet, the row's label and the hint's +N, are each at least 24px and move no row (AC-6)", async ({ page }) => {
+  // Read in Byrne too, so the long run's row says *read in …* with a +1.
+  await withSql((sql) => sql`INSERT INTO issue_progress (user_id, placement_id, completed_at, completed_at_precision)
+    SELECT ${E2E_USER}, id, '2025-04-15T16:00:00Z', 'exact' FROM run_issues WHERE run_id = ${BYRNE.id} AND issue_id = ${X.id}`);
+  await page.goto(`/comics/${LONG.id}`);
+  const row = page.locator(".iss", { has: page.locator(".lbl").getByRole("link", { name: X.label, exact: true }) });
+  const label = row.locator(".lbl a");
+  const more = row.getByRole("link", { name: `+1 more: every run with ${X.label}` });
+  await expect(more).toHaveAttribute("href", sheetUrl(LONG.id, X.id));
+  for (const link of [label, more]) {
+    const box = (await link.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(24);
+    expect(box.width).toBeGreaterThanOrEqual(24);
+  }
+  // The label's padding is given back: its line box is the link's text, not the link's padded box, so
+  // the row is as tall as it was (the label may wrap at this width; the 4px above and below still don't count).
+  const lbl = (await row.locator(".lbl").boundingBox())!;
+  const link = (await label.boundingBox())!;
+  expect(Math.abs(lbl.height - (link.height - 8))).toBeLessThanOrEqual(1);
+  await expectNoAxeViolations(page, ["target-size", "link-name"], ".iss");
+});
+
 test("the sheet and the page at 360, 834 and 1280px, light and dark: names, 44px toggles on the phone, axe, contrast, screenshots (AC-6)", ONCE, async ({ page }, info) => {
   for (const [width, height] of [[360, 780], [834, 1112], [1280, 800]] as const) {
     for (const colorScheme of ["light", "dark"] as const) {

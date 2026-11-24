@@ -103,6 +103,10 @@ describe("issueDetail (AC-1, AC-2)", () => {
     await sql`UPDATE run_issues SET deleted_at = now() WHERE run_id = 'claremont' AND issue_id = 'c3'`;
     await sql`INSERT INTO runs (id, title, deleted_at) VALUES ('gone', 'Gone run', now())`;
     await sql`INSERT INTO run_issues (run_id, sequence, issue_id) VALUES ('gone', 1, 'x')`;
+    // A placeholder run (a forward-declared prerequisite) is in no run list, so in no record either.
+    await sql`INSERT INTO runs (id, title, placeholder) VALUES ('ph', 'Placeholder run', true)`;
+    await sql`INSERT INTO run_issues (run_id, sequence, issue_id) VALUES ('ph', 1, 'x')`;
+    expect(await q.issueDetail(USER, "ph", "x")).toBeNull();
     const d = (await q.issueDetail(USER, "byrne", "x"))!;
     expect(d.placements.map((p) => [p.run_id, p.run_total])).toEqual([["byrne", 2], ["claremont", 2]]);
   });

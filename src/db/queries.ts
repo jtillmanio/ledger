@@ -519,7 +519,8 @@ export async function issueDetail(userId: string, runId: string, issueId: string
              i.store_date::text AS store_date, i.cover_url, (i.metron_id IS NULL) AS pending
       FROM issues i
       WHERE i.id = ${issueId} AND i.deleted_at IS NULL
-        AND EXISTS (SELECT 1 FROM live_run_issues ri JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL
+        AND EXISTS (SELECT 1 FROM live_run_issues ri
+                    JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL AND NOT r.placeholder
                     WHERE ri.issue_id = i.id AND ri.run_id = ${runId})
     `,
     sql<(Omit<IssuePlacement, "read_when"> & { completed_at: Date | null; precision: Precision })[]>`
@@ -529,7 +530,8 @@ export async function issueDetail(userId: string, runId: string, issueId: string
              COALESCE(p.completed_at_precision, 'none') AS precision,
              (ri.run_id = ${runId}) AS this_run
       FROM live_run_issues ri
-      JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL
+      -- A placeholder run is a forward-declared prerequisite, hidden from every run list.
+      JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL AND NOT r.placeholder
       LEFT JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
       WHERE ri.issue_id = ${issueId}
       ORDER BY (ri.run_id = ${runId}) DESC, r.title, ri.run_id
@@ -539,7 +541,7 @@ export async function issueDetail(userId: string, runId: string, issueId: string
       FROM issue_credits ic
       JOIN creators c ON c.id = ic.creator_id
       WHERE ic.issue_id = ${issueId}
-      ORDER BY array_position(ARRAY['writer', 'artist', 'inker', 'colorist', 'letterer', 'cover'], ic.role), c.name
+      ORDER BY array_position(ARRAY['writer', 'artist', 'inker', 'colorist', 'letterer', 'cover'], ic.role), c.name, c.id
     `,
   ]);
   if (!issue) return null;
