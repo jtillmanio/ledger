@@ -529,7 +529,7 @@ export type BookRow = {
   /** The latest read's finish minus its start in days, when both are exact days; null otherwise. */
   days_taken: number | null;
   rating: number | null; cover_url: string | null;
-  /** No external record yet (no Open Library or Hardcover id): *metadata pending* (task 1.4c). */
+  /** No external record yet (no Hardcover id; 6.19, D-94): *metadata pending* (task 1.4c). */
   pending: boolean;
   /** Its reads by eye and its listens (task 1.23, D-85), from book_reads: *Read 2× · Listened 1×*. */
   reads: number; listens: number;
@@ -580,7 +580,7 @@ export async function listBooks(
            (SELECT l.name FROM book_genre_levels l WHERE l.book_id = b.id AND l.direct
             ORDER BY l.depth DESC, l.genre LIMIT 1) AS genre,
            b.word_count, b.word_count_source, b.cover_url,
-           (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
+           (b.hardcover_id IS NULL) AS pending,
            COALESCE(st.status, 'to_read') AS status,
            CASE WHEN st.status = 'read' THEN extract(year FROM st.finished_on)::int END AS read_year,
            st.finished_on::text AS finished_on, COALESCE(st.finished_on_precision, 'none') AS finished_on_precision,
@@ -901,7 +901,7 @@ export async function topBooksYear(userId: string, year: number | null): Promise
   return sql<TopRead[]>`
     SELECT r.read_id, b.id AS book_id, b.title, a.name AS author,
            s.name AS series, b.series_position, u.name AS universe,
-           b.cover_url, (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
+           b.cover_url, (b.hardcover_id IS NULL) AS pending,
            r.finished_on::text AS finished_on, r.finished_on_precision, r.format, r.year_rank
     FROM (
       SELECT e.id AS read_id, e.book_id, e.finished_on, e.finished_on_precision, e.format::text AS format, e.year_rank
@@ -936,7 +936,7 @@ export async function rankSorterRead(
   const [read] = await sql<(TopRead & { year: number | null })[]>`
     SELECT e.id AS read_id, b.id AS book_id, b.title, a.name AS author,
            s.name AS series, b.series_position, u.name AS universe,
-           b.cover_url, (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
+           b.cover_url, (b.hardcover_id IS NULL) AS pending,
            e.finished_on::text AS finished_on, e.finished_on_precision, e.format::text AS format, e.year_rank,
            extract(year FROM e.finished_on)::int AS year
     FROM read_events e
@@ -1044,7 +1044,7 @@ export async function bookDetail(userId: string, bookId: string): Promise<BookDe
            (SELECT l.name FROM book_genre_levels l WHERE l.book_id = b.id AND l.direct
             ORDER BY l.depth DESC, l.genre LIMIT 1) AS genre,
            b.summary, b.subjects, b.page_count, b.word_count, b.word_count_source, b.published_year, b.cover_url,
-           (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
+           (b.hardcover_id IS NULL) AS pending,
            COALESCE(st.status, 'to_read') AS status,
            st.finished_on::text AS finished_on, COALESCE(st.finished_on_precision, 'none') AS finished_on_precision,
            (CASE WHEN st.status = 'read' THEN lr.started_on ELSE st.started_on END)::text AS started_on,
@@ -1680,7 +1680,7 @@ export async function librarySearch(
   return sql<LibraryHit[]>`
     SELECT b.id, b.title, a.name AS author, bs.name AS series, b.series_position, u.name AS universe,
            b.published_year, b.page_count, b.word_count, b.word_count_source, b.cover_url, b.hardcover_id,
-           (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
+           (b.hardcover_id IS NULL) AS pending,
            st.status, tl.level, tl.period, (b.calibre_id IS NOT NULL) AS calibre, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,
            (SELECT COUNT(*) FROM shelf_books sb JOIN shelves sh ON sh.id = sb.shelf_id
             WHERE sb.book_id = b.id AND sh.user_id = ${userId})::int AS shelves

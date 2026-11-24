@@ -1246,7 +1246,7 @@ BEGIN
     GROUP BY table_name) t;
   IF got IS DISTINCT FROM 'authors(id,name) book_series(author_id,id,name,total_books) '
                        || 'book_universes(id,name) books(added_at,author_id,book_type,calibre_id,cover_url,'
-                       || 'deleted_at,hardcover_id,id,open_library_id,page_count,published_year,'
+                       || 'deleted_at,hardcover_id,id,page_count,published_year,'
                        || 'series_id,series_position,subjects,subseries_id,subseries_position,summary,title,universe_id,'
                        || 'universe_position,word_count,word_count_source)' THEN
     RAISE EXCEPTION 'catalog columns changed (a per-user fact belongs in a follow or progress table): %', got;

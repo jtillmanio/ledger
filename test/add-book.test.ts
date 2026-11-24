@@ -1,5 +1,5 @@
 // Task 1.4c: Add a book by search or by hand, to a destination, against the
-// TEST database, with Hardcover (task 1.4f, in Open Library's place) replaced
+// TEST database, with Hardcover (task 1.4f, D-94) replaced
 // by a stubbed fetch that counts its calls. The search (POST /api/books/search),
 // the add (POST /api/books) and its undo (DELETE /api/books), and Paste a
 // list's destination and undo (POST /api/books/bulk). Hardcover's cache, hold,

@@ -17,7 +17,7 @@ export default function Cover({ url, pending }: { url: string | null; pending: b
   if (pending) return <span className="cv" data-enrich="pending" aria-hidden="true" />;
   const none = <span className="cv none" aria-hidden="true" />;
   if (!url) return none;
-  // A Hardcover, Open Library or Metron CDN thumbnail, drawn as it comes: by CoverImage, which draws
+  // A Hardcover or Metron CDN thumbnail, drawn as it comes: by CoverImage, which draws
   // it only when Show covers is on and data isn't reduced (task 4.3). Otherwise the placeholder.
   return <CoverImage url={url} className="cv" width={40} height={60} fallback={none} />;
 }

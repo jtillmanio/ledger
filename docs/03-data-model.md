@@ -22,7 +22,7 @@ read filters `deleted_at IS NULL`, and removing a placement soft-deletes it.
 | Books catalog | `books`, `authors`, `book_series`, `releases`, `external_lists` | `external_lists` keeps raw text until resolved (2.7) |
 | Per user | `issue_progress` (per placement), `edition_progress`, `book_status`, `reading_plan`, `reading_settings`, `shelves`, `shelf_books`, `inbox` | Keyed `(user_id, entity_id)` (2.1) until 6.18; a new table has no `user_id` (D-91) |
 | Logs | `read_events` | Append-only; a reread is a new row with `reread_of` (1.5) |
-| Caches | `metron_cache`, `open_library_cache` | Rebuildable API responses |
+| Caches | `metron_cache`, `hardcover_cache` | Rebuildable API responses |
 | Users | `users` | One row today (§ If you add a second reader, in the architecture) |
 
 32 tables in `src/db/schema.ts`, migrations `0000` to `0013`. Count them again
@@ -399,7 +399,7 @@ anything that points at it:
 | Adding | Search path | Freeform path | Then writes |
 |---|---|---|---|
 | An issue to a run | Your catalog first, then Metron live: series + number, cover and cover date on the result | A label, or many, through the bulk-entry parser (task 1.3) | `issues` (new label) or reuse of the existing row, then a `run_issues` placement |
-| A book to a to-read level (a quarter or year, On deck, Someday) or a shelf | Your library first, then Hardcover live (task 1.4f, D-94; Open Library before it) | Title and author required, series, position, pages and words optional | `books` (plus `authors` / `book_series` if new), then `shelf_books`, `book_status` or `reading_plan` |
+| A book to a to-read level (a quarter or year, On deck, Someday) or a shelf | Your library first, then Hardcover live (task 1.4f, D-94; Open Library before it, removed in 6.19) | Title and author required, series, position, pages and words optional | `books` (plus `authors` / `book_series` if new), then `shelf_books`, `book_status` or `reading_plan` |
 | A film or show | TMDB live (unchanged, 2.5b) | — none (D-28): when TMDB fails or finds nothing, *Save to inbox* keeps the query as a Watch capture note | `titles` / `seasons`, then status |
 
 An existing row is always reused. A search result that is already in your
@@ -420,7 +420,7 @@ never to render a page. A search runs when you submit it, not on every
 keystroke. At 20 requests a minute, Metron is plenty for one person adding
 issues, and Hardcover's 60 for one adding books. Responses are cached like the
 backfill's (`hardcover_cache`, 7 days, D-62). Hardcover was backfill-only until
-1.4f replaced Open Library in *Add books* (D-94).
+1.4f replaced Open Library in *Add books* (D-94), and 6.19 removed it.
 The AI rule is unaffected: tapping *Add* on a Metron result is an explicit
 accept of a label Metron says exists, and a freeform line is your own label,
 not a model's.
@@ -567,8 +567,8 @@ re-extract; calibre.py never writes to Calibre (the sync does, below).
 *Amended by D-87 (2026-10-27):*
 Calibre is the source of truth for a book's data and its reads, because the
 owner edits nothing else. Its word count, series and index replace the
-workbook's, a series Open Library contradicts still fills, and its reads load as
-it has them; what disagrees (the workbook's value, Open Library's series, a
+workbook's, a series Hardcover contradicts still fills, and its reads load as
+it has them; what disagrees (the workbook's value, Hardcover's series, a
 second read) is reported, never silently dropped. Only a near spelling waits on
 a decision. Tags, comments and the ISBN load nothing until their columns are
 approved (D-88). After cutover, 4.4 carries the same rules into the app.

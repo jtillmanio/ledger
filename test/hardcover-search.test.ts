@@ -384,11 +384,11 @@ describe("adding a Hardcover result (AC-3)", () => {
     expect(done.body).toMatchObject({ ok: true, reused: false, created: ["piranesi-luigi-ficacci"], title: "Piranesi" });
     expect(await sql`
       SELECT b.title, a.name AS author, b.hardcover_id, b.cover_url, b.page_count, b.published_year,
-             b.word_count, b.word_count_source, b.open_library_id
+             b.word_count, b.word_count_source
       FROM books b JOIN authors a ON a.id = b.author_id`).toEqual([{
       title: "Piranesi", author: "Luigi Ficacci", hardcover_id: 444003,
       cover_url: "https://assets.hardcover.app/edition/444003/etchings.jpeg", page_count: 800, published_year: 2000,
-      word_count: 800 * 300, word_count_source: "estimated", open_library_id: null,
+      word_count: 800 * 300, word_count_source: "estimated",
     }]);
     expect(await sql`SELECT book_id, status FROM book_status WHERE user_id = ${USER}`)
       .toEqual([{ book_id: "piranesi-luigi-ficacci", status: "to_read" }]);

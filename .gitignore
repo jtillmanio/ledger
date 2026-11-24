@@ -7,7 +7,6 @@ node_modules
 seed/
 *.dump
 etl/.metron-cache.sqlite
-etl/.openlibrary-cache.sqlite
 etl/.hardcover-cache.sqlite
 etl/.fandom-cache.json
 __pycache__/
