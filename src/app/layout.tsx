@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { preload } from "react-dom";
 import "./globals.css";
+import { FollowOfferProvider } from "@/components/FollowOffer";
 import Shell from "@/components/nav/Shell";
 import { RankSorterProvider } from "@/components/RankSorter";
 import { UndoProvider } from "@/components/Undo";
@@ -23,10 +24,14 @@ export default function RootLayout({ children, modal }: { children: React.ReactN
       <body>
         {/* App-wide: the spine, the queue (1.10) and the add flows (1.3c, 1.4c)
             all push onto the one undo stack (task 1.2). This or that (3.4b) is
-            one sorter for the app, opened from a finish's toast or Top books.
+            one sorter for the app, opened from a finish's toast or Top books,
+            and a finish's +N · Follow… (6.24) one Follow… sheet, which outlives
+            the toast that opened it.
             `modal` is the detail-sheet slot (task 3.5): a detail route arrived
             at from a list draws here, over it, inside the same providers. */}
-        <UndoProvider><RankSorterProvider><Shell>{children}</Shell>{modal}</RankSorterProvider></UndoProvider>
+        <UndoProvider><RankSorterProvider><FollowOfferProvider>
+          <Shell>{children}</Shell>{modal}
+        </FollowOfferProvider></RankSorterProvider></UndoProvider>
       </body>
     </html>
   );

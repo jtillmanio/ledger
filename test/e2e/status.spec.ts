@@ -503,7 +503,7 @@ test.describe("Finished on In flight (2.2f)", () => {
     await expect(page.getByRole("button", { name: /^Finished / })).toHaveCount(0);
   });
 
-  test("AC-1/AC-2: a Reading row finishes today, exact, start kept; Keep going? is offered; Undo restores it", ONCE, async ({ page }, info) => {
+  test("AC-1/AC-2: a Reading row finishes today, exact, start kept; the offer is behind +1 · Follow…; Undo restores it", ONCE, async ({ page }, info) => {
     await open(page, "/books/status");
     const button = finish(page, "E2E Fin Alpha");
     await hydrated(button);
@@ -515,7 +515,8 @@ test.describe("Finished on In flight (2.2f)", () => {
     await expect(toast).toContainText("E2E Fin Alpha: read");
     const words = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "America/New_York" });
     await expect(toast).toContainText(`Finished ${words.format(new Date())}`);
-    await expect(toast.getByRole("group", { name: "Keep going?" })).toBeVisible();
+    // The author is offered (Keep going?), in the Follow… sheet behind +1 since the toast was capped (6.24, MR-D17).
+    await expect(toast.getByRole("button", { name: "+1 · Follow…" })).toBeVisible();
     await expect(finish(page, "E2E Fin Alpha")).toHaveCount(0);
     expect(await reads("a")).toEqual([{ format: "text", finished_on: today(), precision: "exact", started_on: "2026-01-15" }]);
     expect((await status("a")).status).toBe("read");

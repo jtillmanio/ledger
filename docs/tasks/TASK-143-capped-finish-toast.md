@@ -1,14 +1,14 @@
 ---
 id: TASK-143
 title: 6.24 Built screens follow the mediums review (1 of 4) — the capped finish toast
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 45c92c8
 ---
 
 # TASK-143 — 6.24 Built screens follow the mediums review (1 of 4) — the capped finish toast
@@ -69,9 +69,31 @@ it gains the six 834px frames.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- A decision amending D-117 and D-108: the finish toast is capped at one *Now reading* chip, the narrowest followed, plus *+N · Follow…*, N counting every chip the sheet holds that the toast doesn't; *Keep going?* lives in the sheet (approved at plan; the wording is asked at close-out, `decisions: propose`).
+- E10's note says the toast keeps "the narrowest thing the finish followed" while its frame draws the series beside a subseries; the build follows the note (owner, plan gate) (approved at plan).
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Answers at the plan gate (owner, 2026-11-24): the toast keeps the **narrowest** chip the finish followed (subseries, else series, else universe; E10's note, over its frame); **N counts everything hidden**, the other *Now reading* follows and every *Keep going?* offer, so a finish that follows nothing still reaches its offers; the sheet shows the offer as **chips above its rows**; *Rank it* keeps its row above, as built (MR-D17 "keeps its row"; `thisorthat` draws it above); the branch starts from `main` after #338.
+
+**Steps**
+
+1. Tests first: `test/undo.test.tsx` (AC-2, AC-3, AC-4) fail for the expected reason; `test/e2e/follows.spec.ts`'s toast tests rewritten to the cap, plus a 360px light-and-dark test (AC-1's clause, AC-5).
+2. `src/lib/follow-offer.ts`: a chip carries its grouping (`kind`, `id`); `toastShare(chips)` splits an offer into the toast's (the narrowest *Now reading* chip) and the sheet's (the other follows, then *Keep going?*).
+3. `src/components/Undo.tsx`, `src/components/useBookWrite.ts`: a third chip, `row: "follow"`, whose `open(opener, chips)` opens the *Follow…* sheet with the chips the toast hides, built beside *Rank it* and pinning the toast while the sheet is open (`hold()`); the finish's Undo drops the sheet's offer, as it cancels the sorter.
+4. `src/components/ToastOffer.tsx`: *Rank it* row as built; then one row: *Now reading*, the kept chip, *+N · Follow…* (`aria-haspopup="dialog"`); no follows, no label and *+N · Follow…* alone; nothing hidden, no *+N*. Taking a chip pushes the chips left, which the next toast caps again.
+5. `src/components/FollowOffer.tsx` (new) + `src/app/layout.tsx`: `FollowOfferProvider`, beside `RankSorterProvider`, owns the sheet so it outlives the toast that opened it; `FollowSheet` stays lazy.
+6. `src/components/FollowSheet.tsx`: opened with an offer, *Now reading* (× chips, *Stop following …*) and *Keep going?* chip rows above its rows; a chip writes what the toast's wrote, pushes the chips left, updates its row, and the sheet stays open; a row changed drops that grouping's chip; on close focus returns to *+N · Follow…*, or the new toast's when a chip replaced it.
+7. `src/app/globals.css`: the sheet's chip style, tokens only, 44px.
+8. `design/mockups.html` § `finishoffer` redrawn from E10, with a frame of the sheet's *Keep going?*; `design/mockups-index.md`'s row.
+
+**Files**: the task's list, plus `src/components/useBookWrite.ts`, `src/components/FollowOffer.tsx` (new) and `src/app/layout.tsx` (not in the list); `src/components/FollowOptions.tsx` likely untouched. 13 files, UI only, no schema; kept whole as part 1 of an existing split.
+
+**Test strategy**: AC-2 to AC-4 in `test/undo.test.tsx`; AC-1's clause and AC-5 (44px, focus into the sheet and back, reduced motion, axe, screenshots) in `test/e2e/follows.spec.ts`; AC-6 by ui-verifier and spec review.
+
+**Risks**: a radio change in the sheet pushes a plain follow toast, so the toast drops its remaining chips (they stay in the sheet); five e2e tests change their expectations.
+
+**Revision 1 (Phase 2, a test file only):** `test/e2e/status.spec.ts`'s In flight *Finished* test asserted the toast's *Keep going?* group, which the cap moves into the sheet; it now asserts *+1 · Follow…*. Found by grepping `test/` for the strings the diff changes, as `.claude/project/implement-task.md` asks.
 
 ## Review log
 

@@ -57,21 +57,49 @@ export function followEntry(
 const shownKind = (k: FollowKind) => (k === "series" || k === "subseries" || k === "shelf" ? k : undefined);
 
 /**
- * A finish's offer as toast chips (task 2.2c; 2.2h). *Now reading* first: one
- * chip per thing the finish followed for you, each turning that one to *Not
+ * A finish's offer as chips (task 2.2c; 2.2h). *Now reading* first: one chip
+ * per thing the finish followed for you, each turning that one to *Not
  * following* (`off`), its undo putting *Reading* back. Then *Keep going?*:
  * *Done with <name>* (it sets *Tracking*; D-43, the app asks), then each grouping
- * to set *Reading*. None, no chips.
+ * to set *Reading*. None, no chips. Each names its grouping (`of`), and its
+ * take shows the state it wrote, and its undo the state put back (the sheet's row).
  */
 export function offerChips(offer: FinishOffer | null | undefined): FollowChip[] {
   if (!offer) return [];
   const chip = (g: Grouping, state: FollowValue, label: string, kind?: string, row?: "now"): FollowChip => ({
-    label, kind, row,
-    take: async () => followEntry(g, state, await postFollow(g.kind, g.id, state)),
+    label, kind, row, of: { kind: g.kind, id: g.id },
+    take: async (show) => {
+      const prior = await postFollow(g.kind, g.id, state);
+      show?.(shown(state));
+      return followEntry(g, state, prior, show);
+    },
   });
   return [
     ...(offer.now ?? []).map((g) => chip(g, "off", g.name, shownKind(g.kind), "now")),
     ...offer.done.map((g) => chip(g, "tracking", `Done with ${g.name}`)),
     ...offer.take.map((g) => chip(g, "reading", g.name, shownKind(g.kind))),
   ];
+}
+
+/** Narrowest first: what the toast keeps of what a finish followed (6.24; E10's note). */
+const NARROW: readonly string[] = ["subseries", "series", "universe"];
+const narrowness = (c: FollowChip) => {
+  const at = NARROW.indexOf(c.of?.kind ?? "");
+  return at < 0 ? NARROW.length : at;
+};
+
+/**
+ * The finish toast's share of its follow chips, and the *Follow…* sheet's (task 6.24, MR-D17,
+ * frame E10): the toast keeps one *Now reading* chip, the narrowest thing the finish followed
+ * (a subseries, else the series, else the universe); the sheet holds the rest, the other
+ * follows first and then every *Keep going?* offer, in their order. `hidden.length` is the
+ * toast's *+N*.
+ */
+export function toastShare(chips: FollowChip[]): { kept: FollowChip | null; hidden: FollowChip[] } {
+  const now = chips.filter((c) => c.row === "now");
+  const kept = now.reduce<FollowChip | null>((best, c) => (!best || narrowness(c) < narrowness(best) ? c : best), null);
+  return {
+    kept,
+    hidden: [...now.filter((c) => c !== kept), ...chips.filter((c) => c.row !== "now")],
+  };
 }
