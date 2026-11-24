@@ -1,7 +1,7 @@
 # Design review, November 2026: the new mediums, and everything since the feel pass
 
 The prompt for roadmap 6.23 (`docs/05-roadmap.md`), run by the owner on the
-[Ledger canvas](https://claude.ai/artifact/KMTyE4DuUvZPYH4pbuHHCu) in claude.ai,
+[Ledger canvas](https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH) in claude.ai,
 with the Ledger design system installed (`docs/04-design.md` § 1, *In
 Claude*). Standalone Claude Design closes by 2026-12-14, so the review is not
 run there (owner, 2026-11-24; TASK-126, plan revision 1). Claude Code checks

@@ -5552,7 +5552,7 @@ it is converted.
   there, this entry starts from that drawing.
   *From 6.23 (2026-11-24, TASK-126):* standalone Claude Design closes by
   2026-12-14, so "the design tool" here is the
-  [Ledger canvas](https://claude.ai/artifact/KMTyE4DuUvZPYH4pbuHHCu) in
+  [Ledger canvas](https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH) in
   claude.ai, with the Ledger design system (`docs/04-design.md` § 1, *In
   Claude*). A page drawn there comes into `design/` under its repo name.
   **Check:** (proposed; the owner agrees it by merging or edits it first) the
@@ -5601,7 +5601,7 @@ it is converted.
     screen*) stay with them, and so does `src/app/globals.css` following any
     new token.
   *From 6.23 (2026-11-24, TASK-126):* it runs on the
-  [Ledger canvas](https://claude.ai/artifact/KMTyE4DuUvZPYH4pbuHHCu) in
+  [Ledger canvas](https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH) in
   claude.ai, not in standalone Claude Design, which closes by 2026-12-14
   (owner, TASK-126 plan revision 1). The canvas is the design tool this entry
   means. The review is its page `Mediums-Review`, delivered into the repo as

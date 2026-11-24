@@ -64,8 +64,8 @@ owner's account:
 
 | Artifact | What it holds |
 |---|---|
-| [Ledger canvas](https://claude.ai/artifact/KMTyE4DuUvZPYH4pbuHHCu) | The drawings: every `.dc.html` page above, on two pages (*Feel pass*, *Specs*). Unchanged, except that four names lose their spaces, which the canvas doesn't allow: `Main` (the feel review), `Style-Guide`, `Telescope-Spec`, `Plan-Rail-Spec`. New design reviews are drawn here |
-| [Ledger design system](https://claude.ai/artifact/4kWo7Lnryxsjr7H79dy9XH) | The rules a new drawing starts from: palette 1c in both themes, the three self-hosted fonts, the type scale, spacing, radii and shadows, and a README of the colour meanings, copy and components. Built from `src/app/globals.css` and this blueprint at `ab28b7d`; no components |
+| [Ledger canvas](https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH) | The drawings: every `.dc.html` page above, on two pages (*Feel pass*, *Specs*). Unchanged, except that four names lose their spaces, which the canvas doesn't allow: `Main` (the feel review), `Style-Guide`, `Telescope-Spec`, `Plan-Rail-Spec`. New design reviews are drawn here |
+| [Ledger design system](https://claude.ai/artifact/2rUye3qEeu2arnmh85vFFj) | The rules a new drawing starts from: palette 1c in both themes, the three self-hosted fonts, the type scale, spacing, radii and shadows, and a README of the colour meanings, copy and components. Built from `src/app/globals.css` and this blueprint at `66d3001`; no components |
 
 The files in `design/` still win (D-1). A page drawn or changed on the canvas
 comes into `design/` as delivered, under its repo name.

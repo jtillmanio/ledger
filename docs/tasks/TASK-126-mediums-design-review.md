@@ -30,13 +30,19 @@ build from it.
   the text to paste, and the inventory behind parts A–F, checked against
   `main` at `5c47fd7` and again at `66d3001` (plan step 1).
 - **Where it runs (owner, 2026-11-24, plan revision 1).** On the
-  [Ledger canvas](https://claude.ai/artifact/KMTyE4DuUvZPYH4pbuHHCu), with the
+  [Ledger canvas](https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH), with the
   Ledger design system installed, not in standalone Claude Design, which
   closes by 2026-12-14. The canvas already holds the feel pass (`Main`) and
   the desktop pages, and allows no spaces in a page name: the review is the
   canvas page `Mediums-Review`, and it comes into the repo as
   `design/Ledger Mediums Review.dc.html` (its repo name, as `Main` is
   `Ledger Feel Review.dc.html`). "The design tool" below means the canvas.
+  Revision 2 (owner, 2026-11-24): the canvas and the design system #335
+  linked had been published to the owner's second claude.ai account, which
+  Claude Code's artifact tools can't open. Both were rebuilt in the main
+  account from `design/` and `src/app/globals.css` at `66d3001` (the canvas's
+  pages byte for byte, except the four renames and the three links between
+  the spec pages), and every link in the repo now points at the new ones.
 - **The precedent** is the feel pass (D-40): `design/handoff/README.md` records
   what that delivery was and how it was recorded. `design/mockups-index.md`
   § *Oct 2026, feel pass (D-40)* is the superseded-frames table this task
@@ -145,6 +151,20 @@ prompt's wording), this file, a *From 6.23* note on roadmap 6.23 and 6.21,
 and one in TASK-137's Context. Entry titles that say *with Claude Design*
 stay as they are.
 
+**Revision 2 (owner, 2026-11-24).** The canvas and design system that #335
+linked live in the owner's second claude.ai account, out of Claude Code's
+reach. The owner chose to rebuild both in the main account. The new
+[Ledger canvas](https://claude.ai/artifact/UYEoW99o3cm13kYGYWpHPH) holds
+`design/`'s ten `.dc.html` pages and `ledger-feel-tokens.css` at `66d3001`,
+with the Ledger design system installed. The new
+[Ledger design system](https://claude.ai/artifact/2rUye3qEeu2arnmh85vFFj) is
+built from `src/app/globals.css`, `src/app/fonts/` and `design/STYLE_GUIDE.md`
+at `66d3001`. Their links are swapped in `README.md`, `docs/04-design.md` § 1,
+`docs/SERVICES.md`, the brief, the two roadmap notes, TASK-137 and this file:
+files outside the plan's list, changed for this revision only. The old
+artifacts are the owner's to delete. Step 4 can now read the canvas and
+check the export against it.
+
 1. **Refresh the inventory (Claude Code).** On an up-to-date `main`, list the
    roadmap entries whose text says *not drawn yet*, *the mockup gains* or *the
    feel pass is silent*, with their tick, using the command in
@@ -199,7 +219,8 @@ stay as they are.
 ## Review log
 
 Plan R1 stale (main +43; Claude Design closing) → revision 1 (owner, the
-Ledger canvas) | Steps 1–2 done at `66d3001` | Verify R1 PASS (verify:docs)
+Ledger canvas) | Steps 1–2 done at `66d3001` | Verify R1 PASS (verify:docs) | CI R1 PASS
+Revision 2 (owner: canvas and design system rebuilt in the main account) | Verify R2 PASS (verify:docs)
 
 ## Blocked
 
@@ -210,4 +231,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds:
 - Review rounds:
 - First-pass AC FAILs:
-- Plan revisions after approval:
+- Plan revisions after approval: 2 (the Ledger canvas; the canvas and design system rebuilt in the main account)
