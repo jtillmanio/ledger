@@ -372,7 +372,9 @@ export default function RunSpine({
               {/* The issue sheet, from this run (task 3.5). Following it is not a click on the row (a range
                   anchor); a shift-click with a mouse is the row's, finishing a range as anywhere else on it. */}
               <div className="lbl">
-                <Link href={issueHref(runId, issue.id)} onClick={(e) => {
+                {/* No scroll: the spine stays where it was behind the sheet. No prefetch: a 381-row spine
+                    would prefetch every row it scrolls past (as the book sheet's links, task 3.5). */}
+                <Link href={issueHref(runId, issue.id)} scroll={false} prefetch={false} onClick={(e) => {
                   if (fine && e.shiftKey) e.preventDefault();
                   else e.stopPropagation();
                 }}>{issue.label}</Link>
@@ -502,7 +504,7 @@ function Seen({ runs, when, label, href }: { runs: string[]; when: string | null
       {`read in ${first}${when ? ` · ${when}` : ""}`}
       {others.length > 0 && (
         <Link className="seen-more" aria-label={`+${others.length} more: every run with ${label}`} href={href}
-          onClick={(e) => e.stopPropagation()}>
+          scroll={false} prefetch={false} onClick={(e) => e.stopPropagation()}>
           {`+${others.length}`}
         </Link>
       )}
