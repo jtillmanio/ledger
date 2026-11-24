@@ -1,7 +1,7 @@
 ---
 id: TASK-126
 title: 6.23 Design review with Claude Design — the new mediums, and what was drawn since the feel pass
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: opus
@@ -15,7 +15,8 @@ planned_at_commit: 5c47fd7
 
 ## Goal
 
-The owner runs one design review in Claude Design that draws watch, music and
+The owner runs one design review on the Ledger canvas in claude.ai (standalone
+Claude Design closes 2026-12-14; `docs/04-design.md` § 1, *In Claude*) that draws watch, music and
 games in the feel pass's language, settles where five media sit in the
 navigation, and reviews every screen drawn after the feel pass. Its result is
 in the repo, where 8.7, 9.0, 10.0, 6.21 and the other entries it touches can
@@ -27,7 +28,15 @@ build from it.
   proposed and agreed by the owner merging the PR that added it.
 - **The prompt** is `docs/design-briefs/2026-11-mediums-review.md`: what to attach,
   the text to paste, and the inventory behind parts A–F, checked against
-  `main` at `5c47fd7`.
+  `main` at `5c47fd7` and again at `66d3001` (plan step 1).
+- **Where it runs (owner, 2026-11-24, plan revision 1).** On the
+  [Ledger canvas](https://claude.ai/artifact/KMTyE4DuUvZPYH4pbuHHCu), with the
+  Ledger design system installed, not in standalone Claude Design, which
+  closes by 2026-12-14. The canvas already holds the feel pass (`Main`) and
+  the desktop pages, and allows no spaces in a page name: the review is the
+  canvas page `Mediums-Review`, and it comes into the repo as
+  `design/Ledger Mediums Review.dc.html` (its repo name, as `Main` is
+  `Ledger Feel Review.dc.html`). "The design tool" below means the canvas.
 - **The precedent** is the feel pass (D-40): `design/handoff/README.md` records
   what that delivery was and how it was recorded. `design/mockups-index.md`
   § *Oct 2026, feel pass (D-40)* is the superseded-frames table this task
@@ -94,14 +103,17 @@ build from it.
   and a *Delivered* section (step 3).
 - `docs/design-briefs/2026-11-mediums-roadmap-excerpt.md` (new): the roadmap text
   the prompt attaches.
-- `design/Ledger Mediums Review.dc.html`, any component pages it imports,
-  `design/screenshots/{phone,tablet,desktop}/` and `README.md`,
-  `design/STYLE_GUIDE.md`, `design/tokens.css`: delivered by the design tool
-  and staged as exported (protected; never edited here).
+- `design/Ledger Mediums Review.dc.html` (the canvas page `Mediums-Review`),
+  any component pages it imports, `design/screenshots/{phone,tablet,desktop}/`
+  and `README.md`, `design/STYLE_GUIDE.md`, `design/tokens.css`: delivered by
+  the design tool and staged as exported (protected; never edited here).
+- `docs/tasks/TASK-137-where-the-book-sits-redesign.md`: a *From 6.23* note in
+  Context, that its drawing happens on the canvas (plan revision 1).
 - `design/mockups-index.md`: the *Nov 2026, mediums review* section.
 - `docs/review/decisions.md`: the owner's answers and the departures row.
 - `docs/04-design.md`: the review page in the table of design files.
-- `docs/05-roadmap.md`: *From 6.23* notes and 6.23's tick.
+- `docs/05-roadmap.md`: *From 6.23* notes (6.23 and 6.21 first, on where the
+  review runs) and 6.23's tick.
 - `docs/06-tasklist.md`: 6.23's Done cell at close-out.
 
 ## Verification
@@ -110,8 +122,8 @@ build from it.
   names a changed file).
 - Manual: open `design/Ledger Mediums Review.dc.html` in a browser. Parts A–F
   render, light and dark, at each width, and the console is clean.
-- Manual (owner): walk the review page, accept or reject each MR-D, answer
-  each MR-Q.
+- Manual (owner): walk the review page (in the repo, or `Mediums-Review` on the
+  canvas), accept or reject each MR-D, answer each MR-Q.
 
 ## Follow-ups
 
@@ -121,7 +133,17 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 Approved by the owner, 2026-11-18, with the task ("make this into an approved
 task"). The branch is `task/6.23-mediums-design-review`, in its own worktree.
-Attended throughout, because step 2 is the owner's.
+Attended throughout, because step 3 is the owner's.
+
+**Revision 1 (owner, 2026-11-24).** The plan went stale on two counts. Main
+moved 43 commits past `5c47fd7`, which step 1 already allows for. And
+standalone Claude Design closes by 2026-12-14, with its pages moved to the
+Ledger canvas (#335). The owner chose the canvas for step 3, and asked that
+the files describing the review follow it. Within AC-5 and the task list's
+Done-cell rule, that means: the brief (where it runs, the Attach table, the
+prompt's wording), this file, a *From 6.23* note on roadmap 6.23 and 6.21,
+and one in TASK-137's Context. Entry titles that say *with Claude Design*
+stay as they are.
 
 1. **Refresh the inventory (Claude Code).** On an up-to-date `main`, list the
    roadmap entries whose text says *not drawn yet*, *the mockup gains* or *the
@@ -138,12 +160,15 @@ Attended throughout, because step 2 is the owner's.
    `docs/design-briefs/2026-11-mediums-roadmap-excerpt.md` under a line saying it
    is a copy and the roadmap wins (D-1). Commit steps 1–2 and hand the owner
    the attach list and the prompt.
-3. **Run the review (owner, in Claude Design).** Paste the prompt with the
-   attachments. Iterate there for as long as the owner wants. Export the
-   review page (and any component pages it imports), every PNG, the style
-   guide and tokens if changed, and the hand-off note. The owner puts the
-   exported files into `design/` and `design/screenshots/`, and the hand-off
-   note into `docs/design-briefs/` as `2026-11-mediums-handoff.md`.
+3. **Run the review (owner, on the Ledger canvas).** Paste the prompt with the
+   attachments into the canvas, which holds the feel pass already. Iterate
+   there for as long as the owner wants. Export the review page
+   (`Mediums-Review`, and any component pages it imports), every PNG, the
+   style guide and tokens if changed, and the hand-off note. The owner puts
+   the exported files into `design/` under their repo names
+   (`Mediums-Review` → `Ledger Mediums Review.dc.html`) and
+   `design/screenshots/`, and the hand-off note into `docs/design-briefs/`
+   as `2026-11-mediums-handoff.md`.
 4. **Record the delivery (Claude Code).** Check the export: the page renders
    (AC-3), each PNG the note names exists, and `git diff` on `STYLE_GUIDE.md`
    and `tokens.css` is listed file by file in the PR, with no edit by Claude
@@ -173,7 +198,8 @@ Attended throughout, because step 2 is the owner's.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Plan R1 stale (main +43; Claude Design closing) → revision 1 (owner, the
+Ledger canvas) | Steps 1–2 done at `66d3001` | Verify R1 PASS (verify:docs)
 
 ## Blocked
 

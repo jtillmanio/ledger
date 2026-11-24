@@ -5550,6 +5550,11 @@ it is converted.
   *From 6.23 (2026-11-18):* the mediums review's part E asks for these frames
   (`docs/design-briefs/2026-11-mediums-review.md`, `bdash`). If the owner picks one
   there, this entry starts from that drawing.
+  *From 6.23 (2026-11-24, TASK-126):* standalone Claude Design closes by
+  2026-12-14, so "the design tool" here is the
+  [Ledger canvas](https://claude.ai/artifact/KMTyE4DuUvZPYH4pbuHHCu) in
+  claude.ai, with the Ledger design system (`docs/04-design.md` § 1, *In
+  Claude*). A page drawn there comes into `design/` under its repo name.
   **Check:** (proposed; the owner agrees it by merging or edits it first) the
   design tool's frames cover phone, tablet and desktop, light and dark, the owner
   picks one, and Now and `/progress` match it; 2.2g's own Check still passes with
@@ -5595,6 +5600,14 @@ it is converted.
     and doesn't build: 9.0's and 10.0's Checks (*the mockup gains each
     screen*) stay with them, and so does `src/app/globals.css` following any
     new token.
+  *From 6.23 (2026-11-24, TASK-126):* it runs on the
+  [Ledger canvas](https://claude.ai/artifact/KMTyE4DuUvZPYH4pbuHHCu) in
+  claude.ai, not in standalone Claude Design, which closes by 2026-12-14
+  (owner, TASK-126 plan revision 1). The canvas is the design tool this entry
+  means. The review is its page `Mediums-Review`, delivered into the repo as
+  `design/Ledger Mediums Review.dc.html`. The inventory was refreshed at
+  `66d3001`: `/progress`, Parked for books and the listen queue were drawn
+  since, and moved from part F to part E.
   **Check:** (proposed; the owner agrees it by merging or edits it first) the
   review page and its PNGs are in `design/` as the design tool delivered them,
   covering the prompt's parts A–F at phone, tablet and desktop, light and dark;
