@@ -309,10 +309,15 @@ test("a past read logged from To read follows nothing: the toast shows +4 · Fol
   await expect(sheetGroup(page, "Keep going?").getByRole("button"))
     .toHaveText([`${SERIES.name} · series`, `${SUBSERIES.name} · subseries`, UNIVERSE.name, `${SHELF.name} · shelf`]);
   await atLeast(sheetGroup(page, "Keep going?").getByRole("button"), 44);
-  const { borderTopColor } = await computedStyle(sheetGroup(page, "Keep going?").getByRole("button").first(), ["borderTopColor"]);
+  const { "border-top-color": border } = await computedStyle(sheetGroup(page, "Keep going?").getByRole("button").first(), ["border-top-color"]);
   // Following isn't reading, and nothing here is red.
-  expect(borderTopColor).not.toBe(await tokenColour(page, "--ready"));
-  expect(borderTopColor).not.toBe(await tokenColour(page, "--danger"));
+  expect(border).not.toBe("");
+  expect(border).not.toBe(await tokenColour(page, "--ready"));
+  expect(border).not.toBe(await tokenColour(page, "--danger"));
+  // The sheet with the finish's chips, at every layout (AC-5).
+  await expectNoAxeViolations(page, AXE, '[role="dialog"]');
+  expect(await contrastFailures(page)).toEqual([]);
+  await screenshot(page, info, "finish-follow-sheet");
 
   // A chip in the sheet writes what the toast's wrote: Reading, with its own toast.
   await sheetGroup(page, "Keep going?").getByRole("button").first().click();
@@ -346,9 +351,10 @@ test.describe("a finish from Reading follows (2.2h)", () => {
     await toastSettled(page);
     await atLeast(toast(page).locator(".toast-chip"), 44);
     for (const chip of await nowRow(page).getByRole("button").all()) {
-      const { borderTopColor } = await computedStyle(chip, ["borderTopColor"]);
-      expect(borderTopColor).not.toBe(await tokenColour(page, "--danger"));
-      expect(borderTopColor).not.toBe(await tokenColour(page, "--ready"));
+      const { "border-top-color": border } = await computedStyle(chip, ["border-top-color"]);
+      expect(border).not.toBe("");
+      expect(border).not.toBe(await tokenColour(page, "--danger"));
+      expect(border).not.toBe(await tokenColour(page, "--ready"));
     }
     await expectNoAxeViolations(page, AXE, ".toast-region");
     expect(await contrastFailures(page)).toEqual([]);
