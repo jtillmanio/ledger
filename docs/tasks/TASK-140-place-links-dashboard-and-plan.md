@@ -1,7 +1,7 @@
 ---
 id: TASK-140
 title: 5.9b Every other place line links its names (1 of 3) — the dashboard and the plan screens
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: sonnet
@@ -38,10 +38,10 @@ their pages; a book with no series draws no series link. A gap row's
 *Add* for #3 opens By hand with the series named and `3` in *#*. Every
 route it changes stays within its byte budget (`scripts/perf/budget.json`).
 Screenshots at 360px and 1280px.
-- [ ] AC-2: Given a book in a series, by an author, in a universe, on the seeded test database, each surface in this part draws three links: the series' accessible name is the series name alone (no `#n`) and its `href` is `/books/series/<series id>`; the author's is `/books/authors/<id>`; the universe's `/books/universes/<id>`.
-- [ ] AC-3: Given a standalone book with no series and no universe, the same surfaces draw the author link and no series or universe link, and the line reads as before.
-- [ ] AC-4: Tapping a place link inside a card or row that is itself a control (a plan row, an Up next card) opens the series, author or universe page, not the book, and the card's own tap still opens the book.
-- [ ] AC-5: These surfaces meet the UX floor (`docs/04-design.md` § 10. The UX floor): every link a real `<a>` with a name, targets at least 24px, link text 4.5:1 in both themes, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-2: Given a book in a series, by an author, in a universe, on the seeded test database, each surface in this part draws three links: the series' accessible name is the series name alone (no `#n`) and its `href` is `/books/series/<series id>`; the author's is `/books/authors/<id>`; the universe's `/books/universes/<id>`.
+- [x] AC-3: Given a standalone book with no series and no universe, the same surfaces draw the author link and no series or universe link, and the line reads as before.
+- [x] AC-4: Tapping a place link inside a card or row that is itself a control (a plan row, an Up next card) opens the series, author or universe page, not the book, and the card's own tap still opens the book.
+- [x] AC-5: These surfaces meet the UX floor (`docs/04-design.md` § 10. The UX floor): every link a real `<a>` with a name, targets at least 24px, link text 4.5:1 in both themes, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -66,7 +66,9 @@ Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- `booksUpNext` now carries `author_id`, `series_id` and `universe_id` (step 1), so TASK-141's On deck and bare-year `StatusBookRow` rows on Up next need no query change for them (approved at plan) → `docs/tasks/TASK-141-place-links-lists-and-follow-sheet.md` § Context
+- `booksUpNext` now carries `author_id`, `series_id` and `universe_id` (step 1), so TASK-141's On deck and bare-year `StatusBookRow` rows on Up next need no query change for them (approved at plan), with `followHref` / `FollowName`, the `globals.css` container list and the 24px-in-a-sheet rule, written as a note (PR #341) → `docs/tasks/TASK-141-place-links-lists-and-follow-sheet.md` § Context
+- The byte budgets of `/books`, `/books/plan` and `/books/status` are unmeasured on this PR (Lighthouse is off): check `test/perf.test.ts` and each route's ceiling straight after merge → not tracked: a check after merge, named in the PR's How it was verified
+- The planning sheet's reason line (*Next in Series · you've read 3 of 6*, `detail`) is plain text built in SQL by `plan_suggestions`, not a place line → not tracked: outside 5.9b's place lines; the roadmap entry names none
 
 ## Plan
 
@@ -105,7 +107,9 @@ Approved by the owner 2026-11-24 ("go with recommendations"): *Next in* split in
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL(2: follow-next.test.ts, plan-period.test.ts pinned the old row shapes) → R2 PASS | CI R1 FAIL(mockup-tablet.spec.ts: the mockup's Next in title 18px; books-dashboard.spec.ts status-tab test read links before the streamed page swapped in) → fixed → CI R2 PASS | Audit R1 PASS (two soft-delete guards pass at base, as no new book read was added; the optional tightening does not apply: authors, book_series and book_universes have no deleted_at) | Spec R1 APPROVE | Schema R1 APPROVE | UI R1 PASS (360 and 1280, light and dark; axe by the specs in CI) | Drift R1 merge as-is (0 behind origin/main).
+
+Notes: AC-1's byte-budget clause is not measured on this PR (`LIGHTHOUSE_MODE` is off): check `test/perf.test.ts` and each route's ceiling after merge, so AC-1 stays unticked until TASK-141 and TASK-142 land. `src/components/BookPlace.tsx` (`followHref`, `FollowName`) is outside the plan's file list: steps 4 and 5 needed one home for the follow's name link. `PlanSheet`'s `Row` is exported for the unit test. `plan-sheet.spec.ts`'s AC-6 floor test now holds place links to 24px and buttons to 44px.
 
 ## Blocked
 
@@ -113,7 +117,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1 (spec, schema, UI each APPROVE/PASS first time)
+- First-pass AC FAILs: 0 (two pinned tests and two CI specs failed on first run, none an AC)
+- Plan revisions after approval: 0 (BookPlace.tsx's two exports and PlanSheet's Row export noted above)
