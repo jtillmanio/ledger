@@ -3,7 +3,7 @@ import TopBooks, { UndatedReads, YearSwitch, type TopRow } from "@/components/To
 import { topBooksYear, topBookYears, type TopRead } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
 import { today } from "@/lib/finish-date";
-import { bookSub } from "@/lib/format";
+import { subParts } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +21,7 @@ function toRow(r: TopRead): TopRow {
     id: r.read_id !== null ? `r${r.read_id}` : `b${r.book_id}`,
     title: r.title, ordinal: 0,
     readId: r.read_id, bookId: r.book_id, rank: r.year_rank,
-    sub: bookSub(r),
+    place: subParts(r),
     month: r.finished_on && r.finished_on_precision === "exact" ? MONTHS[Number(r.finished_on.slice(5, 7)) - 1] : null,
     listened: r.format === "audio",
     cover: r.cover_url, pending: r.pending,

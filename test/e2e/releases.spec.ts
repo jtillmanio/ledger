@@ -274,3 +274,46 @@ test("the destination and the line meet the floor: labelled, refused under the f
   expect(await contrastFailures(page)).toEqual([]);
   await screenshot(page, info, "bdash-coming-out");
 });
+
+// --- Task 5.9b, 2 of 3 (TASK-141; F-38, D-134): a row's place line links its names ---------------------------------
+
+test("5.9b AC-1, AC-2, AC-4: a wanted book links its author, universe and series; one with no series or universe links its author only", FLOOR, async ({ page }, info) => {
+  const sql = testSql();
+  const ids = { au: "e2e-rl-au", un: "e2e-rl-un", se: "e2e-rl-se" };
+  const wipe = async () => {
+    await sql`DELETE FROM books WHERE id LIKE 'e2e-rl-%'`;
+    await sql`DELETE FROM book_series WHERE id = ${ids.se}`;
+    await sql`DELETE FROM book_universes WHERE id = ${ids.un}`;
+    await sql`DELETE FROM authors WHERE id = ${ids.au}`;
+  };
+  try {
+    await wipe();
+    await sql`INSERT INTO authors (id, name) VALUES (${ids.au}, 'Rl Author')`;
+    await sql`INSERT INTO book_universes (id, name) VALUES (${ids.un}, 'Rl World')`;
+    await sql`INSERT INTO book_series (id, name, author_id) VALUES (${ids.se}, 'Rl Cycle', ${ids.au})`;
+    await sql`INSERT INTO books (id, title, author_id, series_id, series_position, universe_id)
+              VALUES ('e2e-rl-serial', 'E2E Rl Serial', ${ids.au}, ${ids.se}, 6, ${ids.un})`;
+    await sql`INSERT INTO books (id, title, author_id) VALUES ('e2e-rl-lone', 'E2E Rl Lone', ${ids.au})`;
+    await sql`INSERT INTO releases (book_id, release_date) VALUES ('e2e-rl-serial', '2020-01-01'), ('e2e-rl-lone', '2020-01-02')`;
+
+    await page.goto("/books/releases");
+    const line = (title: string) => page.locator(".book-row", { hasText: title }).locator(".row-sub");
+    const hrefs = (title: string) => line(title).getByRole("link").evaluateAll((as) => as.map((a) => [a.textContent, a.getAttribute("href")]));
+    await expect(line("E2E Rl Serial")).toHaveText("Rl Author · Rl World · Rl Cycle #6");
+    expect(await hrefs("E2E Rl Serial")).toEqual([
+      ["Rl Author", `/books/authors/${ids.au}`], ["Rl World", `/books/universes/${ids.un}`], ["Rl Cycle", `/books/series/${ids.se}`],
+    ]);
+    await expect(line("E2E Rl Serial").getByRole("link", { name: "Rl Cycle", exact: true })).toBeVisible();
+    expect(await hrefs("E2E Rl Lone")).toEqual([["Rl Author", `/books/authors/${ids.au}`]]);
+    for (const link of await line("E2E Rl Serial").getByRole("link").all()) {
+      expect((await link.boundingBox())!.height, "each place link is 24px or more").toBeGreaterThanOrEqual(24);
+    }
+    await expectNoHorizontalScroll(page);
+    await expectNoAxeViolations(page, AXE);
+    expect(await contrastFailures(page)).toEqual([]);
+    await screenshot(page, info, "5.9b-releases-links");
+  } finally {
+    await wipe();
+    await sql.end();
+  }
+});

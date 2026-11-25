@@ -1036,3 +1036,101 @@ test.describe("On deck by genre (4.5b)", () => {
     }
   });
 });
+
+
+// --- Task 5.9b, 2 of 3 (TASK-141; F-38, D-134): the status rows and Listen next link a book's names ---------------
+
+test.describe("place links on the status rows and Listen next (5.9b)", () => {
+  test.describe.configure({ mode: "serial" });
+  const prefix = "e2e-pl-";
+  const ids = { au: prefix + "au", un: prefix + "un", se: prefix + "se" };
+  const SERIAL_LINKS = [
+    ["Pl Author", `/books/authors/${ids.au}`], ["Pl World", `/books/universes/${ids.un}`], ["Pl Cycle", `/books/series/${ids.se}`],
+  ];
+  // [id, title, status]: a serial book and a standalone on In flight, in Done, and on the listen queue.
+  const BOOKS = [
+    ["flight-s", "E2E Pl Flight Serial", "reading"], ["flight-o", "E2E Pl Flight Lone", "reading"],
+    ["done-s", "E2E Pl Done Serial", "read"], ["done-o", "E2E Pl Done Lone", "read"],
+    ["listen-s", "E2E Pl Listen Serial", "to_read"], ["listen-o", "E2E Pl Listen Lone", "to_read"],
+  ] as const;
+
+  const clean = () => db(async (sql) => {
+    await sql`DELETE FROM listen_queue WHERE book_id LIKE ${prefix + "%"}`;
+    await sql`DELETE FROM books WHERE id LIKE ${prefix + "%"}`;
+    await sql`DELETE FROM book_series WHERE id = ${ids.se}`;
+    await sql`DELETE FROM book_universes WHERE id = ${ids.un}`;
+    await sql`DELETE FROM authors WHERE id = ${ids.au}`;
+  });
+  const status = (id: string) => db(async (sql) =>
+    (await sql`SELECT status FROM book_status WHERE user_id = ${E2E_USER} AND book_id = ${prefix + id}`)[0]?.status as string);
+
+  test.beforeAll(async () => {
+    await clean();
+    await db(async (sql) => {
+      await sql`INSERT INTO authors (id, name) VALUES (${ids.au}, 'Pl Author')`;
+      await sql`INSERT INTO book_universes (id, name) VALUES (${ids.un}, 'Pl World')`;
+      await sql`INSERT INTO book_series (id, name, author_id) VALUES (${ids.se}, 'Pl Cycle', ${ids.au})`;
+      for (const [id, title, st] of BOOKS) {
+        const serial = id.endsWith("-s");
+        await sql`INSERT INTO books (id, title, author_id, series_id, series_position, universe_id)
+                  VALUES (${prefix + id}, ${title}, ${ids.au}, ${serial ? ids.se : null}, ${serial ? 2 : null}, ${serial ? ids.un : null})`;
+        await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+                  VALUES (${E2E_USER}, ${prefix + id}, ${st}, ${st === "read" ? "2026-03-02" : null}, ${st === "read" ? "exact" : "none"})`;
+      }
+      const [{ n }] = await sql`SELECT COALESCE(max(position), 0)::int AS n FROM listen_queue`;
+      await sql`INSERT INTO listen_queue (book_id, position) VALUES (${prefix + "listen-s"}, ${n + 1}), (${prefix + "listen-o"}, ${n + 2})`;
+    });
+  });
+  test.afterAll(clean);
+
+  const line = (page: Page, title: string) =>
+    page.locator("article.row, li.qrow").filter({ hasText: title }).locator(".row-sub, .qplace");
+  const linksOf = (l: Locator) => l.getByRole("link").evaluateAll((as) => as.map((a) => [a.textContent, a.getAttribute("href")]));
+
+  for (const [name, path, serial, lone] of [
+    ["In flight", "/books/status", "E2E Pl Flight Serial", "E2E Pl Flight Lone"],
+    ["Done", "/books/status?tab=done", "E2E Pl Done Serial", "E2E Pl Done Lone"],
+    ["Listen next", "/books/status?tab=next", "E2E Pl Listen Serial", "E2E Pl Listen Lone"],
+  ] as const) {
+    test(`${name}: a book links its author, universe and series, the series named by itself; a standalone links its author only (AC-1, AC-2, AC-4)`, FEEL, async ({ page }, info) => {
+      await page.goto(path);
+      // Visible first: a streamed page holds its content in a hidden node until it swaps in.
+      await expect(line(page, serial)).toBeVisible();
+      await expect(line(page, serial)).toHaveText("Pl Author · Pl World · Pl Cycle #2");
+      expect(await linksOf(line(page, serial))).toEqual(SERIAL_LINKS);
+      await expect(line(page, serial).getByRole("link", { name: "Pl Cycle", exact: true })).toBeVisible();
+      await expect(line(page, lone)).toHaveText("Pl Author");
+      expect(await linksOf(line(page, lone))).toEqual([["Pl Author", `/books/authors/${ids.au}`]]);
+      for (const link of await line(page, serial).getByRole("link").all()) {
+        expect((await link.boundingBox())!.height, "each place link is 24px or more").toBeGreaterThanOrEqual(24);
+      }
+      await floor(page);
+      await screenshot(page, info, `5.9b-status-${name.toLowerCase().replace(" ", "-")}-links`);
+    });
+  }
+
+  test("AC-3: a place link on a status row opens its page and neither opens the row's status control nor changes its status", ONCE, async ({ page }) => {
+    await page.goto("/books/status");
+    const row = page.locator("article.row").filter({ hasText: "E2E Pl Flight Serial" });
+    await expect(row).toBeVisible();
+    await hydrated(row.locator(".status-toggle"));
+    await row.locator(".row-sub").getByRole("link", { name: "Pl Cycle", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/books/series/${ids.se}$`));
+    expect(await status("flight-s")).toBe("reading");
+    await page.goBack();
+    await expect(row).toBeVisible();
+    await expect(row.getByRole("group", { name: "Status of E2E Pl Flight Serial" })).toHaveCount(0);
+  });
+
+  test("AC-3: a place link on a Listen next row opens its page and leaves the queue as it was", ONCE, async ({ page }) => {
+    await page.goto("/books/status?tab=next");
+    const row = page.locator("li.qrow").filter({ hasText: "E2E Pl Listen Serial" });
+    await expect(row).toBeVisible();
+    await hydrated(row.getByRole("button", { name: /^Reorder / }));
+    await row.locator(".qplace").getByRole("link", { name: "Pl World", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/books/universes/${ids.un}`));
+    expect(await status("listen-s")).toBe("to_read");
+    const queue = await db(async (sql) => (await sql`SELECT book_id FROM listen_queue WHERE book_id LIKE ${prefix + "%"} ORDER BY position`).map((r) => r.book_id));
+    expect(queue).toEqual([prefix + "listen-s", prefix + "listen-o"]);
+  });
+});

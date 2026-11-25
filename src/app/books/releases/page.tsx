@@ -1,12 +1,13 @@
 import Link from "next/link";
 import EmptySlate from "@/components/EmptySlate";
 import GotIt from "@/components/GotIt";
+import BookPlace from "@/components/BookPlace";
 import { RowCover, bookInitials } from "@/components/Cover";
 import { bookHref } from "@/components/StatusBookRow";
 import { wantedReleases, type WantedRelease } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
 import { today } from "@/lib/finish-date";
-import { bookSub, releaseDay, releaseMonth } from "@/lib/format";
+import { bookSub, releaseDay, releaseMonth, subParts } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +68,7 @@ export default async function ComingOutPage() {
                     </span>
                     {b.release_date && <span className="row-meta mono">{releaseDay(b.release_date, now)}</span>}
                   </span>
-                  {bookSub(b) && <span className="row-sub">{bookSub(b)}</span>}
+                  {bookSub(b) && <span className="row-sub"><BookPlace parts={subParts(b)} /></span>}
                 </span>
               </GotIt>
             ))}

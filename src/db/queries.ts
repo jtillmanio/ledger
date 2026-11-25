@@ -773,6 +773,8 @@ export type StatusBook = {
   series_position: number | null;
   /** Its universe's name (task 2.2j, D-134); null when it is in none. */
   universe: string | null;
+  /** The ids of its author, series and universe, so the place line's names link to their pages (task 5.9b, TASK-140, TASK-141). */
+  author_id: string | null; series_id: string | null; universe_id: string | null;
   word_count: number | null; listened: boolean;
 };
 
@@ -787,6 +789,7 @@ export type FlyingBook = StatusBook & {
 export async function booksInFlight(userId: string) {
   return sql<FlyingBook[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe, b.word_count,
+           a.id AS author_id, s.id AS series_id, u.id AS universe_id,
            st.status, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,
            st.started_on::text AS started_on, st.started_on_precision
     FROM book_status st
@@ -807,8 +810,6 @@ export type PlannedBook = StatusBook & {
   genres: string[];
   /** Its cover (task 4.3), for the quarter rows of the books status screen. */
   cover_url: string | null;
-  /** The ids of its author, series and universe, so the place line's names link to their pages (task 5.9b, TASK-140). */
-  author_id: string | null; series_id: string | null; universe_id: string | null;
 };
 
 /**
@@ -863,6 +864,7 @@ export async function booksListenNext(userId: string) {
   return sql<ListenNextBook[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe, b.word_count,
            q.position AS ordinal, st.status, b.cover_url,
+           a.id AS author_id, s.id AS series_id, u.id AS universe_id,
            EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened
     FROM listen_queue q
     JOIN books b ON b.id = q.book_id AND b.deleted_at IS NULL
@@ -893,6 +895,7 @@ export type DoneBook = StatusBook & {
 export async function booksDone(userId: string) {
   return sql<DoneBook[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe, b.word_count,
+           a.id AS author_id, s.id AS series_id, u.id AS universe_id,
            st.status, extract(year FROM st.finished_on)::int AS year, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,
            st.finished_on::text AS finished_on, st.finished_on_precision,
            -- The start shown (task 1.17): the read in progress's, or once Read the
@@ -953,6 +956,8 @@ export type TopRead = {
   read_id: number | null;
   book_id: string; title: string; author: string | null;
   series: string | null; series_position: number | null; universe: string | null;
+  /** The ids of its author, series and universe, so the row's names link to their pages (task 5.9b, TASK-141). */
+  author_id: string | null; series_id: string | null; universe_id: string | null;
   cover_url: string | null; pending: boolean;
   finished_on: string | null; finished_on_precision: Precision;
   /** `audio` is a listen (task 1.23), ranked like any read. */
@@ -974,6 +979,7 @@ export async function topBooksYear(userId: string, year: number | null): Promise
   return sql<TopRead[]>`
     SELECT r.read_id, b.id AS book_id, b.title, a.name AS author,
            s.name AS series, b.series_position, u.name AS universe,
+           a.id AS author_id, s.id AS series_id, u.id AS universe_id,
            b.cover_url, (b.hardcover_id IS NULL) AS pending,
            r.finished_on::text AS finished_on, r.finished_on_precision, r.format, r.year_rank
     FROM (
@@ -1009,6 +1015,7 @@ export async function rankSorterRead(
   const [read] = await sql<(TopRead & { year: number | null })[]>`
     SELECT e.id AS read_id, b.id AS book_id, b.title, a.name AS author,
            s.name AS series, b.series_position, u.name AS universe,
+           a.id AS author_id, s.id AS series_id, u.id AS universe_id,
            b.cover_url, (b.hardcover_id IS NULL) AS pending,
            e.finished_on::text AS finished_on, e.finished_on_precision, e.format::text AS format, e.year_rank,
            extract(year FROM e.finished_on)::int AS year
@@ -1483,6 +1490,8 @@ export async function universePage(userId: string, universeId: string): Promise<
 export type WantedRelease = {
   id: string; title: string; author: string | null; series: string | null; series_position: number | null;
   universe: string | null; cover_url: string | null;
+  /** The ids of its author, series and universe, so the row's names link to their pages (task 5.9b, TASK-141). */
+  author_id: string | null; series_id: string | null; universe_id: string | null;
   /** The stored text, never cast: a malformed date prints as it was typed. NULL is announced but undated. */
   release_date: string | null;
   grp: string;
@@ -1498,6 +1507,7 @@ export type WantedRelease = {
 export async function wantedReleases(userId: string, today: string) {
   return sql<WantedRelease[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe, b.cover_url,
+           a.id AS author_id, s.id AS series_id, u.id AS universe_id,
            rl.release_date,
            CASE WHEN rl.release_date IS NULL THEN 'none'
                 WHEN rl.release_date <= ${today} THEN 'out'
@@ -1826,6 +1836,8 @@ export type ParkedBook = {
   id: string; title: string; author: string | null; cover_url: string | null;
   /** Where it belongs (`bookSub`; task 2.2l, D-134), as `PlanBook` carries it. */
   universe: string | null; series: string | null; series_position: number | null;
+  /** The ids of its author, series and universe, so the row's names link to their pages (task 5.9b, TASK-141). */
+  author_id: string | null; series_id: string | null; universe_id: string | null;
   /** The Eastern day it was parked (TASK-108), for *Parked 4 months*. */
   parked_on: string;
   /** Not `none`: parked mid-read (`isParkedMidRead`), offered *Pick it back up*. */
@@ -1844,6 +1856,7 @@ export async function parkedBooks(userId: string): Promise<ParkedBook[]> {
   const rows = await sql<ParkedBook[]>`
     SELECT b.id, b.title, a.name AS author, b.cover_url,
            bu.name AS universe, bs.name AS series, b.series_position,
+           a.id AS author_id, bs.id AS series_id, bu.id AS universe_id,
            st.parked_on::text AS parked_on, st.started_on_precision,
            COALESCE(b.word_count, CASE WHEN b.page_count >= 50
                                        THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
