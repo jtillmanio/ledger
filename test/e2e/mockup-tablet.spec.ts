@@ -12,7 +12,12 @@ import { SCREENS_DIR } from "./helpers";
 
 const MOCKUP = readFileSync("design/mockups.html", "utf8");
 const INDEX = readFileSync("design/mockups-index.md", "utf8");
-const SCREENS = ["home", "spine", "bdash", "status"] as const;
+// The four feel-pass frames (task 1.8e) with a thumb bar, then the mediums review's six (task 6.24, TASK-146):
+// three sheets over a page (E12, E13, E15) and three lists (E14, E16, E17).
+const THUMB = ["home", "spine", "bdash", "status"] as const;
+const SHEETS = ["bookdetail", "thisorthat", "rebalance"] as const;
+const LISTS = ["top", "calibre", "settings"] as const;
+const SCREENS = [...THUMB, ...SHEETS, ...LISTS] as const;
 type Screen = (typeof SCREENS)[number];
 
 // The mockup is checked once.
@@ -43,25 +48,35 @@ async function box(l: Locator): Promise<Box> {
 
 // The source of the four tab frames' markup, and the tablet CSS block.
 function tabMarkup(id: Screen): string {
+  return frameMarkup(id, "tab");
+}
+// The source of one screen's frame of a width (`phone`, `p360`, `tab`, `desk`), the first one.
+function frameMarkup(id: Screen, w: string): string {
   const start = MOCKUP.indexOf(`data-id="${id}"`);
-  const open = MOCKUP.indexOf('<div class="frame" data-w="tab">', start);
-  const close = MOCKUP.indexOf('<div class="frame" data-w="desk">', open);
-  expect(open, `${id} has an 834 frame`).toBeGreaterThan(start);
-  return MOCKUP.slice(open, close);
+  const open = MOCKUP.indexOf(`<div class="frame" data-w="${w}">`, start);
+  expect(open, `${id} has a ${w} frame`).toBeGreaterThan(start);
+  const ends = ['<div class="frame"', '<div class="notes">'].map((s) => MOCKUP.indexOf(s, open + 10)).filter((i) => i > -1);
+  return MOCKUP.slice(open, Math.min(...ends));
 }
 const TAB_CSS = (() => {
   const start = MOCKUP.indexOf("/* ══ Task 1.8 — the 360px and 834px frames");
   return MOCKUP.slice(start, MOCKUP.indexOf("</style>", start));
 })();
 
-test.describe("AC-1 · every 834 frame", ONCE, () => {
+test.describe("AC-1, AC-2 · every 834 frame", ONCE, () => {
   for (const id of SCREENS) {
-    test(`${id}: no sideways scroll, a 72px rail and a thumb bar of 48px controls`, async ({ page }) => {
+    test(`${id}: no sideways scroll and a 72px rail`, async ({ page }) => {
       const f = await openTab(page, id);
       const m = await f.locator(".frame-in").evaluate((e) => ({ sw: e.scrollWidth, cw: e.clientWidth }));
       expect(m.cw).toBeGreaterThan(800);
       expect(m.sw).toBe(m.cw);
       expect((await box(f.locator(".rail"))).width).toBe(72);
+    });
+  }
+
+  for (const id of THUMB) {
+    test(`${id}: a thumb bar of 48px controls`, async ({ page }) => {
+      const f = await openTab(page, id);
       // 48px controls with 12px above and below (task 1.8b, D-78), as the real bar is.
       expect((await box(f.locator(".actionbar .btn").first())).height).toBe(48);
       expect((await box(f.locator(".actionbar"))).height).toBeGreaterThanOrEqual(72);
@@ -176,7 +191,7 @@ test.describe("AC-1, AC-4 · design/mockups-index.md", ONCE, () => {
   };
 
   test("the four screens still list their 834px frames", () => {
-    for (const id of SCREENS) {
+    for (const id of THUMB) {
       const row = INDEX.split("\n").find((l) => l.startsWith(`| \`${id}\` |`));
       expect(row, id).toBeDefined();
       expect(row).toMatch(/834px frames/);
@@ -199,7 +214,7 @@ test.describe("AC-1, AC-4 · design/mockups-index.md", ONCE, () => {
   });
 });
 
-test.describe("AC-5 · the UX floor in the four frames", ONCE, () => {
+test.describe("AC-5 · the UX floor in the ten frames", ONCE, () => {
   // Colour lives in style attributes, presentation attributes and CSS rules;
   // a label like #141 in text is not a colour. Percent-encoded image data
   // (%23394049) is the spine's cover art, not styling.
@@ -220,6 +235,7 @@ test.describe("AC-5 · the UX floor in the four frames", ONCE, () => {
 
   for (const theme of ["light", "dark"] as const) {
     test(`${theme}: nothing resolves to --danger, fonts follow D-32, targets and names hold`, async ({ page }) => {
+      test.setTimeout(120_000); // ten frames, each a computed-style walk and an axe run
       for (const id of SCREENS) {
         const f = await openTab(page, id, theme);
         const report = await f.evaluate((frame) => {
@@ -241,8 +257,8 @@ test.describe("AC-5 · the UX floor in the four frames", ONCE, () => {
             if (paints.some((p) => p.includes(danger))) red.push(name(el));
             const ownText = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent!.trim() !== "");
             if (ownText && cs.fontFamily.startsWith('"Newsreader"') &&
-              !el.closest("h1.t, .tb-name, .tb-story, .hero .name, .rail-word")) display.push(name(el));
-            if (el.matches("a[href], button, [tabindex]:not([tabindex='-1'])") && el.closest(".tabmain")) {
+              !el.closest("h1.t, .tb-name, .tb-story, .hero .name, .rail-word, .dsheet .fsh")) display.push(name(el));
+            if (el.matches("a[href], button, [tabindex]:not([tabindex='-1'])") && el.closest(".tabmain, .dsheet")) {
               const r = el.getBoundingClientRect();
               if (r.width < 24 || r.height < 24) small.push(`${name(el)} ${Math.round(r.width)}×${Math.round(r.height)}`);
             }
@@ -256,13 +272,14 @@ test.describe("AC-5 · the UX floor in the four frames", ONCE, () => {
         });
         expect.soft(report.onFill, `${id}: text on a filled tab not in its --on-* colour`).toEqual([]);
         expect.soft(report.red, `${id}: resolves to --danger ${report.danger}`).toEqual([]);
-        expect.soft(report.display, `${id}: Newsreader outside the title and hero names`).toEqual([]);
+        expect.soft(report.display, `${id}: Newsreader outside the title, hero names and sheet titles`).toEqual([]);
         expect.soft(report.small, `${id}: interactive under 24px`).toEqual([]);
         expect.soft(report.counts, `${id}: counts not in Plex Mono`).toEqual([]);
         if (id === "home" || id === "bdash") expect(report.nCounts, `${id} marks its counts`).toBeGreaterThan(5);
 
         const axe = await new AxeBuilder({ page })
           .include(`section.screen[data-id="${id}"] .frame[data-w="tab"] .tabmain`)
+          .include(`section.screen[data-id="${id}"] .frame[data-w="tab"] .dsheet`)
           .withRules(["button-name", "link-name", "color-contrast", "aria-required-children", "aria-required-parent", "aria-allowed-attr"])
           .analyze();
         expect.soft(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`), `${id} axe`).toEqual([]);
@@ -270,7 +287,7 @@ test.describe("AC-5 · the UX floor in the four frames", ONCE, () => {
     });
   }
 
-  test("screenshots of the four 834 frames, light and dark", async ({ page }, testInfo) => {
+  test("screenshots of the ten 834 frames, light and dark", async ({ page }, testInfo) => {
     const dir = join(SCREENS_DIR, testInfo.project.name);
     mkdirSync(dir, { recursive: true });
     for (const theme of ["light", "dark"] as const) {
@@ -281,5 +298,189 @@ test.describe("AC-5 · the UX floor in the four frames", ONCE, () => {
         expect(readFileSync(file).length).toBeGreaterThan(10_000);
       }
     }
+  });
+});
+
+// ══ Task 6.24, 4 of 4 (TASK-146): the mediums review's six 834px frames, E12 to E17, and the settings frame (E11, E17) ══
+test.describe("AC-1, AC-2 · the three sheets (E12, E13, E15)", ONCE, () => {
+  for (const id of SHEETS) {
+    test(`${id}: a 640px dialogue centred over the content column, the scrim over the column and the rail`, async ({ page }) => {
+      const f = await openTab(page, id);
+      await expect(f.locator('.dsheet[role="dialog"][aria-modal="true"]')).toHaveCount(1);
+      const sheet = await box(f.locator(".dsheet"));
+      const col = await box(f.locator(".tabmain"));
+      const rail = await box(f.locator(".rail"));
+      const scrim = await box(f.locator(".scrim"));
+      const app = await box(f.locator(".app"));
+      expect(sheet.width).toBe(640);
+      expect(Math.abs(sheet.x + sheet.width / 2 - (col.x + col.width / 2))).toBeLessThanOrEqual(1);
+      expect(sheet.y + sheet.height, "the sheet rests on the frame's foot").toBeLessThanOrEqual(app.y + app.height + 1);
+      expect(sheet.x, "the sheet leaves the rail uncovered").toBeGreaterThanOrEqual(rail.x + rail.width);
+      expect(scrim.x).toBeLessThanOrEqual(rail.x);
+      expect(Math.abs(scrim.width - app.width)).toBeLessThanOrEqual(1);
+      expect(Math.abs(scrim.height - app.height)).toBeLessThanOrEqual(1);
+      // The sheet's title is the dialogue's name.
+      const name = await f.locator(".dsheet").getAttribute("aria-label");
+      await expect(f.locator(".dsheet .fsh")).toHaveText(name!);
+    });
+  }
+
+  test("bookdetail and thisorthat are over the Library, rebalance over Plan", async ({ page }) => {
+    for (const [id, title] of [["bookdetail", "Library"], ["thisorthat", "Library"], ["rebalance", "Plan"]] as const) {
+      const f = await openTab(page, id);
+      await expect(f.locator(".tabmain h1.t")).toHaveText(title);
+    }
+  });
+});
+
+test.describe("AC-1, AC-2 · the three lists (E14, E16, E17)", ONCE, () => {
+  for (const id of LISTS) {
+    test(`${id}: the column is padded 32px, the title 40/44`, async ({ page }) => {
+      const f = await openTab(page, id);
+      const wrap = await f.locator(".tabmain .wrap").first().evaluate((e) => {
+        const cs = getComputedStyle(e);
+        return { l: cs.paddingLeft, r: cs.paddingRight };
+      });
+      expect(wrap).toEqual({ l: "32px", r: "32px" });
+      const t = await f.locator("h1.t").evaluate((e) => ({ fs: getComputedStyle(e).fontSize, lh: getComputedStyle(e).lineHeight }));
+      expect(t).toEqual({ fs: "40px", lh: "44px" });
+    });
+  }
+
+  test("calibre's back link says Settings; top has Not ranked yet below the top ten", async ({ page }) => {
+    const c = await openTab(page, "calibre");
+    await expect(c.getByRole("link", { name: /Settings/ }).first()).toBeVisible();
+    const t = await openTab(page, "top");
+    await expect(t.getByRole("heading", { name: /Not ranked yet/ })).toBeVisible();
+  });
+
+  test("settings at 834: Reading pace and Appearance side by side, Parked and Data full width below", async ({ page }) => {
+    const f = await openTab(page, "settings");
+    const h = (name: string) => box(f.getByRole("heading", { name, exact: true }));
+    const [pace, look, parked, data] = [await h("Reading pace"), await h("Appearance"), await h("Parked"), await h("Data")];
+    expect(look.y).toBe(pace.y);
+    expect(look.x).toBeGreaterThan(pace.x + 200);
+    const wrap = await box(f.locator(".tabmain .wrap").first());
+    for (const g of [parked, data]) {
+      expect(g.y, "below the pair").toBeGreaterThan(pace.y + 100);
+      expect(g.x).toBe(pace.x);
+    }
+    expect(data.y).toBeGreaterThan(parked.y);
+    // The full-width groups run the column's width.
+    const widths = await f.locator(".tabmain .group").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)));
+    expect(Math.max(...widths)).toBeGreaterThanOrEqual(wrap.width - 64 - 1);
+    // Every row the phone frame has stays (owner, at plan): its row labels are all in the 834 frame.
+    const labels = [...frameMarkup("settings", "phone").matchAll(/<span class="k"[^>]*>([^<]+)<\/span>/g)].map((m) => m[1]);
+    expect(labels.length).toBeGreaterThan(10);
+    for (const l of labels) await expect(f.locator(".tabmain").getByText(l, { exact: true }).first(), l).toBeVisible();
+  });
+});
+
+test.describe("AC-1 · settings' steppers, typed and held (E11, MR-D18)", ONCE, () => {
+  test("none carries an inline background; one is typed, one held with a 1.5px --brand ring, the rest at rest", async ({ page }) => {
+    for (const w of ["phone", "tab"] as const) {
+      const html = frameMarkup("settings", w);
+      for (const tag of html.match(/<span class="stepper"[^>]*>/g) ?? []) expect(tag, `${w}: ${tag}`).not.toMatch(/background/);
+    }
+    await page.setViewportSize({ width: 1400, height: 1100 });
+    await page.setContent(MOCKUP, { waitUntil: "load" });
+    await page.evaluate(() => {
+      document.body.dataset.vp = "phone";
+      document.querySelectorAll("section.screen").forEach((s) => s.classList.toggle("on", (s as HTMLElement).dataset.id === "settings"));
+    });
+    const f = page.locator('section.screen[data-id="settings"] .frame[data-w="phone"]');
+    await expect(f.locator(".stepper")).toHaveCount(3);
+    await expect(f.locator(".stepper input.val")).toHaveCount(1);
+    await expect(f.locator(".stepper b[data-held]")).toHaveCount(1);
+    await expect(f.locator(".stepper button.val")).toHaveCount(2);
+    const r = await f.evaluate((frame) => {
+      const probe = (prop: "color" | "backgroundColor", v: string) => {
+        const i = document.createElement("i");
+        i.style[prop] = `var(${v})`;
+        frame.querySelector(".app")!.append(i);
+        const c = getComputedStyle(i)[prop];
+        i.remove();
+        return c;
+      };
+      const brand = probe("color", "--brand");
+      const sunk = probe("backgroundColor", "--sunk");
+      const held = getComputedStyle(frame.querySelector(".stepper b[data-held]")!).boxShadow;
+      const rest = getComputedStyle(frame.querySelector(".stepper b:not([data-held])")!).boxShadow;
+      return {
+        brand, held, rest,
+        sunk: [...frame.querySelectorAll(".stepper")].map((e) => getComputedStyle(e).backgroundColor === sunk),
+      };
+    });
+    expect(r.sunk).toEqual([true, true, true]);
+    expect(r.held).toContain(r.brand);
+    expect(r.held).toContain("1.5px");
+    expect(r.rest).not.toContain(r.brand);
+  });
+
+  test("the notes say what is typed and held, and what the review adds later", () => {
+    const from = MOCKUP.indexOf('<div class="notes"><h3>Settings</h3>');
+    expect(from).toBeGreaterThan(-1);
+    const own = MOCKUP.slice(from, MOCKUP.indexOf("</section>", from));
+    expect(own).toMatch(/typed/i);
+    expect(own).toMatch(/held/i);
+    for (const left of [/Start on/, /Spotify/, /Your platforms/]) expect(own).toMatch(left);
+  });
+});
+
+test.describe("AC-3 · the drawn gear on every phone bar", ONCE, () => {
+  test("no U+26B2 or text gear anywhere in the mockup", () => {
+    for (const glyph of [/&#9906;/, /&#x26b2;/i, /⚲/, /&#9881;/, /&#x2699;/i, /⚙/]) expect(MOCKUP).not.toMatch(glyph);
+  });
+
+  test("every phone bar ends in the Settings icon button holding the drawn gear", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 1100 });
+    await page.setContent(MOCKUP, { waitUntil: "load" });
+    const bars = await page.evaluate(() =>
+      [...document.querySelectorAll("nav.bar")].map((bar) => {
+        const last = bar.lastElementChild!;
+        return {
+          ok: last.matches('a.iconbtn[aria-label="Settings"]') && !!last.querySelector("svg path") && !!last.querySelector("svg circle"),
+          where: `${bar.closest("section")?.getAttribute("data-id")} ${bar.closest(".frame")?.getAttribute("data-w")}`,
+          text: (last.textContent ?? "").trim(),
+        };
+      }),
+    );
+    expect(bars.length).toBeGreaterThan(100);
+    expect(bars.filter((b) => !b.ok).map((b) => b.where)).toEqual([]);
+    expect(bars.filter((b) => b.text !== "")).toEqual([]);
+  });
+
+  test("the gear is the app's: Icons.tsx's settings path, 20 × 20", () => {
+    const icons = readFileSync("src/components/nav/Icons.tsx", "utf8");
+    const path = /settings: \(<>\s*<path d="([^"]+)"/.exec(icons)![1];
+    const bar = /<nav class="bar"[^>]*>[\s\S]*?<\/nav>/.exec(frameMarkup("settings", "phone"))![0];
+    expect(bar).toContain(`d="${path}"`);
+    expect(bar).toMatch(/<svg viewBox="0 0 24 24" width="20" height="20"/);
+  });
+});
+
+test.describe("AC-4 · design/mockups-index.md after TASK-146", ONCE, () => {
+  const row = (id: string) => INDEX.split("\n").find((l) => l.startsWith(`| \`${id}\` |`));
+
+  test("the six screens' rows list their 834px frame", () => {
+    for (const id of [...SHEETS, ...LISTS]) expect(row(id), id).toMatch(/834px frame/);
+  });
+
+  test("the mediums-review rows mark settings and the 834px frames redrawn, and name what is left", () => {
+    const start = INDEX.indexOf("## Nov 2026, mediums review");
+    const table = INDEX.slice(start, INDEX.indexOf("Held as drawn", start));
+    const rows = table.split("\n");
+    const settings = rows.find((l) => l.startsWith("| `settings`, `batch`"))!;
+    expect(settings).toMatch(/redrawn \(task 6\.24, TASK-146/);
+    const six = rows.find((l) => l.includes("E12–E17"))!;
+    expect(six).toMatch(/redrawn \(task 6\.24, TASK-146/);
+    for (const [name, home] of [["Start on", "6.25"], ["Spotify", "9."], ["Your platforms", "10.0"]] as const) {
+      const hit = rows.find((l) => l.includes(name) && l.includes(home));
+      expect(hit, `${name} → ${home}`).toBeDefined();
+    }
+  });
+
+  test("each of the six frames is reachable by its data-id", () => {
+    for (const id of [...SHEETS, ...LISTS]) expect(MOCKUP, id).toMatch(new RegExp(`<section class="screen[^>]*data-id="${id}"`));
   });
 });
