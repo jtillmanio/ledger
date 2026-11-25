@@ -5,7 +5,9 @@
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 import { GET } from "../src/app/route";
-import { MEDIA, MEDIUM_COOKIE, mediumOf, pickMedium } from "../src/lib/last-medium";
+import {
+  MEDIA, MEDIUM_COOKIE, START_COOKIE, mediumOf, pickMedium, startMedium, writeStartCookie,
+} from "../src/lib/last-medium";
 import { config, proxy } from "../src/proxy";
 
 const ORIGIN = "http://localhost:3000";
@@ -44,6 +46,81 @@ describe("GET / for watch (task 1.8, AC-5)", () => {
     const res = GET(request("/", { ledger_medium: "watch" }));
     expect(res.status).toBe(307);
     expect(where(res)).toBe("/watch");
+  });
+});
+
+describe("GET / with Start on (task 6.25, TASK-147, AC-2, AC-3)", () => {
+  it("Last used (the default): the medium visited last, else comics", () => {
+    expect(where(GET(request("/", { ledger_medium: "watch" })))).toBe("/watch");
+    expect(where(GET(request("/", { ledger_medium: "watch", ledger_start: "last" })))).toBe("/watch");
+    expect(where(GET(request("/")))).toBe("/comics");
+  });
+
+  it("a medium named by Start on wins over the one visited last", () => {
+    expect(where(GET(request("/", { ledger_start: "books", ledger_medium: "comics" })))).toBe("/books");
+    expect(where(GET(request("/", { ledger_start: "watch" })))).toBe("/watch");
+    expect(where(GET(request("/", { ledger_start: "comics", ledger_medium: "books" })))).toBe("/comics");
+  });
+
+  it("a stored value that names no built medium behaves as Last used", () => {
+    expect(where(GET(request("/", { ledger_start: "bogus", ledger_medium: "watch" })))).toBe("/watch");
+    expect(where(GET(request("/", { ledger_start: "__proto__", ledger_medium: "books" })))).toBe("/books");
+    expect(where(GET(request("/", { ledger_start: "constructor" })))).toBe("/comics");
+  });
+});
+
+describe("startMedium and the Start on writer (task 6.25, TASK-147)", () => {
+  // A document with a cookie jar that behaves like the browser's for the one cookie.
+  function fakeDoc(protocol = "http:", { refuse = false } = {}) {
+    const jar = new Map<string, string>();
+    const writes: string[] = [];
+    const doc = {
+      location: { protocol },
+      get cookie() { return [...jar].map(([k, v]) => `${k}=${v}`).join("; "); },
+      set cookie(line: string) {
+        writes.push(line);
+        if (refuse) return;
+        const [pair, ...attrs] = line.split(";").map((s) => s.trim());
+        const [k, v] = [pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1)];
+        if (attrs.some((a) => a === "max-age=0")) jar.delete(k); else jar.set(k, v);
+      },
+    };
+    return { doc: doc as unknown as Document, jar, writes };
+  }
+
+  it("startMedium: a built medium wins; anything else falls to the last one used", () => {
+    expect(startMedium("books", "comics")).toBe("books");
+    expect(startMedium(undefined, "watch")).toBe("watch");
+    expect(startMedium("last", "watch")).toBe("watch");
+    expect(startMedium("nope", undefined)).toBe("comics");
+    expect(startMedium("__proto__", "books")).toBe("books");
+  });
+
+  it("writes a medium as a year-long, Lax, JS-readable cookie, and reads back", () => {
+    const { doc, jar, writes } = fakeDoc();
+    expect(writeStartCookie("books", doc)).toBe(true);
+    expect(jar.get(START_COOKIE)).toBe("books");
+    expect(writes[0]).toBe(`${START_COOKIE}=books; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`);
+  });
+
+  it("is Secure on https", () => {
+    const { doc, writes } = fakeDoc("https:");
+    writeStartCookie("watch", doc);
+    expect(writes[0]).toMatch(/; Secure$/);
+  });
+
+  it("Last used deletes the cookie, and that reads back too", () => {
+    const { doc, jar, writes } = fakeDoc();
+    writeStartCookie("books", doc);
+    expect(writeStartCookie("last", doc)).toBe(true);
+    expect(jar.has(START_COOKIE)).toBe(false);
+    expect(writes[1]).toContain("max-age=0");
+  });
+
+  it("returns false when the browser keeps no cookie, so the control can put the choice back", () => {
+    const { doc } = fakeDoc("http:", { refuse: true });
+    expect(writeStartCookie("books", doc)).toBe(false);
+    expect(writeStartCookie("last", doc)).toBe(true); // nothing stored is what Last used means
   });
 });
 

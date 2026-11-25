@@ -447,6 +447,129 @@ test("Settings with Show covers on and off at 360, 834 and 1280px, light and dar
   }
 });
 
+// ---- Task 6.25, part 1 of 3 (TASK-147, MR-D7, D-178): Start on ------------------------------------
+// A per-device cookie (`ledger_start`), so nothing here touches the database and nothing needs resetting:
+// each test's browser context starts without it.
+
+const startChip = (page: Page, now: "Last used" | "Comics" | "Books" | "Watch" = "Last used") =>
+  page.getByRole("button", { name: `Start on: ${now}`, exact: true });
+const startChoice = (page: Page, name: "Last used" | "Comics" | "Books" | "Watch") =>
+  group(page, "Start on").getByRole("button", { name, exact: true });
+
+async function chooseStart(page: Page, from: "Last used" | "Comics" | "Books" | "Watch", name: "Last used" | "Comics" | "Books" | "Watch") {
+  await hydrated(startChip(page, from));
+  await startChip(page, from).click();
+  await startChoice(page, name).click();
+  await expect(startChip(page, name)).toBeVisible();
+}
+
+test("Start on: Books makes / open /books, Last used makes it open the medium visited last (TASK-147 AC-1's clause, AC-2, AC-3)", FLOOR, async ({ page }) => {
+  await open(page);
+  await expect(startChip(page)).toBeVisible();
+  await chooseStart(page, "Last used", "Books");
+  // Visit comics, so the medium used last is not Books: Start on has to be what sends / to /books.
+  await page.goto("/comics");
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/books$/);
+
+  await page.goto("/settings");
+  await chooseStart(page, "Books", "Last used");
+  await page.goto("/watch");
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/watch$/);
+  await page.goto("/comics");
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/comics$/);
+});
+
+test("Start on: the choice is on the first paint after a reload, and nothing goes to /api/settings (TASK-147 AC-4)", ONCE, async ({ page }) => {
+  const writes: string[] = [];
+  page.on("request", (r) => { if (r.method() !== "GET" && r.url().includes("/api/")) writes.push(`${r.method()} ${r.url()}`); });
+  await open(page);
+  await chooseStart(page, "Last used", "Watch");
+  await page.reload();
+  // The server drew it: look before hydration has had a chance to set anything.
+  await expect(startChip(page, "Watch")).toBeVisible();
+  await expect(startChip(page, "Last used")).toHaveCount(0);
+  expect(await page.context().cookies().then((c) => c.find((x) => x.name === "ledger_start")?.value)).toBe("watch");
+  // Back to Last used removes the cookie rather than storing a word for it.
+  await chooseStart(page, "Watch", "Last used");
+  expect((await page.context().cookies()).some((c) => c.name === "ledger_start")).toBe(false);
+  await page.reload();
+  await expect(startChip(page, "Last used")).toBeVisible();
+  expect(writes).toEqual([]);
+});
+
+test("Start on lists Last used and one choice per built medium, the stored one aria-current (TASK-147 AC-4)", ONCE, async ({ page }) => {
+  await open(page);
+  await chooseStart(page, "Last used", "Books");
+  await startChip(page, "Books").click();
+  const list = group(page, "Start on");
+  await expect(list.getByRole("button")).toHaveText(["Last used", "Comics", "Books", "Watch"]);
+  await expect(startChoice(page, "Books")).toHaveAttribute("aria-current", "true");
+  for (const other of ["Last used", "Comics", "Watch"] as const) await expect(startChoice(page, other)).not.toHaveAttribute("aria-current", "true");
+});
+
+test("Start on meets the floor: a named chip and real buttons at 44px on the phone, 4.5:1 text, axe clean, no sideways scroll (TASK-147 AC-5)", FLOOR, async ({ page }) => {
+  await open(page);
+  const chip = startChip(page);
+  await hydrated(chip);
+  const phone = page.viewportSize()!.width < 768;
+  const box = (await chip.boundingBox())!;
+  expect(box.height).toBeGreaterThanOrEqual(phone ? 44 : 24);
+  expect(await chip.evaluate((el) => el.tagName)).toBe("BUTTON");
+  await expect(page.getByText("Start on", { exact: true })).toBeVisible();
+  await chip.click();
+  for (const name of ["Last used", "Comics", "Books", "Watch"] as const) {
+    const b = (await startChoice(page, name).boundingBox())!;
+    expect(b.height).toBeGreaterThanOrEqual(phone ? 44 : 36);
+    expect(b.x).toBeGreaterThanOrEqual(0);
+    expect(b.x + b.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  }
+  expect(await contrastFailures(page)).toEqual([]);
+  await expectNoAxeViolations(page, AXE);
+  await expectNoHorizontalScroll(page);
+});
+
+test("Start on is keyboard-operable: ArrowDown opens it on the current choice, the arrows move, Enter chooses, Esc closes and focus returns to the chip (TASK-147 AC-5)", ONCE, async ({ page }) => {
+  await open(page);
+  const chip = startChip(page);
+  await hydrated(chip);
+  await chip.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(startChoice(page, "Last used")).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(startChoice(page, "Comics")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(group(page, "Start on")).toHaveCount(0);
+  await expect(chip).toBeFocused();
+
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("End");
+  await expect(startChoice(page, "Watch")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(startChip(page, "Watch")).toBeFocused();
+  await expect(group(page, "Start on")).toHaveCount(0);
+});
+
+// Sets its own viewports and themes: runs once, in w390-light.
+test("Start on, open, at every ui.viewports width, light and dark (TASK-147 AC-5)", ONCE, async ({ page }, info) => {
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    for (const [width, height] of [[360, 780], [390, 844], [412, 915], [768, 1024], [1024, 768], [1280, 800]]) {
+      await page.setViewportSize({ width, height });
+      await open(page);
+      await hydrated(startChip(page));
+      await startChip(page).click();
+      await expect(group(page, "Start on")).toBeVisible();
+      await expectNoHorizontalScroll(page);
+      await expectNoAxeViolations(page, AXE);
+      await screenshot(page, info, `settings-starton-${width}-${colorScheme}`);
+      await page.keyboard.press("Escape");
+    }
+  }
+});
+
 // ---- Task 5.15, part 3 of 4 (TASK-110, D-105): how often the parked review comes due -----------
 
 const cadence = (page: Page) => group(page, "Review parked items");

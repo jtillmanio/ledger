@@ -214,6 +214,31 @@ describe("the screen reads the row live (AC-2)", () => {
     expect(sw(await render())).toContain('aria-checked="true"');
   });
 
+  it("draws Start on in Appearance with the stored choice on the first paint, and writes nothing to the database (task 6.25, AC-4)", async () => {
+    const Page = (await import("../src/app/settings/page")).default;
+    const render = async () => renderToStaticMarkup(<UndoProvider>{await Page()}</UndoProvider>);
+    const chip = (html: string) => html.match(/<button[^>]*aria-label="Start on: ([^"]*)"[^>]*>([^<]*)</);
+    const none = await render();
+    expect(none).toMatch(/id="[^"]+">Start on<\/span>/);
+    expect(chip(none)?.[1]).toBe("Last used");
+    expect(chip(none)?.[2]).toBe("Last used");
+    // The Appearance group holds the row, after Show covers.
+    expect(none.indexOf("Show covers")).toBeLessThan(none.indexOf(">Start on<"));
+    expect(none.indexOf("Appearance")).toBeLessThan(none.indexOf(">Start on<"));
+    expect(none.indexOf(">Start on<")).toBeLessThan(none.indexOf("Data"));
+    // The choices are drawn only when it is open, so the first paint carries the chip alone.
+    expect(none).not.toContain('role="group" aria-label="Start on"');
+    cookieJar.set("ledger_start", "books");
+    expect(chip(await render())?.[1]).toBe("Books");
+    cookieJar.set("ledger_start", "watch");
+    expect(chip(await render())?.[1]).toBe("Watch");
+    cookieJar.set("ledger_start", "garbage");
+    expect(chip(await render())?.[1]).toBe("Last used");
+    cookieJar.set("ledger_start", "__proto__");
+    expect(chip(await render())?.[1]).toBe("Last used");
+    expect(await rows()).toHaveLength(0);
+  });
+
   it("draws Parked with Review parked items: Monthly · Quarterly · Never, Quarterly chosen by default, the column's default (task 5.15, TASK-110, AC-4, AC-5)", async () => {
     const [col] = await sql`
       SELECT column_default FROM information_schema.columns

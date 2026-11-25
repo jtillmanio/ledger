@@ -14,9 +14,15 @@ import type { Choice } from "@/lib/library-sort";
  * choices and Tab walks them as links; Esc closes it and returns focus to the chip; a click or tap outside, or
  * Tab past the last choice, closes it too. `name` is the chip's name for assistive tech when its text isn't enough
  * (*Sort: Length, longest first*); the list is a group named `group` (*Sort*).
+ *
+ * A choice that is not a navigation (task 6.25, *Start on*: a setting, no URL) is a button with `onSelect` in
+ * place of an `href`; it closes the list, returns focus to the chip and calls `onSelect`. It is keyed, marked and
+ * moved between exactly as a link is.
  */
+export type ButtonChoice = { label: string; onSelect: () => void; current: boolean; divider?: boolean };
+
 export default function ChipMenu({ text, name, group, choices, align = "start" }: {
-  text: string; name?: string; group: string; choices: Choice[]; align?: "start" | "end";
+  text: string; name?: string; group: string; choices: (Choice | ButtonChoice)[]; align?: "start" | "end";
 }) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -25,8 +31,8 @@ export default function ChipMenu({ text, name, group, choices, align = "start" }
 
   useEffect(() => {
     if (!open) return;
-    const links = wrap.current?.querySelectorAll<HTMLElement>(".chipmenu a");
-    (wrap.current?.querySelector<HTMLElement>('.chipmenu a[aria-current="true"]') ?? links?.[0])?.focus();
+    const opts = wrap.current?.querySelectorAll<HTMLElement>(".chipmenu .opt");
+    (wrap.current?.querySelector<HTMLElement>('.chipmenu .opt[aria-current="true"]') ?? opts?.[0])?.focus();
     function away(e: PointerEvent) {
       if (!wrap.current?.contains(e.target as Node)) setOpen(false);
     }
@@ -40,7 +46,7 @@ export default function ChipMenu({ text, name, group, choices, align = "start" }
   }
 
   function onListKeyDown(e: React.KeyboardEvent) {
-    const all = [...(wrap.current?.querySelectorAll<HTMLElement>(".chipmenu a") ?? [])];
+    const all = [...(wrap.current?.querySelectorAll<HTMLElement>(".chipmenu .opt") ?? [])];
     const at = all.indexOf(document.activeElement as HTMLElement);
     if (e.key === "Escape") {
       e.preventDefault();
@@ -68,11 +74,16 @@ export default function ChipMenu({ text, name, group, choices, align = "start" }
       </button>
       {open && (
         <div id={id} className={`menu chipmenu${align === "end" ? " end" : ""}`} role="group" aria-label={group} onKeyDown={onListKeyDown}>
-          {choices.map((c) => (
+          {choices.map((c) => "href" in c ? (
             <Link key={c.label} prefetch={false} href={c.href} className={c.divider ? "opt div" : "opt"}
               aria-current={c.current || undefined} onClick={() => setOpen(false)}>
               {c.label}
             </Link>
+          ) : (
+            <button key={c.label} type="button" className={c.divider ? "opt div" : "opt"}
+              aria-current={c.current || undefined} onClick={() => { close(); c.onSelect(); }}>
+              {c.label}
+            </button>
           ))}
         </div>
       )}

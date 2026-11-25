@@ -33,12 +33,16 @@ export default function Loading() {
           </div>
         </div>
         <div aria-hidden="true">
-          {/* Appearance (4.3): one row, Show covers, with its 44px switch. */}
+          {/* Appearance (4.3, 6.25): Show covers with its 44px switch, then Start on with its 44px chip. */}
           <span className="sk sk-line sk-head" style={{ width: "6rem" }} />
           <div className="group" aria-hidden="true">
             <div className="frow">
               <span className="sk sk-title" style={{ width: "6rem" }} />
               <span className="sk sk-stepper" style={{ width: "36px", height: "44px" }} />
+            </div>
+            <div className="frow">
+              <span className="sk sk-title" style={{ width: "5rem" }} />
+              <span className="sk sk-stepper" style={{ width: "6.5rem", height: "44px" }} />
             </div>
           </div>
           <span className="sk sk-line sk-head" style={{ width: "4rem" }} />
