@@ -1491,6 +1491,13 @@ frozen and kept only to compare numbers during the month.
       cut over if it doesn't** — you will drift back, and the migration will have
       been wasted effort. This is the single most common way projects like this
       fail.
+- [ ] **The switch is rehearsed on development** (D-186). Run *The switch*
+      below against development: the same export and extract, with step 3
+      as `.\etl\load.ps1 seed-final` (no `-EnvFile`, so `.env`), and skip
+      steps 4–6. Then work through *In the app, after the load* against
+      `npm run dev`, every step and every screen in its test list, with the
+      sync's `CALIBRE_SYNC_READS` left off. Fix what reads wrong, then switch
+      production. Development is disposable: this wipes what you built there.
 
 ### The switch
 
@@ -1527,6 +1534,60 @@ migrates the live database instead of pointing you at a rebuild.
 
 The old wishlist needs nothing here: extract settled it before the final load
 (1.27, D-111), so it arrived with everything else.
+
+### In the app, after the load
+
+The final load brings the catalog, the statuses and reads (Calibre's, and the
+workbook's Top Books ranks, D-150), the releases, and the series, author and
+universe follows from the Series tab. It **starts these empty**, because it
+truncates them or, through `CASCADE`, everything that points at a book or a
+shelf: the plan (the extract runs without `--with-plan`, D-13), shelves with
+their books, notes and follows, owned copies, the listen queue, Parked and DNF
+statuses set in the app, subseries follows, the inbox, and the decisions on Calibre near
+spellings. Summaries and tags arrive only through the sync. Your reading pace
+survives, and so does a year accepted as a stretch (2.7).
+
+Do these in order, in the app (production after the switch, development in
+the rehearsal):
+
+1. **Run the Calibre sync by hand** (step 6), with `CALIBRE_SYNC_READS=true`
+   in the env file the production sync reads (left off in the rehearsal). It
+   brings Calibre's summaries, tags and changes since the export, and asks
+   Hardcover for what's missing. Open *Settings → Calibre*: decide every waiting
+   near spelling, then run it once more.
+2. **Settings:** check *Reading pace*.
+3. **Plan:** build this year's quarters and On deck from the suggestions; on
+   the year view, check whether a stretch acceptance should stand.
+4. **Shelves:** re-create each one (the Dark Tower order first), with its order
+   and notes, and follow the ones you're reading.
+5. **What you own:** *Add → Paste a list* to *Physical copy*, then to
+   *Audiobook*.
+6. **Listen next:** queue the audiobooks, in order.
+7. **Park and DNF** what was parked or abandoned.
+8. **Follows:** check the series, authors and universes on *Progress → In the
+   middle of*; set subseries follows again.
+9. **Reads by hand:** enter anything in `seed/workbook_reads.csv` still
+   missing (D-41).
+
+**The minimum test of the books** — every screen once, at phone width and at
+desktop width; a wrong number or a dead control is a bug to fix before
+production (in the rehearsal) or in the app (after the switch):
+
+- [ ] Dashboard: books read this year and the year's planned words match the
+      frozen sheet and Plan.
+- [ ] A book through its life: Add by search → Someday → a quarter → Reading
+      (start date) → Read (finish date) → rank it → Undo the rank.
+- [ ] Add by *Paste a list* and *By hand*; a listen finished from *Listening*
+      counts as a read with its glyph.
+- [ ] Library: Everything, Unlisted, Parked, a genre chip, an owned filter, a
+      search, and a sort.
+- [ ] A series, an author and a universe page; a follow change from each.
+- [ ] Top books: this year's and last year's order match the sheet's.
+- [ ] Coming out: *Got it* and its Undo.
+- [ ] Parked: park a book, then bring it back from the review.
+- [ ] The sync's log on *Settings → Calibre* reads right, and Calibre shows the
+      Ledger's status and owned formats.
+- [ ] *Export everything* downloads and lists every table.
 
 ### The month after
 

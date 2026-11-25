@@ -1,6 +1,6 @@
 # Status
 
-**Last regenerated:** 2026-11-23
+**Last regenerated:** 2026-11-25
 
 This is a rollup of `docs/05-roadmap.md`, not a second source of truth. Every
 count here comes from counting ☑ vs ☐ entries in that file, and the milestones
@@ -9,10 +9,11 @@ wins (D-1): recount and fix this page, don't argue from it.
 
 ## Where we are
 
-**100 of 195 roadmap entries done (51%).** The books cutover (1.26,
-TASK-061, which the owner runs) waits on ten open entries, every one with
-Ready task files: 1.31, and the nine the owner pulled ahead on 2026-11-23
-(D-172).
+**112 of 213 roadmap entries done (53%).** The books cutover (1.26,
+TASK-061, which the owner runs) waits on one open entry, 1.31 (TASK-115,
+Ready), and on the owner's boxes in START-HERE Step 14. The nine entries the
+owner pulled ahead on 2026-11-23 (D-172) are all built. The owner's
+2026-11-24 intake added eleven entries, none of them a gate (D-184 to D-186).
 `LEDGER_LIVE` is `false` (the repo variable and `.env.live`), so production
 is still disposable: `npm run rebuild` can reload it.
 
@@ -32,21 +33,12 @@ The books cutover (1.26) waits for (`docs/cutover-parity.md` § What each
 cutover waits for; 1.26's **Depends on**):
 
 - **1.31**, the Owner checklist settled (TASK-115);
-- **4.4b** and **4.6**, the Calibre sync's year-only date and a near spelling
-  decided on the *Calibre* page (TASK-128, TASK-129): from the switch the sync
-  is the only way Calibre's changes arrive, and `CALIBRE_SYNC_READS` goes on;
-- **5.18**, Parked through every undo (TASK-130);
-- **6.19**, Open Library removed (TASK-131 → TASK-132);
-- **0.13** with **0.14c**, the preview's growth gate and every page measured
-  (TASK-114 → TASK-133), which finish only with `LIGHTHOUSE_MODE` on (D-158);
-- **0.15**, the browser suite by area (TASK-134 → TASK-135 → TASK-136);
-- **6.21** with **6.23**, where the book sits, redesigned from the owner's
-  Claude Design review (TASK-126 → TASK-137);
 - **every box in START-HERE Step 14 *Before the switch***, ticked by the
-  owner.
-
-So the switch also waits on two things only the owner does: turning
-`LIGHTHOUSE_MODE` back on, and the 6.23 session in Claude Design.
+  owner. Since 2026-11-25 that includes a rehearsal (D-186): *The switch*
+  run against development, then Step 14's *In the app, after the load*,
+  which rebuilds what the final load starts empty (the plan, shelves, owned
+  copies, the listen queue, Parked and DNF statuses, the inbox) and holds the
+  minimum test of the books screens.
 
 The comics cutover (1.28) waits for 3.1 → 3.2 → 3.3 and 5.6 → 5.10, none of
 which has a task file yet.
@@ -67,81 +59,79 @@ tasklist's *Build order* is (D-129, D-139).
 | M6 The real navigation | 8 / 8 | Done |
 | M7 Phase 1 complete | 5 / 5 | Done |
 | M8 Books load clean | 9 / 9 | Done |
-| M9 Captured from cutover on | 15 / 21 | 1.31 (TASK-115); Phase 0's 0.13 (TASK-133), 0.14c (TASK-114, PR #319) and 0.15 (TASK-134–136), pulled ahead of 1.26 (D-172); then 1.26 (TASK-061). 0.14d (no task file) is listed here and is not a gate |
-| M10 Capacity: is the year overcommitted? | 15 / 16 | 2.1b, after the books cutover; no task file |
-| M11 Editing the plan | 5 / 5 | Done (pulled ahead of 1.26, D-139) |
-| M12 The comics dashboard and the telescope | 0 / 7 | Not started† |
+| M9 Captured from cutover on | 18 / 23 | 1.31 (TASK-115), then 1.26 (TASK-061). Phase 0's 0.14e (TASK-138), 0.14f and 0.16 are listed here and are not gates |
+| M10 Capacity: is the year overcommitted? | 15 / 17 | 2.1b, after the books cutover; 2.0c (2026-11-24 intake); no task files |
+| M11 Editing the plan | 5 / 6 | 2.10c (2026-11-24 intake), no task file |
+| M12 The comics dashboard and the telescope | 1 / 7 | Not started† |
 | M13 Editing the catalog | 0 / 7 | Not started; ends in 1.28, the comics cutover |
-| M14 The run detail and the detail sheets | 4 / 9 | 3.5 (TASK-080 left), 3.5c, 3.6 → 3.6b → 3.6c |
+| M14 The run detail and the detail sheets | 5 / 10 | 3.5c, 3.5d, 3.6 → 3.6b → 3.6c |
 | M15 Adding at scale | 0 / 3 | Not started |
-| M16 Enrichment and covers | 5 / 8 | 4.4b (TASK-128) and 4.6 (TASK-129), pulled ahead of 1.26 (D-172); 4.1 |
-| M17 Book surfaces | 10 / 12 | 5.18 (TASK-130), pulled ahead of 1.26 (D-172); 5.9 (TASK-125 left) |
+| M16 Enrichment and covers | 7 / 11 | 4.6b (TASK-139); 4.1; 4.3b and 4.4c (2026-11-24 intake) |
+| M17 Book surfaces | 12 / 17 | 5.9b (TASK-141, TASK-142 left); 1.17c, 5.7b, 5.9c and 5.11b (2026-11-24 intake) |
 | M18 Comic surfaces | 0 / 7 | Not started; 5.6 → 5.10 are pulled ahead of 1.28 |
 | M19 Find and look back | 0 / 6 | Not started |
 | M20 Devices and input | 0 / 6 | Not started |
-| M21 Hardening and the last pass | 0 / 10 | 6.19 (TASK-131, TASK-132), 6.21 (TASK-137) and 6.23 (TASK-126), pulled ahead of 1.26 (D-172); 6.22 placed here 2026-11-23 |
+| M21 Hardening and the last pass | 3 / 14 | 6.24 (TASK-144–146 left), 6.25 (TASK-147–149); 6.26 and 6.27 (2026-11-24 intake); the rest not started |
 | M22 AI-assisted curation | 0 / 8 | Not started |
 | M23–M24 Watchlist | 0 / 10 | Not started |
 | M25 Music | 0 / 8 | Not started |
 | M26 Games | 0 / 7 | Not started |
 
-† M12 lists 6.2b, a scope note the roadmap ticks (its work was absorbed
-into 2.4 and 2.6), so the tasklist counts it open and the roadmap done.
+† M12's one done row is 6.2b, a scope note the roadmap ticks (its work was
+absorbed into 2.4 and 2.6).
 
 ### By phase
 
 | Phase | Done / total | Status |
 |---|---|---|
-| 0 — Foundation | 15 / 19 | Open: 0.13, 0.14c and 0.15, before 1.26 (D-172); 0.14d |
-| 1 — Daily use | 44 / 47 | Open: 1.31, then 1.26 (books cutover); 1.28 (comics cutover) later |
-| 2 — The pace engine | 21 / 28 | Open: 2.1b; the comics dashboard and telescope (2.4, 2.5, 2.5b, 2.6, 2.9, 2.12) |
-| 3 — Editing | 4 / 18 | 3.4, 3.4b, 3.4c, 3.5b done; 3.1–3.3 before 1.28 |
-| 4 — Enrichment | 5 / 8 | Open: 4.4b and 4.6, before 1.26 (D-172); 4.1 |
-| 5 — Remaining surfaces | 10 / 19 | The books surfaces done but 5.9 and 5.18 (5.18 before 1.26, D-172); 5.6 and 5.10 before 1.28 |
-| 6 — Polish | 1 / 23 | 6.19, 6.21 and 6.23 before 1.26 (D-172) |
+| 0 — Foundation | 19 / 22 | Open: 0.14e, 0.14f, 0.16; none a gate |
+| 1 — Daily use | 44 / 48 | Open: 1.31, then 1.26 (books cutover); 1.17c; 1.28 (comics cutover) later |
+| 2 — The pace engine | 21 / 30 | Open: 2.0c, 2.1b, 2.10c; the comics dashboard and telescope (2.4, 2.5, 2.5b, 2.6, 2.9, 2.12) |
+| 3 — Editing | 5 / 19 | 3.4, 3.4b, 3.4c, 3.5, 3.5b done; 3.1–3.3 before 1.28 |
+| 4 — Enrichment | 7 / 11 | Open: 4.1, 4.3b, 4.4c, 4.6b |
+| 5 — Remaining surfaces | 12 / 23 | Open for books: 5.7b, 5.9b, 5.9c, 5.11b; 5.6 and 5.10 before 1.28 |
+| 6 — Polish | 4 / 27 | 6.19, 6.21, 6.23 done; 6.24, 6.25 in progress |
 | 7 — AI-assisted curation | 0 / 8 | Not started |
 | 8 — Watchlist (film/TV) | 0 / 10 | Not started |
 | 9 — Music | 0 / 8 | Not started |
 | 10 — Games | 0 / 7 | Not started |
 
-The roadmap's *Later* section (L-1…L-11) holds ideas with no **Check:** and
+The roadmap's *Later* section (L-1…L-13) holds ideas with no **Check:** and
 is not counted.
 
 ## What's next
 
-**To the books cutover**, every task Ready: 1.31 (TASK-115); 4.4b (TASK-128),
-4.6 (TASK-129), 5.18 (TASK-130); 6.19 (TASK-131 → TASK-132); 0.14c
-(TASK-114, PR #319) → 0.13 (TASK-133), once `LIGHTHOUSE_MODE` is on; 0.15
-(TASK-134 → TASK-135 → TASK-136); 6.23 (TASK-126, the owner's session) → 6.21
-(TASK-137). Then 1.26 (TASK-061): the owner runs START-HERE Step 14, and Claude
-confirms every **Depends on** entry is ticked and `py -m unittest
+**To the books cutover:** 1.31 (TASK-115, Ready). Then 1.26 (TASK-061): the
+owner rehearses Step 14 on development (D-186), then runs it on production;
+Claude confirms every **Depends on** entry is ticked and `py -m unittest
 etl.test_cutover_parity` passes on `main` first.
 
-**Ready, and not a gate:** 3.5's issue sheet (TASK-080) and 5.9's series
-links (TASK-125). TASK-120 (3.5b, part 3) merged as PR #320 and waits for the
-owner's accept.
+**Ready, and not a gate:** 0.14e (TASK-138), 4.6b (TASK-139), 5.9b's last
+two parts (TASK-141, TASK-142), 6.24's last three (TASK-144, TASK-145,
+TASK-146) and 6.25 (TASK-147 → TASK-148 → TASK-149).
 
-**After 1.26, books first (D-129):** 2.1b, 3.5's last part and 3.5c, 5.9's
-last part, and Phase 6. **Then comics:**
-M12, M13 with 5.6 → 5.10 pulled ahead and 1.28 at its end, then 3.6 → 3.6b →
-3.6c (M14) and M15.
+**The 2026-11-24 intake, no task files yet:** the suggestions' series order
+and a search on the plan sheet (2.10c), a pace change reaching the plan
+without a reload (2.0c), covers that load small behind their placeholder
+(4.3b), the books screens timed against development (0.14f), Coming out's
+*Remove* and Calibre's arrival (5.7b), `#listened_date` and two-way read dates
+(4.4c, D-184), the Series list on what you've started (5.9c), a Universes list
+(5.11b), a past read logged on a read book (1.17c), the Library's genre row
+scrolling smoothly (6.26), and a plainer-words pass (6.27). Automatic shelves
+(L-13) and star ratings (L-6) wait in *Later*.
 
-Questions the new task files leave for their plan gates:
+**After 1.26, books first (D-129):** 2.1b, 3.5c, the intake above, and Phase
+6. **Then comics:** M12, M13 with 5.6 → 5.10 pulled ahead and 1.28 at its end,
+then 3.6 → 3.6b → 3.6c (M14) and M15.
 
-- **4.6** (TASK-129): which waiting kinds get the two buttons (`two calibre
-  books` may need a different answer), and whether anything is left of the
-  new-author note.
-- **5.18** (TASK-130): for each of the four undos, take the book off or
-  refuse.
-- **6.19** (TASK-131, TASK-132): how many books have an Open Library id and no
-  Hardcover id, which would turn *metadata pending*; whether the decided
-  `open library` reason survives the Check's grep.
-- **0.13** (TASK-133): whether 0.14d is converted first; how the
-  `perf-growth` label re-reports without a new measured run.
-- **0.15** (TASK-134–136): folders or tags for a spec's area; which components
-  are a medium's; how D-145's docs-only reuse treats a run that covered only
-  some areas.
-- **6.21** (TASK-137): which drawing, from 6.23 or a session of its own.
+Questions the intake leaves for its plan gates:
+
+- **4.4c**: where the sync reads the value Calibre held at the end of the
+  last run (the run log, or a new record, which asks first).
+- **1.17c**: how `reread_of` chains a read logged before others.
+- **4.3b**: what makes the small image (the CDN's resize, Next's optimizer and
+  its cost, or a stored thumbnail).
+- **5.11b**: the Universes tab on the Series page rather than a nav item.
 - **2.1b**: `sessions` (a new table), when it is converted.
 
 START-HERE Step 14 is the books cutover, and Step 14b the comics cutover.
@@ -155,20 +145,20 @@ commit is still the PR's head and the month's automatic runs are under the cap
 (0.14, D-160). It fails only on what holds still: a route handler requested
 during a load, bytes or requests over `scripts/perf/budget.json`, CLS of 0.1 or
 more, accessibility under 100. `docs/02-architecture.md` § Performance budget
-holds the budget; 0.13 (TASK-133) turns it into a gate on growth over main.
+holds the budget; 0.13 (TASK-133) made it a gate on growth over main.
 
 **The browser suite** runs whole only in CI (D-141): every width, light and
 dark, in ten balanced shards (D-143, D-167), with a per-shard ceiling and a
-growth limit (D-161). 0.15 (TASK-134–136) makes a PR run only the areas its
-paths can break, plus a critical set.
+growth limit (D-161). Since 0.15 (TASK-134–136) a PR runs only the areas its
+paths can break, plus a critical set (D-173).
 
 **The feel pass is adopted (D-40, palette 1c After hours)** and its tokens
 shipped with 1.8a: `globals.css` carries the measured palette, the
 self-hosted fonts (IBM Plex Sans, Plex Mono, Newsreader) and D-71's control
 outlines, and `test:tokens` checks them. It beats `mockups.html` on layout and
-copy where it draws. Screens drawn since, straight into `mockups.html`, go back
-to the design tool in 6.23 (TASK-126), which also draws watch, music and games
-for the first time (8.7, 9.0, 10.0 wait on it).
+copy where it draws. 6.23 (TASK-126) took the screens drawn since back to the
+design tool and drew watch, music and games for the first time; 6.24 and 6.25
+bring the built screens and the navigation in line with it (D-177, D-178).
 
 ## What's actually built
 
@@ -177,7 +167,7 @@ for the first time (8.7, 9.0, 10.0 wait on it).
   4.4), `etl/volumes.py`, `etl/fandom_titles.py`, `etl/check_sidecars.py`,
   `etl/check_role_outliers.py`, `etl/rebuild.ps1`/`.sh`, `etl/load.ps1`/`.sh`,
   the comics-only `etl/load-comics.ps1`/`.sh` (1.29), and `etl/views.sql`
-- `src/db/schema.ts` (46 tables, migrations through `0034_parked_review`),
+- `src/db/schema.ts` (45 tables, migrations through `0035_drop_open_library`),
   `src/db/queries.ts`, `src/db/writes.ts`, `src/db/calibre-sync.ts`,
   `src/db/backfill.ts`
 - Pages: `/comics`, `/comics/runs`, `/comics/status`, `/comics/[runId]`,
