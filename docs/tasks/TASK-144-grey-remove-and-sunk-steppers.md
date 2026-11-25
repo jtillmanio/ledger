@@ -1,14 +1,14 @@
 ---
 id: TASK-144
 title: 6.24 Built screens follow the mediums review (2 of 4) — grey Remove from Listen next, steppers on --sunk
-status: Ready
+status: In progress
 depends_on: []
 size: S
 model: sonnet
 autonomy: unattended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 64dd15c
 ---
 
 # TASK-144 — 6.24 Built screens follow the mediums review (2 of 4) — grey Remove from Listen next, steppers on --sunk
@@ -68,7 +68,44 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-25. Worktree `.claude/worktrees/task-144`, branch `task/6.24-grey-remove-sunk-steppers`, test DB `ledger_test_2`, E2E port 3200 (`.env.worktree`).
+
+**Reading of AC-3 and the Check (owner, at plan):** "stepper buttons resolve to `--sunk`" means the stepper as §9 and E11 draw it and Settings builds it: the **track** (`.stepper`, the `role="group"`) is `--sunk` with the 1px `--rule` ring in dark, the − and + buttons stay `--surface`, and the number (`.val`, transparent) shows the `--sunk` track. The tests prove each sheet's track equals Settings' track (= `--sunk`) and each sheet's buttons equal Settings' buttons. Menu items carry no icon (`src/components/Menu.tsx`), so AC-2 compares the text colour only; the test says so.
+
+**Steps**
+
+1. Tests first, each failing before the change for the expected reason:
+   - `test/e2e/listen-queue.spec.ts`: seed a books shelf (`e2e-lq-shelf`) holding `ONE` in `beforeAll` (removed in `afterAll`, by the `books` cascade and an explicit `DELETE FROM shelves`). New test at 360px, light and dark: open `/books/shelves/<id>`, read *Remove from shelf*'s computed `color`; open Listen next's ⋯ for `TWO`, *Remove from Listen next*'s `color` equals it, isn't `tokenColour(--danger)`, and the item has no `danger` class (AC-1 first clause, AC-2). The existing *Remove from Listen next … Undo* test stays as the undo proof (AC-2). Extend the floor test (axe, contrast, screenshots) with the menu open at each `ui.viewports` width, light and dark (AC-4).
+   - New `test/e2e/stepper-surface.spec.ts` (`@area` header like its neighbours): Settings' `.stepper` and its first button's `background-color` read as the reference; the batch sheet (`/comics`, *+ batch*, group *How many issues*) and the finish sheet (a seeded read book's *Finished* on `/books/list`, *Year only*, the year group) each: track `background-color` = Settings' track = `tokenColour(--sunk)`, − and + = Settings' buttons, `.val` transparent over the track; `contrastFailures` empty with the sheet open (text 4.5:1). At 360px light and dark (AC-1 second clause, AC-3); axe, no sideways scroll and screenshots at each `ui.viewports` width, light and dark (AC-4). Seeded rows under its own id prefix, removed after.
+   - `test/control-states.test.ts`: no rule whose subject is `.stepper` sets a background of `var(--raise)`, and the base `.stepper` rule's background is `var(--sunk)`.
+2. `src/components/ListenNext.tsx`: `danger: false` on `remove`, with the comment's reason (no loss: the book stays in the library and the plan), as `ShelfBooks.tsx` says it.
+3. `src/app/globals.css`: base `.stepper` `background:var(--raise)` → `var(--sunk)`; `.settings .stepper` keeps only `margin-left:0`; the Settings block's comment no longer says the sheets keep theirs (MR-D18, MR-Q18).
+4. `design/mockups.html`: the base `.stepper` rule → `--sunk` (redraws `batch`'s steppers and the books finish sheet's year stepper in `blist`, from E11); `status`'s Listen next menu loses `style="color:var(--danger)"` on *Remove from Listen next* (E8); `status`'s In flight *Finished* toast redrawn capped as `finishoffer` draws it (one *Now reading* chip and *+N · Follow…*, D-183) and its note reworded; `thisorthat`'s note "above *Now reading* and *+N · Follow…*" (TASK-143's note in Context).
+5. `design/mockups-index.md`: the `status` row (the capped toast, *Remove* grey), the `batch` row (stepper on `--sunk`), and the review table's E8 and E11 rows say redrawn (task 6.24, TASK-144); `settings` stays TASK-146's.
+
+**Files**
+
+- `src/components/ListenNext.tsx` — the item's tone.
+- `src/app/globals.css` — `.stepper` on `--sunk`.
+- `design/mockups.html`, `design/mockups-index.md` — `status`, `batch`, the finish sheet, `thisorthat`'s note (`ui.redrawFiles`).
+- `test/e2e/listen-queue.spec.ts` — AC-1, AC-2, AC-4 for the menu.
+- `test/e2e/stepper-surface.spec.ts` — **new, not in Files likely touched**: the batch sheet is a comics screen and the finish sheet a books one, so neither existing spec holds both with Settings as the reference.
+- `test/control-states.test.ts` — the static `--sunk` check.
+- `BatchSheet.tsx`, `FinishDate.tsx` — not touched: no class changes.
+
+**Test strategy**
+
+| AC | Proof |
+|---|---|
+| AC-1 | `listen-queue.spec.ts` (Remove not `--danger`) and `stepper-surface.spec.ts` (tracks `--sunk`), 360px light and dark; mockup clauses by spec-reviewer |
+| AC-2 | `listen-queue.spec.ts`: same colour as *Remove from shelf*; the existing Undo test |
+| AC-3 | `stepper-surface.spec.ts`; `control-states.test.ts` |
+| AC-4 | the floor loops in both specs (axe, `contrastFailures`, screenshots per `ui.viewports` width and theme) |
+| AC-5 | the mockup diff; spec-reviewer and ui-verifier |
+
+**Risks:** the base `.stepper` change reaches every stepper (Settings, batch, finish); that is the intent (§9 "everywhere"). Dark `--sunk` (#05060e) sits under the page, so the existing dark `--rule` ring keeps the track legible (SG-D2). The batch sheet needs the e2e comics run with unread issues; `thumb-bar.spec.ts` uses the same fixture.
+
+**Size:** 7 files, no schema. Within the split policy.
 
 ## Review log
 
