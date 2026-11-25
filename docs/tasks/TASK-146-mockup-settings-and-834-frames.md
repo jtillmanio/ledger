@@ -1,14 +1,14 @@
 ---
 id: TASK-146
 title: 6.24 Built screens follow the mediums review (4 of 4) — the mockup's settings frame, gear icons and six 834px frames
-status: Ready
+status: In progress
 depends_on: [TASK-143, TASK-144, TASK-145]
 size: S
 model: sonnet
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 81032b6
 ---
 
 # TASK-146 — 6.24 Built screens follow the mediums review (4 of 4) — the mockup's settings frame, gear icons and six 834px frames
@@ -67,9 +67,33 @@ it gains the six 834px frames.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The app's `Stepper.tsx` draws no ring while a button is held, where E11 draws a 1.5px `--brand` ring (the mockup's settings frame draws it from this task) (approved at plan) → `docs/05-roadmap.md` § 6.24b
+- TASK-143's two finish-toast differences from E10 (the kept chip pushing *+N · Follow…* to a third row at 360–412px; the sentence-case *Now reading* label where E10 draws uppercase mono): the owner chose a new roadmap item to fix both in `ToastOffer.tsx` / `globals.css`, with a proposed **Check:** (owner, at plan) (approved at plan) → `docs/05-roadmap.md` § 6.24c (new)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-25 (owner: keep every row the phone frame has in the 834 `settings` frame, laid out as E17; remove the merged task-145 worktree for ledger_test_3; TASK-143's toast question → a new roadmap item).
+
+**Steps**
+
+1. **Tests first**, `test/e2e/mockup-tablet.spec.ts`: `SCREENS` gains `bookdetail`, `thisorthat`, `top`, `rebalance`, `calibre`, `settings`. The rail (72px) and no-sideways-scroll check covers all ten; the 48px thumb-bar check stays on the four with a thumb bar (`home`, `spine`, `bdash`, `status`). New describes:
+   - the three sheets (`bookdetail` E12, `thisorthat` E13, `rebalance` E15): the sheet is 640px wide and centred on the content column (the `.tabmain`), and the scrim covers the column and the rail;
+   - the three lists (`top` E14, `calibre` E16, `settings` E17): the column is padded 32px;
+   - `settings` at 834: *Reading pace* and *Appearance* side by side, *Parked* and *Data* full width below them;
+   - `settings` phone frame (E11): no stepper carries an inline `background`; one stepper is typed (`input.val`), one held (`b[data-held]`, resolving to a 1.5px `--brand` ring), the rest at rest (`button.val`);
+   - AC-3: the mockup holds no `&#9906;`, `⚲` or `&#x26b2;` (nor `&#9881;`); every `nav.bar` ends in `a.iconbtn[aria-label="Settings"]` holding an `svg` with the gear path;
+   - AC-4: the mediums-review rows for `settings` and the 834px frames say *redrawn (task 6.24, TASK-146)* and name *Start on* → 6.25, *Spotify* → 9.x, *Your platforms* → 10.0.
+   The UX-floor (no hex, no `--danger`, D-32 fonts, 24px targets, axe) and screenshot tests run on all ten; the sheet titles join the Newsreader exemption.
+2. **Gears**, by a node script in the session temp folder (never a PowerShell rewrite): every phone bar's last slot becomes the app's drawn gear, `<a class="iconbtn" aria-label="Settings">` with `src/components/nav/Icons.tsx`'s `settings` path at 20×20: the 95 `&#9906;` *Search (Ctrl K)* spans, the 22 bars that draw a search SVG there, and the two `&#9881;` bars (`settings`, `calibre`, with `aria-current="page"`). The bar's search returns left of the gear in 6.25 (TASK-148). The 43 other `&#9906;` (search fields, thumb-bar search buttons, `palette`) become the drawn magnifier (the circle and line already in the mockup), their names kept.
+3. **`settings` redrawn from E11**: the steppers drop the inline `background:var(--sunk)` (the base `.stepper` has it since TASK-144); *Minutes a day* stays typed, *Words a minute* is drawn held (a new `.stepper b[data-held]` rule: 1.5px `--brand` ring), *Words per page* at rest. Every row the frame has stays. The notes describe typed and held (§9, MR-D18) and name what the review adds later: *Start on* (6.25, TASK-147), *Spotify* (9.x), *Your platforms* (10.0).
+4. **Six 834px frames** (`data-w="tab"`), each with the mockup's current books tablet rail (6.25 redraws it), its own item current: `bookdetail` (E12) and `thisorthat` (E13) as sheets over the Library, `rebalance` (E15) as a sheet over Plan, one new tablet sheet rule (640px, centred over the column, the scrim over the rail too, E12–E17's closing note); `top` (E14), `calibre` (E16, *‹ Settings* back link) and `settings` (E17's two columns; every phone row kept) as lists in the 32px column with the 40/44 title. Copy and figures from E12–E17 (sample data, D-7). `moveplan` gets a note: its 834 frame follows the sheet rule.
+5. **`design/mockups-index.md`**: the six rows say "360px and 834px frames" (or "834px frame") and carry fresh line ranges (and `moveplan`'s); the mediums-review rows mark `settings` and the 834px frames redrawn (task 6.24, TASK-146), naming what is left.
+
+**Files**: `design/mockups.html` (gears, `settings`, six 834 frames, the tablet sheet and held-stepper rules); `design/mockups-index.md` (rows, line ranges); `test/e2e/mockup-tablet.spec.ts` (`SCREENS`, the new checks). Nothing in `src/`.
+
+**Test strategy**: AC-1 (this part: `settings` redrawn, the six 834 frames) and AC-2 → the new describes in `mockup-tablet.spec.ts`, run in `w1280-light` (`ONCE`); AC-3 → its gear test; AC-4 → its index test. `markup.spec.ts` runs too.
+
+**Risks**: a test elsewhere may pin the bar's *Search (Ctrl K)* markup or `&#9906;`: grep `test/` before the first run. The new frames' sheet titles are Newsreader, so the D-32 exemption must name them exactly.
 
 ## Review log
 
