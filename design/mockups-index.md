@@ -269,7 +269,7 @@ The second design review is drawn in `design/MR-Main.dc.html` and the sixteen `d
 | — (new) music | C1–C20, `MR-C-Music-1`, `-2` | 9.0 (the mockup frames), then 9.2–9.7 |
 | — (new) games; `settings`' *Your platforms* | D1–D18, `MR-D-Games-1`, `-2` | 10.0 (the mockup frames), then 10.2–10.6 |
 | `bdash` (*where the book sits*) | E1–E6, `MR-E-Review-1`: the kind keys, an indent per level, fixed meter and count columns (MR-D19) | 6.21 (**redrawn**, TASK-137) |
-| `blist` (phone) | E7, `MR-E-Review-2`: *Owned* and *Sort* as dropdown chips, the genre row (MR-D20) | 6.24 |
+| `blist` (phone) | E7, `MR-E-Review-2`: *Owned* and *Sort* as dropdown chips, the genre row (MR-D20); redrawn (task 6.24, TASK-145) at every width, with the chips' words *Owned: Any* and *Sort: Length*; E7's *Genre ▾*, *All genres* and genre counts are not built | 6.24 |
 | `status` (books *Listen next*) | E8, `MR-E-Review-2`: *Remove from Listen next* grey (MR-D16); redrawn (task 6.24, TASK-144), with `status`' *Finished* toast capped as `finishoffer` draws it | 6.24 |
 | `finishoffer` | E10, `MR-E-Review-2`: one *Now reading* chip and *+N · Follow…* (MR-D17); redrawn (task 6.24, TASK-143), with the *Follow…* sheet's *Keep going?* frame E10 doesn't draw | 6.24 |
 | `settings`, `batch`, the books finish sheet (the stepper) | E11, `MR-E-Review-2`: typed and held, on `--sunk` in sheets too (MR-D18); `batch` and the finish sheet's year stepper redrawn on `--sunk` (task 6.24, TASK-144; the base `.stepper` rule), `settings`' frame is TASK-146's | 6.24 |

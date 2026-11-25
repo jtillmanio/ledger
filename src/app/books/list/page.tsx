@@ -1,12 +1,12 @@
 import { requireUserId } from "@/lib/auth";
 import {
-  inboxCount, listBooks, listCounts, OWNED_FILTERS, TO_READ_LEVELS, type BookRow, type OwnedFilter, type ToReadLevel,
+  inboxCount, listBooks, listCounts, OWNED_FILTERS, TO_READ_LEVELS, type BookRow, type ToReadLevel,
 } from "@/db/queries";
 import Link from "next/link";
 import AddBooksButton from "@/components/AddBooksButton";
 import BookListSearch from "@/components/BookListSearch";
 import BookPlace from "@/components/BookPlace";
-import BookSort from "@/components/BookSort";
+import BookSort, { BookOwned } from "@/components/BookSort";
 import BookStatus from "@/components/BookStatus";
 import { bookInitials, Pending, RowCover } from "@/components/Cover";
 import SheetLinks from "@/components/SheetLinks";
@@ -24,11 +24,6 @@ type Search = {
 /** The To read filter's levels (task 1.9, D-37), in the order the plan reads. */
 const LEVELS: [ToReadLevel | undefined, string][] = [
   [undefined, "All"], ["quarter", "Quarter"], ["year", "Year"], ["on_deck", "On deck"], ["someday", "Someday"],
-];
-
-/** The *Owned* filter (task 5.17, D-121, D-132): what you own on paper, by ear, in Calibre, or none of the three. */
-const OWNED: [OwnedFilter, string][] = [
-  ["physical", "Physical"], ["audio", "Audiobook"], ["ebook", "Ebook"], ["none", "Not owned"],
 ];
 
 export default async function Books({ searchParams }: { searchParams: Promise<Search> }) {
@@ -98,8 +93,6 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
             Parked <span className="n">{parked}</span>
           </Link>
         )}
-        {/* The order (task 2.2e, D-110): in the URL with the filters, so a reload keeps it. */}
-        <BookSort params={{ status, level, genre, owned, q }} {...order} />
       </div>
 
       {/* Under the Parked filter, the way to the review (task 5.15, TASK-111; the plan gate: no nav item): grey, a link. */}
@@ -119,15 +112,14 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
         </div>
       )}
 
-      {/* What you own (task 5.17, D-121, D-132): the physical library is this chip, not a page. A chip keeps
-          everything else chosen, the search too; the chosen one is the way back, dropping only itself.
-          Physical, Audiobook and Ebook list Unlisted books, Not owned doesn't (D-152). Only the chosen
-          chip carries aria-current, as on the genres. */}
-      <div className="filters" role="group" aria-label="Owned">
-        {OWNED.map(([o, name]) => (
-          <Link key={o} prefetch={false} className="chip" aria-current={owned === o || undefined}
-                href={libraryHref({ status, level, genre, owned: owned === o ? undefined : o, q, ...order })}>{name}</Link>
-        ))}
+      {/* What you own (task 5.17, D-121, D-132) and the order (task 2.2e, D-110), one row of two dropdown chips
+          (task 6.24, MR-D20, frame E7): each names its choice, and opens its links, drawn in the browser, so the
+          page carries two buttons and the params. A choice keeps everything else chosen, the search too; *Any* is
+          the way back from an owned filter. Physical, Audiobook and Ebook list Unlisted books, Not owned doesn't
+          (D-152). Both are in the URL with the filters, so a reload keeps them. */}
+      <div className="filters" role="group" aria-label="More filters">
+        <BookOwned params={{ status, level, genre, owned, q, ...order }} />
+        <BookSort params={{ status, level, genre, owned, q }} {...order} />
       </div>
 
       {/* The top-level genres of the books listed (task 4.5, D-98): Calibre's,

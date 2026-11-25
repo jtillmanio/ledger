@@ -1354,7 +1354,9 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .sk-line{height:.8125rem;margin:.2rem 0 .95rem}
 .sk-input{height:2.875rem;width:100%;margin:1rem 0 1.25rem;border-radius:var(--r-md)}
 .sk-chip{display:inline-block;height:1.85rem;border-radius:var(--r-full)}
-.sk-sort{height:2rem;border-radius:var(--r-md)}
+/* The Library's two dropdown chips (task 6.24): as tall as `.chip.dd`, 44px on the phone. */
+.sk-dd{height:44px}
+@media (min-width:768px){ .sk-dd{height:1.85rem} }
 .sk-title{height:1rem;margin:.25rem 0}
 .sk-sub{height:.8125rem;margin:.325rem 0 .2rem}
 .sk-mono{height:.8125rem;margin:.2rem 0 .2rem}
@@ -1448,11 +1450,24 @@ p{margin:0 0 .75rem;max-width:66ch}
 .genre-row{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;padding:4px;margin-left:-4px;margin-right:-4px}
 .genre-row .chip{flex:0 0 auto;display:inline-flex;align-items:center;white-space:nowrap;min-height:44px}
 @media (min-width:768px){ .genre-row .chip{min-height:28px} }
-/* The Library's Sort (task 2.2e): a label, a native select (the phone's own picker) and the chip that
-   reverses it, in the status row. The select is 32px, the chip's 28px or more: nothing under 24px. */
-.sort{display:inline-flex;align-items:center;gap:.375rem;margin-left:auto}
-.sort select{font:inherit;font-size:.8125rem;min-height:32px;padding:.25rem .5rem;cursor:pointer;
-  color:var(--ink);background:var(--sunk);border:1px solid var(--faint-deco);border-radius:var(--r-md)}
+/* The Library's dropdown chips (task 6.24, MR-D20, frame E7): *Owned* and *Sort* on one row, each a chip that
+   names its choice and a caret, and opens a panel of links (the `.menu` surface). Grey like every chip, the
+   `--ink` border only while open: no hue. 44px on the phone, 28px from the tablet up, as the genre chips; a
+   choice is 44px on the phone and 36px (the `.menu` item) from the tablet up. The panel opens from the chip's
+   left edge, the Sort's from its right (`.end`), so neither leaves the 360px screen. */
+.chip.dd{display:inline-flex;align-items:center;gap:.25rem;min-height:44px;font:inherit;font-size:.8125rem;
+  padding:.25rem .625rem;cursor:pointer;white-space:nowrap}
+@media (min-width:768px){ .chip.dd{min-height:28px} }
+.chip.dd .caret{flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.chip.dd[aria-expanded="true"]{border-color:var(--ink);color:var(--ink)}
+.chipmenu{left:0;right:auto}
+.chipmenu.end{left:auto;right:0}
+.chipmenu .opt{min-height:44px;text-decoration:none}
+@media (min-width:768px){ .chipmenu .opt{min-height:36px} }
+.chipmenu .opt[aria-current="true"]{color:var(--ink);font-weight:600}
+/* The tick is a glyph beside the weight, never colour alone; its alt text is empty so the link's name stays its label. */
+.chipmenu .opt[aria-current="true"]::after{content:"✓";content:"✓" / "";margin-left:auto;padding-left:.75rem}
+.chipmenu .opt.div{margin-top:.25rem;border-top:1px solid var(--rule)}
 /* The master list's *Searching…* (task 1.22): its line is kept, so the list doesn't jump when it shows. */
 .list-searching{margin:-.875rem 0 .25rem;min-height:1.125rem}
 .chip{font-size:.8125rem;padding:.25rem .625rem;text-decoration:none;
