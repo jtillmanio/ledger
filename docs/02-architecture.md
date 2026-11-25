@@ -346,6 +346,10 @@ tables.
     | `/books/shelves` | 10,300 | 5,300 | 23 | 100 |
     | `/books/shelves/[id]` | 11,400 | 12,000 | 25 | 100 |
     | `/books/universes` | 10,300 | 5,300 | 23 | 100 |
+    | `/books/series` | – | – | – | – |
+    | `/books/series/[id]` | – | – | – | – |
+    | `/books/authors/[id]` | – | – | – | – |
+    | `/books/universes/[id]` | – | – | – | – |
     | `/books/add` | 11,200 | 23,300 | 23 | 100 |
     | `/books/top` | 12,100 | 10,000 | 24 | 100 |
     | `/book/[id]` | 11,000 | 28,900 | 27 | 100 |
@@ -370,8 +374,12 @@ tables.
     list rows and chips), unmeasured, because `LIGHTHOUSE_MODE` is off and no run has measured it; its tap
     starts on `/books/series`, whose *Universes* tab opens it (it has no nav item). `/parked`'s tap starts on
     the Library's *Parked* filter. Unmeasured, with their reasons in the test: the
-    two sheets' own intercept pages, and the series, a series', an author's and a universe's
-    pages (5.9, 5.11), which roadmap 0.14e measures.
+    two sheets' own intercept pages. The series list, a series', an author's and a
+    universe's page (5.9, 5.11, roadmap 0.14e) are measured too: the list is the bare
+    `/books/series`, which opens on *Started* (5.9c), tapped from the books nav's
+    *Series*; a series' and a universe's page take the first row of their list, and
+    an author's the first author link on Top's place line (a Library place link is a
+    bare anchor, which loads the page whole), each logged as the shelf's is.
 
     How each number got here, and every raise under the rule before 0.13 (PR
     #80 to #319), is in `docs/perf-budget-history.md`.

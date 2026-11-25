@@ -901,6 +901,7 @@ describe("the shared JS is budgeted once (task 0.13)", () => {
     expect(typeof budget.shared.jsBytes).toBe("number");
     // A route's own JS is far less than the shared framework and layout it no longer carries.
     for (const [id, b] of Object.entries(budget.routes as Record<string, RouteBudget>)) {
+      if (AWAITING_MEASUREMENT.has(id)) continue; // no number yet (task 0.14e)
       expect(b.jsBytes as number, id).toBeLessThan(budget.shared.jsBytes);
     }
     expect(budget.$comment).toMatch(/raised only with a decision \(D-n\)/);
@@ -1060,11 +1061,13 @@ const UNMEASURED: Record<string, string> = {
   "/@modal/(.)book/[id]": "the book sheet, an intercept with no URL of its own: the book route's tap opens it from the Library",
   "/@modal/(.)comics/[runId]/issue/[issueId]":
     "the issue sheet, an intercept with no URL of its own: the issue route's tap opens it from a run's spine (task 3.5)",
-  "/books/series": "drawn by 5.9, outside 0.14c's eight: its route and budget are roadmap 0.14e",
-  "/books/series/[id]": "drawn by 5.9, outside 0.14c's eight: its route and budget are roadmap 0.14e",
-  "/books/authors/[id]": "drawn by 5.11, outside 0.14c's eight: its route and budget are roadmap 0.14e",
-  "/books/universes/[id]": "drawn by 5.11, outside 0.14c's eight: its route and budget are roadmap 0.14e",
 };
+
+/**
+ * Routes whose budget numbers are still `null` because no run has measured them yet (task 0.14e: the four
+ * books pages). The report lists such a route as measured but not gated. Empty once the run's ceilings are in.
+ */
+const AWAITING_MEASUREMENT = new Set<string>(["series", "series-page", "author", "universe"]);
 
 
 describe("the page guard (task 0.14c)", () => {
@@ -1206,6 +1209,35 @@ describe("the route list (scripts/perf/routes.mjs)", () => {
     }
   });
 
+  it("has a route for each of 0.14e's four books pages, tapped from a screen that links to it, ids resolved at run time", () => {
+    const by = Object.fromEntries(ROUTES.map((r) => [r.id, r]));
+    // The series list: the bare path is the Started view (5.9c), reached from the books nav's Series item.
+    expect(by.series).toMatchObject({ path: "/books/series", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/series"]' } });
+    expect(by.series.resolve).toBeUndefined();
+    // A series' page, an author's and a universe's: ids are the owner's data, so each takes the first matching link
+    // on the page that lists it, and the tap clicks that same link (no id is written into the route list).
+    const pages = {
+      "series-page": { path: "/books/series/[id]", from: "/books/series", selector: '.series-row a[href^="/books/series/"]' },
+      // Top's place line links an author through BookPlace's <Link>; the Library's place links are bare anchors.
+      author: { path: "/books/authors/[id]", from: "/books/top", selector: '.qplace a[href^="/books/authors/"]' },
+      universe: { path: "/books/universes/[id]", from: "/books/universes", selector: '.series-row a[href^="/books/universes/"]' },
+    };
+    for (const [id, p] of Object.entries(pages)) {
+      expect(by[id]?.path, id).toBe(p.path);
+      expect(by[id].signedIn, id).toBe(true);
+      expect(by[id].resolve, id).toEqual({ from: p.from, selector: p.selector });
+      expect(by[id].tap, id).toEqual({ from: p.from, selector: p.selector });
+      expect(by[id].tap.from, id).not.toBe(p.path);
+      expect(by[id].tap.selector, id).toMatch(/^.*a\[href/);
+      // No literal id in the route: after the entity's slash comes only a quote or the [id] pattern.
+      expect(JSON.stringify(by[id]), id).not.toMatch(/\/books\/(series|authors|universes)\/[^[\s"\\]/);
+    }
+  });
+
+  it("lists as unmeasured only the two intercept sheets (task 0.14e)", () => {
+    expect(Object.keys(UNMEASURED).sort()).toEqual(["/@modal/(.)book/[id]", "/@modal/(.)comics/[runId]/issue/[issueId]"]);
+  });
+
   it("follows the 1.8c moves: the dashboard, the run list, and run taps that start from the list", () => {
     const by = Object.fromEntries(ROUTES.map((r) => [r.id, r]));
     expect(by.comics.path).toBe("/comics");
@@ -1227,7 +1259,11 @@ describe("the route list (scripts/perf/routes.mjs)", () => {
   it("holds a number for everything it gates on every route", () => {
     const budget = JSON.parse(readFileSync("scripts/perf/budget.json", "utf8")).routes;
     for (const r of ROUTES) {
-      for (const k of ["docRscBytes", "jsBytes", "requests", "a11y"]) expect(typeof budget[r.id][k], `${r.id}.${k}`).toBe("number");
+      for (const k of ["docRscBytes", "jsBytes", "requests", "a11y"]) {
+        // Only a route awaiting its first measurement (AWAITING_MEASUREMENT) may hold null.
+        if (AWAITING_MEASUREMENT.has(r.id)) expect(budget[r.id][k], `${r.id}.${k}`).toBeNull();
+        else expect(typeof budget[r.id][k], `${r.id}.${k}`).toBe("number");
+      }
     }
   });
 
