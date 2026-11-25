@@ -142,7 +142,9 @@ describe("Top books (AC-2)", () => {
     const { default: Top } = await import("../src/app/books/top/page");
     const d = await render(Top, { searchParams: Promise.resolve({ year: "2026" }) });
     const li = [...d.querySelectorAll("ol.queue > li")].find((r) => r.textContent?.includes("Serial top"))!;
-    for (const a of li.querySelectorAll(".qplace a")) {
+    const links = [...li.querySelectorAll(".qplace a")];
+    expect(links.length).toBe(3);
+    for (const a of links) {
       expect(a.closest("button, [role=button]")).toBeNull();
       expect(a.closest(".qbody")).not.toBeNull();
     }
