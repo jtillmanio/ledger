@@ -391,9 +391,11 @@ const hrefsOf = async (l: Locator) => {
   return l.getByRole("link").evaluateAll((as) => as.map((a) => [a.textContent, a.getAttribute("href")]));
 };
 
-test("5.9b AC-1, AC-2, AC-4: a row links its author, universe and series; a book with no series or universe draws only its author link", ONCE, async ({ page }, info) => {
-  for (const [width, height] of [[360, 780], [1280, 800]] as const) {
+test("5.9b AC-1, AC-2, AC-4: a row links its author, universe and series; a book with no series or universe draws only its author link; every width, light and dark", ONCE, async ({ page }, info) => {
+  // Pinned to one project (it sets its own viewport and theme), so each theme is emulated here and its frames named for it.
+  for (const [width, height, colorScheme] of VIEWPORTS.flatMap(([w, h]) => (["light", "dark"] as const).map((c) => [w, h, c] as const))) {
     await page.setViewportSize({ width, height });
+    await page.emulateMedia({ colorScheme });
     await page.goto("/parked");
     await expect(rows(page)).toHaveCount(3);
     await expect(placeLine(page, OLD.title)).toHaveText("Pr Author · Pr World · Pr Cycle #5");
@@ -403,13 +405,13 @@ test("5.9b AC-1, AC-2, AC-4: a row links its author, universe and series; a book
     await expect(placeLine(page, OLD.title).getByRole("link", { name: "Pr Cycle", exact: true })).toBeVisible();
     expect(await hrefsOf(placeLine(page, NEW.title))).toEqual([["Pr Author", `/books/authors/${PL.au}`]]);
     for (const link of await placeLine(page, OLD.title).getByRole("link").all()) {
-      expect((await link.boundingBox())!.height, `a place link at ${width}px`).toBeGreaterThanOrEqual(24);
+      expect((await link.boundingBox())!.height, `a place link at ${width}px ${colorScheme}`).toBeGreaterThanOrEqual(24);
     }
     await expectNoHorizontalScroll(page);
     await expectNoDanger(page);
     await expectNoAxeViolations(page, AXE);
-    expect(await contrastFailures(page), `${width}px`).toEqual([]);
-    await screenshot(page, info, `5.9b-parked-links-${width}`);
+    expect(await contrastFailures(page), `${width}px ${colorScheme}`).toEqual([]);
+    if (width === 360 || width === 1280) await screenshot(page, info, `5.9b-parked-links-${width}-${colorScheme}`);
   }
 });
 
@@ -439,6 +441,12 @@ test("5.9b AC-1, AC-3: Plan…'s picker header links the names too, each 24px, a
   ]);
   for (const link of await by.getByRole("link").all()) {
     expect((await link.boundingBox())!.height, "a place link in a sheet").toBeGreaterThanOrEqual(24);
+  }
+  // The open sheet meets the floor in both themes: axe and contrast (AC-4).
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    await expectNoAxeViolations(page, AXE);
+    expect(await contrastFailures(page), `the picker header, ${colorScheme}`).toEqual([]);
   }
   await by.getByRole("link", { name: "Pr Cycle", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/books/series/${PL.se}$`));
