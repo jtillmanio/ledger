@@ -1,7 +1,7 @@
 ---
 id: TASK-146
 title: 6.24 Built screens follow the mediums review (4 of 4) — the mockup's settings frame, gear icons and six 834px frames
-status: In progress
+status: Review
 depends_on: [TASK-143, TASK-144, TASK-145]
 size: S
 model: sonnet
@@ -32,7 +32,7 @@ planned_at_commit: 81032b6
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves *the `settings` frame is redrawn from the review and it gains the six 834px frames*; with TASK-143 to TASK-145 merged, every clause is proven and 6.24 is ticked):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves *the `settings` frame is redrawn from the review and it gains the six 834px frames*; with TASK-143 to TASK-145 merged, every clause is proven and 6.24 is ticked):
 browser test at 360px, light and dark: *Remove from Listen next* resolves to
 no `--danger` colour; finishing a book in a series shows one *Now reading*
 chip and *+N · Follow…*, and *Keep going?* is in the *Follow…* sheet; the
@@ -41,9 +41,9 @@ shows *Owned* and *Sort* as dropdown chips in one row and the genre row, and
 nothing scrolls sideways; `design/mockups.html`'s `blist`, `status`,
 `finishoffer`, `batch` and `settings` frames are redrawn from the review and
 it gains the six 834px frames.
-- [ ] AC-2: `design/mockups.html` holds an 834px frame for each of `bookdetail`, `thisorthat`, `top`, `rebalance`, `calibre` and `settings`, each reachable by its `data-id` with `powershell -NoProfile -File scripts/screen.ps1 <id>`, and `test/e2e/mockup-tablet.spec.ts` lists each in its `SCREENS` and passes.
-- [ ] AC-3: No phone bar in `design/mockups.html` contains U+26B2 or a text gear: a search for `⚲`, `&#x26b2;` and `&#9906;` finds nothing, and each bar's gear is the drawn icon.
-- [ ] AC-4: `design/mockups-index.md`'s mediums review table marks `settings` and the six 834px frames as redrawn by this task, names what is left (*Start on* → 6.25; *Spotify*, *Your platforms* → 9.x, 10.0), and the frames' line ranges are updated.
+- [x] AC-2: `design/mockups.html` holds an 834px frame for each of `bookdetail`, `thisorthat`, `top`, `rebalance`, `calibre` and `settings`, each reachable by its `data-id` with `powershell -NoProfile -File scripts/screen.ps1 <id>`, and `test/e2e/mockup-tablet.spec.ts` lists each in its `SCREENS` and passes.
+- [x] AC-3: No phone bar in `design/mockups.html` contains U+26B2 or a text gear: a search for `⚲`, `&#x26b2;` and `&#9906;` finds nothing, and each bar's gear is the drawn icon.
+- [x] AC-4: `design/mockups-index.md`'s mediums review table marks `settings` and the six 834px frames as redrawn by this task, names what is left (*Start on* → 6.25; *Spotify*, *Your platforms* → 9.x, 10.0), and the frames' line ranges are updated.
 
 ## Out of scope
 
@@ -69,6 +69,9 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 - The app's `Stepper.tsx` draws no ring while a button is held, where E11 draws a 1.5px `--brand` ring (the mockup's settings frame draws it from this task) (approved at plan) → `docs/05-roadmap.md` § 6.24b
 - TASK-143's two finish-toast differences from E10 (the kept chip pushing *+N · Follow…* to a third row at 360–412px; the sentence-case *Now reading* label where E10 draws uppercase mono): the owner chose a new roadmap item to fix both in `ToastOffer.tsx` / `globals.css`, with a proposed **Check:** (owner, at plan) (approved at plan) → `docs/05-roadmap.md` § 6.24c (new)
+- E15's *Move 4 books* is drawn in the 834px `rebalance` frame where the phone frame and the built `RebalanceSheet.tsx` say *Drop 4 books* (and E15's shorter option lines): the frame's notes say the review's wording is not built → not tracked: nothing in the roadmap asks for it; the owner decides whether to rename the app's *Drop*, and the PR names it
+- E12's *Owned* line is plain text where the phone frame and the app draw the *Paper* and *Audiobook* toggles (task 3.5b); the 834px `bookdetail` note says so → not tracked: a drawing difference the frame's notes now state; the app keeps the toggles
+- AC-4's "line ranges are updated" is done by script for the seven rows this task touches and is not pinned by a test: the index calls them approximate and a test would fail every later PR that adds a line above those sections; 42 other rows were already stale on main → not tracked: the index says the ranges may drift and `scripts/screen.ps1` computes them fresh
 
 ## Plan
 
@@ -97,7 +100,7 @@ Approved 2026-11-25 (owner: keep every row the phone frame has in the 834 `setti
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL(1: reading-log.test.tsx, passed alone: a load flake) → R2 PASS | CI R1 FAIL (mockup-tablet.spec.ts:431 and :435, w1280-light: #347 on main added a bar and a magnifier the branch had not converted) → rebased on main, converted | Verify R3 PASS | Audit R1 NOT RUN (tree not clean) → R2 CHANGES (the data-id test was vacuous; no line-range test: the first fixed, the second declined, see Follow-ups) | Spec R1 APPROVE
 
 ## Blocked
 
@@ -105,7 +108,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 1 (spec-reviewer); audit 2 rounds
+- First-pass AC FAILs: 0 (CI's two gear tests failed on main's new content, not on an AC)
+- Plan revisions after approval: 0

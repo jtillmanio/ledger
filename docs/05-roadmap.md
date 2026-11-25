@@ -5923,7 +5923,7 @@ it is converted.
   to 8.7's three open questions; and each question the owner answered is a
   decisions row or a *From 6.23* note in the roadmap entry it changes.
 
-- ☐ 6.24 **Built screens follow the mediums review** · M. From 6.23 (TASK-126,
+- ☑ 6.24 **Built screens follow the mediums review** · M. From 6.23 (TASK-126,
   D-177). The review held most of what was drawn after the feel pass and
   redrew four built screens; the owner accepted each departure. *Remove from
   Listen next* is grey, as *Remove from shelf* is (MR-D16, frame E8). The
