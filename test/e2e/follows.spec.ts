@@ -9,7 +9,10 @@
 // Task 2.2h (D-117, D-118): a finish from Reading follows the series, subseries
 // and universe itself, and the toast's *Now reading* row has a chip each that
 // turns that one off; the finish's Undo restores every follow; the middle
-// option reads *On hold* on something part-read. The books are made here,
+// option reads *On hold* on something part-read. Task 6.24 (TASK-143, MR-D17):
+// the toast is capped at one *Now reading* chip, the narrowest followed, and
+// *+N · Follow…*, which opens the *Follow…* sheet holding the other follows and
+// *Keep going?*; each chip there writes what it wrote in the toast. The books are made here,
 // under E2E ids the rest of the suite doesn't use, and removed after the last
 // test; each test starts from the same rows.
 import { expect, test, type Locator, type Page } from "@playwright/test";
@@ -24,6 +27,9 @@ const AXE = [
   "aria-prohibited-attr", "aria-valid-attr-value", "aria-hidden-focus", "landmark-unique", "duplicate-id-aria",
   "target-size", "label", "aria-dialog-name", "aria-required-children", "aria-required-parent",
 ];
+
+// Sets its own width and both themes: once in w390-light, and in w390-reduced-motion for its motion check (6.24).
+const AT_360 = { tag: ["@at-w390-light", "@at-w390-reduced-motion"] };
 
 const AUTHOR = { id: "e2e-fo-author", name: "E2E Fo Author" };
 const UNIVERSE = { id: "e2e-fo-uni", name: "E2E Fo Universe" };
@@ -78,6 +84,7 @@ test.afterAll(clean);
 test.beforeEach(async () => {
   await withSql(async (sql) => {
     await sql`UPDATE book_series SET name = ${SERIES.name} WHERE id = ${SERIES.id}`;
+    await sql`UPDATE book_subseries SET name = ${SUBSERIES.name} WHERE id = ${SUBSERIES.id}`;
     await sql`DELETE FROM read_events WHERE book_id = ANY(${IDS}::text[])`;
     await sql`DELETE FROM book_status WHERE book_id = ANY(${IDS}::text[])`;
     await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
@@ -116,7 +123,11 @@ const bookRow = (page: Page, title: string) =>
   page.locator(".book-row", { has: page.locator(".row-title", { hasText: title }) });
 const toast = (page: Page) => page.locator(".toast");
 const nowRow = (page: Page) => toast(page).getByRole("group", { name: "Now reading" });
-const keepRow = (page: Page) => toast(page).getByRole("group", { name: "Keep going?" });
+/** *+N · Follow…* (6.24, MR-D17): the capped toast's way to the rest. */
+const more = (page: Page) => toast(page).getByRole("button", { name: /^\+\d+ · Follow…$/ });
+/** The *Follow…* sheet a finish's toast opens, headed by the book's title. */
+const finishSheet = (page: Page) => page.getByRole("dialog", { name: TWO.title });
+const sheetGroup = (page: Page, name: "Now reading" | "Keep going?") => finishSheet(page).getByRole("group", { name });
 /** A dated finish's *Rank it in <year>* (3.4b, TASK-077): first in the toast, on a row of its own. */
 const rankChip = (page: Page) => toast(page).getByRole("button", { name: /^Rank it in \d{4}$/ });
 
@@ -175,8 +186,10 @@ test("Follow… opens a sheet headed by the title, each grouping checked as stor
 
   await atLeast(sheet.locator(".opts .opt"), 24);
   // Nothing red: the checked option is --brand, never --danger.
-  const { backgroundColor } = await computedStyle(checked(3), ["backgroundColor"]);
-  expect(backgroundColor).not.toBe(await tokenColour(page, "--danger"));
+  // `computedStyle` takes CSS names: a camelCase one read "" and the check could never fail (TASK-143).
+  const { "background-color": fill } = await computedStyle(checked(3), ["background-color"]);
+  expect(fill).toBe(await tokenColour(page, "--brand"));
+  expect(fill).not.toBe(await tokenColour(page, "--danger"));
 
   // Tab stays inside the sheet.
   for (let i = 0; i < 20; i++) await page.keyboard.press("Tab");
@@ -268,39 +281,57 @@ test("Not following on a series is kept as off and shows as Not following; on th
   await expect.poll(async () => (await follows()).author).toBe("reading");
 });
 
-test("a past read logged from To read follows nothing and offers Keep going? chips, reached by F6 and Tab; a chip writes Reading and its Undo leaves the finish (AC-1, AC-4, AC-5; 2.2h)", FLOOR, async ({ page }, info) => {
+test("a past read logged from To read follows nothing: the toast shows +4 · Follow… alone, reached by F6 and Tab; the sheet holds Keep going?, a chip writes Reading and its Undo leaves the finish (AC-1, AC-4, AC-5; 2.2h; 6.24)", FLOOR, async ({ page }, info) => {
   await openLibrary(page);
   await finishInLibrary(page);
 
-  // The author is already Reading: not offered. The series is only Tracking: offered.
-  await expect(keepRow(page).getByRole("button"))
-    .toHaveText([`${SERIES.name} · series`, `${SUBSERIES.name} · subseries`, UNIVERSE.name, `${SHELF.name} · shelf`]);
+  // The author is already Reading: not offered. The series is only Tracking: offered. All four are behind +4.
   await expect(nowRow(page)).toHaveCount(0);
+  await expect(toast(page).locator(".toast-chip")).toHaveText([/^Rank it in \d{4}$/, "+4 · Follow…"]);
+  await expect(toast(page)).not.toContainText("Keep going?");
   expect(await follows()).toEqual({ series: "tracking", author: "reading" });
   await toastSettled(page);
-  await atLeast(keepRow(page).getByRole("button"), 44);
-  const { borderTopColor } = await computedStyle(keepRow(page).getByRole("button").first(), ["borderTopColor"]);
-  // Following isn't reading, and nothing here is red.
-  expect(borderTopColor).not.toBe(await tokenColour(page, "--ready"));
-  expect(borderTopColor).not.toBe(await tokenColour(page, "--danger"));
-  // The toast and its chips; the page behind it is checked with the sheet's test.
+  await atLeast(toast(page).locator(".toast-chip"), 44);
   await expectNoAxeViolations(page, AXE, ".toast-region");
   expect(await contrastFailures(page)).toEqual([]);
   await screenshot(page, info, "finish-offer");
 
-  // By keyboard: F6 into the toast (Undo), Tab past *Rank it* (3.4b) to the first chip, Enter takes it.
+  // By keyboard: F6 into the toast (Undo), Tab past *Rank it* (3.4b) to +4 · Follow…, Enter opens the sheet.
   await page.keyboard.press("F6");
   await expect(toast(page).getByRole("button", { name: "Undo" })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(rankChip(page)).toBeFocused();
   await page.keyboard.press("Tab");
-  await expect(keepRow(page).getByRole("button").first()).toBeFocused();
+  await expect(more(page)).toBeFocused();
+  await expect(more(page)).toHaveAttribute("aria-haspopup", "dialog");
   await page.keyboard.press("Enter");
+  await expect(finishSheet(page)).toBeVisible();
+  await expect(finishSheet(page).getByRole("heading", { name: TWO.title })).toBeFocused();
+  await expect(sheetGroup(page, "Now reading")).toHaveCount(0);
+  await expect(sheetGroup(page, "Keep going?").getByRole("button"))
+    .toHaveText([`${SERIES.name} · series`, `${SUBSERIES.name} · subseries`, UNIVERSE.name, `${SHELF.name} · shelf`]);
+  await atLeast(sheetGroup(page, "Keep going?").getByRole("button"), 44);
+  const { "border-top-color": border } = await computedStyle(sheetGroup(page, "Keep going?").getByRole("button").first(), ["border-top-color"]);
+  // Following isn't reading, and nothing here is red.
+  expect(border).not.toBe("");
+  expect(border).not.toBe(await tokenColour(page, "--ready"));
+  expect(border).not.toBe(await tokenColour(page, "--danger"));
+  // The sheet with the finish's chips, at every layout (AC-5).
+  await expectNoAxeViolations(page, AXE, '[role="dialog"]');
+  expect(await contrastFailures(page)).toEqual([]);
+  await screenshot(page, info, "finish-follow-sheet");
+
+  // A chip in the sheet writes what the toast's wrote: Reading, with its own toast.
+  await sheetGroup(page, "Keep going?").getByRole("button").first().click();
   await expect(toast(page).locator(".toast-label")).toHaveText(`Reading ${SERIES.name}`);
   await expect.poll(follows).toMatchObject({ series: "reading" });
-  // Focus stays in the toast, on the first chip left: *Rank it*, which rides along, then the rest.
-  await expect(rankChip(page)).toBeFocused();
-  await expect(keepRow(page).getByRole("button").first()).toHaveText(`${SUBSERIES.name} · subseries`);
+  // The sheet stays open, the chip gone; the new toast carries the three left behind +3.
+  await expect(sheetGroup(page, "Keep going?").getByRole("button")).toHaveCount(3);
+  await expect(more(page)).toHaveText("+3 · Follow…");
+  // Closing returns focus to the toast's +3 · Follow….
+  await page.keyboard.press("Escape");
+  await expect(finishSheet(page)).toBeHidden();
+  await expect(more(page)).toBeFocused();
 
   // The chip's Undo puts the follow back to Tracking; the finish stays.
   await toast(page).getByRole("button", { name: "Undo" }).click();
@@ -311,28 +342,27 @@ test("a past read logged from To read follows nothing and offers Keep going? chi
 test.describe("a finish from Reading follows (2.2h)", () => {
   test.beforeEach(() => setStatus(TWO.id, "reading"));
 
-  test("the toast says Now reading, a chip each, reached by F6 and Tab; a chip turns one off and its Undo restores reading (AC-1, AC-3, AC-6)", FLOOR, async ({ page }, info) => {
+  test("the toast shows one Now reading chip, the subseries, and +3 · Follow…, reached by F6 and Tab; the chip turns it off and its Undo restores reading (AC-1, AC-3, AC-6; 6.24 AC-2)", FLOOR, async ({ page }, info) => {
     await openLibrary(page);
     await finishInLibrary(page);
     await expect.poll(follows).toEqual({ series: "reading", subseries: "reading", universe: "reading", author: "reading" });
-    // One chip each, named Stop following; Keep going? keeps the shelf (the author is Reading already).
-    await expect(nowRow(page).getByRole("button")).toHaveText([
-      `${SERIES.name} · series ×`, `${SUBSERIES.name} · subseries ×`, `${UNIVERSE.name} ×`,
-    ].map((t) => `Stop following ${t}`));
-    await expect(nowRow(page).getByRole("button").first()).toHaveAccessibleName(`Stop following ${SERIES.name} · series`);
-    await expect(keepRow(page).getByRole("button")).toHaveText([`${SHELF.name} · shelf`]);
+    // The narrowest followed is the subseries; the series, the universe and the shelf are behind +3.
+    await expect(nowRow(page).getByRole("button")).toHaveText([`Stop following ${SUBSERIES.name} · subseries ×`, "+3 · Follow…"]);
+    await expect(nowRow(page).getByRole("button").first()).toHaveAccessibleName(`Stop following ${SUBSERIES.name} · subseries`);
+    await expect(toast(page)).not.toContainText("Keep going?");
     await toastSettled(page);
     await atLeast(toast(page).locator(".toast-chip"), 44);
     for (const chip of await nowRow(page).getByRole("button").all()) {
-      const { borderTopColor } = await computedStyle(chip, ["borderTopColor"]);
-      expect(borderTopColor).not.toBe(await tokenColour(page, "--danger"));
-      expect(borderTopColor).not.toBe(await tokenColour(page, "--ready"));
+      const { "border-top-color": border } = await computedStyle(chip, ["border-top-color"]);
+      expect(border).not.toBe("");
+      expect(border).not.toBe(await tokenColour(page, "--danger"));
+      expect(border).not.toBe(await tokenColour(page, "--ready"));
     }
     await expectNoAxeViolations(page, AXE, ".toast-region");
     expect(await contrastFailures(page)).toEqual([]);
     await screenshot(page, info, "finish-now-reading");
 
-    // F6 into the toast, Tab past *Rank it* (3.4b) to the first Now reading chip, Enter turns the series off.
+    // F6 into the toast, Tab past *Rank it* (3.4b) to the Now reading chip, Enter turns the subseries off.
     await page.keyboard.press("F6");
     await expect(toast(page).getByRole("button", { name: "Undo" })).toBeFocused();
     await page.keyboard.press("Tab");
@@ -340,38 +370,61 @@ test.describe("a finish from Reading follows (2.2h)", () => {
     await page.keyboard.press("Tab");
     await expect(nowRow(page).getByRole("button").first()).toBeFocused();
     await page.keyboard.press("Enter");
-    await expect(toast(page).locator(".toast-label")).toHaveText(`Not following ${SERIES.name}`);
-    await expect(toast(page).locator(".toast-detail")).toHaveText("series · was reading");
-    await expect.poll(follows).toEqual({ series: "off", subseries: "reading", universe: "reading", author: "reading" });
-    // The chips left ride along, *Rank it* first, with focus on it.
+    await expect(toast(page).locator(".toast-label")).toHaveText(`Not following ${SUBSERIES.name}`);
+    await expect(toast(page).locator(".toast-detail")).toHaveText("subseries · was reading");
+    await expect.poll(follows).toEqual({ series: "reading", subseries: "off", universe: "reading", author: "reading" });
+    // The chips left ride along, capped again: the series is now the one shown, *Rank it* first, with focus on it.
     await expect(rankChip(page)).toBeFocused();
-    await expect(nowRow(page).getByRole("button")).toHaveCount(2);
-    await expect(keepRow(page).getByRole("button")).toHaveCount(1);
+    await expect(nowRow(page).getByRole("button")).toHaveText([`Stop following ${SERIES.name} · series ×`, "+2 · Follow…"]);
 
     await toast(page).getByRole("button", { name: "Undo" }).click();
-    await expect.poll(follows).toMatchObject({ series: "reading" });
+    await expect.poll(follows).toMatchObject({ subseries: "reading" });
     expect(await statusOf(TWO.id)).toBe("read");
   });
 
-  test("the finish's Undo restores the book and every follow it changed (AC-3)", async ({ page }) => {
+  test("+3 · Follow… lists the other follows under Now reading and the shelf under Keep going?; a Now reading chip there turns that one off (6.24 AC-2, AC-4)", async ({ page }) => {
+    await openLibrary(page);
+    await finishInLibrary(page);
+    await hydrated(more(page));
+    await more(page).click();
+    await expect(finishSheet(page)).toBeVisible();
+    await expect(sheetGroup(page, "Now reading").getByRole("button"))
+      .toHaveText([`Stop following ${SERIES.name} · series ×`, `Stop following ${UNIVERSE.name} ×`]);
+    await expect(sheetGroup(page, "Keep going?").getByRole("button")).toHaveText([`${SHELF.name} · shelf`]);
+    await sheetGroup(page, "Now reading").getByRole("button", { name: `Stop following ${UNIVERSE.name}` }).click();
+    await expect(toast(page).locator(".toast-label")).toHaveText(`Not following ${UNIVERSE.name}`);
+    await expect.poll(follows).toEqual({ series: "reading", subseries: "reading", universe: "off", author: "reading" });
+    // Its row says so, and the finish is committed: the toast's Undo takes back the follow alone.
+    await expect(finishSheet(page).getByRole("radiogroup", { name: `Following ${UNIVERSE.name}` }).getByRole("radio", { name: "Not following" }))
+      .toBeChecked();
+    await toast(page).getByRole("button", { name: "Undo" }).click();
+    await expect.poll(follows).toMatchObject({ universe: "reading" });
+    expect(await statusOf(TWO.id)).toBe("read");
+  });
+
+  test("the finish's Undo restores the book and every follow it changed, and closes its Follow… sheet (AC-3)", async ({ page }) => {
     await openLibrary(page);
     await finishInLibrary(page);
     await expect(nowRow(page)).toBeVisible();
+    await hydrated(more(page));
+    await more(page).click();
+    await expect(finishSheet(page)).toBeVisible();
     await toast(page).getByRole("button", { name: "Undo" }).click();
     await expect.poll(follows).toEqual({ series: "tracking", author: "reading" });
     await expect.poll(() => statusOf(TWO.id)).toBe("reading");
+    await expect(finishSheet(page)).toBeHidden();
   });
 
-  test("In flight's Finished follows the same, and its toast says so (2.2f's finish)", async ({ page }) => {
+  test("In flight's Finished follows the same, and its toast says so, capped (2.2f's finish)", async ({ page }) => {
     await page.goto("/books/status");
     const button = page.getByRole("button", { name: `Finished ${TWO.title}`, exact: true });
     await hydrated(button);
     await button.click();
-    await expect(nowRow(page).getByRole("button")).toHaveCount(3);
+    await expect(nowRow(page).getByRole("button")).toHaveText([`Stop following ${SUBSERIES.name} · subseries ×`, "+3 · Follow…"]);
     await expect.poll(follows).toEqual({ series: "reading", subseries: "reading", universe: "reading", author: "reading" });
   });
 
-  test("on the last book left in a Reading series, Done with still shows and writes tracking; nothing else followed, no Now reading (AC-3)", async ({ page }) => {
+  test("on the last book left in a Reading series, Done with is in the sheet and writes tracking; nothing else followed, no Now reading (AC-3)", async ({ page }) => {
     await withSql(async (sql) => {
       await sql`UPDATE series_follows SET state = 'reading' WHERE series_id = ${SERIES.id}`;
       await sql`UPDATE book_status SET status = 'read' WHERE user_id = ${E2E_USER} AND book_id = ANY(${[BOOKS[2].id, BOOKS[3].id]}::text[])`;
@@ -379,29 +432,82 @@ test.describe("a finish from Reading follows (2.2h)", () => {
     await openLibrary(page);
     await finishInLibrary(page);
     await expect(nowRow(page)).toHaveCount(0);
-    await keepRow(page).getByRole("button", { name: `Done with ${SERIES.name}` }).click();
+    await hydrated(more(page));
+    await more(page).click();
+    await sheetGroup(page, "Keep going?").getByRole("button", { name: `Done with ${SERIES.name}` }).click();
     await expect.poll(async () => (await follows()).series).toBe("tracking");
   });
 
-  test("at 360 the toast fits with a long series name and four chips, and Rank it (AC-6)", FLOOR, async ({ page }, info) => {
-    const long = "E2E Fo Series The Stormlight Archive Of Very Long Names Indeed";
-    await withSql((sql) => sql`UPDATE book_series SET name = ${long} WHERE id = ${SERIES.id}`);
+  test("at 360 the toast fits with a long subseries name: Rank it, one chip and +3 · Follow…, wrapping inside it (AC-6; 6.24)", FLOOR, async ({ page }, info) => {
+    const long = "E2E Fo Era The Stormlight Archive Of Very Long Names Indeed";
+    await withSql((sql) => sql`UPDATE book_subseries SET name = ${long} WHERE id = ${SUBSERIES.id}`);
     await openLibrary(page);
     await finishInLibrary(page);
-    // Four follow chips, and the finish's *Rank it in <year>* (3.4b) above them.
-    await expect(toast(page).locator(".toast-chip")).toHaveCount(5);
+    await expect(toast(page).locator(".toast-chip")).toHaveCount(3);
     await expect(rankChip(page)).toBeVisible();
+    await expect(more(page)).toHaveText("+3 · Follow…");
     await toastSettled(page);
     const width = page.viewportSize()!.width;
     const box = (await toast(page).boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(width);
+    const tops = new Set<number>();
     for (const chip of await toast(page).locator(".toast-chip").all()) {
       const b = (await chip.boundingBox())!;
       expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width);
+      tops.add(Math.round(b.y));
     }
+    // *Rank it* on its row, the chip and +3 on the next, unless the long name pushes +3 down: three at most.
+    expect(tops.size).toBeLessThanOrEqual(3);
     await expectNoHorizontalScroll(page);
     expect(await contrastFailures(page)).toEqual([]);
     await screenshot(page, info, "finish-now-reading-long");
+  });
+
+  test("at 360px, light and dark: one Now reading chip and +3 · Follow…, Keep going? in the Follow… sheet; 44px, axe, contrast, reduced motion, screenshots (6.24 AC-1, AC-5)", AT_360, async ({ page }, info) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    for (const colorScheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme });
+      await openLibrary(page);
+      await finishInLibrary(page);
+      // The toast: one Now reading chip and +3 · Follow…, two rows of chips (Rank it, then the two).
+      await expect(nowRow(page).getByRole("button", { name: /^Stop following / })).toHaveCount(1);
+      await expect(more(page)).toHaveText("+3 · Follow…");
+      await expect(toast(page)).not.toContainText("Keep going?");
+      await toastSettled(page);
+      const tops = new Set(await toast(page).locator(".toast-chip").evaluateAll((els) =>
+        els.map((el) => Math.round(el.getBoundingClientRect().top))));
+      expect(tops.size, `${colorScheme}: chip rows`).toBeLessThanOrEqual(2);
+      await atLeast(toast(page).locator(".toast-chip"), 44);
+      await expectNoAxeViolations(page, AXE, ".toast-region");
+      expect(await contrastFailures(page), `${colorScheme} toast`).toEqual([]);
+      await screenshot(page, info, `finish-capped-360-${colorScheme}`);
+
+      // The sheet: focus moves in; Keep going? is there; Esc returns focus to +3 · Follow….
+      await more(page).focus();
+      await page.keyboard.press("Enter");
+      await expect(finishSheet(page).getByRole("heading", { name: TWO.title })).toBeFocused();
+      await expect(sheetGroup(page, "Keep going?").getByRole("button")).toHaveText([`${SHELF.name} · shelf`]);
+      await expect(finishSheet(page).getByRole("radiogroup").first()).toBeVisible();
+      await atLeast(finishSheet(page).locator(".offer-chip"), 44);
+      await expectNoHorizontalScroll(page);
+      await expectNoAxeViolations(page, AXE, '[role="dialog"]');
+      expect(await contrastFailures(page), `${colorScheme} sheet`).toEqual([]);
+      // Reduced motion (the w390-reduced-motion project): the toast and the sheet don't move.
+      if (await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+        for (const el of [toast(page), finishSheet(page)]) {
+          expect((await computedStyle(el, ["animation-name"]))["animation-name"]).toBe("none");
+        }
+      }
+      await screenshot(page, info, `finish-follow-sheet-360-${colorScheme}`);
+      await page.keyboard.press("Escape");
+      await expect(finishSheet(page)).toBeHidden();
+      await expect(more(page)).toBeFocused();
+
+      // Undo the finish: the book and its follows are as they were for the other theme.
+      await toast(page).getByRole("button", { name: "Undo" }).click();
+      await expect.poll(() => statusOf(TWO.id)).toBe("reading");
+      await expect.poll(follows).toEqual({ series: "tracking", author: "reading" });
+    }
   });
 });

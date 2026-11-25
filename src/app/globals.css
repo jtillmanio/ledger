@@ -854,6 +854,17 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .follow-row .opts{margin-top:.5rem}
 .follow-head{display:flex;align-items:baseline;gap:.5rem;margin:0}
 .follow-name{font-size:.9375rem;font-weight:600;min-width:0;overflow-wrap:anywhere}
+/* A finish's chips in the sheet (task 6.24, MR-D17): what the capped toast doesn't show,
+   *Now reading* then *Keep going?*, drawn as the toast draws them on the sheet's surface:
+   outlined grey, never green (following isn't reading), 44px, wrapping. */
+.follow-offers{display:flex;flex-direction:column;gap:.5rem;margin:.25rem 0 .75rem}
+.follow-offer{display:flex;flex-wrap:wrap;align-items:center;gap:.375rem}
+.follow-offer-label{flex-basis:100%;font-size:.75rem;line-height:1rem;color:var(--muted)}
+.offer-chip{min-height:44px;padding:0 .875rem;border:1px solid var(--faint-deco);border-radius:var(--r-full);
+  background:var(--surface);color:var(--ink);font:inherit;font-size:.8125rem;font-weight:600;cursor:pointer}
+.offer-chip:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.offer-chip[aria-disabled="true"]{opacity:.6;cursor:progress}
+.offer-chip .toast-chip-kind,.offer-chip .toast-chip-x{color:var(--muted)}
 .follow-kind{font-size:.75rem;color:var(--muted)}
 .follow-count{margin-left:auto;font-size:.75rem;color:var(--muted);white-space:nowrap}
 /* --- A book's status and the finish-date control (task 1.5; mockup `blist`,

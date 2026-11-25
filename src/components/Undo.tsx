@@ -2,7 +2,7 @@
 
 import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-// The *Keep going?* row, loaded only when a toast carries an offer (task 2.2c): see ToastOffer.
+// A finish's chip rows, loaded only when a toast carries an offer (task 2.2c; capped by 6.24): see ToastOffer.
 const ToastOffer = lazy(() => import("@/components/ToastOffer"));
 
 /**
@@ -18,25 +18,31 @@ export type UndoEntry = {
   detail?: string;
   /** Reverses the action. Rejects when it couldn't, and then changes nothing. */
   undo: () => Promise<void>;
-  /** The toast's *Keep going?* row (task 2.2c): what a finish offers to follow. */
+  /** What a finish offers to follow (task 2.2c, 2.2h), capped in the toast (6.24): see ToastOffer. */
   offer?: OfferChip[];
 };
 
 /**
- * One chip in the toast's *Keep going?* row (task 2.2c, D-108): *Mistborn · series*,
- * *Done with Mistborn*; or in its *Now reading* row (task 2.2h, D-117), which
- * turns a follow the finish made to *Not following*. Taking it writes, and
+ * One chip of a finish's offer: *Keep going?* (task 2.2c, D-108), *Mistborn · series*,
+ * *Done with Mistborn*; or *Now reading* (task 2.2h, D-117), which turns a follow
+ * the finish made to *Not following*. The toast shows one, the narrowest *Now
+ * reading*, and the *Follow…* sheet the rest (6.24, MR-D17). Taking it writes, and
  * answers the entry its own toast carries, whose Undo undoes that write alone;
- * the chips not taken ride along, each in its row.
+ * the chips not taken ride along.
  */
 export type FollowChip = {
   label: string;
   /** Grey after the label: `series`, `subseries`, `shelf`. */
   kind?: string;
-  /** `now`: the *Now reading* row, above *Keep going?*. Unset: *Keep going?*. */
+  /** `now`: *Now reading*, what the finish followed. Unset: *Keep going?*. */
   row?: "now";
-  /** Writes. Rejects when it couldn't, and then changed nothing. */
-  take: () => Promise<UndoEntry>;
+  /** The grouping it writes: which *Now reading* chip is narrowest, and the sheet's row it changes. */
+  of?: { kind: string; id: string };
+  /**
+   * Writes. Rejects when it couldn't, and then changed nothing. `show` draws the state it wrote
+   * once it has saved, and the state its Undo put back (`null` is *Not following*): the sheet's row.
+   */
+  take: (show?: (state: "reading" | "tracking" | null) => void) => Promise<UndoEntry>;
 };
 
 /**
@@ -45,7 +51,17 @@ export type FollowChip = {
  */
 export type RankChip = { label: string; row: "rank"; open: (opener: HTMLElement) => void };
 
-export type OfferChip = FollowChip | RankChip;
+/**
+ * *+N · Follow…* (task 6.24, MR-D17): writes nothing itself but opens the *Follow…* sheet
+ * (`FollowOffer`), the button its opener, with the toast's whole offer, of which the sheet
+ * shows what the toast doesn't. A finish with a follow chip carries one.
+ */
+export type SheetChip = { row: "follow"; open: (opener: HTMLElement, offer: OfferChip[]) => void };
+
+export type OfferChip = FollowChip | RankChip | SheetChip;
+
+/** A chip that writes a follow: *Now reading* or *Keep going?*. */
+export const isFollowChip = (c: OfferChip): c is FollowChip => c.row === undefined || c.row === "now";
 
 /** How long an entry can be taken back, and how long its toast stays. */
 export const UNDO_MS = 8000;
@@ -99,10 +115,11 @@ export function useUndo() {
  * held does not count against its 8 seconds, and the countdown bar stops with
  * it. Undo and Retry hand focus back to where it was before the toast took it.
  *
- * A finish's toast may carry *Keep going?* chips (task 2.2c), and above them
- * *Now reading* chips for what the finish followed (2.2h). A chip writes,
- * then pushes its own entry with the chips left, which (one toast at a time)
- * commits the finish; focus stays in the toast. The chips go when the toast does.
+ * A finish's toast may carry what it followed (*Now reading*, 2.2h) and what it
+ * offers (*Keep going?*, 2.2c), capped at one chip and *+N · Follow…*, which
+ * opens the sheet holding the rest (6.24). A chip writes, then pushes its own
+ * entry with the chips left, which (one toast at a time) commits the finish;
+ * focus stays in the toast. The chips go when the toast does.
  *
  * F6, while a toast is up, moves focus to its first control, from anywhere, a
  * sheet included; F6 or Esc inside it hands focus back (D-116). Focus holds the

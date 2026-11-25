@@ -3,8 +3,9 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { finishWords, toChoice, type FinishValue } from "@/components/FinishDate";
+import { useFollowOffer } from "@/components/FollowOffer";
 import { useRankSorter } from "@/components/RankSorter";
-import { useUndo, type RankChip } from "@/components/Undo";
+import { useUndo, type OfferChip, type RankChip } from "@/components/Undo";
 import type { FinishOffer } from "@/db/queries";
 import { offerChips } from "@/lib/follow-offer";
 import type { Precision } from "@/lib/format";
@@ -70,6 +71,7 @@ export function useBookWrite() {
   const router = useRouter();
   const { push, hold } = useUndo();
   const sorter = useRankSorter();
+  const followOffer = useFollowOffer();
   return useCallback(async ({
     bookId, status, name, was, detail, finish, start, onSaved, onUndone, refresh = true,
   }: BookWriteArgs): Promise<{ refused: string } | { written: BookWritten; withNote: WithNote }> => {
@@ -88,7 +90,9 @@ export function useBookWrite() {
     const written = (await res.json()) as BookWritten;
     onSaved?.(written);
     if (refresh) router.refresh();
-    const follows = offerChips(written.offer);
+    const chips = offerChips(written.offer);
+    // The toast shows one of them and *+N · Follow…*, which opens the sheet with the rest (task 6.24, MR-D17).
+    const follows: OfferChip[] = chips.length > 0 && followOffer ? [...chips, followOffer.chip(bookId, name)] : chips;
     // A finish that appended a dated read offers to rank it in its year (task 3.4b, D-101); a read with no date has none.
     const appended = (written.change as { appended?: number | null } | null)?.appended ?? null;
     const year = status === "read" && written.finish?.on ? Number(written.finish.on.slice(0, 4)) : null;
@@ -107,8 +111,9 @@ export function useBookWrite() {
         body: JSON.stringify({ change: written.change, ...(note !== undefined && { note }) }),
       });
       if (!back.ok) throw new Error("undo failed");
-      // The read is gone: a sorter placing it closes, having written nothing.
+      // The read is gone: a sorter placing it closes, having written nothing, and so does its Follow… sheet.
       if (appended !== null) sorter?.cancel(appended);
+      followOffer?.cancel(bookId);
       onUndone?.();
       router.refresh();
     };
@@ -131,5 +136,5 @@ export function useBookWrite() {
       push({ label, detail: note.note === null ? "Reason cleared" : "Reason saved", undo: undo(note) });
     };
     return { written, withNote };
-  }, [router, push, hold, sorter]);
+  }, [router, push, hold, sorter, followOffer]);
 }
