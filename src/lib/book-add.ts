@@ -81,6 +81,30 @@ export async function undoAdd(entry: AddedEntry, note?: { id: number; bookId: st
   if (!res.ok) throw new Error(String(res.status));
 }
 
+/**
+ * A series page's gap row *Add* (task 5.9b, TASK-142): Add books on *By hand*, *Series* and *#* filled. The
+ * series is named, not its id: By hand finds a series by the slug of its name (`seriesOf` in `src/db/writes.ts`),
+ * so a shared link needs no lookup, and a name the Ledger doesn't hold is made by the add, as typing it is.
+ */
+export const handHref = (series: string, n: number) => `/books/add?series=${encodeURIComponent(series)}&n=${n}`;
+
+/** What By hand starts with: the series' name and the position as the *#* field holds it (`""` for none). */
+export type HandStart = { series: string; position: string };
+
+/**
+ * `handHref`'s reader, for the page's `series` and `n` search params, which are the URL's and so untrusted:
+ * null when there is no series to start with (one name, 1 to MAX_FIELD characters, spaces collapsed as By hand
+ * cleans them), and then Add books opens as it always did. `n` fills *#* only as a plain number from 0 to
+ * MAX_POSITION (the series page draws a `#0` and a `#2.5`); anything else leaves *#* empty.
+ */
+export function handParam(series: string | string[] | undefined, n?: string | string[]): HandStart | null {
+  // As By hand's own check cleans a series (`checkHand`): trimmed, spaces collapsed, no more rewriting than that.
+  const name = typeof series === "string" ? series.trim().replace(/\s+/g, " ") : "";
+  if (!name || name.length > MAX_FIELD) return null;
+  const position = typeof n === "string" && /^\d+(\.\d+)?$/.test(n) && Number(n) <= MAX_POSITION ? n : "";
+  return { series: name, position };
+}
+
 /** A year or a quarter, one value (task 2.3, D-38): `2027` or `2027-Q1`, never a month. */
 export const YEAR_OR_QUARTER = /^\d{4}(-Q[1-4])?$/;
 /** A plan period: a year, a quarter or On deck. */

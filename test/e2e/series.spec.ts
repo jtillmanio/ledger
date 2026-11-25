@@ -17,6 +17,10 @@
 // puts the prior state back; *Not following* is a stored off that series_progress reads as NULL). A series with no
 // live books is an empty slate; an unknown id is the not-found page. The same floor, at every width.
 //
+// Task 5.9b, 3 of 3 (TASK-142; F-38): a gap row's *Add* for #3 opens Add books on By hand with the series named and
+// `3` in *#*, focus in the first empty field; saving adds the book at #3 and the page's gap row is gone. Add books
+// with no new parameter, or `?q=` alone, opens on Search as before. The form meets the floor as it opens.
+//
 // The series and books are made here, under E2E ids no other spec uses, and removed after the last test.
 // The database holds real series too, so rows are found by name, never by index on the whole list.
 import { expect, test, type Page } from "@playwright/test";
@@ -69,7 +73,10 @@ const EMPTY = { id: "e2e-sp-empty", name: "E2E Sp Empty", total: 2 as number | n
 // 1 of 3 read: part-read, so the middle choice reads On hold. The follow tests write to it.
 const FOLLOW = { id: "e2e-sp-follow", name: "E2E Sp Follow", total: 3 as number | null,
   books: [pbook("follow", 1, "read"), pbook("follow", 2, null), pbook("follow", 3, null)] };
-const PAGES = [GAP, OPEN, SOFT, EMPTY, FOLLOW];
+// A gap row's *Add* writes a book (TASK-142), so it has a series of its own: GAP's tests only read.
+const FILL = { id: "e2e-sp-fill", name: "E2E Sp Fill", total: 4 as number | null,
+  books: [pbook("fill", 1, "read"), pbook("fill", 2, "reading"), pbook("fill", 4, null)] };
+const PAGES = [GAP, OPEN, SOFT, EMPTY, FOLLOW, FILL];
 const ALL = [...SERIES, ...PAGES];
 const IDS = ALL.flatMap((s) => s.books.map((b) => b.id));
 
@@ -83,8 +90,11 @@ async function withSql<T>(work: (sql: TestSql) => Promise<T>): Promise<T> {
 }
 
 const clean = () => withSql(async (sql) => {
-  await sql`DELETE FROM book_status WHERE book_id = ANY(${IDS}::text[])`;
-  await sql`DELETE FROM books WHERE id = ANY(${IDS}::text[])`;
+  // The books a gap row's Add made (TASK-142) are in these series under ids the add chose.
+  const seriesIds = ALL.map((s) => s.id);
+  await sql`DELETE FROM book_status WHERE book_id = ANY(${IDS}::text[])
+    OR book_id IN (SELECT id FROM books WHERE series_id = ANY(${seriesIds}::text[]))`;
+  await sql`DELETE FROM books WHERE id = ANY(${IDS}::text[]) OR series_id = ANY(${seriesIds}::text[])`;
   // Follows go with their series (ON DELETE CASCADE).
   await sql`DELETE FROM book_series WHERE id = ANY(${ALL.map((s) => s.id)}::text[])`;
   await sql`DELETE FROM authors WHERE id = ${AUTHOR.id}`;
@@ -305,13 +315,63 @@ test("the gap row is grey, never green or red, and its Add is a named link of 24
   expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(24);
 });
 
-test("Add on the gap row opens Add books with the series named (AC-3)", ONCE, async ({ page }) => {
-  await openPage(page, GAP);
-  const add = page.locator(".sp-gap").getByRole("link", { name: `Add #3 of ${GAP.name}` });
+// A gap row's Add opens By hand with the series and the gap's number filled (TASK-142, AC-3). The three-width,
+// two-theme floor runs on the form as it opens (AC-5).
+const byHandSeg = (page: Page) => page.locator(".seg").getByRole("button", { name: "By hand", exact: true });
+
+async function addFromGap(page: Page, s: { id: string; name: string }) {
+  await openPage(page, s);
+  const add = page.locator(".sp-gap").getByRole("link", { name: `Add #3 of ${s.name}` });
   await hydrated(add);
   await add.click();
-  await expect(page).toHaveURL(/\/books\/add\?q=E2E(%20|\+)Sp(%20|\+)Gap$/);
-  await expect(page.locator("#book-q")).toHaveValue(GAP.name);
+  await expect(page).toHaveURL(new RegExp(`/books/add\\?series=${s.name.replace(/ /g, "(%20|\\+)")}&n=3$`));
+}
+
+test("Add on the gap row opens By hand with the series named and 3 in #, focus in Title (AC-3, AC-4)", ONCE, async ({ page }) => {
+  await addFromGap(page, GAP);
+  await expect(byHandSeg(page)).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".seg").getByRole("button", { name: "Search", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator("#hand-series")).toHaveValue(GAP.name);
+  await expect(page.locator("#hand-position")).toHaveValue("3");
+  await expect(page.locator("#hand-title")).toHaveValue("");
+  // The first field with nothing in it: Title, then Author after it.
+  await expect(page.locator("#hand-title")).toBeFocused();
+  // Nothing else of the form is filled from the gap (out of scope: author, universe, title).
+  await expect(page.locator("#hand-author")).toHaveValue("");
+});
+
+test("Add books with no new parameter opens on Search, empty; ?q= alone holds the text (AC-4)", ONCE, async ({ page }) => {
+  await page.goto("/books/add");
+  await expect(page.locator(".seg").getByRole("button", { name: "Search", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#book-q")).toHaveValue("");
+  await page.goto("/books/add?q=Dark%20Tower");
+  await expect(page.locator("#book-q")).toHaveValue("Dark Tower");
+  await expect(page.locator("#hand-series")).toHaveValue("");
+});
+
+test("saving from a gap adds the book at #3 in that series, and the series page's gap row is gone (AC-3)", ONCE, async ({ page }) => {
+  await addFromGap(page, FILL);
+  await expect(page.locator("#hand-title")).toBeFocused();
+  await page.locator("#hand-title").fill("E2E Sp Fill Book 3");
+  await page.locator("#hand-author").fill(AUTHOR.name);
+  await page.getByRole("button", { name: "Add to Someday", exact: true }).click();
+  await expect(page.locator(".toast-label")).toHaveText("Added to Someday");
+  const [added] = await withSql((sql) => sql<{ title: string; series_id: string; series_position: number }[]>`
+    SELECT title, series_id, series_position::float AS series_position FROM books
+    WHERE series_id = ${FILL.id} AND title = 'E2E Sp Fill Book 3' AND deleted_at IS NULL`);
+  expect(added).toEqual({ title: "E2E Sp Fill Book 3", series_id: FILL.id, series_position: 3 });
+  await page.goto(href(FILL.id));
+  await expect(bookRows(page)).toHaveCount(4);
+  await expect(page.locator(".sp-gap")).toHaveCount(0);
+  await expect(bookRows(page).locator(".sp-pos")).toHaveText(["#1", "#2", "#3", "#4"]);
+  await expect(bookRows(page).nth(2)).toContainText("E2E Sp Fill Book 3");
+});
+
+test("By hand opened from a gap meets the floor: axe, contrast, 24px targets, no sideways scroll; screenshots (AC-5)", FLOOR, async ({ page }, info) => {
+  await addFromGap(page, GAP);
+  await expect(page.locator("#hand-title")).toBeFocused();
+  await floor(page);
+  await screenshot(page, info, "by-hand-from-gap");
 });
 
 test("a series with no stated total draws no gap rows, however its positions run (AC-3)", ONCE, async ({ page }) => {

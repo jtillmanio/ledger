@@ -156,6 +156,23 @@ describe("what Search lists (AC-1, AC-3)", () => {
   });
 });
 
+describe("a library result's ids for its place links (task 5.9b, TASK-142: AC-2)", () => {
+  it("carries the author, series and universe ids its names link to; a book in none carries null", async () => {
+    await sql`INSERT INTO authors (id, name) VALUES ('zz-link-author', 'Zz Link Author')`;
+    await sql`INSERT INTO book_series (id, name, author_id) VALUES ('zz-link-series', 'Zz Link Series', 'zz-link-author')`;
+    await sql`INSERT INTO book_universes (id, name) VALUES ('zz-link-universe', 'Zz Link Universe')`;
+    await sql`INSERT INTO books (id, title, author_id, series_id, series_position, universe_id)
+              VALUES ('zz-linked', 'Zzlinked Book', 'zz-link-author', 'zz-link-series', 3, 'zz-link-universe'),
+                     ('zz-bare', 'Zzlinked Bare', NULL, NULL, NULL, NULL)`;
+    const answer = await find("zzlinked");
+    const got = Object.fromEntries(answer.library.map((b) => [b.id, [b.author_id, b.series_id, b.universe_id]]));
+    expect(got).toEqual({
+      "zz-linked": ["zz-link-author", "zz-link-series", "zz-link-universe"],
+      "zz-bare": [null, null, null],
+    });
+  });
+});
+
 describe("where each library book sits (task 1.22, AC-3)", () => {
   it("each book carries its level and period from to_read_level, its status, and whether Calibre has it", async () => {
     const place: [string, string | null, string | null, number | null][] = [

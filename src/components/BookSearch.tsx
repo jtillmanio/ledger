@@ -2,11 +2,12 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { BookSearchAnswer } from "@/app/api/books/search/route";
+import BookPlace from "@/components/BookPlace";
 import Cover, { Pending } from "@/components/Cover";
 import type { LibraryHit } from "@/db/queries";
 import { addTo, type Target } from "@/lib/book-add";
 import { Headphones } from "@/components/nav/Icons";
-import { bookSub, listenGlyph, placeTag } from "@/lib/format";
+import { listenGlyph, placeTag, subParts } from "@/lib/format";
 import { queueable } from "@/lib/status-tabs";
 import type { HardcoverBook } from "@/lib/hardcover";
 import { useSearch } from "@/lib/use-search";
@@ -181,10 +182,11 @@ export default function BookSearch({
     const hc = pick.kind === "hardcover" ? pick.book : null;
     const year = lib ? lib.published_year : hc!.year;
     const pages = lib ? lib.page_count : hc!.pages;
-    // *author · universe · series #n* as every books row says it (`bookSub`, task 2.2l, D-134), then its pages.
-    // A Hardcover result has no universe.
+    // *author · universe · series #n* as every books row says it (`subParts`, task 2.2l, D-134), then its pages.
+    // A library book's names link to their pages (task 5.9b); a Hardcover result has no universe and no ids, so
+    // its names are text.
     const place = lib ?? { author: authorList(hc!.authors), universe: null, series: hc!.series, series_position: hc!.position };
-    const sub = [bookSub(place), pages && `${pages} pages`].filter(Boolean).join(" · ");
+    const parts = subParts(place);
     const subtitle = hc?.subtitle ?? null;
     const label = addTo(done ? (wheres[key] ?? target) : target);
     // The words a plan total would gain: the stated count, else pages at your words per page (50 or more).
@@ -202,7 +204,9 @@ export default function BookSearch({
             <span id={`${id}t`}><span className="rt">{book.title}</span>{subtitle && <> <span className="rsub muted">{subtitle}</span></>}</span>
             {year && <span className="rm mono">{year}</span>}
           </span>
-          {sub && <div className="rs">{sub}</div>}
+          {(parts.length > 0 || pages) && (
+            <div className="rs res-place"><BookPlace parts={parts} />{pages ? `${parts.length > 0 ? " · " : ""}${pages} pages` : null}</div>
+          )}
           {/* One tag a row, where it came from; the rest is plain text beside it. */}
           <div className="res-tags">
             <span className="tag" id={`${id}g`}>{lib ? placeTag(lib) : "Hardcover"}</span>

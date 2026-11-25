@@ -13,7 +13,7 @@ import Sheet, { useSheetClose } from "@/components/Sheet";
 import { useUndo } from "@/components/Undo";
 import type { AddBookResult, AddedEntry, Destination, HandItem } from "@/db/writes";
 import {
-  COMING_OUT, destinationOf, OWNED_CHOICES, OWNED_HAVE, OWNED_NAMES, shelfLabel, targetName, undoAdd, type Target,
+  COMING_OUT, destinationOf, OWNED_CHOICES, OWNED_HAVE, OWNED_NAMES, shelfLabel, targetName, undoAdd, type HandStart, type Target,
 } from "@/lib/book-add";
 import { MAX_FIELD } from "@/lib/book-parse";
 import { useQueueListen } from "@/lib/listen-queue";
@@ -83,7 +83,7 @@ const STATUS: Record<string, string> = {
  * note's text in it, and the first Search or By hand add that goes through
  * resolves the note in its own transaction; undoing that add reopens it.
  */
-export default function AddBooks({ initial, close, onHeading, query = "", note = null }: {
+export default function AddBooks({ initial, close, onHeading, query = "", note = null, hand: start = null }: {
   initial: Target;
   /** Closes the sheet this is in; absent on the full page. */
   close?: () => void;
@@ -93,11 +93,13 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
   query?: string;
   /** The inbox note this add resolves. */
   note?: number | null;
+  /** A series page's gap row (task 5.9b): opens on *By hand* with *Series* and *#* filled, focus on its first empty field. */
+  hand?: HandStart | null;
 }) {
   const level = close ? 3 : 2;
   const [target, setTarget] = useState<Target>(initial);
   const [noteId, setNoteId] = useState(note);
-  const [mode, setMode] = useState<Mode>("search");
+  const [mode, setMode] = useState<Mode>(start ? "hand" : "search");
   const [picker, setPicker] = useState<Picker>({ phase: "closed" });
   const [outcomes, setOutcomes] = useState<Record<string, Outcome>>({});
   /** Where a result went when its own *Year or quarter…* sent it somewhere other than `target`. */
@@ -112,8 +114,9 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
   /** Why a new shelf's name can't be used (task 5.1): under the name field. */
   const [why, setWhy] = useState<string | null>(null);
   const nameField = useRef<HTMLInputElement>(null);
-  // *Add it by hand* carries the search over: a new key remounts the form with it.
-  const [hand, setHand] = useState({ key: 0, title: "" });
+  // *Add it by hand* carries the search over: a new key remounts the form with it. A gap row's link (task 5.9b)
+  // starts it with the series and the number instead, and it takes focus once, on mount.
+  const [hand, setHand] = useState({ key: 0, title: "", series: start?.series ?? "", position: start?.position ?? "" });
   /** *Coming out*'s date (task 5.7), kept while you switch destinations; `releaseError` is the refusal under it. */
   const [release, setRelease] = useState<ReleaseValue>(NO_RELEASE);
   const [releaseError, setReleaseError] = useState(false);
@@ -330,7 +333,7 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
   }
 
   function byHand(title: string) {
-    setHand((h) => ({ key: h.key + 1, title }));
+    setHand((h) => ({ key: h.key + 1, title, series: "", position: "" }));
     switchTo("hand");
     // The form mounts with the switch; its title takes focus once it is there.
     requestAnimationFrame(() => document.getElementById("hand-title")?.focus());
@@ -467,7 +470,8 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
               onByHand={byHand} initialQuery={query} added={added} onListen={(id, title) => void queueListen(id, title)} />
           </div>
           <div className="pane pane-hand" hidden={mode !== "hand"}>
-            <ByHand key={hand.key} target={target} title={hand.title} onSubmit={addByHand} cancel={cancel("Cancel")} />
+            <ByHand key={hand.key} target={target} title={hand.title} series={hand.series} position={hand.position}
+              focusFirstEmpty={start !== null && hand.key === 0} onSubmit={addByHand} cancel={cancel("Cancel")} />
           </div>
         </div>
         <div className="pane pane-paste" hidden={mode === "hand"}>

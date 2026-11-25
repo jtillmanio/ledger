@@ -1730,6 +1730,8 @@ export type LibraryHit = {
   id: string; title: string; author: string | null; series: string | null; series_position: number | null;
   /** The book's universe (D-90), for the line `bookSub` draws (task 2.2l, D-134); null for a book in none. */
   universe: string | null;
+  /** The ids the three names link to (task 5.9b): `BookPlace` draws a name with no id as text. */
+  author_id: string | null; series_id: string | null; universe_id: string | null;
   published_year: number | null; page_count: number | null; word_count: number | null;
   word_count_source: "stated" | "estimated" | null; cover_url: string | null; hardcover_id: number | null;
   /** No external record yet: *metadata pending*. */
@@ -1762,6 +1764,7 @@ export async function librarySearch(
   const words = q.toLowerCase().split(/\s+/).filter(Boolean).map((w) => `%${w.replace(/[\\%_]/g, "\\$&")}%`);
   return sql<LibraryHit[]>`
     SELECT b.id, b.title, a.name AS author, bs.name AS series, b.series_position, u.name AS universe,
+           b.author_id, b.series_id, b.universe_id,
            b.published_year, b.page_count, b.word_count, b.word_count_source, b.cover_url, b.hardcover_id,
            (b.hardcover_id IS NULL) AS pending,
            st.status, tl.level, tl.period, (b.calibre_id IS NOT NULL) AS calibre, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,

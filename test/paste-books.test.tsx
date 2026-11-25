@@ -525,8 +525,8 @@ describe("the mockup's add frame (task 1.4e, AC-5)", () => {
     const start = html.indexOf('<section class="screen" data-id="add">');
     const frame = html.slice(start, html.indexOf("</section>", start));
     expect(frame).toContain('<button class="btn sm">Add to Physical copy</button>');
-    // Every frame's Add to row offers both formats now, not Paste a list's alone: six frames.
-    expect(frame.split('tabindex="0">Audiobook</span>').length - 1 + frame.split('tabindex="0" data-on>Audiobook</span>').length - 1).toBe(6);
+    // Every frame's Add to row offers both formats now, not Paste a list's alone: seven frames (the seventh is By hand opened from a gap row, task 5.9b).
+    expect(frame.split('tabindex="0">Audiobook</span>').length - 1 + frame.split('tabindex="0" data-on>Audiobook</span>').length - 1).toBe(7);
     const row = readFileSync("design/mockups-index.md", "utf8").split("\n").find((l) => l.startsWith("| `add` |"))!;
     expect(row).toContain("task 5.17b");
     expect(row).toContain("*Already owned on paper.*");

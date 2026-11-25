@@ -14,6 +14,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BookSearchAnswer } from "../src/app/api/books/search/route";
+import AddBooks from "../src/components/AddBooks";
 import AddBooksButton from "../src/components/AddBooksButton";
 import IssueSearch from "../src/components/IssueSearch";
 import { UndoProvider } from "../src/components/Undo";
@@ -28,6 +29,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => router }));
 
 const BLADE: LibraryHit = {
   id: "the-blade-itself-joe-abercrombie", title: "The Blade Itself", author: "Joe Abercrombie", series: "First Law",
+  author_id: "joe-abercrombie", series_id: "first-law", universe_id: null,
   series_position: 1, universe: null, published_year: null, page_count: null, word_count: null, word_count_source: null,
   cover_url: null, hardcover_id: null, pending: true, status: "read", level: null, period: null, calibre: false, shelves: 2,
   listened: false,
@@ -664,6 +666,63 @@ describe("A library result names its universe and series (task 2.2l, D-134)", ()
   });
 });
 
+describe("A result's place line links its names (task 5.9b, TASK-142: AC-2, AC-5)", () => {
+  const MISTBORN: LibraryHit = {
+    ...BLADE, id: "the-well-of-ascension-brandon-sanderson", title: "The Well of Ascension", author: "Brandon Sanderson",
+    author_id: "brandon-sanderson", universe: "Cosmere", universe_id: "cosmere", series: "Mistborn", series_id: "mistborn",
+    series_position: 4, page_count: 330, status: "to_read", level: "someday",
+  };
+  const res = (i: number) => dialog()!.querySelectorAll(".pane-search .row.res")[i];
+  const links = (el: Element) => [...el.querySelectorAll<HTMLAnchorElement>(".rs a")]
+    .map((a) => [a.textContent, a.getAttribute("href")]);
+
+  it("a library book's author, universe and series are links to their pages; the #n and the pages stay text (AC-2)", async () => {
+    searchAnswer = () => Response.json(answer({ library: [MISTBORN], hardcover: [SAKEY] }));
+    await open();
+    await search("mistborn");
+    expect(links(res(0))).toEqual([
+      ["Brandon Sanderson", "/books/authors/brandon-sanderson"],
+      ["Cosmere", "/books/universes/cosmere"],
+      ["Mistborn", "/books/series/mistborn"],
+    ]);
+    // The line reads as it did: the series link's name is the series alone, its #4 and the pages follow as text.
+    expect(res(0).querySelector(".rs")!.textContent).toBe("Brandon Sanderson · Cosmere · Mistborn #4 · 330 pages");
+  });
+
+  it("a Hardcover-only result has no ids to link: its names are text, no <a> (AC-2)", async () => {
+    searchAnswer = () => Response.json(answer({ library: [MISTBORN], hardcover: [{ ...SAKEY, series: "Some Series", position: 2 }] }));
+    await open();
+    await search("mistborn");
+    expect(res(1).querySelector(".rs")!.textContent).toBe("Marcus Sakey · Some Series #2 · 320 pages");
+    expect(res(1).querySelectorAll("a")).toHaveLength(0);
+  });
+
+  it("a library book with no series draws no series link; with no ids at all, no links (AC-1)", async () => {
+    const LONE: LibraryHit = { ...MISTBORN, id: "lone", title: "Lone", series: null, series_id: null, series_position: null, universe: null, universe_id: null };
+    const ORPHAN: LibraryHit = { ...LONE, id: "orphan", title: "Orphan", author_id: null };
+    searchAnswer = () => Response.json(answer({ library: [LONE, ORPHAN], hardcover: [] }));
+    await open();
+    await search("lone");
+    expect(links(res(0))).toEqual([["Brandon Sanderson", "/books/authors/brandon-sanderson"]]);
+    expect(links(res(1))).toEqual([]);
+    expect(res(1).querySelector(".rs")!.textContent).toBe("Brandon Sanderson · 330 pages");
+  });
+
+  it("the row is still named by its title and its tag alone, whatever its links say (AC-5)", async () => {
+    searchAnswer = () => Response.json(answer({ library: [MISTBORN], hardcover: [] }));
+    await open();
+    await search("mistborn");
+    expect(nameOf(res(0))).toBe("The Well of Ascension Someday");
+  });
+
+  it("the line is the row's one place line, class res-place on .rs, for the place-link style (AC-5)", async () => {
+    searchAnswer = () => Response.json(answer({ library: [MISTBORN], hardcover: [SAKEY] }));
+    await open();
+    await search("mistborn");
+    expect(dialog()!.querySelectorAll(".pane-search .row.res .rs.res-place")).toHaveLength(2);
+  });
+});
+
 describe("Year or quarter… (task 2.3, AC-4)", () => {
   const Y = easternYear() + 1;
   const Q3 = `${Y}-Q3`;
@@ -794,6 +853,69 @@ describe("By hand (AC-2)", () => {
       destination: { kind: "someday" },
     }]);
     expect(dialog()!.querySelector<HTMLInputElement>("#hand-title")!.value).toBe("");
+  });
+});
+
+// The full page (`/books/add`), where a series page's gap row *Add* lands (task 5.9b, TASK-142: AC-3, AC-4).
+describe("By hand from a gap row (task 5.9b, TASK-142: AC-3, AC-4)", () => {
+  const page = async (props: { query?: string; hand?: { series: string; position: string } | null } = {}) => {
+    act(() => root.render(<UndoProvider><AddBooks initial={{ kind: "someday" }} {...props} /></UndoProvider>));
+    await act(async () => { await new Promise((r) => setImmediate(r)); });
+  };
+  const addb = () => container.querySelector<HTMLElement>(".addb")!;
+  const field = (f: string) => container.querySelector<HTMLInputElement>(`#hand-${f}`)!;
+  const pressed = () => [...container.querySelectorAll<HTMLButtonElement>(".seg button")]
+    .filter((b) => b.getAttribute("aria-pressed") === "true").map((b) => b.textContent);
+
+  it("opens with By hand selected, Series and # filled, and focus on Title, the first empty field (AC-3)", async () => {
+    await page({ hand: { series: "The Dark Tower", position: "6" } });
+    expect(pressed()).toEqual(["By hand"]);
+    expect(addb().dataset.mode).toBe("hand");
+    expect(field("series").value).toBe("The Dark Tower");
+    expect(field("position").value).toBe("6");
+    expect(field("title").value).toBe("");
+    expect(field("author").value).toBe("");
+    expect(document.activeElement).toBe(field("title"));
+  });
+
+  it("a number that wasn't one leaves # empty, and the series is still filled (AC-3)", async () => {
+    await page({ hand: { series: "The Dark Tower", position: "" } });
+    expect(field("series").value).toBe("The Dark Tower");
+    expect(field("position").value).toBe("");
+    expect(document.activeElement).toBe(field("title"));
+  });
+
+  it("saving sends the book in that series at that number, then clears for the next (AC-3)", async () => {
+    await page({ hand: { series: "The Dark Tower", position: "6" } });
+    await type(field("title"), "Song of Susannah");
+    await type(field("author"), "Stephen King");
+    await submit(container.querySelector("form.byhand")!);
+    expect(adds()).toEqual([{
+      item: { hand: { title: "Song of Susannah", author: "Stephen King", series: "The Dark Tower", position: 6, pages: null, words: null } },
+      destination: { kind: "someday" },
+    }]);
+  });
+
+  it("a series the Ledger doesn't hold is filled in all the same: the write makes it, as typing it does (AC-3)", async () => {
+    await page({ hand: { series: "A Shared Link Series", position: "2" } });
+    expect(field("series").value).toBe("A Shared Link Series");
+  });
+
+  it("with no new parameter, Search is selected and empty, as before (AC-4)", async () => {
+    await page();
+    expect(pressed()).toEqual(["Search"]);
+    expect(addb().dataset.mode).toBe("search");
+    expect(container.querySelector<HTMLInputElement>("#book-q")!.value).toBe("");
+    expect(field("series").value).toBe("");
+    expect(field("position").value).toBe("");
+    expect(document.activeElement).not.toBe(field("title"));
+  });
+
+  it("?q= alone: Search holds the text, as before (AC-4)", async () => {
+    await page({ query: "Dark Tower", hand: null });
+    expect(pressed()).toEqual(["Search"]);
+    expect(container.querySelector<HTMLInputElement>("#book-q")!.value).toBe("Dark Tower");
+    expect(field("series").value).toBe("");
   });
 });
 
