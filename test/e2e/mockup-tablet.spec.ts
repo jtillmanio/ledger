@@ -52,7 +52,9 @@ function tabMarkup(id: Screen): string {
 }
 // The source of one screen's frame of a width (`phone`, `p360`, `tab`, `desk`), the first one.
 function frameMarkup(id: Screen, w: string): string {
-  const start = MOCKUP.indexOf(`data-id="${id}"`);
+  // The section's own tag: `data-id="status"` also appears first in a CSS selector.
+  const start = MOCKUP.search(new RegExp(`<section class="screen[^"]*" data-id="${id}">`));
+  expect(start, `${id} is a screen`).toBeGreaterThan(-1);
   const open = MOCKUP.indexOf(`<div class="frame" data-w="${w}">`, start);
   expect(open, `${id} has a ${w} frame`).toBeGreaterThan(start);
   const ends = ['<div class="frame"', '<div class="notes">'].map((s) => MOCKUP.indexOf(s, open + 10)).filter((i) => i > -1);
@@ -480,7 +482,13 @@ test.describe("AC-4 · design/mockups-index.md after TASK-146", ONCE, () => {
     }
   });
 
-  test("each of the six frames is reachable by its data-id", () => {
-    for (const id of [...SHEETS, ...LISTS]) expect(MOCKUP, id).toMatch(new RegExp(`<section class="screen[^>]*data-id="${id}"`));
+  test("each of the six screens holds an 834px frame, reachable by its data-id", () => {
+    for (const id of [...SHEETS, ...LISTS]) {
+      expect(MOCKUP, id).toMatch(new RegExp(`<section class="screen[^>]*data-id="${id}"`));
+      // The frame sits inside that screen's own section, not a later one's.
+      const section = MOCKUP.slice(MOCKUP.indexOf(`<section class="screen" data-id="${id}">`));
+      const own = section.slice(0, section.indexOf("</section>"));
+      expect(own, `${id}: an 834px frame`).toContain('<div class="frame" data-w="tab">');
+    }
   });
 });
