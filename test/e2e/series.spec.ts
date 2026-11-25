@@ -22,7 +22,7 @@
 // with no new parameter, or `?q=` alone, opens on Search as before. The form meets the floor as it opens.
 //
 // Task 5.9c (TASK-161; F-38): the page opens on *Started* (a book read, in hand or DNF, or a follow of Tracking or
-// Reading), with *All* a tap away (?show=, real links with their counts and ria-current); any other value is
+// Reading), with *All* a tap away (`?show=`, real links with their counts and `aria-current`); any other value is
 // *Started*; with none started a slate names *All*; the Library's *All series* line is gone.
 //
 // The series and books are made here, under E2E ids no other spec uses, and removed after the last test.
@@ -251,11 +251,19 @@ test("the error state: a neutral line and a real Try again; the floor; screensho
 // The skeleton's first row is measured against a loaded row of the same lines: Done's (the name and count, the
 // author, one *All read* line) is two .rs lines, as the skeleton draws.
 test("the loading skeleton's row is the loaded row's size, within 2px (AC-6)", FLOOR, async ({ page }) => {
-  await open(page);
+  await open(page, true);
   const loaded = (await rowOf(page, PART.name).boundingBox())!;
   const done = (await rowOf(page, DONE.name).boundingBox())!;
+  const chips = (await page.locator(".series-chips").boundingBox())!;
+  const firstRow = (await rows(page).first().boundingBox())!;
   await swapMain(page, renderToStaticMarkup(createElement(SeriesLoading)));
+  // The chip row (5.9c) is the loaded height too (44px at phone), and the list sits the same distance beneath
+  // it: no jump when the page arrives. Measured from the chips, so the title block above them is not in it.
+  const skChips = (await page.locator(".series-chips").boundingBox())!;
+  expect(Math.abs(skChips.height - chips.height), `skeleton chips ${skChips.height}px, loaded ${chips.height}px`).toBeLessThanOrEqual(2);
   const sk = (await page.locator(".series-rows > li").first().boundingBox())!;
+  expect(Math.abs((sk.y - skChips.y) - (firstRow.y - chips.y)),
+    `list ${sk.y - skChips.y}px under the chips, loaded ${firstRow.y - chips.y}px`).toBeLessThanOrEqual(2);
   // Part and Done each have a name line, an author line and one more line (Next up / All read): the skeleton's size.
   expect(Math.abs(loaded.height - done.height), "loaded rows differ").toBeLessThanOrEqual(2);
   expect(Math.abs(sk.height - done.height), `skeleton ${sk.height}px, loaded ${done.height}px`).toBeLessThanOrEqual(2);

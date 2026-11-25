@@ -9,7 +9,8 @@ export default function Loading() {
       <div className="series-page" aria-hidden="true">
         <div className="series-head"><Bar w="6rem" className="sk-h1" /><Bar w="16rem" className="sk-line" /></div>
         <div className="filters genre-row series-chips">
-          {["5.5rem", "4.5rem"].map((w) => <Bar key={w} w={w} className="sk-chip" />)}
+          {/* `sk-dd` is 44px below 768px and 1.85rem above, as the loaded chips are. */}
+          {["5.5rem", "4.5rem"].map((w) => <Bar key={w} w={w} className="sk-chip sk-dd" />)}
         </div>
         <ul className="group series-rows series-list">
           {Array.from({ length: 4 }, (_, i) => (
