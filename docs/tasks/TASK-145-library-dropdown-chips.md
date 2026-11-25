@@ -1,14 +1,14 @@
 ---
 id: TASK-145
 title: 6.24 Built screens follow the mediums review (3 of 4) — the Library's dropdown chips
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 0a772cc
 ---
 
 # TASK-145 — 6.24 Built screens follow the mediums review (3 of 4) — the Library's dropdown chips
@@ -68,9 +68,48 @@ it gains the six 834px frames.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- E7 also draws a *Genre ▾* dropdown chip, an *All genres* chip and a count on each genre chip (*Fantasy · 212*); the task and MR-D20 name only *Owned* and *Sort*, so they are not built here: a candidate item in `docs/05-roadmap.md` phase 6 (approved at plan, owner 2026-11-25).
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-25 (owner). Owner's answers at the gate: **dropdowns at every width** (one markup; `blist`'s wider frames redrawn to match), and E7's extras (*Genre ▾*, *All genres*, genre counts) **left out**, with a roadmap item.
+
+**Approach.** A new client `ChipMenu`: a chip-shaped `<button aria-expanded>` that opens a short list of links, `aria-current="true"` on the current choice. Enter/Space open it (native button), ArrowUp/Down/Home/End and Tab move through it, Esc closes it and returns focus to the chip, a click elsewhere closes it. The links are drawn only while open and built in the client from the URL's params (as `BookSort` builds its options now), so the document + RSC carry two chips and the params, not the choices: `/books/list`'s doc + RSC shrinks (the four *Owned* links and the select's options go), and the JS grows by about 1 KB, under one PR's 3,000-byte limit (D-175). Not `role="menu"`: a disclosure of links (navigation), so `aria-current` is the right mark.
+
+Steps:
+
+1. `src/lib/library-sort.ts`: pure `ownedChoices(params)` (*Any · Physical · Audiobook · Ebook · Not owned*) and `sortChoices(params, sort, dir)` (the seven sorts, each opening in its own direction, then the current sort's two directions), each `{ label, href, current }` through `libraryHref`, so every other filter, the search and the sort ride along; plus the chip words (*Owned: Any*, *Owned: Physical*, *Sort: Length*) and the Sort chip's accessible name with its direction (*Sort: Length, longest first*).
+2. `src/components/ChipMenu.tsx` (new): the dropdown chip above, modelled on `Menu.tsx`.
+3. `src/components/BookSort.tsx`: *Sort* as a `ChipMenu`; the select and the reverse chip go (the reverse's two directions are in the menu: a third chip doesn't fit at 360px). A second export, `BookOwned`, draws *Owned* the same way.
+4. `src/app/books/list/page.tsx`: status chips → (Parked line) → (To read levels) → one row, `role="group"` named *More filters*, holding *Owned ▾* and *Sort ▾* → the genre row. The four *Owned* chip links go. Filter rules unchanged (4.9, 1.15, 4.5).
+5. `src/app/globals.css`: the dropdown chip (caret, 44px tall on the phone, 28px+ from 768px as the genre chips; grey, no hue; *on* state `--ink` border as `aria-current` chips) and its panel (the `.menu` surface, choices 44px on the phone). Tokens only.
+6. `src/components/Skeleton.tsx`, `src/app/books/list/loading.tsx`: the skeleton's first group loses the Sort; a two-chip line stands for the new row, so nothing moves when the list lands.
+7. `design/mockups.html` § `blist` (the phone frames that draw *Owned* or *Sort*, the tablet and desktop frames) and `design/mockups-index.md`: redrawn from E7 as built, with a notes line (6.24, MR-D20).
+
+**Files** (13; over the 8-file size check: the tests and the redraw are required in the same PR, the task is already a quarter of 6.24, no schema; kept whole, owner-approved)
+
+- `src/lib/library-sort.ts` — the choice lists and chip words.
+- `src/components/ChipMenu.tsx` (new) — the dropdown chip.
+- `src/components/BookSort.tsx` — *Sort* and *Owned* as dropdown chips.
+- `src/app/books/list/page.tsx` — the one row.
+- `src/app/globals.css` — the chip and its panel.
+- `src/components/Skeleton.tsx`, `src/app/books/list/loading.tsx` — the skeleton follows the rows (not in "Files likely touched").
+- `design/mockups.html`, `design/mockups-index.md` — `blist`.
+- `test/library-sort.test.ts` (not in "Files likely touched"), `test/library-page.test.tsx`, `test/e2e/library-owned.spec.ts`, `test/e2e/library-sort.spec.ts`, `test/e2e/library-genres.spec.ts` — the tests.
+
+**Test strategy** (written first, failing)
+
+- AC-1 (this clause): `test/e2e/library-genres.spec.ts` › *the Owned and Sort dropdown chips share one row above the genre row at 360px, light and dark, and nothing scrolls sideways*; `test/library-page.test.tsx` › *draws Owned and Sort as dropdown chips in one row, then the genre row, and no Owned chip links*. The `blist` redraw: the mockups diff, checked by spec-reviewer.
+- AC-2: the same e2e test: equal `top` of the two chips' boxes, chip text *Owned: Any* / *Sort: Series*, `scrollWidth === innerWidth`.
+- AC-3: `test/library-sort.test.ts` › the choice lists' hrefs and `current`; `test/e2e/library-owned.spec.ts` › *each Owned choice lists exactly its books, keeps the status and sort, and survives a reload*; `test/e2e/library-sort.spec.ts` › *each sort and both directions from the Sort menu, and a reload keeps them*.
+- AC-4: `test/e2e/library-sort.spec.ts` › *the dropdowns open by Enter and Space, move by arrows and Tab, close by Esc back to the chip, and mark the current choice* (both chips).
+- AC-5: `test/e2e/library-owned.spec.ts` FLOOR test rewritten: chips and choices ≥ 44px at the phone, axe, `contrastFailures`, no hue on a chip (computed border/text colours are `--faint-deco`/`--muted`/`--ink`); screenshots at 360/390/412/768/1024/1280 light and dark (the ONCE test); the skeleton-height test updated. The byte budget: CI's Lighthouse on the preview (D-175), or reported as not run while `LIGHTHOUSE_MODE` is off.
+
+Risks and open questions:
+
+- The byte budget is measured only on the preview; the design above lowers doc + RSC and adds ~1 KB of JS.
+- The phone's native select picker goes; the menu replaces it (the frame's choice).
+- Tests that pinned `#library-sort`, the *Sort* combobox, the reverse link or the *Owned* group are rewritten, not deleted: each assertion moves to the menu.
 
 ## Review log
 
