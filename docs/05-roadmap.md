@@ -404,6 +404,30 @@ measured run of the branch's preview (automatic or by hand); the four are
 gone from `UNMEASURED` in `test/perf.test.ts`, which still passes on the real
 `src/app`, and the PR's Lighthouse comment shows a tap time for each.
 
+### ☐ 0.14f The books screens that wait a second are timed and explained · S
+Owner intake, 2026-11-24 (*some db calls seem to take a second*). 0.14c
+measures what a page costs the browser on the preview; nothing times the
+server's side of a books screen against a real database, cold and warm, so a
+slow query, a wave that could run in parallel and a database waking from idle
+all look the same from the phone.
+
+- **Time it where it happens.** Each books route in `scripts/perf/routes.mjs`
+  is loaded against the **development** database twice: once after it has sat
+  idle past Neon's suspend, once straight after. The server's time for each
+  query wave is recorded (`Server-Timing`, or the query log the plan picks).
+  Production is never timed by this.
+- **Name the cause of each slow screen.** A route over 500 ms warm gets a
+  cause: a query (with its `EXPLAIN`), waves that could run as one, or the
+  database waking. A cause fixed by one query change is fixed here; anything
+  larger becomes a roadmap entry, and an index is a migration that asks first.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first)
+`docs/perf/books-server-timing.md` lists every books route with its cold and
+warm server time against development and a cause for each one over 500 ms
+warm; each fix made here has a test that would have failed before it (a query
+count in `test/query-budget.test.ts`, or an `EXPLAIN` assertion), and a second
+run recorded in the same file shows each fixed route under 500 ms warm.
+
 ---
 
 ### ☑ 0.15 The browser suite runs by area, with a critical set always · L
@@ -1833,6 +1857,37 @@ second changes it and `book_status`. The same control works from *Now* on
 `/books` and from `/books/status`; a search result has none. axe passes at
 every width.
 
+### ☐ 1.17c Log a past read of a book already read · S
+Owner intake, 2026-11-24 (*ability to add a "read" date in the past*).
+Marking a book Read already takes any past finish: 1.17b's *Finished*
+picker, as a day, a month or a year. What it can't do is add a read. *Read*
+on a book already Read re-dates its latest read (1.5), so a 2019 read can't be
+logged beside a 2024 one.
+
+- **Where.** The date line (1.17b), with one read or *All reads (n)*, gains
+  *Add a past read*: *Started* (optional) and *Finished*, with 1.5's picker,
+  and the format, text or audio (1.23).
+- **The write.** One new `read_events` row, through a helper in
+  `src/db/writes.ts`. A read that finishes after the latest keeps
+  `book_status` in step as 1.17b does; an earlier one leaves `book_status`
+  alone. No rank is written (3.4b: ranks move only through the rank helpers).
+  Undo deletes the row and puts `book_status` back. How `reread_of` chains a
+  read logged before others is the plan's, and it asks first if that rewrites
+  an existing row.
+- **Stop and ask at plan time** if it changes how a stored date is written or
+  interpreted (CLAUDE.md). No new column is proposed.
+- 4.4's sync sends the latest finish, so a past read that becomes the latest
+  changes `#date_read` on the next run.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) with
+the test database, a book read 2024-03-10 gets a past read finished
+2019-06-01: it has two `read_events` rows, `book_status` still finishes
+2024-03-10, and `book_reads` counts the book in 2019 and in 2024; Undo leaves
+one row. A past read finished 2025-01-05 moves `book_status`'s finish to
+2025-01-05. In the browser (0.11) at 360px, *Add a past read* opens both
+pickers, a start after the finish is refused and writes nothing, and axe
+passes.
+
 ### ☑ 1.29 Refresh production's comics from `Comics.xlsx`, books untouched · M
 Owner, 2026-11-08 (D-128). **Before 1.26.** From the books cutover on,
 `LEDGER_LIVE=true` makes `rebuild` and the full `load` refuse, and both would
@@ -1959,6 +2014,15 @@ whose drawing 6.21 builds). 0.13 and 0.14c finish only with
 `LIGHTHOUSE_MODE` on (D-158), and 6.23 is the owner's session in Claude
 Design, so the switch now waits on both.
 
+*Amended 2026-11-25 (D-186): rehearsed on development first.* The final load
+starts the plan, shelves, owned copies, the listen queue, Parked books, the
+inbox and the Calibre decisions empty, so the switch has an *In the app, after
+the load* list in Step 14. Before production, the owner runs *The switch*
+against development and then that list, which doubles as the minimum test of
+the books screens; Step 14's *Before the switch* gains the box. The entries
+from the 2026-11-24 intake (0.14f, 1.17c, 2.0c, 2.10c, 4.3b, 4.4c, 5.7b, 5.9c,
+5.11b, 6.26, 6.27) are not gates unless the owner pulls one ahead.
+
 **Depends on:** 1.25; the open Phase 1 entries the books need (1.14c, 1.17b)
 and 1.29, so the comics can still be refreshed after the switch; 2.11a and
 1.11 (done); and every open entry `docs/cutover-parity.md` names for
@@ -2067,6 +2131,28 @@ tap steps once. `PaceSettings`: a hold sends one `PATCH`, carrying the final
 value. In the browser (0.11), the input has `inputmode="numeric"`, focus
 returns to the number after a commit, and axe passes. Screenshots at 360px and
 1280px.
+
+### ☐ 2.0c A pace change reaches the plan without a reload · S
+Owner intake, 2026-11-24 (*changing reading time updates plan*; 2026-11-25:
+*I wanted it to happen automatically, not need a new load*). Capacity is
+derived from the pace on every render (`plan_capacity`, hard rule 2), but
+`PaceSettings` saves with a `fetch` and leaves the client's router cache
+alone. So the Plan screen and the books dashboard, opened again with Back or
+from the nav, can show the capacity from before the change until a reload.
+
+- After a save succeeds, the app drops its cached screens (`router.refresh()`,
+  or the Next 16 way the plan reads in `node_modules/next/dist/docs/`), so the
+  next visit to Plan or the dashboard renders at the new pace. A failed save
+  changes nothing beyond 2.0's failed-write line.
+- Nothing stored changes: the pace stays the only input, and nothing is
+  recomputed on save.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) in the
+browser (0.11): open Plan and note this year's capacity, go to Settings and
+change *Minutes a day* from 45 to 90; Plan reached with the browser's Back, and
+again from the nav, shows the capacity for 90 minutes without a reload, and the
+books dashboard's budget line agrees. A save that fails (the route answering
+500) leaves the capacity as it was.
 
 ### ☑ 2.1 Capacity view · M
 Depends on 1.7 and 2.0.
@@ -3450,6 +3536,41 @@ writes its `to_read` status and its plan row in one transaction. With 100k of
 room left, *Fits the room left* lists no book over 100k. Nothing on the sheet
 resolves to `--danger`. Screenshots at 360px and 1280px.
 
+### ☐ 2.10c Suggestions keep series order, and the sheet can search · M
+Owner intake, 2026-11-24 (*I tried it and it gave me multiple later books in
+series I hadn't started yet; no search on Plan this quarter*). Of 2.10b's eight
+groups, only *Next in a series* and *Next on a shelf* read `follow_next`, which
+offers a follow's first open book. *More from*, *Coming out*, *Recently
+added*, *Fits the room left* and *A change of genre* take any To-read book (or
+any unread book of the author), so book 4 of a series is offered while books
+1–3 sit unread (`plan_suggestions`, `etl/views.sql`). The sheet has no search,
+so a book no group offers can't be planned from it.
+
+- **Series order in every group.** No group suggests a book whose series or
+  subseries has an earlier live book still unread: no status, To read, Unlisted
+  or Parked. A book in hand (Reading, Listening), read or DNF counts as
+  started. *On deck* is the exception: it is the owner's own pick (D-37) and is
+  listed as it is. Universe order isn't used: a universe's later series start
+  fresh.
+- **Search.** The sheet gains a search field, its first control. It finds what
+  the Library's search finds (1.22: title or author, as you type), less read
+  and DNF books and those already planned in the target, each with its place
+  line (2.2l) and the suggestions' *Put in* / *Move here*. Placing one writes
+  what placing a suggestion writes (an Unlisted or Parked book moves to To
+  read, 1.21, 5.15).
+- Derived, never stored (hard rule 2); `plan_suggestions` stays one function.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) with
+the test database: a series with books 1–4, none followed, all To read, each
+50k words, and 200k of room left: the sheet for 2027 Q2 suggests book 1 under
+*Fits the room left* and never books 2–4 in any group; with book 1 read it
+suggests book 2 and not 3–4; with book 1 Reading, book 2; book 3 put On deck is
+listed under *On deck*. An author followed Reading lists only the first unread
+book of each of the author's series under *More from*. Typing two letters of a
+title in the sheet's search lists that book with its place line and no read
+book; *Put in Q2* on it writes one `reading_plan` row and Undo removes it.
+Screenshots at 360px and 1280px; axe passes.
+
 ### ☑ 2.11a Prerequisite cycle check · S
 D-7, and the loader half of R0-01. Split from the old 2.11 (R3-15; every other mention of "2.11" in the docs means this task plus the owner checklist): what is left
 here is agent work with a pass/fail check; the judgement calls about 230 hard
@@ -4454,6 +4575,29 @@ height (CLS under 0.1 on a 381-row spine). With `prefers-reduced-data: reduce`
 emulated, or *Show covers* off, the spine makes zero image requests. No cover
 element carries a `box-shadow` that resolves to `--halo`.
 
+### ☐ 4.3b Covers load small, behind their placeholder · S
+Owner intake, 2026-11-24 (*covers take a second to come in (at least add the
+loading text image)*). `CoverImage` hotlinks the full-size Hardcover image into
+a 40×60 box and drops the placeholder the moment it starts, so the box is
+blank until the bytes arrive.
+
+- **The placeholder stays until the image has loaded** (`onLoad`); then the
+  image takes its place in the same box, so nothing moves. An image that fails
+  stays the placeholder, and with *Show covers* off or data reduced none is
+  requested, as now (4.3).
+- **A small image.** Each box asks for an image at most twice its CSS width.
+  The plan names how: a resize the source's CDN offers, else Next's image
+  optimizer (and what it costs on Vercel's plan), else a stored thumbnail.
+  The cover URL in the database is unchanged.
+- A fade, if any, uses the motion tokens, and none under reduced motion.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) in the
+browser (0.11), with cover responses held back: a Library row's cover box shows
+the placeholder, and its bounding box is the same before and after the image
+is released; once released, the image shows. The image requested for a 40-px
+box is at most 80 px wide. A cover that fails leaves the placeholder. The
+Library stays within its budget in `scripts/perf/budget.json`.
+
 ### ☑ 4.4 Sync with Calibre, both ways: one command, by hand or weekly · M
 Backlog intake, 2026-10-26 (owner: *Calibre link/import, recurring*). D-83.
 Depends on 1.18 and 1.21, and only on cutover otherwise, so it can be pulled
@@ -4596,6 +4740,46 @@ Ledger finish on 2023-11-02 returns one `#date_read` write, `2023-11-02`; a
 day-precise Calibre date of 2024-07-01 against the Ledger's 2024-03-14 returns
 one write, as today; a book new to the Ledger from the year-only record has one
 read finished 2024-07-01, `approximate`.
+
+### ☐ 4.4c A listen's date in Calibre, and a date changed on either side · M
+Owner intake, 2026-11-24 and 2026-11-25 (D-184; **amends D-133**, under which
+the Ledger's reads always win from the books cutover). The owner's Calibre
+gains a date column, `#listened_date`. From the cutover, a date changed in
+Calibre (`#date_read` or `#listened_date`) comes into the Ledger instead of
+being overwritten, unless the Ledger changed it too.
+
+- **`#listened_date`.** The sync writes the finish of the latest `audio` read
+  (`read_events.format`, 1.23) the way it writes `#date_read`: its day at noon
+  Eastern, a year-only finish kept as 4.4b keeps it, cleared when the book has
+  no dated listen. `calibre_sync.py` gains `--listened-column` (default
+  `#listened_date`); a library without the column is named and skipped.
+- **The side that changed wins** (D-184), for both date columns. The sync
+  compares Calibre's value with what it held at the end of the last run.
+  Changed in Calibre only: Calibre's date re-dates that read (the latest read,
+  or the latest listen) through 1.17b's helper, the write an edit in the app
+  makes, and the run lists it under *in*. Changed in the Ledger only: written
+  out, as now. Changed on both: the Ledger's is written and the run lists the
+  conflict. A date cleared in Calibre on a read book never unreads it; it is
+  listed as a conflict.
+- **Where the last value comes from is the plan's.** From the run log
+  (`calibre_syncs`) if it holds every book's value; otherwise from a record of
+  what each run left, which is a schema change and asks first.
+- **From the cutover only.** Until `CALIBRE_SYNC_READS` is on, reads come only
+  through extract (D-87), and Calibre's dates change nothing in the Ledger.
+- **Stop and ask at plan time** if it changes how a stored date is written or
+  interpreted (CLAUDE.md).
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) with
+the test database and `CALIBRE_SYNC_READS` on: a book with a text read
+finished 2026-03-01 and an audio read finished 2026-05-02 gets `#date_read` and
+`#listened_date` 2026-05-02, and a book with only a text read gets no
+`#listened_date`. On the next run, with Calibre's `#listened_date` changed to
+2026-05-09 and the Ledger unchanged, the audio read finishes 2026-05-09 and the
+report lists it under *in*, with nothing out for that column; with both sides
+changed, the Ledger's date is written and the report lists the conflict. A
+library without `#listened_date` is named and skipped, and the run succeeds.
+With `CALIBRE_SYNC_READS` off, a changed Calibre date writes nothing to
+`read_events`.
 
 ### ☑ 4.5 Calibre's genres on every screen · M
 *Pulled ahead of 1.26 by the owner (D-139).*
@@ -4856,6 +5040,28 @@ it is converted.
     never appears. The dashboard line's counts equal the list's. Screenshot at
     360px, 834px and 1280px.
 
+- ☐ 5.7b **Coming out lets a book go: Remove, and Calibre having it** · S.
+  Owner intake, 2026-11-24 and 2026-11-25 (D-185). A book stays on Coming out
+  while it has no status (5.7), and *Got it* is the only way off. The owner's
+  rule: it stays until it is got, removed, or Calibre adds it.
+  - **Remove.** Each row's `⋯` menu gains *Remove*, grey and never `--danger`
+    (6.24): it soft-deletes the book (hard rule 4), which has no status by
+    definition, so it leaves every list, and the toast's Undo restores it.
+  - **Calibre adds it.** When the sync (4.4) matches a Calibre book to a
+    Ledger book with no status row, it writes `unlisted`, as it does for a book
+    it creates (D-83), and lists the change in the run's *in*. So a wanted book
+    leaves Coming out on the first sync after it lands in Calibre. A book with
+    any status is left as it is. `.claude/rules/schema.md`'s list of what
+    writes `unlisted` gains it.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first)
+    with the test database: *Remove* on a Coming out row sets the book's
+    `deleted_at`, the row leaves the list and the dashboard line's counts drop
+    by one, and Undo brings both back. A sync whose payload matches a wanted
+    book writes its `book_status` as `unlisted`, lists it under *in*, and the
+    book is gone from Coming out and listed under the Library's *Unlisted*; a
+    matched book already To read keeps its status. At 360px *Remove* resolves
+    to no `--danger` colour, and axe passes.
+
 - ☐ 5.8 **Comic issues coming out, for the runs you follow** · M. D-35 (this
   reverses the product doc's *Not building: upcoming-issue tracking*). Depends on 1.3b,
   1.3c and 5.7 (the screen pattern). `/comics/releases`: new issues in a series
@@ -4958,6 +5164,26 @@ it is converted.
     route it changes stays within its byte budget (`scripts/perf/budget.json`).
     Screenshots at 360px and 1280px.
 
+- ☐ 5.9c **The Series list opens on what you've started** · S. Owner
+  intake, 2026-11-24 (*do we need to load the whole series list, or just ones
+  started and finished?*) and 2026-11-25. `/books/series` lists every series
+  you have a book in (`seriesList`, `books_listed > 0`), most never started.
+  Depends on 5.9.
+  - **Started by default.** The list opens on the series with a book read, in
+    hand or DNF, or followed (Tracking or Reading). A chip row, *Started* ·
+    *All*, real links (`?show=all`), each with its count. In progress first, as
+    now. The query reads only the rows the chip shows: the cut is in SQL, not
+    a filter in the app.
+  - **The Library's foot line goes.** *All series →* at the foot of
+    `/books/list` (5.9, TASK-125) is removed: the books nav's *Series* reaches
+    the page (owner, 2026-11-25).
+  - **Check:** (proposed; the owner agrees it by merging or edits it first)
+    with the test database, three series: one with a read book, one followed
+    Tracking with none read, and one with only To-read books. `/books/series`
+    lists the first two and not the third, *All* lists all three, and each
+    chip shows its count. The Library has no *All series* link, and the nav's
+    *Series* opens the page. Screenshots at 360px and 1280px; axe passes.
+
 - ☐ 5.10 **Editions: collected and read** · M. Coverage check, 2026-10-08;
   product § The owner's list's *Master* row. Depends on 5.6. The workbook's Master tab (178
   trades and omnibuses) was loaded as `editions`, with per-user
@@ -5015,6 +5241,29 @@ it is converted.
     counts from their views. Setting *Reading* writes one follow row for the
     user, survives a reload, and shows in the view's `follow_state`. *Not
     following* deletes the row. No count or state column is added.
+
+- ☐ 5.11b **Universes: every universe in one list** · S. Owner intake,
+  2026-11-24 (*where are universes?*) and 2026-11-25 (*yes, let's build the
+  universe list*). A universe's page (5.11) is reached only from its name on a
+  book row; nothing lists them. Depends on 5.9c, whose chips it copies.
+  - **`/books/universes`.** Every universe with a live book: its name linking
+    to its page, `read / total` with a `--ready` meter from
+    `universe_progress`, its follow state, and how many series it holds. In
+    progress first, then by name, as the Series list orders. *Started* ·
+    *All*, as 5.9c.
+  - **Reached from Series.** The Series page gains a tab row, *Series* ·
+    *Universes*, real links with `aria-current` on the open one, so the books
+    nav gains no item (6.25 is fitting the rails to five media). The mockup
+    draws a `universes` frame before it is built, and the route gets a perf
+    route and budget, as 0.14e's pages do.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first)
+    with the test database, three universes: one with a read book, one followed
+    with none read, and one with only To-read books. `/books/universes` lists
+    the first two, *All* adds the third, and each row links to
+    `/books/universes/<id>` with `read / total` equal to `universe_progress`'s.
+    The Series page's *Universes* tab opens it and carries `aria-current`
+    there. `scripts/perf/routes.mjs` and `budget.json` have a route for it.
+    Screenshots at 360px and 1280px; axe passes.
 
 - ☑ 5.12 **In the middle of, and completed: one page for every medium** · M.
   Backlog intake, 2026-10-20 (owner: *series, authors and tracks I'm in the
@@ -5694,6 +5943,49 @@ it is converted.
   focus return work in; at 1280px the sidebar lists every medium with the
   current one expanded and an *Across media* group; with *Start on* set to
   Books, `/` opens `/books`; axe reports no new violations at each width.
+
+- ☐ 6.26 **The Library's genre row scrolls smoothly, with arrows you can
+  hold** · S. Owner intake, 2026-11-24 and 2026-11-25 (*it's choppy; if I hold
+  down on the arrow it should scroll smoothly*). The genre row is the one chip
+  row that still draws the browser's scrollbar (`.genre-row`, `globals.css`),
+  and on Windows that scrollbar's arrows step in jumps.
+  - **No native scrollbar**, as `.tabrow` and `.shelf` hide theirs.
+  - **Arrows at 768px and up**, one at each end that has more to show: a tap
+    scrolls about the row's width, smoothly; a held press scrolls at a steady
+    speed until release or the end. Each is a named button (*Scroll genres
+    left*, *right*); the chips stay in tab order. Under reduced motion a tap
+    jumps the same distance, and a hold steps.
+  - **The phone keeps the swipe**, with no arrows (TASK-145 redraws its
+    filters). The arrows' script adds JS to `/books/list`: the plan states the
+    bytes and keeps the route within its budget.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first) in
+    the browser (0.11) at 1280px, with more genres than fit: no native
+    scrollbar is drawn and there is no left arrow at the start; a tap on the
+    right arrow moves `scrollLeft` by about the row's width over several
+    frames; holding it for a second moves it further than a tap and it stops on
+    release; at the end the right arrow goes. At 360px there are no arrows and
+    the row still scrolls by touch. Under reduced motion a tap moves in one
+    frame. Axe passes, and `/books/list` stays within its budget.
+
+- ☐ 6.27 **Plainer words on every built screen** · M. Owner intake,
+  2026-11-24 (*overall wording review: less fluffy, more direct*). The copy grew
+  screen by screen, in the mockups' voice.
+  - **Proposed first, changed second.** Every user-facing string on the built
+    books and comics screens (headings, empty states, toasts, menus, sheets,
+    Settings) is listed in `docs/review/copy-pass.md` with a plainer proposal
+    beside it, under rules written at the file's top (say what happens; cut
+    asides and adverbs; one sentence where there were two). The owner marks
+    each *keep*, *take* or *edit* before any string changes.
+  - **Then one change.** The accepted strings change in `src/` and in
+    `design/mockups.html` (the copy authority) in the same PR, and the browser
+    specs that name a string follow it. The rules go into `docs/04-design.md`
+    § 11; `design/STYLE_GUIDE.md` is protected and changes only with the
+    owner's permission.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first)
+    `docs/review/copy-pass.md` lists every changed string with its old and new
+    text and the owner's mark; no string marked *keep* changed; every accepted
+    string is in `design/mockups.html` where it draws it; the browser suite
+    passes; the rules are in `docs/04-design.md` § 11.
 
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M
@@ -6763,7 +7055,12 @@ becomes a task once its open question is answered. None has a **Check:**, and
   service the Ledger already talks to (Hardcover keeps a star rating per
   book); how a rank becomes stars, when the Ledger has a ranking and no star
   scale (D-3); and whether a public copy breaks the cut list's *no public
-  pages*, since the repository is public.
+  pages*, since the repository is public. **2026-11-24 intake** (owner: *star
+  ratings, maybe Goodreads integration (star ratings integrated into
+  Calibre)*): Calibre has a rating of its own, 0–5 stars, which 4.4's sync
+  could read and write as it does `#read`; `book_status.rating` exists and
+  nothing draws it. Goodreads closed its public API to new keys in December
+  2020, so Goodreads can only be a CSV import or export (6.6).
 - **L-7 Rank games** (2026-11-01 intake; owner: *ranking system maybe down
   the line*). Once Phase 10 is in use, a game could be ranked within its year
   as 3.4b ranks books, with the same *This or that* sorter. The open
@@ -6842,5 +7139,12 @@ becomes a task once its open question is answered. None has a **Check:**, and
   in its name). Neither involves the plan rail. The open question is whether
   to add both rules to the dashboard spec's list and fix them there, or to
   give the shelf another keyboard route.
+- **L-13 Automatic shelves** (2026-11-24 intake; owner: *why are there no
+  automatic shelves?*, and 2026-11-25: *put it in later, we can brainstorm
+  then*). Shelves are hand-made (5.1). A universe already has its page and
+  list (5.11, 5.11b), so they wouldn't be per universe. To brainstorm: which
+  rules (owned and unread, added lately, a genre and a length, a Calibre tag);
+  whether a rule shelf is a saved Library filter or a shelf with a rule; and
+  whether it can be followed (2.2c).
 
 ---
