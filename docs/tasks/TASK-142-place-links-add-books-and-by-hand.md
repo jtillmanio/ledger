@@ -1,14 +1,14 @@
 ---
 id: TASK-142
 title: 5.9b Every other place line links its names (3 of 3) — Add books' results, and a gap row fills By hand
-status: Ready
+status: In progress
 depends_on: [TASK-140, TASK-141]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 56a5a60
 ---
 
 # TASK-142 — 5.9b Every other place line links its names (3 of 3) — Add books' results, and a gap row fills By hand
@@ -66,9 +66,32 @@ Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- By hand reaches a series only by `slug(name)` (`addBook`'s `seriesOf`, `src/db/writes.ts`), but the Calibre sync mints `<slug>-x` when two names share a slug (`freshId`, `src/db/calibre-sync.ts`). Such a series can't be reached by typing its name, nor by a gap row's link, and an add lands in the other series. Older than this task → new roadmap item in phase 5 with a proposed **Check:** (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+_Approved 2026-11-25 (owner: "approve"), keeping the task whole although it touches 11 files: it is the last of a three-way split, every change is small, and there's no schema change._
+
+**The parameter.** A gap row's *Add* links to `/books/add?series=<name>&n=<n>`. When `series` is present, Add books opens on By hand with *Series* filled. *#* is filled only when `n` is a number from 0 to `MAX_POSITION`, else left empty. Focus goes to By hand's first empty field (Title). `q` is ignored when `series` is present. With no new parameter, `/books/add` and `?q=` behave as before. A series name the Ledger doesn't hold (a shared link) is still filled in, and saving creates that series, as typing it does. The name is used, not the id, because By hand already finds a series by the slug of its name: no lookup query, no added bytes.
+
+**Steps**
+
+1. `librarySearch` selects `b.author_id`, `b.series_id`, `b.universe_id`, and `LibraryHit` gains them. `BookSearch`'s row draws its place line through `BookPlace` (`subParts`), then ` · N pages`, in `.rs.res-place`. A Hardcover-only result has no ids, so its names draw as text. `globals.css`'s place-link rules gain `.res-place a`.
+2. `src/lib/book-add.ts` gains `handHref(series, n)` (the link) and `handParam(series, n)` (the page's reader: `{ series, position } | null`). `SeriesBooks`' gap row uses `handHref`; the empty slate keeps `seriesAddHref` (`?q=`).
+3. `src/app/books/add/page.tsx` reads `series` and `n` through `handParam` and passes `hand` to `AddBooks`. `AddBooks` starts in mode `hand` when given one, and its By hand state carries the series and position. `ByHand` takes starting `series` and `position` plus `focusFirstEmpty`, which on mount focuses the first empty field in `ORDER`. *Add it by hand* from Search still carries only the title.
+4. `design/mockups.html`: on the `add` screen, `a.plink` on the library results' author, universe and series (the Hardcover result stays text), and a By hand frame opened from a gap (*The Dark Tower*, `6`); on the `series` screen, the gap-row note says *Add* opens By hand filled. `design/mockups-index.md` follows.
+
+**Files:** `src/db/queries.ts`, `src/components/BookSearch.tsx`, `src/app/globals.css`, `src/lib/book-add.ts`, `src/components/SeriesBooks.tsx`, `src/app/books/add/page.tsx`, `src/components/AddBooks.tsx`, `src/components/ByHand.tsx`, `design/mockups.html`, `design/mockups-index.md`, this task file. Not in the task's list: `queries.ts` (the answer's ids), `globals.css` (the link style), `book-add.ts` (the href and the reader).
+
+**Test strategy**
+
+- AC-2: `test/add-book-sheet.test.tsx` (a library result's author, universe and series are links to `/books/authors/…`, `/books/universes/…`, `/books/series/…`; a Hardcover result's `.rs` has no `<a>`); `test/hardcover-search.test.ts` (the route's library hits carry `author_id`, `series_id`, `universe_id`); `test/e2e/book-search.spec.ts` (the same in a browser, with axe).
+- AC-3: `test/series-books.test.tsx` (the gap row's `href` is `/books/add?series=…&n=3`, encoded); a component test (By hand selected, *Series* and *#* filled, focus on Title); `test/e2e/series.spec.ts` (tap *Add* for #3, By hand filled, save, then the series page has no gap row for #3).
+- AC-4: component tests: no parameter means Search is selected and empty; `?q=` alone means Search holds the text; a bad `n` leaves *#* empty.
+- AC-5 and AC-1's screenshots: floor checks (axe, contrast, named links) with screenshots at each `ui.viewports` width, light and dark, in the two browser specs.
+- AC-1's byte budgets: `books-add` is measured on the preview. The series page has no `scripts/perf/budget.json` entry until 0.14e merges; the PR says so.
+
+**Risks:** `src/app/books/add/loading.tsx` draws Search's skeleton, so a gap link briefly shows Search before By hand. Accepted at plan.
 
 ## Review log
 
