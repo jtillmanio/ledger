@@ -375,7 +375,8 @@ tables.
     starts on `/books/series`, whose *Universes* tab opens it (it has no nav item). `/parked`'s tap starts on
     the Library's *Parked* filter. Unmeasured, with their reasons in the test: the
     two sheets' own intercept pages. The series list, a series', an author's and a
-    universe's page (5.9, 5.11, roadmap 0.14e) are measured too: the list is the bare
+    universe's page (5.9, 5.11, roadmap 0.14e) have routes, and their ceilings (`–`
+    above) come from the first measured run: the list is the bare
     `/books/series`, which opens on *Started* (5.9c), tapped from the books nav's
     *Series*; a series' and a universe's page take the first row of their list, and
     an author's the first author link on Top's place line (a Library place link is a
