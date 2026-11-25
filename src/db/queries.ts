@@ -1290,14 +1290,77 @@ export function parseSeriesShow(raw: string | string[] | undefined): SeriesShow 
  * `seriesList`'s cut, written out in both because the query-budget harness counts a nested `sql` fragment as a
  * query. Derived here, never stored (hard rule 2); a removed book counts for nothing (hard rule 4).
  */
-export async function seriesCounts(userId: string): Promise<{ started: number; all: number }> {
-  const [row] = await sql<{ started: number; all: number }[]>`
+export async function seriesCounts(userId: string): Promise<{ started: number; all: number; universes: number }> {
+  const [row] = await sql<{ started: number; all: number; universes: number }[]>`
     SELECT COUNT(*) FILTER (WHERE p.follow_state IN ('tracking', 'reading') OR EXISTS (
              SELECT 1 FROM books sb JOIN book_status ss ON ss.book_id = sb.id AND ss.user_id = ${userId}
              WHERE sb.series_id = p.series_id AND sb.deleted_at IS NULL
                AND ss.status IN ('read', 'reading', 'listening', 'dnf')))::int AS started,
-           COUNT(*)::int AS "all"
+           COUNT(*)::int AS "all",
+           (SELECT COUNT(*)::int FROM universe_progress up
+            WHERE up.user_id = ${userId} AND up.books_listed > 0) AS universes
     FROM series_progress p
+    WHERE p.user_id = ${userId} AND p.books_listed > 0`;
+  return row;
+}
+
+/** A universe on the Universes list (task 5.11b): how far through it you are, its follow and how many series it holds. */
+export type UniverseSummary = {
+  id: string; name: string;
+  /** `universe_progress`'s counts: live books only; a universe has no stated total, so `total` is the live books listed. */
+  read: number; total: number;
+  /** `follow_state`: null for no follow and for a stored `off` (D-117). */
+  followState: FollowState | null;
+  /** Its live books neither read nor DNF: *On hold* (D-118) reads this, as the universe's own page does. */
+  unread: number;
+  /** The distinct series its live books are in; a book in none counts for nothing. */
+  series: number;
+};
+
+/**
+ * Every universe you have a live book in (task 5.11b; mockup `universes`): *Started* (the page's own address) or
+ * *All*, in progress first, then not started, then complete, each by name, as `seriesList`. Counts and the
+ * follow come from `universe_progress` (a removed book is on neither count, hard rule 4), `unread` as
+ * `universePage` reads it. A universe is *started* when you follow it (`tracking` or `reading`; a stored `off`
+ * already reads NULL) or a live book in it is read, in hand (reading, listening) or a DNF, the cut `seriesList`
+ * makes of a series; Calibre's `#superseries` alone says which books are in one (D-90). All derived here,
+ * never stored (hard rule 2).
+ */
+export async function universesList(userId: string, show: SeriesShow = "all"): Promise<UniverseSummary[]> {
+  return sql<UniverseSummary[]>`
+    SELECT p.universe_id AS id, p.name, p.books_read::int AS read, p.books_listed::int AS total,
+           p.follow_state AS "followState",
+           (SELECT COUNT(*)::int FROM books k
+            LEFT JOIN book_status ks ON ks.book_id = k.id AND ks.user_id = ${userId}
+            WHERE k.universe_id = p.universe_id AND k.deleted_at IS NULL
+              AND (ks.status IS NULL OR ks.status NOT IN ('read', 'dnf'))) AS unread,
+           (SELECT COUNT(DISTINCT k.series_id)::int FROM books k
+            WHERE k.universe_id = p.universe_id AND k.deleted_at IS NULL) AS series
+    FROM universe_progress p
+    WHERE p.user_id = ${userId} AND p.books_listed > 0
+      AND (${show === "all"}::boolean OR p.follow_state IN ('tracking', 'reading') OR EXISTS (
+        SELECT 1 FROM books sb JOIN book_status ss ON ss.book_id = sb.id AND ss.user_id = ${userId}
+        WHERE sb.universe_id = p.universe_id AND sb.deleted_at IS NULL
+          AND ss.status IN ('read', 'reading', 'listening', 'dnf')))
+    ORDER BY CASE WHEN p.books_read >= p.books_listed THEN 2 WHEN p.books_read = 0 THEN 1 ELSE 0 END,
+             lower(p.name COLLATE "default"), p.universe_id`;
+}
+
+/**
+ * How many universes each cut of the Universes list holds, for the chips, and how many series the Series tab
+ * names (task 5.11b): one statement, the same rows as `universesList`, the test written out in both for the
+ * query-budget harness's sake (as `seriesCounts`). A removed book counts for nothing (hard rule 4).
+ */
+export async function universeCounts(userId: string): Promise<{ started: number; all: number; series: number }> {
+  const [row] = await sql<{ started: number; all: number; series: number }[]>`
+    SELECT COUNT(*) FILTER (WHERE p.follow_state IN ('tracking', 'reading') OR EXISTS (
+             SELECT 1 FROM books sb JOIN book_status ss ON ss.book_id = sb.id AND ss.user_id = ${userId}
+             WHERE sb.universe_id = p.universe_id AND sb.deleted_at IS NULL
+               AND ss.status IN ('read', 'reading', 'listening', 'dnf')))::int AS started,
+           COUNT(*)::int AS "all",
+           (SELECT COUNT(*)::int FROM series_progress sp
+            WHERE sp.user_id = ${userId} AND sp.books_listed > 0) AS series
+    FROM universe_progress p
     WHERE p.user_id = ${userId} AND p.books_listed > 0`;
   return row;
 }

@@ -108,7 +108,7 @@ describe("the Started cut (5.9c AC-1)", () => {
     await sql`INSERT INTO series_follows (user_id, series_id, state) VALUES (${USER}, 'track', 'tracking')`;
     expect(await ids("started")).toEqual(["readb", "track"]);
     expect(await ids("all")).toEqual(["readb", "todo", "track"]);
-    expect(await q.seriesCounts(USER)).toEqual({ started: 2, all: 3 });
+    expect(await q.seriesCounts(USER)).toEqual({ started: 2, all: 3, universes: 0 });
   });
 
   it("a book in hand (reading, listening) or a DNF starts a series; unlisted and parked do not", async () => {
@@ -119,7 +119,7 @@ describe("the Started cut (5.9c AC-1)", () => {
     await series("prk", "Parked", null, [{ id: "p1", pos: 1 }]);
     await sql`INSERT INTO book_status (user_id, book_id, status, parked_on) VALUES (${USER}, 'p1', 'parked', '2026-11-01')`;
     expect(await ids("started")).toEqual(["dnf", "lst", "rdg"]);
-    expect(await q.seriesCounts(USER)).toEqual({ started: 3, all: 5 });
+    expect(await q.seriesCounts(USER)).toEqual({ started: 3, all: 5, universes: 0 });
   });
 
   it("a follow of Reading starts it; a stored off, and no follow at all, do not", async () => {
@@ -136,7 +136,7 @@ describe("the Started cut (5.9c AC-1)", () => {
     await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${OTHER}, 'm1', 'read')`;
     await sql`INSERT INTO series_follows (user_id, series_id, state) VALUES (${OTHER}, 'gone', 'tracking')`;
     expect(await ids("started")).toEqual([]);
-    expect(await q.seriesCounts(USER)).toEqual({ started: 0, all: 2 });
+    expect(await q.seriesCounts(USER)).toEqual({ started: 0, all: 2, universes: 0 });
     expect(await ids("started", OTHER)).toEqual(["gone", "mine"]);
   });
 
@@ -144,7 +144,7 @@ describe("the Started cut (5.9c AC-1)", () => {
     await series("one", "One", null, [{ id: "o1", pos: 1 }]);
     await series("ghost", "Ghost", null, [{ id: "h1", pos: 1, status: "read", deleted: true }]);
     expect((await q.seriesList(USER)).map((s) => s.id)).toEqual(["one"]);
-    expect(await q.seriesCounts(USER)).toEqual({ started: 0, all: 1 });
+    expect(await q.seriesCounts(USER)).toEqual({ started: 0, all: 1, universes: 0 });
   });
 
   it("keeps the order and the next unread within the cut", async () => {

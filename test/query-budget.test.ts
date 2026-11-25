@@ -45,6 +45,8 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   "/books/series": { queries: 2, waves: 1 },
   // One series' page (task 5.9, 2 of 3): its counts, follow, live books and gaps, one read.
   "/books/series/[id]": { queries: 1, waves: 1 },
+  // Universes (task 5.11b): every universe with its counts and series, and the chips' and tab's counts, together.
+  "/books/universes": { queries: 2, waves: 1 },
   // An author's and a universe's page (task 5.11): its counts, follow and live books, one read each.
   "/books/authors/[id]": { queries: 1, waves: 1 },
   "/books/universes/[id]": { queries: 1, waves: 1 },
@@ -161,6 +163,8 @@ const pages: [string, () => Promise<unknown>][] = [
     (await import("../src/app/books/series/page")).default({ searchParams: Promise.resolve({}) })],
   ["/books/series/[id]", async () =>
     (await import("../src/app/books/series/[id]/page")).default({ params: Promise.resolve({ id: "ser" }) })],
+  ["/books/universes", async () =>
+    (await import("../src/app/books/universes/page")).default({ searchParams: Promise.resolve({}) })],
   ["/books/authors/[id]", async () =>
     (await import("../src/app/books/authors/[id]/page")).default({ params: Promise.resolve({ id: "au" }) })],
   ["/books/universes/[id]", async () =>

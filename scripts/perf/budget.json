@@ -19,6 +19,7 @@
     "watch": { "docRscBytes": 8400, "jsBytes": 12400, "requests": 22, "a11y": 100 },
     "releases": { "docRscBytes": 10100, "jsBytes": 8000, "requests": 23, "a11y": 100 },
     "shelves": { "docRscBytes": 10300, "jsBytes": 5300, "requests": 23, "a11y": 100 },
+    "universes": { "docRscBytes": 10300, "jsBytes": 5300, "requests": 23, "a11y": 100 },
     "shelf": { "docRscBytes": 11400, "jsBytes": 12000, "requests": 25, "a11y": 100 },
     "books-add": { "docRscBytes": 11200, "jsBytes": 23300, "requests": 23, "a11y": 100 },
     "top": { "docRscBytes": 12100, "jsBytes": 10000, "requests": 24, "a11y": 100 },

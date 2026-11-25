@@ -113,11 +113,11 @@ const MEDIUM_ROUTES = [
 export const MEDIUM_COMPONENTS = {
   comics: ["AddIssues", "InsertPreview", "IssueDetail", "IssueRecord", "IssueRow", "IssueSearch", "NextStrip", "QueueBadge", "QueueButton", "QueueList", "QueueShelf", "RunChip"],
   books: [
-    "BetweenBooks", "BlockPopover", "BookDetail", "BookListSearch", "BookNote", "BookSheetActions", "BookShelves", "BookSort",
+    "BetweenBooks", "BlockPopover", "BookDetail", "BookListSearch", "BookListTabs", "BookNote", "BookSheetActions", "BookShelves", "BookSort",
     "CalibreSyncLine", "ComingOutLine", "FinishBook", "GotIt", "GroupingBooks", "InlineText", "ListenNext", "OnDeckRow",
     "ParkedDone", "ParkedReviewLine", "ParkedRow", "PlaceThem", "PlanQuarter", "PlanQuarterRows", "PlanRail", "PlanSheet",
     "PlanShelf", "QuarterStrip", "QueueListen", "RailDrag", "RailStackSheet", "ReadAgain", "RebalanceSheet", "ReleaseDate",
-    "SeriesBooks", "SeriesList", "SheetLinks", "ShelfBooks", "ShelfList", "TopBooks", "YearDecision",
+    "SeriesBooks", "SeriesList", "SheetLinks", "ShelfBooks", "ShelfList", "TopBooks", "UniversesList", "YearDecision",
   ],
 };
 

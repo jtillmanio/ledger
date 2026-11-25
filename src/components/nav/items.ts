@@ -61,7 +61,11 @@ export const NAV_ITEMS: NavItem[] = [
   // Every books shelf, and each shelf's page under it (task 5.1).
   { id: "books-shelves", label: "Shelves", href: "/books/shelves", icon: "library", enabled: true, group: "medium", medium: "books" },
   // Every series you have books in, with the next one to read (task 5.9). Neutral icon: hue identifies data.
-  { id: "books-series", label: "Series", href: "/books/series", icon: "book-marked", enabled: true, group: "medium", medium: "books" },
+  // The Universes list is its tab, not a nav item (task 5.11b): Series stays current on it. A universe's own page is not.
+  {
+    id: "books-series", label: "Series", href: "/books/series", icon: "book-marked", enabled: true, group: "medium", medium: "books",
+    currentOn: /^\/books\/universes$/,
+  },
   // Every year's whole reading list, ranked (task 3.4b, D-122). Never prefetched, as Plan: its chunks would ride on every books page.
   {
     id: "books-top", label: "Top", sideLabel: "Top books", href: "/books/top", icon: "list-ordered", enabled: true,

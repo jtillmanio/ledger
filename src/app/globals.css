@@ -2284,16 +2284,19 @@ p.muted[id^="dnd-help"]{margin:.5rem 0 0}
    single element that slides to the selected tab by --i; --dur-2 is 0 under
    reduced motion, so there it just moves. */
 .tabs{position:relative;display:flex;margin:.75rem 0 1rem;border-bottom:1px solid var(--rule)}
-.tabs [role="tab"]{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:.5rem;
+.tabs [role="tab"],.list-tabs > a{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:.5rem;
   min-height:44px;padding:0 .5rem;font-size:.9375rem;font-weight:500;color:var(--muted);text-decoration:none;
   white-space:nowrap}
-.tabs [role="tab"][aria-selected="true"]{color:var(--ink);font-weight:600}
-.tabs [role="tab"] .n{font-size:.6875rem;font-weight:500;font-variant-numeric:tabular-nums;color:inherit}
-.tabs [role="tab"]:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring);border-radius:var(--r-sm)}
+.tabs [role="tab"][aria-selected="true"],.list-tabs > a[aria-current="page"]{color:var(--ink);font-weight:600}
+.tabs [role="tab"] .n,.list-tabs > a .n{font-size:.6875rem;font-weight:500;font-variant-numeric:tabular-nums;color:inherit}
+.tabs [role="tab"]:focus-visible,.list-tabs > a:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring);border-radius:var(--r-sm)}
 .tab-ink{position:absolute;left:0;bottom:-1px;width:calc(100% / var(--n,3));height:2px;background:var(--m,var(--brand));
   transform:translateX(calc(var(--i,0) * 100%));transition:transform var(--dur-2) var(--ease-out)}
-@media (hover:hover) and (pointer:fine){ .tabs [role="tab"][aria-selected="false"]:hover{color:var(--ink)} }
+@media (hover:hover) and (pointer:fine){
+  .tabs [role="tab"][aria-selected="false"]:hover,.list-tabs > a:not([aria-current="page"]):hover{color:var(--ink)}
+}
 .sk-tabs{height:45px;margin:.75rem 0 1rem}
+/* `.list-tabs` (task 5.11b, *Series · Universes*): the same strip as two links in a nav, `aria-current="page"` for `aria-selected`. */
 
 /* --- Progress (task 5.12, 2 of 2; mockup `progress`) -------------------------------------------
    One list per tab, a row each: the medium's glyph, the name, the kind as a grey badge, `read / total` in mono,

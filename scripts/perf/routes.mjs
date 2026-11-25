@@ -64,6 +64,8 @@ export const ROUTES = [
     resolve: { from: "/books/shelves", selector: 'a[href^="/books/shelves/"]' },
     tap: { from: "/books/shelves", selector: 'a[href^="/books/shelves/"]' },
   },
+  // The Universes list (task 5.11b) has no nav item: Series' tab row reaches it, so the tap starts on Series.
+  { id: "universes", path: "/books/universes", signedIn: true, tap: { from: "/books/series", selector: 'a[href="/books/universes"]' } },
   { id: "books-add", path: "/books/add", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/add"]' } },
   { id: "top", path: "/books/top", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/top"]' } },
   // A book's page: the Library's first book. The Lighthouse load is the full page (a direct load: a reload or a

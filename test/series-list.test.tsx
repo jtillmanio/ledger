@@ -12,9 +12,12 @@ import SeriesError from "../src/app/books/series/error";
 import Loading from "../src/app/books/series/loading";
 import type { SeriesShow, SeriesSummary } from "../src/db/queries";
 
-// `counts` default to the rows given, as a page whose cut is every series would pass them (task 5.9c).
-const render = (series: SeriesSummary[], show: SeriesShow = "all", counts = { started: series.length, all: series.length }) =>
-  renderToStaticMarkup(createElement(SeriesList, { series, show, counts }));
+// `counts` default to the rows given, as a page whose cut is every series would pass them (task 5.9c); the
+// Universes tab's count (task 5.11b) is 2 unless a test says otherwise.
+const render = (
+  series: SeriesSummary[], show: SeriesShow = "all",
+  counts: { started: number; all: number; universes?: number } = { started: series.length, all: series.length },
+) => renderToStaticMarkup(createElement(SeriesList, { series, show, counts: { universes: 2, ...counts } }));
 const row = (over: Partial<SeriesSummary> = {}): SeriesSummary => ({
   id: "s", name: "Stormlight", author: "Brandon Sanderson", read: 3, total: 5,
   next: { id: "n", title: "Oathbringer", position: 3 }, ...over,
@@ -131,6 +134,48 @@ describe("nothing started (5.9c AC-3)", () => {
     expect(html).toContain("No series yet");
     expect(html).not.toContain("series-chips");
     expect(html).not.toContain("Nothing started yet");
+  });
+});
+
+// Task 5.11b (TASK-162, AC-1, AC-4): the *Series · Universes* row heads the list in every state, two real links
+// (not `Tablist`'s `role="tab"`: nothing here is a panel), each with its count in mono, `aria-current="page"`
+// on Series; the skeleton draws its bar so the list does not jump.
+describe("the tab row (5.11b AC-1, AC-4)", () => {
+  const tabs = (html: string) => {
+    const nav = /<nav class="tabs list-tabs" aria-label="Series and universes"[^>]*>(.*?)<\/nav>/.exec(html)![1];
+    return [...nav.matchAll(/<a ([^>]*)>(.*?)<\/a>/g)].map((m) => ({
+      href: /href="([^"]*)"/.exec(m[1])![1], current: /aria-current="page"/.test(m[1]),
+      role: /role=/.test(m[1]), text: m[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+    }));
+  };
+
+  it("is Series and Universes, links with their counts, Series current", () => {
+    expect(tabs(render([row()], "started", { started: 4, all: 5, universes: 3 }))).toEqual([
+      { href: "/books/series", current: true, role: false, text: "Series 5" },
+      { href: "/books/universes", current: false, role: false, text: "Universes 3" },
+    ]);
+  });
+
+  it("is under the title before the chips, and the underline sits on the first tab", () => {
+    const html = render([row()], "started", { started: 1, all: 1 });
+    expect(html.indexOf("list-tabs")).toBeGreaterThan(html.indexOf("<h1>Series</h1>"));
+    expect(html.indexOf("list-tabs")).toBeLessThan(html.indexOf("series-chips"));
+    expect(html).toContain("--i:0;--n:2");
+    expect(html).toContain('<span class="tab-ink" aria-hidden="true"></span>');
+  });
+
+  it("is on the No series yet state too, with a Universes count", () => {
+    const html = render([], "started", { started: 0, all: 0, universes: 4 });
+    expect(html).toContain("No series yet");
+    expect(tabs(html).map((t) => t.text)).toEqual(["Series 0", "Universes 4"]);
+  });
+
+  it("is on the nothing-started state too", () => {
+    expect(tabs(render([], "started", { started: 0, all: 3 })).map((t) => t.text)).toEqual(["Series 3", "Universes 2"]);
+  });
+
+  it("the skeleton draws its bar, so the chips and rows start where the loaded ones do", () => {
+    expect(renderToStaticMarkup(createElement(Loading))).toContain("sk-tabs");
   });
 });
 
