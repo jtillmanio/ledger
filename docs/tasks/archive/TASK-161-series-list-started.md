@@ -1,7 +1,7 @@
 ---
 id: TASK-161
 title: 5.9c The Series list opens on what you've started
-status: Review
+status: Done
 depends_on: []
 size: M
 model: sonnet
