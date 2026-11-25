@@ -1,14 +1,14 @@
 ---
 id: TASK-138
 title: 0.14e Series, author and universe pages are measured
-status: Ready
+status: In progress
 depends_on: []
 size: S
 model: sonnet
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: da316c2
 ---
 
 # TASK-138 — 0.14e Series, author and universe pages are measured
@@ -63,7 +63,32 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-11-25 ("approve and recommended rule"): the ceilings follow D-175, not the roadmap entry's "about 5%".
+
+**Steps.**
+
+1. **Tests first** (`test/perf.test.ts`). A new test in "the route list": the four routes, each with its path, a tap that starts on another page and clicks a link (`a[href`), and, for the three whose ids are the owner's data, a `resolve` whose `from` and selector the tap shares (no id written into `routes.mjs`; AC-2). A new assertion that `UNMEASURED`'s keys are exactly `/@modal/(.)book/[id]` and `/@modal/(.)comics/[runId]/issue/[issueId]` (AC-3); the existing fixture tests keep proving the guard fails on a page in neither list. Then the four `UNMEASURED` entries go.
+2. **Four routes** in `scripts/perf/routes.mjs`:
+   - `series`: `/books/series`, the bare path (the Started view, 5.9c), tapped from `/books` on the books nav's `a[href="/books/series"]`, as `releases` and `shelves` are.
+   - `series-page`: `/books/series/[id]`, resolved and tapped from `/books/series` on `.series-row a[href^="/books/series/"]` (a `SeriesList` row, a `<Link>`).
+   - `author`: `/books/authors/[id]`, resolved and tapped from `/books/top` on `.qplace a[href^="/books/authors/"]` (Top's place line, `subParts`, `BookPlace` as `<Link>`). Not from the Library: its place links are bare `<a>`s and `SheetLinks` softens only `.row-title` anchors, so the click is a full load, which `clientTap`'s in-page timing can't survive.
+   - `universe`: `/books/universes/[id]`, resolved and tapped from `/books/universes` on `.series-row a[href^="/books/universes/"]` (a `UniversesList` row, a `<Link>`).
+3. **First push: budgets await the run, as 0.14c's did.** The four ids go into `budget.json` with `null` numbers; the test allows `null` only for ids in a temporary `AWAITING_MEASUREMENT` (naming 0.14e). The report already lists such a route as measured but not gated. `docs/02-architecture.md` § Performance budget gains four rows (`–` until measured), and its "Unmeasured … which roadmap 0.14e measures" sentence becomes how the four are reached.
+4. **The measured run.** `LIGHTHOUSE_MODE` is off (D-158): once CI is green, the task stops and asks the owner for a hand run; Claude dispatches one only if the owner says to.
+5. **Budgets from the run, by D-175.** `node scripts/perf/report.mjs ceilings <metrics.json>` printed, not `--write` (that rewrites every route's ceiling and the shared JS, which is out of scope); the four new ids' ceilings are copied into `budget.json` and the doc table, `AWAITING_MEASUREMENT` goes, and the PR body names the run and shows each measurement → ceiling (AC-4).
+
+**Files.**
+
+- `scripts/perf/routes.mjs`: the four routes.
+- `scripts/perf/budget.json`: the four ids (null, then measured).
+- `test/perf.test.ts`: the route test, the `UNMEASURED` assertion, the temporary allowance.
+- `docs/02-architecture.md` § Performance budget: four rows and the sentence (not in Files likely touched: its table is held to `budget.json` row for row by a test).
+
+**Test strategy.** AC-1, AC-2: `test/perf.test.ts` › "the route list" › the new 0.14e test, "measures every page in src/app …", "matches budget.json one for one", "holds a number for everything it gates" and the architecture mirror. AC-3: the `UNMEASURED` assertion and "the page guard" fixtures. AC-1's tap times and AC-4: by hand, against the hand run's Lighthouse comment and the PR body.
+
+**Risks.** A preview with no started series or universe fails that route as not measured (as the shelf did on 0.14c): the owner's call. The hand run also measures `universes` and `issue`, whose ceilings were copied, not measured; rewriting them is out of scope, so one that measures over is a follow-up.
+
+**Size.** 4 files, no schema, no UI. Not split.
 
 ## Review log
 
