@@ -519,7 +519,7 @@ with the task that first reads it.
 |  | 5.7b → TASK-159, TASK-160 | Coming out lets a book go: Remove, and Calibre having it | S | _Owner intake, 2026-11-24 (D-185); Check proposed_ | 5.7, 4.4 |
 | ✅ | 5.9 → TASK-101, TASK-102, TASK-125 | Series page from `series_progress` | M |  | — |
 | ✅ | 5.9b → TASK-140, TASK-141, TASK-142 | Every other place line links its names | M | _From TASK-125 (PR #330); Check proposed_ | 5.9, 5.11 |
-|  | 5.9c → TASK-161 | The Series list opens on what you've started | S | _Owner intake, 2026-11-24; Check proposed_ | 5.9 |
+| ✅ | 5.9c → TASK-161 | The Series list opens on what you've started | S | _Owner intake, 2026-11-24; Check proposed_ | 5.9 |
 | ✅ | 5.11 → TASK-103 | Author and universe pages, and the follow control | M |  | 1.15, 5.9 |
 |  | 5.11b → TASK-162 | Universes: every universe in one list | S | _Owner intake, 2026-11-24; Check proposed_ | 5.11, 5.9c |
 | ✅ | 5.12 → TASK-104, TASK-105 | In the middle of, and completed: one page for every medium | M |  | 1.9, 1.15, 2.2c, 2.2d |

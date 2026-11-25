@@ -5164,7 +5164,7 @@ it is converted.
     route it changes stays within its byte budget (`scripts/perf/budget.json`).
     Screenshots at 360px and 1280px.
 
-- ☐ 5.9c **The Series list opens on what you've started** · S. Owner
+- ☑ 5.9c **The Series list opens on what you've started** · S. Owner
   intake, 2026-11-24 (*do we need to load the whole series list, or just ones
   started and finished?*) and 2026-11-25. `/books/series` lists every series
   you have a book in (`seriesList`, `books_listed > 0`), most never started.

@@ -1,7 +1,7 @@
 ---
 id: TASK-161
 title: 5.9c The Series list opens on what you've started
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: sonnet
@@ -28,15 +28,15 @@ The Series page opens on the series the owner has started or follows, with *All*
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim):
+- [x] AC-1 (roadmap **Check:**, verbatim):
 with the test database, three series: one with a read book, one followed
 Tracking with none read, and one with only To-read books. `/books/series`
 lists the first two and not the third, *All* lists all three, and each
 chip shows its count. The Library has no *All series* link, and the nav's
 *Series* opens the page. Screenshots at 360px and 1280px; axe passes.
-- [ ] AC-2: Given `?show=` with any other value, the page shows *Started*; a reload and Back keep the chip.
-- [ ] AC-3: Given no started series, *Started* draws an empty state naming *All* (with its count), never a blank page.
-- [ ] AC-4: The page meets the UX floor (`docs/04-design.md` § 10. The UX floor): chips are links with `aria-current` on the open one, 44 px targets at phone widths, contrast in both themes, and screenshots at each `ui.viewports` width, light and dark; both routes stay within their budgets.
+- [x] AC-2: Given `?show=` with any other value, the page shows *Started*; a reload and Back keep the chip.
+- [x] AC-3: Given no started series, *Started* draws an empty state naming *All* (with its count), never a blank page.
+- [x] AC-4: The page meets the UX floor (`docs/04-design.md` § 10. The UX floor): chips are links with `aria-current` on the open one, 44 px targets at phone widths, contrast in both themes, and screenshots at each `ui.viewports` width, light and dark; both routes stay within their budgets.
 
 ## Out of scope
 
@@ -61,8 +61,12 @@ chip shows its count. The Library has no *All series* link, and the nav's
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- 0.14e's `/books/series` route: the page now opens on *Started*, so its measured budget is that view, and the Library no longer links to it (the books nav's *Series* is the tap). (approved at plan) → planned: `docs/tasks/TASK-138-measure-series-author-universe-pages.md` § Context
-- AC-4's "both routes stay within their budgets": `/books/series` has no budget until 0.14e (TASK-138); this task holds the Library to its budget and leaves the series page on `UNMEASURED`. Say so in the PR's **How it was verified** (owner, at plan, 2026-11-25). (approved at plan) → planned: not tracked: stated in the PR; the budget is 0.14e's
+- 0.14e's `/books/series` route: the page now opens on *Started*, so its measured budget is that view, and the Library no longer links to it (the books nav's *Series* is the tap). (approved at plan) → docs/tasks/TASK-138-measure-series-author-universe-pages.md § Context
+- AC-4's "both routes stay within their budgets": `/books/series` has no budget until 0.14e (TASK-138); this task holds the Library to its budget and leaves the series page on `UNMEASURED`. Say so in the PR's **How it was verified** (owner, at plan, 2026-11-25). (approved at plan) → not tracked: stated in PR #349's How it was verified; the budget is 0.14e's (TASK-138)
+- The Progress page's loading skeleton draws its chips with `sk-chip` alone (1.85rem) where the loaded chips are 44px below 768px, so its list jumps about 14px on a phone; the Series skeleton had the same gap and is fixed here (found by spec-reviewer) → docs/OWNER-CHECKLIST.md § Approvals from follow-ups
+- `seriesList` and `seriesCounts` each write the *started* test out in full, not as the plan's one shared fragment, because `test/query-budget.test.ts` counts a nested `sql` fragment as a query (the series page would read 5, not 2); the two copies are pinned on the same fixtures (`test/series-page.test.ts`) → not tracked: done in this PR (plan revision, 1)
+- The series page now runs 2 queries in one wave, so `test/query-budget.test.ts` and `docs/02-architecture.md` § Performance budget say 2, neither in the plan's file list → not tracked: done in this PR (plan revision, 2)
+- ui-verifier saw the books sub-nav strip at 360px scroll inside its own container with *Status* part clipped at the left → not tracked: it is a scrolling tab strip, not this task's page
 
 ## Plan
 
@@ -93,13 +97,15 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 _Filled by /implement-task. One line per round._
 
+Verify R1 FAIL(3: `query-budget.test.ts` page call; `/books/series` 5 queries over its budget of 2, the nested `sql` fragments counted; a `parked` row without `parked_on` in my own test) → fixed | R2 PASS (after the skeleton fix) | CI R1 PASS (b3212a7) | Audit R1 PASS (query-budget's ceiling is a guard, not a proof) | Schema R1 APPROVE | Spec R1 CHANGES (the skeleton's chips 30px, not 44px, below 768px) → R2 re-read of the fix | UI R1 PASS (7b1c153; AC-3's slate is not reachable on the dev data: 32 started of 751, so the unit test and spec hold it)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2 (spec-reviewer)
+- First-pass AC FAILs: 1 (AC-4, the skeleton's chip height)
+- Plan revisions after approval: 2 (the started test written out in both queries; the query-budget test and its architecture line)
