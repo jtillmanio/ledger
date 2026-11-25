@@ -153,7 +153,7 @@ describe("Next in, under Now (AC-3)", () => {
     await status("u-1", "to_read");
     await sql`INSERT INTO universe_follows (user_id, universe_id, state) VALUES (${USER}, 'v', 'reading')`;
     await sql`INSERT INTO author_follows (user_id, author_id, state) VALUES (${USER}, 'au', 'reading')`;
-    expect(await nextIn("s-2")).toEqual({ id: "s-3", title: "Book s 3", kind: "series", name: "Series s" });
+    expect(await nextIn("s-2")).toEqual({ id: "s-3", title: "Book s 3", kind: "series", name: "Series s", entityId: "s" });
   });
 
   it("falls to the universe when the series has nothing unread left", async () => {

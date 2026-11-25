@@ -436,6 +436,8 @@ describe("GET /api/plan?bookId= is the picker's book (task 2.3, part 2, AC-2)", 
     expect(await book("b")).toEqual({ status: 200, body: { book: {
       id: "b", title: "Beta", author: "Ann Author", status: "to_read", level: "quarter", period: "2027-Q1",
       universe: null, series: null, series_position: null, words: 150_000, estimated: false,
+      // Task 5.9b: the ids the header's names link by; null for what the book is not in.
+      author_id: "au", series_id: null, universe_id: null,
     } } });
     expect(await planRows()).toEqual(rows);
   });

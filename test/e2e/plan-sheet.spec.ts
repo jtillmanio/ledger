@@ -43,6 +43,7 @@ const clean = () => withSql(async (sql) => {
   await sql`DELETE FROM book_series WHERE id LIKE 'e2e-ps-%'`;
   await sql`DELETE FROM shelves WHERE id LIKE 'e2e-ps-%'`;
   await sql`DELETE FROM authors WHERE id LIKE 'e2e-ps-%'`;
+  await sql`DELETE FROM book_universes WHERE id LIKE 'e2e-ps-%'`;
   await sql`DELETE FROM plan_acceptance WHERE year = ${Y}`;
 });
 
@@ -374,7 +375,12 @@ test("AC-6: every control a named button, 44px on the phone; focus on the headin
   const named = await controls.evaluateAll((els) => els.map((el) => ({ tag: el.tagName, name: (el.textContent ?? "").trim() })));
   expect(named.every((c) => c.name.length > 0)).toBe(true);
   const min = page.viewportSize()!.width < 768 ? 44 : 24;
-  for (const box of await controls.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()))) {
+  // A place link (task 5.9b) is a name inside a line of text: the floor's 24px, not a thumb target's 44px.
+  const place = p.locator(".ps-sub a");
+  const inText = await place.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
+  expect(inText.every((h) => h >= 24)).toBe(true);
+  const targets = p.locator("button, a[href]:not(.ps-sub a)");
+  for (const box of await targets.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()))) {
     expect(box.height).toBeGreaterThanOrEqual(min);
   }
   await page.keyboard.press("Escape");
@@ -439,4 +445,104 @@ test("AC-6: the empty state is a panel with one action", async ({ page }) => {
   const empty = panel(page).locator(".ps-empty");
   await expect(empty.locator(".ps-empty-line")).toHaveText(`Nothing to suggest for Q2 ${Y}.`);
   await expect(empty.getByRole("link", { name: "Open the Library" })).toHaveAttribute("href", "/books/list");
+});
+
+// --- Task 5.9b, 1 of 3 (TASK-140; F-38, D-134): the plan screens link a book's names ---------------------------------
+// The open quarter's rows, the planning sheet's rows and the picker's header draw their place line through BookPlace,
+// as the Library does (5.9): the author, universe and series each a link to their page, the series named by itself.
+
+/** Sheet Saga 3 (suggested in Q2) and Sheet Moving 2 (planned in Q3) get an author and a universe; af-1 stays a standalone. */
+async function placeNames() {
+  await withSql(async (sql) => {
+    await sql`INSERT INTO book_universes (id, name) VALUES (${id("un")}, 'Sheet Universe')`;
+    await sql`UPDATE books SET author_id = ${id("af")}, universe_id = ${id("un")} WHERE id IN (${id("s-3")}, ${id("m-2")})`;
+  });
+}
+const AUTHOR = ["Sheet Followed Author", `/books/authors/${id("af")}`];
+const UNIVERSE = ["Sheet Universe", `/books/universes/${id("un")}`];
+const hrefsOf = (line: Locator) =>
+  line.getByRole("link").evaluateAll((as) => as.map((a) => [a.textContent, a.getAttribute("href")]));
+async function expectTargets24(line: Locator) {
+  for (const link of await line.getByRole("link").all()) {
+    expect((await link.boundingBox())!.height, "each place link is 24px or more").toBeGreaterThanOrEqual(24);
+  }
+}
+
+test("5.9b AC-1, AC-2, AC-3: the planning sheet's rows link the author, universe and series; a standalone has the author link alone", async ({ page }) => {
+  await seed();
+  await placeNames();
+  const p = await open(page);
+  const saga = row(p, "s-3").locator(".ps-sub");
+  await expect(saga).toHaveText("Sheet Followed Author · Sheet Universe · Sheet Saga #3");
+  expect(await hrefsOf(saga)).toEqual([AUTHOR, UNIVERSE, ["Sheet Saga", `/books/series/${id("s")}`]]);
+  // The series link is named by the series alone.
+  await expect(saga.getByRole("link", { name: "Sheet Saga", exact: true })).toBeVisible();
+  const alone = row(p, "af-1").locator(".ps-sub");
+  await expect(alone).toHaveText("Sheet Followed Author");
+  expect(await hrefsOf(alone)).toEqual([AUTHOR]);
+  await expectTargets24(saga);
+  await expectTargets24(alone);
+  await expectNoAxeViolations(page, AXE);
+  expect(await contrastFailures(page)).toEqual([]);
+});
+
+test("5.9b AC-4: a place link on a suggestion row opens its page and places nothing", async ({ page }) => {
+  await seed();
+  await placeNames();
+  const p = await open(page);
+  await row(p, "s-3").locator(".ps-sub").getByRole("link", { name: "Sheet Saga", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/books/series/${id("s")}$`));
+  expect(await planOf("s-3"), "the tap opened the series and wrote no plan row").toEqual([]);
+});
+
+test("5.9b AC-1, AC-2, AC-4: the open quarter's rows and the picker's header link the names, and Move still opens the picker", async ({ page }) => {
+  await seed();
+  await placeNames();
+  await page.goto(`/books/plan?year=${Y}`);
+  await hydrated(opener(page, Q2));
+  await page.locator(`button.plan-sum[data-period="${q(3)}"]`).click();
+  const line = page.locator(`.plan-row[data-book="${id("m-2")}"] .row-sub`);
+  await expect(line).toHaveText("Sheet Followed Author · Sheet Universe · Sheet Moving #2");
+  const links = [AUTHOR, UNIVERSE, ["Sheet Moving", `/books/series/${id("m")}`]];
+  expect(await hrefsOf(line)).toEqual(links);
+  await expectTargets24(line);
+  // Move is its own control: it opens the picker, whose header carries the same links.
+  await page.getByRole("button", { name: "Move Sheet Moving 2" }).click();
+  const by = page.locator(".pp-by");
+  await expect(by).toContainText("Sheet Moving #2");
+  expect(await hrefsOf(by)).toEqual(links);
+  await expectTargets24(by);
+  await expectNoAxeViolations(page, AXE);
+  await page.keyboard.press("Escape");
+  // A row link opens the series page, not the picker.
+  await line.getByRole("link", { name: "Sheet Moving", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/books/series/${id("m")}$`));
+});
+
+test("5.9b AC-5: the linked place lines at 360 and 1280px, light and dark: no horizontal scroll, contrast 4.5:1, axe clean, screenshots", { tag: "@at-w390-light" }, async ({ page }, info) => {
+  await seed();
+  await placeNames();
+  for (const scheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    for (const [width, height] of [[360, 780], [1280, 800]]) {
+      await page.setViewportSize({ width, height });
+      await page.goto(`/books/plan?year=${Y}`);
+      await hydrated(opener(page, Q2));
+      await page.locator(`button.plan-sum[data-period="${q(3)}"]`).click();
+      await expect(page.locator(`.plan-row[data-book="${id("m-2")}"] .row-sub a`)).toHaveCount(3);
+      await expectNoHorizontalScroll(page);
+      expect(await contrastFailures(page), `plan rows ${width}px ${scheme}`).toEqual([]);
+      await expectNoAxeViolations(page, AXE, "main");
+      await screenshot(page, info, `5.9b-plan-rows-${width}-${scheme}`);
+
+      const sheet = await open(page, Q2);
+      await expect(row(sheet, "s-3").locator(".ps-sub a")).toHaveCount(3);
+      await expectNoHorizontalScroll(page);
+      expect(await contrastFailures(page), `plan sheet ${width}px ${scheme}`).toEqual([]);
+      await expectNoAxeViolations(page, AXE);
+      await screenshot(page, info, `5.9b-plan-sheet-links-${width}-${scheme}`);
+      await page.keyboard.press("Escape");
+      await expect(sheet).toHaveCount(0);
+    }
+  }
 });

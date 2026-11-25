@@ -1,10 +1,11 @@
 "use client";
 
+import BookPlace from "@/components/BookPlace";
 import BookStatus from "@/components/BookStatus";
 import { ArtCover } from "@/components/Cover";
 import { Headphones } from "@/components/nav/Icons";
 import ReorderList from "@/components/ReorderList";
-import { bookSub, quarterName, wordsK } from "@/lib/format";
+import { bookSub, quarterName, subParts, wordsK } from "@/lib/format";
 
 /** A planned book as one quarter's list draws it. `ordinal` is its stored place in the quarter.
  * `listened`: it has a listen, for the headphones glyph (task 1.23). */
@@ -12,6 +13,8 @@ export type QuarterBook = {
   id: string; title: string; ordinal: number; author: string | null;
   series: string | null; series_position: number | null; universe: string | null;
   word_count: number | null; listened?: boolean; cover_url: string | null;
+  /** The ids of its author, series and universe: the place line's names link to their pages (task 5.9b). */
+  author_id?: string | null; series_id?: string | null; universe_id?: string | null;
 };
 
 /** One call to `/api/plan`: move a book to a place in its own quarter. Rejects when it didn't save. */
@@ -49,7 +52,7 @@ export default function PlanQuarter({ period, rows }: { period: string; rows: Qu
             {/* A planned book is to read, so its glyph can only say *Listened* (task 1.23). */}
             <span className="qtitle">{b.title}{b.listened && <> <Headphones label="Listened" /></>}</span>
             <span className="qmeta">
-              {bookSub(b) && <span className="mono qplace">{bookSub(b)}</span>}
+              {bookSub(b) && <span className="mono qplace"><BookPlace parts={subParts(b)} /></span>}
               {wordsK(b.word_count) && <span className="mono qwords">{wordsK(b.word_count)}</span>}
             </span>
             {/* The status control (task 1.17b): a planned book is to read, so it starts at Reading from here. */}

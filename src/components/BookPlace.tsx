@@ -20,6 +20,20 @@ export function partHref(p: Pick<PlacePart, "kind" | "id">): string | null {
 }
 
 /**
+ * The page a followed thing's name links to (task 5.9b, TASK-140): *Next in Red Rising* and *Or keep going*'s
+ * reasons name a series, a universe or an author. A subseries and a shelf have no page, so their names stay text.
+ */
+export function followHref(kind: string, id: string): string | null {
+  return kind === "series" ? seriesHref(id) : kind === "author" ? authorHref(id) : kind === "universe" ? universeHref(id) : null;
+}
+
+/** A followed thing's name, a link to its page where it has one (`followHref`), else text. */
+export function FollowName({ kind, id, name }: { kind: string; id: string; name: string }) {
+  const href = followHref(kind, id);
+  return href === null ? name : <Link href={href} prefetch={false}>{name}</Link>;
+}
+
+/**
  * A book's place line with its names as links (task 5.9, 3 of 3; TASK-125, F-38, D-134): the parts
  * `subParts` or `placeParts` cut, joined by ` · `, each name a link to its own page and a series' `#n` after
  * its link, so the link is named by the series alone. A part with no id is text. `plain` draws bare anchors,

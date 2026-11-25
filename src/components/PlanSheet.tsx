@@ -3,12 +3,13 @@
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import BookPlace from "@/components/BookPlace";
 import { acceptYear, undoAccept } from "@/components/RebalanceSheet";
 import Sheet, { useSheetClose } from "@/components/Sheet";
 import { useUndo } from "@/components/Undo";
 import type { PeriodCapacity, PlanSuggestion, SuggestionReason } from "@/db/queries";
 import type { PlanMove } from "@/db/writes";
-import { bookSub, quarterName } from "@/lib/format";
+import { quarterName, subParts } from "@/lib/format";
 import { kWords } from "@/lib/plan-rail";
 
 /** The groups' headings, in `SUGGESTION_REASONS` order (the roadmap entry 2.10b's). */
@@ -333,11 +334,15 @@ async function write(s: PlanSuggestion, to: string): Promise<(() => Promise<void
   };
 }
 
-function Row({ s, target, year, isYear, placed, busy, error, onPlace, onUndo, onHide }: {
+/** One suggestion's row (exported for test/plan-page.test.tsx: the sheet's rows are fetched in the browser). */
+export function Row({ s, target, year, isYear, placed, busy, error, onPlace, onUndo, onHide }: {
   s: PlanSuggestion; target: string; year: number; isYear: boolean; placed: Placed | undefined; busy: boolean;
   error: string | undefined; onPlace: (to: string) => void; onUndo: () => void; onHide: () => void;
 }) {
-  const sub = bookSub({ author: s.author, universe: s.universe, series: s.series, series_position: s.seriesPosition });
+  const parts = subParts({
+    author: s.author, author_id: s.authorId, universe: s.universe, universe_id: s.universeId,
+    series: s.series, series_id: s.seriesId, series_position: s.seriesPosition,
+  });
   const words = s.words === null ? "no count" : `${s.estimated ? "~" : ""}${kWords(s.words)}`;
   const wait = busy || undefined;
   const li = useRef<HTMLLIElement>(null);
@@ -365,7 +370,7 @@ function Row({ s, target, year, isYear, placed, busy, error, onPlace, onUndo, on
         {s.unlisted && <span className="bdg dn ps-tag">Unlisted</span>}
         <span className="mono ps-words" data-wc={s.estimated ? "estimated" : undefined}>{words}</span>
       </div>
-      {sub && <p className="ps-sub">{sub}</p>}
+      {parts.length > 0 && <p className="ps-sub"><BookPlace parts={parts} /></p>}
       <p className="ps-why">{s.detail}</p>
       {placed ? (
         <p className="ps-done">

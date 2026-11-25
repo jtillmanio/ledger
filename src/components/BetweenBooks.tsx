@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FollowName } from "@/components/BookPlace";
 import { daysBetween, said } from "@/components/BooksNow";
 import { ArtCover } from "@/components/Cover";
 import StartBook from "@/components/StartBook";
@@ -58,7 +59,8 @@ export function finishLine(last: LastFinish, today: string, now = new Date()): {
  * line (none when nothing was ever finished), then the top of the quarter's plan (the
  * lowest-ordinal book still to read, D-37) and *Pick something else*. The thumb bar's verb
  * starts the offer by name. *Or keep going* (2.2d, D-108) lists, under the offer, up to three
- * books next in what you follow as Reading, each with its reason and **Start**; none, no block.
+ * books next in what you follow as Reading, each with its reason (the name links to its page, task 5.9b)
+ * and **Start**; none, no block.
  * Below 768px it sits between the offer and *Pick something else*; from 768 under their row.
  * Grey and calm: no nudge, nothing amber or red.
  */
@@ -111,7 +113,7 @@ export default function BetweenBooks({ last, offer, quarter, today, keep = [] }:
                   <span className="keep-body">
                     <b className="keep-title">{k.title}</b>
                     <span className="keep-why">
-                      Next in {k.name} · <span className="mono">{k.read} of {k.total}</span> read
+                      Next in <FollowName kind={k.kind} id={k.entityId} name={k.name} /> · <span className="mono">{k.read} of {k.total}</span> read
                     </span>
                   </span>
                   <StartBook book={k} />

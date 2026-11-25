@@ -807,6 +807,8 @@ export type PlannedBook = StatusBook & {
   genres: string[];
   /** Its cover (task 4.3), for the quarter rows of the books status screen. */
   cover_url: string | null;
+  /** The ids of its author, series and universe, so the place line's names link to their pages (task 5.9b, TASK-140). */
+  author_id: string | null; series_id: string | null; universe_id: string | null;
 };
 
 /**
@@ -823,7 +825,8 @@ export async function booksUpNext(userId: string) {
     sql<PlannedBook[]>`
       SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe, b.word_count,
              pp.period, pp.level, pp.year, pp.quarter, pp.ordinal, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,
-             ${sql.unsafe(TOP_GENRES)} AS genres, b.cover_url
+             ${sql.unsafe(TOP_GENRES)} AS genres, b.cover_url,
+             a.id AS author_id, s.id AS series_id, u.id AS universe_id
       FROM plan_period pp
       JOIN book_status st ON st.book_id = pp.book_id AND st.user_id = pp.user_id AND st.status = 'to_read'
       JOIN books b ON b.id = pp.book_id AND b.deleted_at IS NULL
@@ -2017,6 +2020,8 @@ export type PlanBook = {
   id: string; title: string; author: string | null; status: string | null;
   /** Where it belongs, for the header's line (`bookSub`; task 2.2l, D-134). */
   universe: string | null; series: string | null; series_position: number | null;
+  /** The ids of its author, series and universe, so that line's names link to their pages (task 5.9b, TASK-140). */
+  author_id: string | null; series_id: string | null; universe_id: string | null;
   /** `to_read_level`'s level and period; null unless the book is to read. */
   level: ToReadLevel | null; period: string | null;
   /** The stated count, else pages x your words per page (50 pages or more), as `plan_book_words` reads it; null when unknown. */
@@ -2034,6 +2039,7 @@ export async function planBook(userId: string, bookId: string): Promise<PlanBook
   const [row] = await sql<PlanBook[]>`
     SELECT b.id, b.title, a.name AS author, st.status, tl.level, tl.period,
            bu.name AS universe, bs.name AS series, b.series_position,
+           a.id AS author_id, bs.id AS series_id, bu.id AS universe_id,
            COALESCE(b.word_count, CASE WHEN b.page_count >= 50
                                        THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
            CASE WHEN b.word_count IS NOT NULL THEN b.word_count_source = 'estimated'
@@ -2072,7 +2078,11 @@ export type InHandBook = {
 export type Level = { kind: "universe" | "author" | "series" | "subseries"; id: string; name: string; read: number; total: number };
 
 /** Now's *Next in {name}: {title}* (task 2.2d). */
-export type NextIn = { id: string; title: string; kind: FollowKind; name: string };
+export type NextIn = {
+  id: string; title: string; kind: FollowKind; name: string;
+  /** The followed thing's own id, so its name links to its page (task 5.9b, TASK-140). */
+  entityId: string;
+};
 
 /** The kinds a reason can name, narrowest first: a subseries before its series, and so on. */
 const REASON_ORDER = ["subseries", "series", "universe", "author", "shelf"];
@@ -2108,7 +2118,7 @@ export async function booksInHand(userId: string) {
       SELECT * FROM follow_queue WHERE user_id = ${userId}
     ), next_in AS (
       SELECT DISTINCT ON (h.book_id) h.book_id AS hand_id,
-             json_build_object('id', n.book_id, 'title', nb.title, 'kind', n.kind, 'name', n.name) AS next_in
+             json_build_object('id', n.book_id, 'title', nb.title, 'kind', n.kind, 'name', n.name, 'entityId', n.entity_id) AS next_in
       FROM fq h
       JOIN fq n ON n.kind = h.kind AND n.entity_id = h.entity_id
       JOIN books nb ON nb.id = n.book_id
@@ -2231,6 +2241,8 @@ export type PlanRow = {
   id: string; title: string; author: string | null; series: string | null; seriesPosition: number | null;
   /** Its universe's name (task 2.2j, D-134); null when it is in none. */
   universe: string | null;
+  /** The ids of its author, series and universe, so the place line's names link (task 5.9b, TASK-140). */
+  authorId: string | null; seriesId: string | null; universeId: string | null;
   /** Null when the book has no word count and no plausible page count: it counts in `books`, in no word total. */
   words: number | null;
   /** The count rests on an estimate (pages at your words per page), not a stated one. */
@@ -2252,7 +2264,7 @@ export type PlanRow = {
 export async function planRows(userId: string, year: number): Promise<PlanRow[]> {
   return sql<PlanRow[]>`
     SELECT w.book_id AS id, b.title, a.name AS author, s.name AS series, b.series_position AS "seriesPosition",
-           u.name AS universe,
+           u.name AS universe, a.id AS "authorId", s.id AS "seriesId", u.id AS "universeId",
            w.words, w.word_source = 'estimated' AS estimated, ${sql.unsafe(TOP_GENRES)} AS genres, w.period, p.ordinal
     FROM plan_book_words w
     JOIN books b ON b.id = w.book_id AND b.deleted_at IS NULL
@@ -2381,6 +2393,8 @@ export type KeepGoing = {
   /** Its status now, which an undo of **Start** goes back to; null with no status row. */
   status: "to_read" | "unlisted" | null;
   kind: FollowKind; name: string; read: number; total: number;
+  /** The followed thing's own id, so its name links to its page (task 5.9b, TASK-140). */
+  entityId: string;
 };
 
 /**
@@ -2407,7 +2421,8 @@ export async function keepGoing(userId: string, period: string, limit: number) {
       -- Two followed shelves can hold one book: the reason is then the first by name, every time.
       ORDER BY f.book_id, array_position(${REASON_ORDER}::text[], f.kind), f.name, f.entity_id
     )
-    SELECT n.book_id AS id, b.title, a.name AS author, st.status, n.kind, n.name, n.read, n.total
+    SELECT n.book_id AS id, b.title, a.name AS author, st.status, n.kind, n.name, n.read, n.total,
+           n.entity_id AS "entityId"
     FROM n
     JOIN books b ON b.id = n.book_id
     LEFT JOIN authors a ON a.id = b.author_id
@@ -2431,6 +2446,8 @@ export type PlanSuggestion = {
   id: string; title: string; author: string | null;
   /** The book's place (task 2.2j, D-134): its universe, series and `#position`, for the row's place line. */
   universe: string | null; series: string | null; seriesPosition: number | null;
+  /** The ids of its author, series and universe, so the place line's names link (task 5.9b, TASK-140). */
+  authorId: string | null; seriesId: string | null; universeId: string | null;
   reason: SuggestionReason;
   /** The reason line: *Next in Red Rising · you've read 3 of 6*, *Out May 4, 2027*. */
   detail: string;
@@ -2468,6 +2485,7 @@ export async function planSuggestions(userId: string, target: string, today: str
   return sql<PlanSuggestion[]>`
     SELECT s.book_id AS id, b.title, a.name AS author,
            u.name AS universe, bs.name AS series, b.series_position AS "seriesPosition",
+           a.id AS "authorId", bs.id AS "seriesId", u.id AS "universeId",
            s.reason, s.detail, s.rank, s.status, s.unlisted,
            s.period, s.words, COALESCE(s.word_source = 'estimated', false) AS estimated
     FROM plan_suggestions(${userId}, ${target}, ${room}::bigint, ${today}::date) s

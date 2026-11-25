@@ -11,6 +11,12 @@ vi.mock("@/lib/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../src/lib/auth")>()),
   apiUserId: async () => USER,
 }));
+// The status control and Start read the router: the component renders below draw them outside an app.
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: () => {}, replace: () => {}, refresh: () => {} }),
+  usePathname: () => "/books",
+}));
 
 const sql = testSql();
 let q: typeof import("../src/db/queries");
@@ -674,6 +680,127 @@ describe("Where the book sits (2.2g): the rows' markup", () => {
     ]);
     expect(await rows([{ kind: "series", id: "s", name: "Series S", read: 1, total: 4 }]))
       .toEqual([{ key: "Series", depth: "0", elbow: 0, meter: true }]);
+  });
+});
+
+// Task 5.9b, 1 of 3 (TASK-140, F-38, D-134): the names on the Up next cards, Now's *Next in*, *Or keep going*'s
+// reasons and the status screen's Up next quarter rows are links, as the Library's are (5.9). The queries carry
+// the ids; the components draw them through `BookPlace` (`FollowName` for a followed thing's name). The plan
+// screens' half is test/plan-page.test.tsx.
+describe("Place links on the dashboard (task 5.9b, TASK-140, AC-2, AC-3, AC-4)", () => {
+  const MIST = "Author A · Cosmere · Mistborn #4";
+  beforeEach(async () => {
+    await sql`TRUNCATE book_universes, book_subseries CASCADE`;
+    await sql`INSERT INTO book_universes (id, name) VALUES ('cosmere', 'Cosmere')`;
+    await sql`INSERT INTO book_series (id, name, author_id) VALUES ('mistborn', 'Mistborn', 'a')`;
+    await books({ id: "hand", author: "a" }, { id: "alloy", author: "a" }, { id: "plain", author: "b" });
+    await sql`UPDATE books SET series_id = 'mistborn', series_position = 3, universe_id = 'cosmere' WHERE id = 'hand'`;
+    await sql`UPDATE books SET series_id = 'mistborn', series_position = 4, universe_id = 'cosmere' WHERE id = 'alloy'`;
+    await status("hand", "reading", "2026-11-01");
+    await status("alloy", "to_read");
+    await status("plain", "to_read");
+    await plan("alloy", "2026-Q4", 1);
+    await plan("plain", "2026-Q4", 2);
+    await sql`INSERT INTO series_follows (user_id, series_id, state) VALUES (${USER}, 'mistborn', 'reading')`;
+  });
+
+  /** Markup of an element under the providers a dashboard has, parsed back to a document. */
+  async function draw(build: (c: typeof import("react").createElement) => import("react").ReactElement) {
+    const { createElement } = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { Window } = await import("happy-dom");
+    const { UndoProvider } = await import("../src/components/Undo");
+    const doc = new Window().document;
+    doc.body.innerHTML = renderToStaticMarkup(createElement(UndoProvider, null, build(createElement)));
+    return doc;
+  }
+  type Anchored = { querySelectorAll(s: string): Iterable<{ textContent: string | null; getAttribute(n: string): string | null }> };
+  const links = (root: Anchored | null | undefined) =>
+    [...(root?.querySelectorAll("a") ?? [])].map((a) => [a.textContent, a.getAttribute("href")]);
+  const MIST_LINKS = [
+    ["Author A", "/books/authors/a"], ["Cosmere", "/books/universes/cosmere"], ["Mistborn", "/books/series/mistborn"],
+  ];
+
+  it("the queries carry the ids: booksUpNext, and the followed thing's id on Next in and Or keep going", async () => {
+    const { planned } = await q.booksUpNext(USER);
+    expect(planned.map((b) => [b.id, b.author_id, b.series_id, b.universe_id])).toEqual([
+      ["alloy", "a", "mistborn", "cosmere"], ["plain", "b", null, null],
+    ]);
+    const hand = (await q.booksInHand(USER)).find((b) => b.id === "hand")!;
+    expect(hand.next_in).toEqual({ id: "alloy", title: "Title alloy", kind: "series", name: "Mistborn", entityId: "mistborn" });
+    await sql`UPDATE book_status SET status = 'read', finished_on = '2026-11-10', finished_on_precision = 'exact' WHERE book_id = 'hand'`;
+    const [keep] = await q.keepGoing(USER, "2026-Q3", 3);
+    expect(keep).toMatchObject({ id: "alloy", kind: "series", name: "Mistborn", entityId: "mistborn" });
+  });
+
+  it("a soft-deleted book is on neither query (Hard rule 4)", async () => {
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 'alloy'`;
+    expect((await q.booksUpNext(USER)).planned.map((b) => b.id)).toEqual(["plain"]);
+    expect((await q.booksInHand(USER)).find((b) => b.id === "hand")!.next_in).toBeNull();
+  });
+
+  it("the Up next cards link the author, universe and series, and the title stays the card's one link to the book (AC-2, AC-4)", async () => {
+    const { default: PlanShelf } = await import("../src/components/PlanShelf");
+    const rows = await q.quarterShelf(USER, "2026-Q4");
+    const doc = await draw((c) => c(PlanShelf, { rows, period: "2026-Q4", quarter: "Q4" }));
+    const [alloy, plain] = [...doc.querySelectorAll("li.card")];
+    expect(alloy.querySelector(".card-sub")?.textContent).toBe(MIST);
+    expect(links(alloy.querySelector(".card-sub"))).toEqual(MIST_LINKS);
+    expect(links(alloy.querySelector(".card-title"))).toEqual([["Title alloy", "/book/alloy"]]);
+    // A place link is a sibling of the title link, never inside it, so its tap opens its own page.
+    expect(doc.querySelectorAll("a a")).toHaveLength(0);
+    // AC-3: a standalone book by an author alone: the author link, and no series or universe link.
+    expect(plain.querySelector(".card-sub")?.textContent).toBe("Author B");
+    expect(links(plain.querySelector(".card-sub"))).toEqual([["Author B", "/books/authors/b"]]);
+  });
+
+  it("the status screen's Up next quarter rows link their names the same way (AC-2, AC-3)", async () => {
+    const { default: PlanQuarter } = await import("../src/components/PlanQuarter");
+    const rows = (await q.booksUpNext(USER)).planned.map((b) => ({ ...b, ordinal: b.ordinal! }));
+    const doc = await draw((c) => c(PlanQuarter, { period: "2026-Q4", rows }));
+    const [alloy, plain] = [...doc.querySelectorAll(".qplace")];
+    expect(alloy.textContent).toBe(MIST);
+    expect(links(alloy)).toEqual(MIST_LINKS);
+    expect(plain.textContent).toBe("Author B");
+    expect(links(plain)).toEqual([["Author B", "/books/authors/b"]]);
+  });
+
+  it("Now's Next in has two links, the follow's name and the title; a subseries has no page, so its name is text (AC-2, AC-4)", async () => {
+    const { default: BooksNow } = await import("../src/components/BooksNow");
+    const book = (await q.booksInHand(USER)).find((b) => b.id === "hand")!;
+    const settings = { minutesPerDay: 30, wordsPerMinute: 250 } as never;
+    const line = async (next: typeof book.next_in) => {
+      const doc = await draw((c) => c(BooksNow, { book, settings, next }));
+      return doc.querySelector(".now-next")!;
+    };
+    const series = await line(book.next_in);
+    expect(series.querySelector(".now-next-text")?.textContent).toBe("Next in Mistborn: Title alloy");
+    expect(links(series)).toEqual([["Mistborn", "/books/series/mistborn"], ["Title alloy", "/book/alloy"]]);
+    // The line is not itself a link (a link in a link is invalid): the › is decoration.
+    expect(series.tagName).not.toBe("A");
+    expect(series.querySelector(".now-next-go")?.getAttribute("aria-hidden")).toBe("true");
+    const sub = await line({ ...book.next_in!, kind: "subseries", entityId: "era-1", name: "Era One" });
+    expect(links(sub)).toEqual([["Title alloy", "/book/alloy"]]);
+    expect(sub.querySelector(".now-next-text")?.textContent).toBe("Next in Era One: Title alloy");
+    expect(links(await line({ ...book.next_in!, kind: "universe", entityId: "cosmere", name: "Cosmere" })))
+      .toEqual([["Cosmere", "/books/universes/cosmere"], ["Title alloy", "/book/alloy"]]);
+    expect(links(await line({ ...book.next_in!, kind: "author", entityId: "a", name: "Author A" }))[0])
+      .toEqual(["Author A", "/books/authors/a"]);
+  });
+
+  it("Or keep going links each reason's name to its page; a shelf's stays text (AC-2)", async () => {
+    const { default: BetweenBooks } = await import("../src/components/BetweenBooks");
+    await sql`UPDATE book_status SET status = 'read', finished_on = '2026-11-10', finished_on_precision = 'exact' WHERE book_id = 'hand'`;
+    const keep = await q.keepGoing(USER, "2026-Q3", 3);
+    const draw1 = async (list: import("../src/db/queries").KeepGoing[]) =>
+      (await draw((c) => c(BetweenBooks, { last: null, offer: null, quarter: "Q4", today: "2026-11-20", keep: list })))
+        .querySelector(".keep-why")!;
+    const why = await draw1(keep);
+    expect(why.textContent).toBe("Next in Mistborn · 1 of 2 read");
+    expect(links(why)).toEqual([["Mistborn", "/books/series/mistborn"]]);
+    const shelf = await draw1([{ ...keep[0], kind: "shelf", entityId: "sh", name: "Fantasy shelf" }]);
+    expect(shelf.textContent).toBe("Next in Fantasy shelf · 1 of 2 read");
+    expect(links(shelf)).toEqual([]);
   });
 });
 

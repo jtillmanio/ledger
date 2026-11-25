@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import BookPlace from "@/components/BookPlace";
 import { PlanSheetButton } from "@/components/PlanSheet";
 import type { PeriodCapacity, PlanRow } from "@/db/queries";
-import { bookSub } from "@/lib/format";
+import { subParts } from "@/lib/format";
 import { genreHue, kWords, periodName } from "@/lib/plan-rail";
 
 // Loaded on the first Move, as BookRowMenu loads it: the page carries none of the sheet until then.
@@ -97,7 +98,10 @@ export default function PlanQuarterRows({ quarters, rows, focus, room, settled =
                         <span className="row-meta mono rm" data-wc={r.estimated ? "estimated" : undefined}>{rowWords(r)}</span>
                       </span>
                       <span className="row-sub">
-                        {bookSub({ author: r.author, universe: r.universe, series: r.series, series_position: r.seriesPosition })}
+                        <BookPlace parts={subParts({
+                          author: r.author, author_id: r.authorId, universe: r.universe, universe_id: r.universeId,
+                          series: r.series, series_id: r.seriesId, series_position: r.seriesPosition,
+                        })} />
                       </span>
                     </span>
                     <button type="button" className="btn sec sm plan-move" aria-label={`Move ${r.title}`}

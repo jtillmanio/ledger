@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FollowName } from "@/components/BookPlace";
 import BookStatus from "@/components/BookStatus";
 import { ArtCover } from "@/components/Cover";
 import { Headphones } from "@/components/nav/Icons";
@@ -6,7 +7,6 @@ import type { InHandBook, NextIn } from "@/db/queries";
 import { dayWhen } from "@/lib/format";
 import { bookHref } from "@/components/StatusBookRow";
 import WhereItSits from "@/components/WhereItSits";
-import { libraryHref } from "@/lib/library-sort";
 import type { ReadingSettings } from "@/lib/settings";
 
 const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
@@ -63,7 +63,8 @@ export function nowFoot(book: InHandBook, s: ReadingSettings, now = new Date()):
  * author, series, subseries) with `read / total`; under the cover and text on the phone, in the text column
  * from 768px. 2.1b's meter, when it lands, goes in the band above them.
  * *Next in* (2.2d): when the book is in something you follow as Reading, one grey line under
- * the band names the next book there and links to it, the Library row until 3.5's sheet.
+ * the band names the next book there. Two links (task 5.9b, TASK-140): the follow's name to its page (a
+ * subseries has none, so it stays text) and the title to the book's sheet (task 3.5b).
  */
 export default function BooksNow({ book, settings, next = null }: {
   book: InHandBook; settings: ReadingSettings; next?: NextIn | null;
@@ -94,10 +95,13 @@ export default function BooksNow({ book, settings, next = null }: {
           startedOn={book.started_on} startPrecision={book.started_on_precision} />
       </div>
       {next && (
-        <Link href={libraryHref({ q: next.title })} prefetch={false} className="now-next">
-          <span className="now-next-text">Next in {next.name}: {next.title}</span>
+        <div className="now-next">
+          <span className="now-next-text">
+            Next in <span className="now-next-name"><FollowName kind={next.kind} id={next.entityId} name={next.name} /></span>
+            : <Link href={bookHref(next.id)} scroll={false} prefetch={false} className="book-link">{next.title}</Link>
+          </span>
           <span className="now-next-go" aria-hidden="true">›</span>
-        </Link>
+        </div>
       )}
       {foot && <p className="now-foot">{foot}</p>}
     </section>
