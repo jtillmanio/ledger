@@ -32,6 +32,8 @@ export default function ListenNext({ rows }: { rows: ListenNextBook[] }) {
       move={async (id, to) => { await listenCall("PATCH", { bookId: id, to }); }}
       remove={{
         label: `Remove from ${LISTEN_NEXT}`,
+        // Grey, as *Remove from shelf* is (MR-D16): the book stays in the library and the plan, and Undo puts it back.
+        danger: false,
         toast: (title) => `Removed ${title} from ${LISTEN_NEXT}`,
         run: async (id) => {
           const { position } = await listenCall("DELETE", { bookId: id });

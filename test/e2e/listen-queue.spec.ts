@@ -13,7 +13,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
 import {
-  contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot,
+  computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
 } from "./helpers";
 
 // Every test here writes, or sets its own viewport and theme: once, in w390-light.
@@ -33,6 +33,8 @@ const LATER = { id: `${P}later`, title: "E2E Lq Later" };
 const EYE = { id: `${P}eye`, title: "E2E Lq Read By Eye" };
 const EAR = { id: `${P}ear`, title: "E2E Lq Listened To" };
 const BOOKS = [ONE, TWO, THREE, PLANNED, LATER, EYE, EAR];
+// A books shelf holding ONE: its *Remove from shelf* is the grey the review drew (MR-D16), the reference for *Remove from Listen next*.
+const SHELF = { id: `${P}shelf`, name: "E2E Lq Shelf" };
 const QUEUED = [ONE, TWO, THREE];
 
 async function db<T>(fn: (sql: TestSql) => Promise<T>): Promise<T> {
@@ -44,7 +46,10 @@ async function db<T>(fn: (sql: TestSql) => Promise<T>): Promise<T> {
   }
 }
 
-const clean = () => db((sql) => sql`DELETE FROM books WHERE id LIKE ${P + "%"}`);
+const clean = () => db(async (sql) => {
+  await sql`DELETE FROM shelves WHERE id = ${SHELF.id}`;
+  await sql`DELETE FROM books WHERE id LIKE ${P + "%"}`;
+});
 
 /** The queue as stored: the seeded three at 1–3, nothing else. */
 const resetQueue = () => db(async (sql) => {
@@ -71,6 +76,8 @@ test.beforeAll(async () => {
       await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, format)
                 VALUES (${E2E_USER}, ${b.id}, ${on}, 'exact', ${format})`;
     }
+    await sql`INSERT INTO shelves (id, name, user_id, kind) VALUES (${SHELF.id}, ${SHELF.name}, ${E2E_USER}, 'books')`;
+    await sql`INSERT INTO shelf_books (shelf_id, book_id, ordinal) VALUES (${SHELF.id}, ${ONE.id}, 1)`;
   });
   await resetQueue();
 });
@@ -223,6 +230,33 @@ test("Remove from Listen next takes it off; Undo puts it back where it was", ONC
   await expect.poll(stored).toEqual([`${ONE.id}:1`, `${TWO.id}:2`, `${THREE.id}:3`]);
 });
 
+test("Remove from Listen next reads grey like Remove from shelf, in no --danger colour, light and dark at 360px (AC-1, AC-2)", ONCE, async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    // The reference: a shelf's *Remove from shelf* (task 5.1b), grey because the book stays in the library.
+    await page.goto(`/books/shelves/${SHELF.id}`);
+    const shelfMore = page.getByRole("button", { name: `More for ${ONE.title}`, exact: true });
+    await hydrated(shelfMore);
+    await shelfMore.click();
+    const shelfItem = page.getByRole("menuitem", { name: "Remove from shelf", exact: true });
+    const reference = (await computedStyle(shelfItem, ["color"])).color;
+    await expect(shelfItem).not.toHaveClass(/danger/);
+
+    await open(page, "/books/status?tab=next");
+    const more = listenNext(page).getByRole("button", { name: `More for ${TWO.title}`, exact: true });
+    await hydrated(more);
+    await more.click();
+    const item = page.getByRole("menuitem", { name: "Remove from Listen next", exact: true });
+    // Menu items carry no icon (Menu.tsx), so the text colour is the whole of it.
+    const { color } = await computedStyle(item, ["color"]);
+    await expect(item).not.toHaveClass(/danger/);
+    expect(color, `${colorScheme}: the colour of Remove from shelf`).toBe(reference);
+    expect(color, `${colorScheme}: not --danger`).not.toBe(await tokenColour(page, "--danger"));
+    expect(await contrastFailures(page), `${colorScheme} menu open`).toEqual([]);
+  }
+});
+
 test("the book sheet and an Add books result queue too, each with its undo", ONCE, async ({ page }) => {
   try {
     await page.goto(`/book/${LATER.id}`);
@@ -280,6 +314,28 @@ test("Done's Listened chip lists only the listened book, is current and in the U
   await expect(page).toHaveURL(/\/books\/status\?tab=done$/);
   await expect(titles.filter({ hasText: /^E2E Lq/ })).toHaveText([EAR.title, EYE.title]);
   expect(await counted(page, "Done")).toBe(await titles.count());
+});
+
+// `ui.viewports` in .claude/kit.json: the open menu is checked at each of them (task 6.24, AC-4).
+const WIDTHS = [[360, 780], [390, 844], [412, 915], [768, 1024], [1024, 768], [1280, 800]] as const;
+
+test("the Listen next row menu open, at each width, light and dark: axe, contrast and screenshots (task 6.24, AC-4)", ONCE, async ({ page }, info) => {
+  for (const [width, height] of WIDTHS) {
+    for (const colorScheme of ["light", "dark"] as const) {
+      await page.setViewportSize({ width, height });
+      await page.emulateMedia({ colorScheme });
+      await open(page, "/books/status?tab=next");
+      const more = listenNext(page).getByRole("button", { name: `More for ${TWO.title}`, exact: true });
+      await hydrated(more);
+      await more.click();
+      await expect(page.getByRole("menuitem", { name: "Remove from Listen next", exact: true })).toBeVisible();
+      await expectNoHorizontalScroll(page);
+      await expectNoAxeViolations(page, AXE);
+      expect(await contrastFailures(page), `menu ${width}px ${colorScheme}`).toEqual([]);
+      await screenshot(page, info, `listen-menu-${width}-${colorScheme}`);
+      await page.keyboard.press("Escape");
+    }
+  }
 });
 
 test("Up next and Done at 360 and 1280px, light and dark: axe, contrast and screenshots (AC-6)", ONCE, async ({ page }, info) => {

@@ -93,6 +93,28 @@ describe("control states (UX-N01)", () => {
   });
 });
 
+// Task 6.24 (MR-D18, MR-Q18; STYLE_GUIDE §9, §17.9): every stepper's track is --sunk, the batch and
+// finish sheets' as Settings' is. The buttons on it stay raised, so only a rule on the track itself counts.
+describe("stepper surface (task 6.24)", () => {
+  const isTrack = (sel: string) => {
+    const parts: string[] = compounds(sel);
+    const last = parts[parts.length - 1] ?? "";
+    return bound(".stepper").test(last) && !/^(button|input|output)/.test(last);
+  };
+  const trackRules = rules.filter((r) => r.selectors.some(isTrack));
+
+  it("the base .stepper rule draws the track on var(--sunk)", () => {
+    const base = trackRules.find((r) => r.selectors.includes(".stepper") && r.media.length === 0);
+    expect(base, "a base .stepper rule").toBeDefined();
+    expect(base!.decls.background).toBe("var(--sunk)");
+  });
+
+  it("no rule on a .stepper track sets it on --raise", () => {
+    const raised = trackRules.filter((r) => /var\(--raise\)/.test(`${r.decls.background ?? ""} ${r.decls["background-color"] ?? ""}`));
+    expect(raised.map((r) => r.selectors.join(", "))).toEqual([]);
+  });
+});
+
 describe("radius scale (UX-N04)", () => {
   it("border-radius values are var(--r-*) or 50%", () => {
     const bad: string[] = [];
