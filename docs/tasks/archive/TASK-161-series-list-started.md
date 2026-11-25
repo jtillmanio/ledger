@@ -97,7 +97,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 _Filled by /implement-task. One line per round._
 
-Verify R1 FAIL(3: `query-budget.test.ts` page call; `/books/series` 5 queries over its budget of 2, the nested `sql` fragments counted; a `parked` row without `parked_on` in my own test) → fixed | R2 PASS (after the skeleton fix) | CI R1 PASS (b3212a7) | Audit R1 PASS (query-budget's ceiling is a guard, not a proof) | Schema R1 APPROVE | Spec R1 CHANGES (the skeleton's chips 30px, not 44px, below 768px) → R2 re-read of the fix | UI R1 PASS (7b1c153; AC-3's slate is not reachable on the dev data: 32 started of 751, so the unit test and spec hold it)
+Verify R1 FAIL(3: `query-budget.test.ts` page call; `/books/series` 5 queries over its budget of 2, the nested `sql` fragments counted; a `parked` row without `parked_on` in my own test) → fixed | R2 PASS (after the skeleton fix) | CI R1 PASS (b3212a7) → Drift R1 update first (behind 1; both changed design/mockups-index.md) → rebased | CI R2 FAIL(2: mockup-tablet.spec.ts:433 and :437, w1280-light: the new none-started frame still had the old search-glyph bar, where 6.24 drew the Settings gear on every phone bar) → fixed (mockup-tablet.spec.ts 47 passed in w1280-light) | Audit R1 PASS (query-budget's ceiling is a guard, not a proof) | Schema R1 APPROVE | Spec R1 CHANGES (the skeleton's chips 30px, not 44px, below 768px) → R2 re-read of the fix | UI R1 PASS (7b1c153; AC-3's slate is not reachable on the dev data: 32 started of 751, so the unit test and spec hold it)
 
 ## Blocked
 
