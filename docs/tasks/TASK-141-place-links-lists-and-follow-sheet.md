@@ -1,14 +1,14 @@
 ---
 id: TASK-141
 title: 5.9b Every other place line links its names (2 of 3) — the status rows, lists and follow sheet
-status: Ready
+status: In progress
 depends_on: [TASK-140]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 64dd15c
 ---
 
 # TASK-141 — 5.9b Every other place line links its names (2 of 3) — the status rows, lists and follow sheet
@@ -66,7 +66,41 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-25 ("approved with recommendations"): the task kept whole (attended), Parked's picker header linked too.
+
+**Steps**
+
+1. **Queries** (`src/db/queries.ts`): `author_id`, `series_id`, `universe_id` move from `PlannedBook` into `StatusBook`, and are selected by `booksInFlight`, `booksListenNext`, `booksDone`, `topBooksYear` and `rankSorterRead` (`TopRead`), `wantedReleases` (`WantedRelease`) and `parkedBooks` (`ParkedBook`). Each already joins `authors`, `book_series`, `book_universes` and filters `b.deleted_at IS NULL`: no new join, no new book read.
+2. **Status rows** (`src/components/StatusBookRow.tsx`): `.row-sub` draws `<BookPlace parts={subParts(book)} />` (In flight, Done, Stopped, On deck, the bare-year lane).
+3. **Listen next** (`src/components/ListenNext.tsx`): `.qplace` draws `BookPlace`.
+4. **Top books** (`src/components/TopBooks.tsx`, `src/app/books/top/page.tsx`): `TopRow.sub: string` becomes `place: PlacePart[]`; `Body` draws it through `BookPlace`; the sorter's `sub` is `place.map(partText).join(" · ")`. The drag stays on the handle alone (`ReorderList`); the place line is in the row body.
+5. **Coming out** (`src/app/books/releases/page.tsx`) and **Parked** (`src/app/parked/page.tsx`): `.row-sub` draws `BookPlace`. Parked's *Plan…* picker gets the ids too (`ParkedRowBook`, `src/components/ParkedRow.tsx`), so its header links the names (TASK-140 left it text).
+6. **Follow sheet** (`src/components/FollowSheet.tsx`): `.follow-name` draws `<FollowName>` (series, author, universe linked; subseries, shelf text). Opened from a finish's toast it lives above every page (`FollowOfferProvider`), so it closes itself when the pathname changes.
+7. **Styles** (`src/app/globals.css`): `.follow-name a` joins the place-links rule, with a 24px box; `.row-sub a` and `.qplace a` are covered already.
+8. **Mockup** (`design/mockups.html`, `design/mockups-index.md`): `a.plink` on `status` (In flight, Done, Listen next), `top`, `releases`, `parked`, `follow`; the index notes say so.
+
+**Link form.** `<Link prefetch={false}>` on every surface, as TASK-140. Budgets are compressed transfer bytes on the measured views (`books-status` In flight, `top` one year, `parked`, `releases`); a route over takes `plain`.
+
+**Files**
+
+- `src/db/queries.ts` — the ids (step 1).
+- `src/components/StatusBookRow.tsx`, `ListenNext.tsx`, `TopBooks.tsx`, `FollowSheet.tsx`, `ParkedRow.tsx` — the place lines (steps 2–6). `ParkedRow.tsx` is not in *Files likely touched*: the picker's ids.
+- `src/app/books/top/page.tsx`, `src/app/books/releases/page.tsx`, `src/app/parked/page.tsx` — the rows built server-side (steps 4, 5). Not in *Files likely touched* except releases.
+- `src/app/globals.css` — not in *Files likely touched*: `.follow-name a` (step 7).
+- `design/mockups.html`, `design/mockups-index.md` — step 8.
+- Tests: `test/top-books.test.tsx`, a new `test/place-links.test.tsx`, `test/status.test.ts`, `test/parked.test.ts`, `test/releases.test.ts`; `test/e2e/status.spec.ts`, `top-books.spec.ts`, `parked.spec.ts`, `releases.spec.ts`, `follows.spec.ts`; any test pinning `TopRow.sub` or these queries' columns (grep first).
+
+**Test strategy**
+
+- AC-2: component tests (`test/top-books.test.tsx`; `test/place-links.test.tsx` for `StatusBookRow`, `ListenNext`, the follow sheet's row, the Parked and Coming out lines): link names and hrefs, the series link named alone, a standalone with no series or universe link. Query tests pin the ids (`status.test.ts`, `parked.test.ts`, `releases.test.ts`).
+- AC-3: `top-books.spec.ts` presses a place link → the series URL, the ranks unchanged; `status.spec.ts` and `parked.spec.ts`: a link opens its page, the status control or verbs don't fire.
+- AC-4: axe, contrast, 24px boxes and screenshots at each width, light and dark, in the status, top-books, parked, releases and follows specs.
+- AC-1: the byte budgets checked after merge (Lighthouse off).
+- Manual: the ui-verifier taps each surface's names at 360 and 1280.
+
+**Risks.** A test pinning Top books' `sub` or these queries' columns; the follow sheet's close on navigation.
+
+**Size.** About 12 source files plus tests, over the split policy's 8; already part 2 of 3 and each edit small, so kept whole, attended (owner, at plan).
 
 ## Review log
 
