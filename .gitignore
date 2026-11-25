@@ -18,3 +18,5 @@ next-env.d.ts
 test/e2e/.auth/
 # the Playwright MCP's console logs, page snapshots and screenshots from ui-verifier walks
 /.playwright-mcp/
+# ui-verifier screenshots saved by name (<task-id>-<ac>-<viewport>.png) land in the root
+/TASK-*.png
