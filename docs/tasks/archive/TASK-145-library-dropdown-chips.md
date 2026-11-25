@@ -1,7 +1,7 @@
 ---
 id: TASK-145
 title: 6.24 Built screens follow the mediums review (3 of 4) — the Library's dropdown chips
-status: Review
+status: Done
 depends_on: []
 size: M
 model: sonnet
