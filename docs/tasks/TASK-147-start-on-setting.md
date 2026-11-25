@@ -1,7 +1,7 @@
 ---
 id: TASK-147
 title: 6.25 Navigation for four and five media (1 of 3) — Start on, for what / opens
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: sonnet
@@ -30,7 +30,7 @@ Settings → Appearance gains *Start on*: *Last used* (as today) or a named medi
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves *with Start on set to Books, / opens /books*. TASK-148 and TASK-149 prove the rest):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves *with Start on set to Books, / opens /books*. TASK-148 and TASK-149 prove the rest):
 browser test, light and dark: at 360px the bar shows the current medium as a
 44px button whose sheet lists every built medium with the current one
 `aria-current`, a 44px search button and the gear, nothing scrolls sideways,
@@ -40,10 +40,10 @@ divider, *Inbox* and *Progress*; at 834px the rail names every medium; at
 focus return work in; at 1280px the sidebar lists every medium with the
 current one expanded and an *Across media* group; with *Start on* set to
 Books, `/` opens `/books`; axe reports no new violations at each width.
-- [ ] AC-2: Given *Start on* is *Last used* (the default, and the value when nothing is stored) and the last medium visited was watch, `/` redirects to `/watch`; given nothing visited and nothing stored, `/` redirects to `/comics`.
-- [ ] AC-3: Given *Start on* is Books and the last medium visited was comics, `/` redirects to `/books`; given a stored value that names no built medium, `/` behaves as *Last used*.
-- [ ] AC-4: Settings → Appearance shows *Start on* with *Last used* and one choice per built medium, the stored choice selected on the first paint (no flash), and a change persists across a reload; nothing is written to the database.
-- [ ] AC-5: *Start on* meets the UX floor (`docs/04-design.md` § 10. The UX floor): a real control with a name, targets at least 44px, text 4.5:1 in both themes, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-2: Given *Start on* is *Last used* (the default, and the value when nothing is stored) and the last medium visited was watch, `/` redirects to `/watch`; given nothing visited and nothing stored, `/` redirects to `/comics`.
+- [x] AC-3: Given *Start on* is Books and the last medium visited was comics, `/` redirects to `/books`; given a stored value that names no built medium, `/` behaves as *Last used*.
+- [x] AC-4: Settings → Appearance shows *Start on* with *Last used* and one choice per built medium, the stored choice selected on the first paint (no flash), and a change persists across a reload; nothing is written to the database.
+- [x] AC-5: *Start on* meets the UX floor (`docs/04-design.md` § 10. The UX floor): a real control with a name, targets at least 44px, text 4.5:1 in both themes, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -69,7 +69,10 @@ Books, `/` opens `/books`; axe reports no new violations at each width.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Candidate decision: *Start on* is a per-device cookie (`ledger_start`), not a `reading_settings` column, so a phone and a desktop can each open somewhere different and no schema changes (MR-D7; owner chose the cookie at the plan gate, 2026-11-25). Destination: `docs/review/decisions.md`, a new D-n row, written at close-out. (approved at plan)
+- Candidate decision: *Start on* is a per-device cookie (`ledger_start`), not a `reading_settings` column, so a phone and a desktop can each open somewhere different and no schema changes (MR-D7; owner chose the cookie at the plan gate, 2026-11-25) → docs/review/decisions.md § D-188 (approved at plan)
+- The mockups draw the dropdown chip with `aria-haspopup="true"`; the built `ChipMenu` has `aria-expanded` and no `aria-haspopup` (ui-verifier) → not tracked: `ChipMenu` is a disclosure of links and buttons, not a `role="menu"` (its own doc comment), so `aria-haspopup` would promise keyboard behaviour it doesn't have; the Library's chips, shipped by 6.24, are the same
+- Later screens' line ranges in `design/mockups-index.md` moved by three lines when the mockup gained the row → not tracked: the index says the screen scripts compute the range fresh from the file, so it cannot go stale in use
+- `locator.click()` scrolls clipped containers, so a spec that only clicks misses a menu a pointer can't reach (ui-verifier, the clipped *Start on* menu) → not tracked: the spec now hit-tests each choice (`settings.spec.ts`, "not clipped by its group"); no other `.group` holds a dropdown chip today, and `.group:has(.menu-wrap)` covers one added later
 
 ## Plan
 
@@ -99,7 +102,7 @@ Approved 2026-11-25 (owner: per-device cookie, not a column). Worktree `.claude/
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (tsc, lint, test:no-e2e; 48 specs in w390-light) | CI R1 PASS (`8a5e666`) | Spec R1 APPROVE (no findings; a dead `useId` removed) | Audit R1 PASS (every AC discriminating; restoration OK) | UI R1 CHANGES (the open menu was clipped by `.group{overflow:hidden}`: a mouse or finger could only hit *Last used*; scripted `click()` had hidden it) → fixed with `.group:has(.menu-wrap){overflow:visible}` and a hit-test spec that fails without it | Verify R2 PASS | Verify R3 PASS (49 specs) | Drift R1 update first (behind 3; both changed `design/mockups.html`, `design/mockups-index.md`, `src/app/globals.css`; main changed `src/db/queries.ts`) → rebased, clean | UI R2 pending the owner's call (it needs a sign-in in the verifier's browser; the hit-test spec covers the defect, and the preview walk is the owner's) | Verify R4 and CI R2 on the rebased head: see the PR
 
 ## Blocked
 
@@ -107,7 +110,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 4 (R1 to R3 PASS, R4 on the rebased head)
+- Review rounds: 2 (spec-reviewer 1, test-auditor 1, ui-verifier 1 with CHANGES; the fix is covered by a new spec)
+- First-pass AC FAILs: 0 (AC-5's mouse path failed the ui-verifier's walk; no spec had failed)
+- Plan revisions after approval: 0
