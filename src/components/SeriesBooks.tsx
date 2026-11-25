@@ -5,9 +5,10 @@ import { FollowControl } from "@/components/FollowOptions";
 import { bookHref } from "@/components/StatusBookRow";
 import { fillShare } from "@/components/WhereItSits";
 import type { Grouping, SeriesBook, SeriesPageData } from "@/db/queries";
+import { handHref } from "@/lib/book-add";
 import { bookDates, placeTag } from "@/lib/format";
 
-/** Where a gap row's *Add* goes (task 5.9 decision 3): Add books, Search starting with the series' name (`?q=`). */
+/** Where the empty slate's *Add a book* goes (task 5.9 decision 3): Add books, Search starting with the series' name (`?q=`). A gap row's *Add* fills By hand instead (`handHref`, task 5.9b). */
 export const seriesAddHref = (name: string) => `/books/add?q=${encodeURIComponent(name)}`;
 
 /** The marks on a status tag: ✓ once read, ◐ while in hand; glyph and words, never colour alone (as `ShelfBooks`). */
@@ -66,7 +67,7 @@ export function BookRowItem({ book, next, lead, where }: {
   );
 }
 
-/** A position the series states and the catalog doesn't hold: grey, with a real *Add* that opens Add books (never a checkmark). */
+/** A position the series states and the catalog doesn't hold: grey, with a real *Add* that opens By hand with the series and this number filled (task 5.9b; never a checkmark). */
 function GapRowItem({ n, series }: { n: number; series: string }) {
   return (
     <li className="row sp-row sp-gap">
@@ -74,7 +75,7 @@ function GapRowItem({ n, series }: { n: number; series: string }) {
       <div className="rb">
         <span className="rt"><span className="mono sp-pos">#{n}</span> not in your library</span>
       </div>
-      <Link prefetch={false} className="btn sm sec" href={seriesAddHref(series)} aria-label={`Add #${n} of ${series}`}>Add</Link>
+      <Link prefetch={false} className="btn sm sec" href={handHref(series, n)} aria-label={`Add #${n} of ${series}`}>Add</Link>
     </li>
   );
 }

@@ -112,7 +112,7 @@ milestone._
 | F-35 Tracks page | Later | 5.2 | M18 |
 | F-36 Editions: collected in | Later | 5.6, 5.10 | M18 |
 | F-37 Coming out | Later | 5.7, 5.7b, 5.8 | M17, M18 |
-| F-38 Series pages | Later | 5.9, 5.9b, 5.9c, 5.13 | M17, M18 |
+| F-38 Series pages | Later | 5.9, 5.9b, 5.9c, 5.13, 5.19 | M17, M18 |
 | F-39 Search and the verb palette | Later | 6.1 | M19 |
 | F-40 Stats and the activity log | Later | 6.2, 6.17 | M19 |
 | F-41 Offline and the keyboard | Later | 6.4, 6.5 | M20 |
@@ -518,7 +518,7 @@ with the task that first reads it.
 | ✅ | 5.7 → TASK-099, TASK-100 | Books coming out | M |  | 1.4c, 1.8 |
 |  | 5.7b → TASK-159, TASK-160 | Coming out lets a book go: Remove, and Calibre having it | S | _Owner intake, 2026-11-24 (D-185); Check proposed_ | 5.7, 4.4 |
 | ✅ | 5.9 → TASK-101, TASK-102, TASK-125 | Series page from `series_progress` | M |  | — |
-|  | 5.9b → TASK-140, TASK-141, TASK-142 | Every other place line links its names | M | _From TASK-125 (PR #330); Check proposed_ | 5.9, 5.11 |
+| ✅ | 5.9b → TASK-140, TASK-141, TASK-142 | Every other place line links its names | M | _From TASK-125 (PR #330); Check proposed_ | 5.9, 5.11 |
 |  | 5.9c → TASK-161 | The Series list opens on what you've started | S | _Owner intake, 2026-11-24; Check proposed_ | 5.9 |
 | ✅ | 5.11 → TASK-103 | Author and universe pages, and the follow control | M |  | 1.15, 5.9 |
 |  | 5.11b → TASK-162 | Universes: every universe in one list | S | _Owner intake, 2026-11-24; Check proposed_ | 5.11, 5.9c |
@@ -528,6 +528,7 @@ with the task that first reads it.
 | ✅ | 5.17 → TASK-092, TASK-093, TASK-094 | What you own: physical copies and audiobooks | M | _Pulled ahead of 1.26 (D-132)_ | 2.2e, 1.4, 1.21 |
 | ✅ | 5.17b → TASK-122, TASK-123 | Own it from Search and By hand | S | _From TASK-094 (PR #268)_ | 5.17 |
 | ✅ | 5.18 → TASK-130 | A Parked book stays out of the plan and the listen queue, through every undo | S | _From TASK-127 and TASK-111 (PR #304, PR #311); pulled ahead of 1.26 (D-172); Check proposed_ | 5.15 |
+|  | 5.19 | A series whose id isn't the slug of its name is reachable by hand | S | _From TASK-142 (PR #347); Check proposed_ | 5.9b |
 |  | 1.17c → TASK-151, TASK-152 | Log a past read of a book already read | S | _Owner intake, 2026-11-24; Phase 1's, listed here with the book surfaces; not a cutover gate; Check proposed_ | 1.17b |
 
 ## M18: Comic surfaces — Later

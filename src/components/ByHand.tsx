@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { HandItem } from "@/db/writes";
 import { addTo, MAX_PAGES, MAX_POSITION, MAX_WORDS, type Target } from "@/lib/book-add";
 import { MAX_FIELD } from "@/lib/book-parse";
@@ -51,18 +51,30 @@ const ORDER: Field[] = ["title", "author", "series", "position", "pages", "words
  * every field is right: a missing title or author says so under the field,
  * and focus goes to the first one wrong. The button names the destination.
  */
-export default function ByHand({ target, title: carried, onSubmit, cancel }: {
+export default function ByHand({ target, title: carried, series = "", position = "", focusFirstEmpty = false, onSubmit, cancel }: {
   target: Target;
   /** A search carried over by *Add it by hand*: the caller remounts the form (a new `key`) to carry another. */
   title: string;
+  /** A series page's gap row (task 5.9b): *Series* and *#* start filled, as the link carried them. */
+  series?: string;
+  position?: string;
+  /** On mount, focus goes to the first field with nothing in it, in the form's order. */
+  focusFirstEmpty?: boolean;
   /** Sends the book; true once it is added, and the form clears. */
   onSubmit: (item: HandItem) => Promise<boolean>;
   cancel: React.ReactNode;
 }) {
-  const [v, setV] = useState<Values>({ ...EMPTY, title: carried });
+  const [v, setV] = useState<Values>({ ...EMPTY, title: carried, series, position });
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [saving, setSaving] = useState(false);
   const refs = useRef<Partial<Record<Field, HTMLInputElement | null>>>({});
+
+  // Opened from a gap row, the form is part filled: focus goes to the first field still to type.
+  useEffect(() => {
+    if (focusFirstEmpty) refs.current[ORDER.find((f) => !v[f])!]?.focus();
+    // Once, on mount: typing must not pull focus back.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

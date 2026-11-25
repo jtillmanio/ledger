@@ -36,6 +36,10 @@ const NOTHING = "zzzz e2e nothing";
 /** A library book a rate-limited search still lists. */
 const LIBRARY = { id: "e2e-hardcover-library-book", title: "E2E Hardcover Library Book", author: "E2E Hardcover Author" };
 const LIBRARY_AUTHOR_ID = "e2e-hardcover-author";
+/** A library book in a series and a universe (TASK-142): its names link to their pages; Hardcover has nothing for it. */
+const LINKED = { id: "e2e-hardcover-linked-book", title: "E2E Linked Place Book", series: { id: "e2e-hardcover-series", name: "E2E Linked Series" },
+  universe: { id: "e2e-hardcover-universe", name: "E2E Linked Universe" }, position: 2 };
+const LINKED_KEY = "search:e2e linked place book";
 const FIXTURE_IDS = [444001, 444002, 444003, 444004, 444005];
 const FIXTURE_AUTHORS = ["susanna-clarke", "luigi-ficacci", "sarah-e-lawrence"];
 const PIRANESI_COVER = "https://assets.hardcover.app/edition/444001/piranesi.jpeg";
@@ -52,11 +56,13 @@ async function withSql<T>(work: (sql: TestSql) => Promise<T>): Promise<T> {
 
 async function clean() {
   await withSql(async (sql) => {
-    await sql`DELETE FROM books WHERE hardcover_id = ANY(${FIXTURE_IDS}::int[]) OR id = ${LIBRARY.id}`;
+    await sql`DELETE FROM books WHERE hardcover_id = ANY(${FIXTURE_IDS}::int[]) OR id IN (${LIBRARY.id}, ${LINKED.id})`;
+    await sql`DELETE FROM book_series WHERE id = ${LINKED.series.id}`;
+    await sql`DELETE FROM book_universes WHERE id = ${LINKED.universe.id}`;
     await sql`DELETE FROM authors a WHERE a.id = ANY(${[...FIXTURE_AUTHORS, LIBRARY_AUTHOR_ID]}::text[])
       AND NOT EXISTS (SELECT 1 FROM books b WHERE b.author_id = a.id)`;
     await sql`DELETE FROM hardcover_cache
-      WHERE key IN (${SEARCH_KEY}, ${PIR_KEY}, ${LIBRARY_KEY}, ${ISBN_KEY}, ${`search:${NOTHING}`}, 'hold')`;
+      WHERE key IN (${SEARCH_KEY}, ${PIR_KEY}, ${LIBRARY_KEY}, ${LINKED_KEY}, ${ISBN_KEY}, ${`search:${NOTHING}`}, 'hold')`;
   });
 }
 
@@ -65,7 +71,7 @@ test.beforeAll(async () => {
   await withSql(async (sql) => {
     // A day old: a request would rewrite fetched_at, so an unchanged one shows none was made.
     const rows = [[SEARCH_KEY, recorded[SEARCH_KEY]], [PIR_KEY, recorded[SEARCH_KEY]], [ISBN_KEY, recorded[ISBN_KEY]],
-      [`search:${NOTHING}`, { found: 0, hits: [] }], [LIBRARY_KEY, { found: 0, hits: [] }]];
+      [`search:${NOTHING}`, { found: 0, hits: [] }], [LIBRARY_KEY, { found: 0, hits: [] }], [LINKED_KEY, { found: 0, hits: [] }]];
     for (const [key, body] of rows) {
       await sql`INSERT INTO hardcover_cache (key, body, fetched_at)
         VALUES (${key as string}, ${sql.json(body as never)}, now() - interval '1 day')`;
@@ -73,6 +79,11 @@ test.beforeAll(async () => {
     await sql`INSERT INTO authors (id, name) VALUES (${LIBRARY_AUTHOR_ID}, ${LIBRARY.author})`;
     await sql`INSERT INTO books (id, title, author_id) VALUES (${LIBRARY.id}, ${LIBRARY.title}, ${LIBRARY_AUTHOR_ID})`;
     await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${LIBRARY.id}, 'to_read')`;
+    await sql`INSERT INTO book_series (id, name, author_id) VALUES (${LINKED.series.id}, ${LINKED.series.name}, ${LIBRARY_AUTHOR_ID})`;
+    await sql`INSERT INTO book_universes (id, name) VALUES (${LINKED.universe.id}, ${LINKED.universe.name})`;
+    await sql`INSERT INTO books (id, title, author_id, series_id, series_position, universe_id, page_count)
+      VALUES (${LINKED.id}, ${LINKED.title}, ${LIBRARY_AUTHOR_ID}, ${LINKED.series.id}, ${LINKED.position}, ${LINKED.universe.id}, 321)`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${LINKED.id}, 'to_read')`;
   });
 });
 test.afterAll(clean);
@@ -125,6 +136,8 @@ test("searching piranesi lists Hardcover's books under From Hardcover, no compil
   // The recorded compilation is not listed, nor the book with no author.
   await expect(page.getByText("Piranesi & Jonathan Strange and Mr Norrell")).toHaveCount(0);
   await expect(rows.first()).toContainText("Susanna Clarke · 272 pages");
+  // A result from Hardcover alone has no ids to link: its names are text (TASK-142, AC-2).
+  await expect(fromHardcover(page).locator(".rs a")).toHaveCount(0);
   await expect(rows.first().locator(".tag")).toHaveText(["Hardcover"]);
   await expect(rows.first()).toContainText("est 75k words");
   await expect(rows.nth(2)).toContainText("Sarah E. Lawrence and John Wilton-Ely");
@@ -209,7 +222,7 @@ test("adding one creates one books row with hardcover_id and its cover; adding i
   const after = await withSql(searchRow);
   expect(after).toEqual(before);
   expect(await withSql((sql) => sql`SELECT key FROM hardcover_cache WHERE key LIKE 'search:%' ORDER BY key`))
-    .toEqual([{ key: LIBRARY_KEY }, { key: PIR_KEY }, { key: SEARCH_KEY }, { key: `search:${NOTHING}` }]);
+    .toEqual([{ key: LIBRARY_KEY }, { key: LINKED_KEY }, { key: PIR_KEY }, { key: SEARCH_KEY }, { key: `search:${NOTHING}` }]);
 });
 
 test("a result's Year or quarter… adds the book at the end of a quarter, and Undo makes the row addable again (task 2.3, AC-4)", ONCE, async ({ page }) => {
@@ -300,4 +313,35 @@ test("a library row's tag says where it sits and a Hardcover row's says Hardcove
   await expect(page.getByRole("heading", { name: /^In your library/ })).toBeVisible();
   await floor(page);
   await screenshot(page, info, "book-search-library-tag");
+});
+
+// Task 5.9b, 3 of 3 (TASK-142; F-38): a library result's author, universe and series names are links to their
+// pages, the series' named by the series alone; the `#2` and the pages stay text. A Hardcover-only result's names
+// are text (asserted with the piranesi search above).
+test("a library result's author, universe and series are links to their pages, and meet the floor (AC-2, AC-5)", FLOOR, async ({ page }, info) => {
+  await search(page, "e2e linked place book");
+  const row = page.getByRole("list", { name: "In your library" }).getByRole("listitem", { name: `${LINKED.title} Someday`, exact: true });
+  await expect(row).toBeVisible();
+  const line = row.locator(".rs");
+  await expect(line).toHaveText(`${LIBRARY.author} · ${LINKED.universe.name} · ${LINKED.series.name} #${LINKED.position} · 321 pages`);
+  await expect(line.getByRole("link", { name: LIBRARY.author, exact: true })).toHaveAttribute("href", `/books/authors/${LIBRARY_AUTHOR_ID}`);
+  await expect(line.getByRole("link", { name: LINKED.universe.name, exact: true })).toHaveAttribute("href", `/books/universes/${LINKED.universe.id}`);
+  await expect(line.getByRole("link", { name: LINKED.series.name, exact: true })).toHaveAttribute("href", `/books/series/${LINKED.series.id}`);
+  await expect(line.getByRole("link")).toHaveCount(3);
+  // Underlined, so a link in a line of text is told apart by more than colour (axe link-in-text-block).
+  await expect(line.getByRole("link").first()).toHaveCSS("text-decoration-line", "underline");
+  for (const link of await line.getByRole("link").all()) {
+    expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+  }
+  await floor(page);
+  await screenshot(page, info, "book-search-place-links");
+});
+
+test("a place link opens the series' page (AC-2)", ONCE, async ({ page }) => {
+  await search(page, "e2e linked place book");
+  const link = page.getByRole("list", { name: "In your library" }).getByRole("link", { name: LINKED.series.name, exact: true });
+  await hydrated(link);
+  await link.click();
+  await expect(page).toHaveURL(new RegExp(`/books/series/${LINKED.series.id}$`));
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(LINKED.series.name);
 });

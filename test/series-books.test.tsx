@@ -77,18 +77,28 @@ describe("the rows in order (AC-2)", () => {
 });
 
 describe("a gap row (AC-3, AC-6)", () => {
-  it("is grey text, #3 not in your library, with a real link named Add #3 of the series to Add books", () => {
+  it("is grey text, #3 not in your library, with a real link named Add #3 of the series to Add books' By hand (task 5.9b, AC-3)", () => {
     const html = render(data({ name: "Mistborn & Co" }));
     const gap = /<li class="row sp-row sp-gap">([\s\S]*?)<\/li>/.exec(html)![1];
     expect(text(gap)).toContain("#3 not in your library");
     expect(gap).toMatch(/<a [^>]*class="btn sm sec"[^>]*>Add<\/a>/);
     expect(gap).toContain('aria-label="Add #3 of Mistborn &amp; Co"');
-    expect(gap).toContain('href="/books/add?q=Mistborn%20%26%20Co"');
+    // The series' name and the gap's number, for By hand: not Search's ?q=.
+    expect(gap).toContain('href="/books/add?series=Mistborn%20%26%20Co&amp;n=3"');
+    expect(gap).not.toContain("?q=");
     expect(gap).not.toMatch(/ready|danger|#[0-9a-f]{6}\b/i);
   });
 
-  it("the Add link's href is Add books' own ?q=, encoded", () => {
+  it("each gap's Add carries its own number", () => {
+    const html = render(data({ gaps: [3, 5] }));
+    const hrefs = [...html.matchAll(/href="(\/books\/add[^"]*)"/g)].map((m) => m[1]);
+    expect(hrefs).toEqual(["/books/add?series=Stormlight&amp;n=3", "/books/add?series=Stormlight&amp;n=5"]);
+  });
+
+  it("the empty slate's Add a book stays Search's own ?q=, encoded", () => {
     expect(seriesAddHref("The Wheel of Time")).toBe("/books/add?q=The%20Wheel%20of%20Time");
+    const html = render(data({ books: [], gaps: [], read: 0, total: 0, nextId: null }));
+    expect(html).toContain('href="/books/add?q=Stormlight"');
   });
 
   it("no gaps, no gap rows", () => {
