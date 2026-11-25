@@ -894,7 +894,7 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .finish-fields .frow{padding:.625rem 0 0;border:0}
 .finish-fields .frow input{margin-left:auto;font:inherit;font-family:var(--mono);font-size:.875rem;color:var(--ink);
   background:var(--surface);border:1px solid var(--faint-deco);border-radius:var(--r-md);padding:.25rem .5rem;min-height:32px}
-.stepper{margin-left:auto;display:flex;align-items:center;gap:.25rem;background:var(--raise);
+.stepper{margin-left:auto;display:flex;align-items:center;gap:.25rem;background:var(--sunk);
   border:1px solid var(--faint-deco);border-radius:var(--r-md);padding:.1875rem}
 .stepper button{width:32px;height:32px;border:0;border-radius:var(--r-sm);display:grid;place-items:center;font:inherit;
   font-weight:600;color:var(--ink);background:var(--surface);box-shadow:var(--sh-1);cursor:pointer}
@@ -1748,7 +1748,7 @@ textarea.txt.capture-field[aria-invalid="true"]{border-color:var(--danger)}
 
 /* --- Settings (task 2.0, F-21; mockup `settings`; STYLE_GUIDE §9) -------------
    Pace on the left and data on the right from 1024px, as the inbox does. The stepper
-   sits on --sunk here (the guide's §9); the batch and finish sheets keep theirs. At a bound
+   sits on --sunk, as every stepper does (§9; the base `.stepper`, task 6.24, MR-D18). At a bound
    the stepper's reason is written beneath it. The phone bar's gear is the 44px .iconbtn. */
 @media (min-width:1024px){
   main:has(> .settings-2up){max-width:var(--content-max)}
@@ -1773,7 +1773,7 @@ textarea.txt.capture-field[aria-invalid="true"]{border-color:var(--danger)}
 }
 .stepper-wrap{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;min-width:0}
 .stepper-why{text-align:right}
-.settings .stepper{margin-left:0;background:var(--sunk)}
+.settings .stepper{margin-left:0}
 .pace-card{margin-top:.625rem}
 .pace-card .frow{display:block;margin:0;font-size:.8125rem;color:var(--muted)}
 .pace-card b{color:var(--ink)}

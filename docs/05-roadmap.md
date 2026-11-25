@@ -5920,6 +5920,26 @@ it is converted.
   `finishoffer`, `batch` and `settings` frames are redrawn from the review and
   it gains the six 834px frames.
 
+- ☐ 6.24b **The batch and finish sheets' steppers are typed and held** · S.
+  From TASK-144 (6.24, 2 of 4). 6.24 puts both steppers on `--sunk` and leaves
+  their behaviour: the batch sheet's *How many issues* and the finish sheet's
+  year stepper are still the plain `.stepper` markup (`BatchSheet.tsx`,
+  `FinishDate.tsx`), where Settings' `Stepper.tsx` types the number on a tap
+  and repeats on a hold (MR-D18's first half, D-123, frame E11). They adopt
+  `Stepper` with their own bounds (the batch's 1 to the next-unread count, at
+  most 50 (`BATCH_MAX`); the year's `EARLIEST_YEAR` to this year) and keep the
+  44px targets in a sheet. While there, look at the finish sheet's *Year
+  only* choice: in TASK-144's walk a click on its label text was intercepted
+  by the radio input laid over it.
+  **Check:** (proposed; the owner agrees it by merging or edits it first)
+  browser test at 360px: on the batch sheet, tapping the number turns it into
+  a field, typing 7 and pressing Enter sets *How many issues* to 7 and the
+  range line beneath it to the 7th unread issue; holding + for a second
+  raises the count by more than one; on the finish sheet's *Year only*, typing
+  last year and pressing Enter sets the year to it, and typing next year sets
+  it to this year and shows *The highest is* this year; the buttons stay 44px
+  and axe reports no new violations.
+
 - ☐ 6.25 **Navigation for four and five media** · M. From 6.23 (TASK-126,
   D-178). The three-media phone bar is at its width limit, so this lands
   before 9.0 adds a fourth medium. On the phone the bar reads *Ledger* · the
