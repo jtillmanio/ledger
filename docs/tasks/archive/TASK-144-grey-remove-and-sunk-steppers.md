@@ -1,7 +1,7 @@
 ---
 id: TASK-144
 title: 6.24 Built screens follow the mediums review (2 of 4) — grey Remove from Listen next, steppers on --sunk
-status: Review
+status: Done
 depends_on: []
 size: S
 model: sonnet
