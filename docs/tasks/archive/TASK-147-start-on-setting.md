@@ -1,7 +1,7 @@
 ---
 id: TASK-147
 title: 6.25 Navigation for four and five media (1 of 3) — Start on, for what / opens
-status: Review
+status: Done
 depends_on: []
 size: M
 model: sonnet
@@ -102,7 +102,7 @@ Approved 2026-11-25 (owner: per-device cookie, not a column). Worktree `.claude/
 
 ## Review log
 
-Verify R1 PASS (tsc, lint, test:no-e2e; 48 specs in w390-light) | CI R1 PASS (`8a5e666`) | Spec R1 APPROVE (no findings; a dead `useId` removed) | Audit R1 PASS (every AC discriminating; restoration OK) | UI R1 CHANGES (the open menu was clipped by `.group{overflow:hidden}`: a mouse or finger could only hit *Last used*; scripted `click()` had hidden it) → fixed with `.group:has(.menu-wrap){overflow:visible}` and a hit-test spec that fails without it | Verify R2 PASS | Verify R3 PASS (49 specs) | Drift R1 update first (behind 3; both changed `design/mockups.html`, `design/mockups-index.md`, `src/app/globals.css`; main changed `src/db/queries.ts`) → rebased, clean | UI R2 pending the owner's call (it needs a sign-in in the verifier's browser; the hit-test spec covers the defect, and the preview walk is the owner's) | Verify R4 and CI R2 on the rebased head: see the PR
+Verify R1 PASS (tsc, lint, test:no-e2e; 48 specs in w390-light) | CI R1 PASS (`8a5e666`) | Spec R1 APPROVE (no findings; a dead `useId` removed) | Audit R1 PASS (every AC discriminating; restoration OK) | UI R1 CHANGES (the open menu was clipped by `.group{overflow:hidden}`: a mouse or finger could only hit *Last used*; scripted `click()` had hidden it) → fixed with `.group:has(.menu-wrap){overflow:visible}` and a hit-test spec that fails without it | Verify R2 PASS | Verify R3 PASS (49 specs) | Drift R1 update first (behind 3; both changed `design/mockups.html`, `design/mockups-index.md`, `src/app/globals.css`; main changed `src/db/queries.ts`) → rebased, clean | UI R2 not re-run (it needs a sign-in in the verifier's browser; the hit-test spec covers the defect; the owner walked it and accepted) | Verify R4 PASS on the rebased head | CI R2: see the PR | Accepted by the owner 2026-11-25
 
 ## Blocked
 
