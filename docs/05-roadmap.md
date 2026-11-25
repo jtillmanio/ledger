@@ -5135,7 +5135,7 @@ it is converted.
     renders a gap row for #3, and a series name in a list row links to its
     page. Screenshot at 360px, 834px and 1280px.
 
-- ☐ 5.9b **Every other place line links its names** · M. *From TASK-125
+- ☑ 5.9b **Every other place line links its names** · M. *From TASK-125
   (5.9, PR #330):* 5.9 linked the series, author and universe names in the
   Library rows, *where the book sits*, the *On deck* rows and the book sheet,
   through `BookPlace` (`src/components/BookPlace.tsx`), and listed the rest
@@ -5587,6 +5587,33 @@ it is converted.
     The same for an *Unlisted* from the review and its undo. Undoing a queue
     *Remove* after the book was parked leaves it off the queue. Undoing a plan
     move after the book was parked answers 409 and writes no plan row.
+
+- ☐ 5.19 **A series whose id isn't the slug of its name is reachable by hand** · S.
+  *From TASK-142 (5.9b, PR #347):* By hand finds a series by the slug of its
+  name (`seriesOf` in `createBooks`, `src/db/writes.ts`), but the Calibre sync
+  mints `<slug>-x` when two series names share a slug (`freshId`,
+  `src/db/calibre-sync.ts`). Such a series can't be reached by typing its name,
+  nor by a series page's gap row *Add* (5.9b links to it by name), and an add
+  lands in the other series (or makes a new one). Older than 5.9b. Depends on
+  5.9b.
+  - **Resolve the name, not its slug.** *Series* resolves to the series whose
+    name matches (case-insensitively, after the same trimming as the write),
+    not to `slug(name)`; two series with one name are told apart by the author
+    or are refused with a reason under the field. Decide which, and say so in
+    `.claude/rules/schema.md`.
+  - **The gap row names the series it came from.** A gap row's link carries
+    the series' id as well as its name (`handHref`), and By hand adds to that
+    series, so a series with a minted `-x` id is reached from its own page.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first)
+    `npm test`: a series *Foo* (id `foo`) and a series *Foo.* (id `foo-x`,
+    which slugs to `foo` too), each with a gap at #3. A By hand add opened
+    from `foo-x`'s gap row lands the book in `foo-x` at #3 and none in `foo`;
+    the same from `foo`'s lands in `foo`. Typing *Foo.* in By hand with no id
+    lands the book in `foo-x` and creates no third series. Two series both
+    named *Foo*, with no id given, are refused with a reason under *Series*
+    or land in the one whose author matches, as the decision recorded in
+    `.claude/rules/schema.md` says (the owner picks the branch before this
+    is built).
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 id: TASK-142
 title: 5.9b Every other place line links its names (3 of 3) — Add books' results, and a gap row fills By hand
-status: In progress
+status: Review
 depends_on: [TASK-140, TASK-141]
 size: M
 model: sonnet
@@ -29,7 +29,7 @@ Add books' search results link a book's series, author and universe names, and a
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the clauses for Add books' results and the gap row, and the byte budgets of `/books/add` and the series page. TASK-140 and TASK-141 prove the rest, and this part's merge ticks 5.9b):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the clauses for Add books' results and the gap row, and the byte budgets of `/books/add` and the series page. TASK-140 and TASK-141 prove the rest, and this part's merge ticks 5.9b):
 on the Up next cards, the status rows, the plan screens, Top books, Coming
 out, Parked, Listen next, Add books' results, Now's *Next in* and the
 follow sheet's rows, a book's series name is a link named by the series
@@ -38,10 +38,10 @@ their pages; a book with no series draws no series link. A gap row's
 *Add* for #3 opens By hand with the series named and `3` in *#*. Every
 route it changes stays within its byte budget (`scripts/perf/budget.json`).
 Screenshots at 360px and 1280px.
-- [ ] AC-2: Given a search on Add books that returns a book the Ledger holds in a series and one only Hardcover has, the first result's series, author and universe names are links to their pages and the second's names are text with no link.
-- [ ] AC-3: Given a series with books #1, #2 and #4, when its gap row's *Add* for #3 is tapped, then Add books opens with By hand selected, *Series* holding the series' name and *#* holding `3`, focus in By hand's first empty field; saving adds the book at #3 and the series page's gap row is gone.
-- [ ] AC-4: Given `/books/add` opened with no new parameter, Search is selected and empty as before; given `?q=` alone, Search holds the text as before.
-- [ ] AC-5: Add books' results and By hand meet the UX floor (`docs/04-design.md` § 10. The UX floor): every link a real `<a>` with a name, link text 4.5:1 in both themes, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-2: Given a search on Add books that returns a book the Ledger holds in a series and one only Hardcover has, the first result's series, author and universe names are links to their pages and the second's names are text with no link.
+- [x] AC-3: Given a series with books #1, #2 and #4, when its gap row's *Add* for #3 is tapped, then Add books opens with By hand selected, *Series* holding the series' name and *#* holding `3`, focus in By hand's first empty field; saving adds the book at #3 and the series page's gap row is gone.
+- [x] AC-4: Given `/books/add` opened with no new parameter, Search is selected and empty as before; given `?q=` alone, Search holds the text as before.
+- [x] AC-5: Add books' results and By hand meet the UX floor (`docs/04-design.md` § 10. The UX floor): every link a real `<a>` with a name, link text 4.5:1 in both themes, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -66,7 +66,10 @@ Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- By hand reaches a series only by `slug(name)` (`addBook`'s `seriesOf`, `src/db/writes.ts`), but the Calibre sync mints `<slug>-x` when two names share a slug (`freshId`, `src/db/calibre-sync.ts`). Such a series can't be reached by typing its name, nor by a gap row's link, and an add lands in the other series. Older than this task → new roadmap item in phase 5 with a proposed **Check:** (approved at plan)
+- By hand reaches a series only by `slug(name)` (`addBook`'s `seriesOf`, `src/db/writes.ts`), but the Calibre sync mints `<slug>-x` when two names share a slug (`freshId`, `src/db/calibre-sync.ts`). Such a series can't be reached by typing its name, nor by a gap row's link, and an add lands in the other series. Older than this task → docs/05-roadmap.md § 5.19 (new, approved at plan; Check proposed), and its row in docs/06-tasklist.md § M17 and the F-38 line of § Coverage
+- The series page has no `scripts/perf/budget.json` entry until 0.14e (TASK-138) merges, so its byte-budget clause holds trivially here; `books-add` is measured on the preview → not tracked: already tracked in TASK-138 (0.14e adds the entry)
+- `/books/add?q=` fills Search's field but runs no search until you type (as before); the ui-verifier noticed it → not tracked: unchanged by this task, and AC-4 says "as before"
+- `src/app/books/add/loading.tsx` briefly shows Search's skeleton before By hand appears on a gap link (accepted at plan) → not tracked: accepted at plan
 
 ## Plan
 
@@ -97,13 +100,15 @@ _Approved 2026-11-25 (owner: "approve"), keeping the task whole although it touc
 
 _Filled by /implement-task. One line per round._
 
+Verify R1 FAIL(2: paste-books frame-count pin, reading-log load-only flake) -> R2 PASS | CI R1 PASS (check, 10 e2e shards, tests) | Audit R1 PASS | Spec R1 APPROVE | Schema R1 APPROVE | UI R1 PASS (AC-3's save not walked on the dev DB; the e2e spec covers it) | Drift: see PR
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
