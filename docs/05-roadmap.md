@@ -5957,7 +5957,10 @@ it is converted.
   most 50 (`BATCH_MAX`); the year's `EARLIEST_YEAR` to this year) and keep the
   44px targets in a sheet. While there, look at the finish sheet's *Year
   only* choice: in TASK-144's walk a click on its label text was intercepted
-  by the radio input laid over it.
+  by the radio input laid over it. From TASK-146 (6.24, 4 of 4): `Stepper.tsx`
+  draws no ring while a button is held, where E11 draws a 1.5px `--brand` ring
+  on the held button (the mockup's `settings` frame draws it from 6.24); the
+  held button gets it, so every stepper shows the repeat.
   **Check:** (proposed; the owner agrees it by merging or edits it first)
   browser test at 360px: on the batch sheet, tapping the number turns it into
   a field, typing 7 and pressing Enter sets *How many issues* to 7 and the
@@ -5966,6 +5969,25 @@ it is converted.
   last year and pressing Enter sets the year to it, and typing next year sets
   it to this year and shows *The highest is* this year; the buttons stay 44px
   and axe reports no new violations.
+
+- ☐ 6.24c **The finish toast keeps to E10's two chip rows and its uppercase mono label** · S.
+  From TASK-143 (6.24, 1 of 4), settled by the owner at TASK-146's plan. 6.24
+  caps the toast at one *Now reading* chip and *+N · Follow…*, and two things
+  still differ from frame E10 (`design/MR-E-Review-2.dc.html`). At 360 to
+  412px a long kept chip (*Discworld - Death · subseries ×*) pushes
+  *+N · Follow…* onto its own line, so the toast can have three chip rows
+  (*Rank it*, the chip, *+N*) where E10's note says two at most; and the
+  toast's *Now reading* label is small sentence case, as built since 2.2h,
+  where E10 draws an uppercase mono label. Both are `src/components/ToastOffer.tsx`
+  and `src/app/globals.css` changes (the chip's width cap or wrap, the label's
+  `text-transform` and `--mono`), with `design/mockups.html`'s `finishoffer`
+  redrawn beside them if it differs.
+  **Check:** (proposed; the owner agrees it by merging or edits it first)
+  browser test at 360px and 412px, light and dark: finishing a book whose
+  series is *Discworld - Death · subseries* shows the toast with at most two
+  chip rows below its title (*Rank it* on one, the *Now reading* chip and
+  *+N · Follow…* on the other), the *Now reading* label resolves to uppercase
+  IBM Plex Mono, nothing scrolls sideways, and every chip stays 44px.
 
 - ☐ 6.25 **Navigation for four and five media** · M. From 6.23 (TASK-126,
   D-178). The three-media phone bar is at its width limit, so this lands
