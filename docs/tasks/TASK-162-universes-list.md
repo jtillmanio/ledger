@@ -1,14 +1,14 @@
 ---
 id: TASK-162
 title: 5.11b Universes: every universe in one list
-status: Ready
+status: In progress
 depends_on: [TASK-161]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: f33055b
 ---
 
 # TASK-162 — 5.11b Universes: every universe in one list
@@ -64,9 +64,88 @@ Screenshots at 360px and 1280px; axe passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Candidate decision: sibling list pages (*Series · Universes*) are joined by a row of real links carrying `aria-current="page"`, styled as the `.tabs` strip, not by `Tablist` (`role="tab"`, `aria-selected`), which is for one page's panels; the Check asks for `aria-current` → `docs/review/decisions.md` (approved at plan)
+- The `universes` route's perf ceilings start at `/books/shelves`'s, unmeasured (`LIGHTHOUSE_MODE` is off; owner, plan gate 2026-11-25), as #334 did for `issue`; a first measurement above them is a raise and needs a decision → `docs/02-architecture.md` § Performance budget, stated beside the route (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-25 (owner, plan gate): keep the task whole (about 20 files, most a new route's companions), the
+budget at Shelves' ceilings unmeasured, implement on Sonnet. Two departures from the task's Context, decided at
+the gate: the tab row is **not** `Tablist` (it uses `role="tab"`/`aria-selected`; the Check asks for
+`aria-current`), and the budget is **not** from a measured run (the switch is off).
+
+**Steps**
+
+1. **Mockup first** (`ui.redrawFiles`): `design/mockups.html` gains a `universes` section (360px populated,
+   360px empty *No universes yet*, 360px none started, 834px with *Series* current on the rail, desktop with it
+   current in the sidebar), and every `series` list frame gains the *Series · Universes* row (Series current)
+   above the chips. `design/mockups-index.md` gets a `universes` row and the `series` row names the tab row.
+2. **Queries** (`src/db/queries.ts`, beside `seriesList`):
+   - `UniverseSummary = { id, name, read, total, followState: FollowState | null, unread, series }`.
+   - `universesList(userId, show: SeriesShow)`: from `universe_progress` (`books_read`, `books_listed` as
+     total, `follow_state`), `books_listed > 0`; `unread` = live books neither read nor DNF (as `universePage`);
+     `series` = `COUNT(DISTINCT series_id)` of its live books. The *Started* cut in SQL, written out as in
+     `seriesList`: `follow_state IN ('tracking','reading')` or a live book `read`/`reading`/`listening`/`dnf`.
+     Order as `seriesList`: in progress (0), not started (1), complete (2), then `lower(name)`, then id.
+   - `universeCounts(userId)` → `{ started, all, series }`: the chips' counts over the same rows, plus the
+     Series tab's count (`series_progress`, `books_listed > 0`) as a scalar sub-select (one query).
+   - `seriesCounts` gains `universes` (the Universes tab's count) the same way, so `/books/series` stays at 2
+     queries. Update `test/series-page.test.ts`'s `toEqual`s for the new key.
+3. **Server-safe *On hold*** (D-118): move `middle` from `src/components/FollowOptions.tsx` (a `"use client"`
+   module, whose exports a server component can't call) to `src/lib/follow-offer.ts`; FollowOptions imports it.
+4. **`src/components/BookListTabs.tsx`** (server): `<nav className="tabs list-tabs" aria-label="Series and
+   universes">` with two `Link`s (`prefetch={false}`), *Series* `/books/series` and *Universes*
+   `/books/universes`, each its name and count (`<span className="n mono">`), `aria-current="page"` on the open
+   one, and the sliding `tab-ink` (`--i`, `--n: 2`). Pushes, not replaces, so Back returns to the tab.
+   `src/app/globals.css`: the `.tabs [role="tab"]` rules extended to `.list-tabs > a` (44px, `--muted` → `--ink`
+   600 on `[aria-current="page"]`, the count in its tab's colour, focus ring, hover under `(pointer:fine)`).
+5. **`src/components/UniversesList.tsx`** (after `SeriesList`): head *Universes* + lede, `BookListTabs`, chips
+   *Started · All* (`UNIVERSES_HREF`, `?show=all`, counts, `aria-current`), rows: `row-link rt` name →
+   `universeHref(id)`, `read / total` mono, a line *N series · Reading|Tracking|On hold* (no follow: *N series*
+   alone; 0 series: the follow word alone, or nothing), a `--ready` meter (`fillShare`), a chevron. No universes
+   at all: `BookListTabs` + `EmptySlate` *No universes yet*, saying a universe comes from a book's superseries
+   in Calibre (`#superseries`), action *Calibre sync* → `/settings/calibre`. None started: chips + slate naming
+   *All N universes*. Route `src/app/books/universes/page.tsx` (`force-dynamic`, metadata *Universes · Ledger*,
+   `parseSeriesShow`, the two queries in one `Promise.all`), `loading.tsx` (the series skeleton's shape plus the
+   tab row, `sk-tabs`), `error.tsx` (neutral, *Couldn't load your universes. Nothing was changed.*, *Try again*).
+6. **Series page**: `SeriesList` draws `BookListTabs` (Series current) under the head in both the populated and
+   the *No series yet* states; `src/app/books/series/loading.tsx` gains the tab row's bar.
+7. **Nav**: `books-series` in `src/components/nav/items.ts` gains `currentOn: /^\/books\/universes$/`, so Series
+   stays current on the list (a universe's own page is unchanged).
+8. **Perf and harness**: `scripts/perf/routes.mjs` `{ id: "universes", path: "/books/universes", signedIn: true,
+   tap: { from: "/books/series", selector: 'a[href="/books/universes"]' } }`; `scripts/perf/budget.json`
+   `universes` = `shelves`' ceilings; mirrored in `docs/02-architecture.md` § Performance budget, saying it is
+   unmeasured; `test/query-budget.test.ts` `/books/universes: { queries: 2, waves: 1 }` and its render entry;
+   `scripts/lib/ci-scope.mjs` names `UniversesList` and `BookListTabs` books' components; `test/e2e/shard-times.json`
+   an estimate for the new spec. Grep `test/` for every name the diff adds (`.claude/project/implement-task.md`).
+
+**Files**: the 18 in *Files likely touched*, plus (not listed there) `src/components/BookListTabs.tsx`,
+`src/components/FollowOptions.tsx`, `src/lib/follow-offer.ts`, `src/app/globals.css`, `src/app/books/series/loading.tsx`,
+`src/components/nav/items.ts`, `docs/02-architecture.md`, `scripts/lib/ci-scope.mjs`, `test/e2e/shard-times.json`,
+`test/query-budget.test.ts`, `test/series-page.test.ts`, `test/series-list.test.tsx`, `test/nav-items.test.tsx`.
+
+**Test strategy**
+
+- AC-1: `test/universes-list.test.tsx` (TEST database, as `test/series-page.test.ts` sets up): three universes,
+  read book / followed none read / only To-read → *Started* lists the first two, *All* three, counts `{2,3}`,
+  `read`/`total` equal `universe_progress`'s, order, a soft-deleted book on no count, another user's follow
+  ignored. `test/e2e/universes.spec.ts` (own E2E ids, found by name): the same three on `/books/universes`, *All*
+  adds the third, each row's href `/books/universes/<id>` and `read / total` equal to a `universe_progress`
+  select; from `/books/series` the *Universes* tab opens it and carries `aria-current="page"` (and *Series* does
+  on `/books/series`); axe; screenshots at 360 and 1280. `test/perf.test.ts` still passes (route present, not in
+  `UNMEASURED`).
+- AC-2: markup test (*On hold* for tracking + read > 0 + unread > 0; *Tracking* when none read; *Reading*) and an
+  e2e row followed Tracking and part-read reading *On hold*, as its page's follow control does.
+- AC-3: markup test (the shared TEST database always has universes): *No universes yet*, names Calibre's
+  `#superseries`, one action to `/settings/calibre`, the tab row still there.
+- AC-4: e2e floor as `series.spec.ts` does (axe list, contrast in both themes, 44px chips and tabs at phone
+  widths, no sideways scroll, nothing red, meter fill = `--ready`, loading skeleton at the loaded size, error
+  state), screenshots at every `ui.viewports` width, light and dark; markup tests for loading and error.
+- Also: `test/nav-items.test.tsx` (Series current on `/books/universes`, not on `/books/universes/x`),
+  `test/series-list.test.tsx` (the tab row in both states, Series current).
+
+**Risks**: `seriesCounts`' new key touches every `toEqual` on it; the tab row moves the Series list's chips down
+(its screenshot tests and the mockup change together); the shared `.tabs` CSS must leave `Tablist` as it is.
 
 ## Review log
 
