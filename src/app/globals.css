@@ -2051,13 +2051,12 @@ h2.group-head{margin:2.25rem 0 .75rem}
   .parked-done .btn{min-height:32px}
   .sk-done{height:32px}
 }
-/* The Library's way to the review under its Parked filter, and its foot's way to every series (task 5.9): grey
-   text and a link, as the dashboard's line. */
-.list-parked-line,.list-series-line{margin:.5rem 0 0;font-size:.8125rem;line-height:1.25rem}
-.list-series-line{margin-top:1rem}
-.list-parked-line a,.list-series-line a{display:inline-flex;align-items:center;gap:.25rem;min-height:24px;color:var(--muted);
+/* The Library's way to the review under its Parked filter (task 5.9): grey text and a link, as the dashboard's
+   line. The foot's *All series* line went in 5.9c: the books nav's *Series* is the tap. */
+.list-parked-line{margin:.5rem 0 0;font-size:.8125rem;line-height:1.25rem}
+.list-parked-line a{display:inline-flex;align-items:center;gap:.25rem;min-height:24px;color:var(--muted);
   text-decoration:underline;text-decoration-color:var(--faint-deco);text-underline-offset:3px}
-.list-parked-line a:hover,.list-series-line a:hover{color:var(--ink)}
+.list-parked-line a:hover{color:var(--ink)}
 
 /* The queue row, the one the dashboard's Reorder and the status tab share (M-08). */
 .queue{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
@@ -2206,6 +2205,7 @@ p.muted[id^="dnd-help"]{margin:.5rem 0 0}
    --ready (D-26). One column at every width: there is no action to put in a rail. A row's name links to
    the series' own page (`row-link`: the whole row is the target) and ends in a chevron. */
 .series-head{margin-bottom:.75rem}
+.series-page .series-chips{margin:.25rem -4px 1rem}
 .series-rows{list-style:none;margin:0;padding:0}
 .series-row .rt{min-height:24px;line-height:24px;overflow-wrap:anywhere}
 .series-next{display:flex;flex-wrap:wrap;gap:0 .375rem}

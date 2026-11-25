@@ -95,6 +95,76 @@ describe("the Series list's counts (AC-1)", () => {
   });
 });
 
+// Task 5.9c (TASK-161, AC-1, AC-2): *Started* is a book read, in hand (reading, listening) or DNF, or a series
+// follow of tracking or reading. The cut is in SQL: `seriesList(user, "started")` returns fewer rows, and
+// `seriesCounts` gives the chips' two counts from one aggregate over the same rows.
+describe("the Started cut (5.9c AC-1)", () => {
+  const ids = async (show: "started" | "all", user = USER) => (await q.seriesList(user, show)).map((s) => s.id).sort();
+
+  it("lists a series with a read book and one followed Tracking, not one with only To-read books; All lists all three", async () => {
+    await series("readb", "Read book", null, [{ id: "r1", pos: 1, status: "read" }, { id: "r2", pos: 2 }]);
+    await series("track", "Tracked", null, [{ id: "t1", pos: 1 }, { id: "t2", pos: 2, status: "to_read" }]);
+    await series("todo", "To read", null, [{ id: "d1", pos: 1, status: "to_read" }, { id: "d2", pos: 2 }]);
+    await sql`INSERT INTO series_follows (user_id, series_id, state) VALUES (${USER}, 'track', 'tracking')`;
+    expect(await ids("started")).toEqual(["readb", "track"]);
+    expect(await ids("all")).toEqual(["readb", "todo", "track"]);
+    expect(await q.seriesCounts(USER)).toEqual({ started: 2, all: 3 });
+  });
+
+  it("a book in hand (reading, listening) or a DNF starts a series; unlisted and parked do not", async () => {
+    await series("rdg", "Reading", null, [{ id: "a1", pos: 1, status: "reading" }]);
+    await series("lst", "Listening", null, [{ id: "b1", pos: 1, status: "listening" }]);
+    await series("dnf", "Did not finish", null, [{ id: "c1", pos: 1, status: "dnf" }]);
+    await series("unl", "Unlisted", null, [{ id: "u1", pos: 1, status: "unlisted" }]);
+    await series("prk", "Parked", null, [{ id: "p1", pos: 1 }]);
+    await sql`INSERT INTO book_status (user_id, book_id, status, parked_on) VALUES (${USER}, 'p1', 'parked', '2026-11-01')`;
+    expect(await ids("started")).toEqual(["dnf", "lst", "rdg"]);
+    expect(await q.seriesCounts(USER)).toEqual({ started: 3, all: 5 });
+  });
+
+  it("a follow of Reading starts it; a stored off, and no follow at all, do not", async () => {
+    await series("fr", "Follow reading", null, [{ id: "x1", pos: 1 }]);
+    await series("fo", "Follow off", null, [{ id: "y1", pos: 1 }]);
+    await series("fn", "No follow", null, [{ id: "z1", pos: 1 }]);
+    await sql`INSERT INTO series_follows (user_id, series_id, state) VALUES (${USER}, 'fr', 'reading'), (${USER}, 'fo', 'off')`;
+    expect(await ids("started")).toEqual(["fr"]);
+  });
+
+  it("only your own reads and follows count, and a removed book starts nothing", async () => {
+    await series("mine", "Mine", null, [{ id: "m1", pos: 1 }]);
+    await series("gone", "Gone", null, [{ id: "g1", pos: 1, status: "read", deleted: true }, { id: "g2", pos: 2 }]);
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${OTHER}, 'm1', 'read')`;
+    await sql`INSERT INTO series_follows (user_id, series_id, state) VALUES (${OTHER}, 'gone', 'tracking')`;
+    expect(await ids("started")).toEqual([]);
+    expect(await q.seriesCounts(USER)).toEqual({ started: 0, all: 2 });
+    expect(await ids("started", OTHER)).toEqual(["gone", "mine"]);
+  });
+
+  it("the default is All, and a series with no live book is in neither count", async () => {
+    await series("one", "One", null, [{ id: "o1", pos: 1 }]);
+    await series("ghost", "Ghost", null, [{ id: "h1", pos: 1, status: "read", deleted: true }]);
+    expect((await q.seriesList(USER)).map((s) => s.id)).toEqual(["one"]);
+    expect(await q.seriesCounts(USER)).toEqual({ started: 0, all: 1 });
+  });
+
+  it("keeps the order and the next unread within the cut", async () => {
+    await series("b", "Bravo", 3, [{ id: "b1", pos: 1, status: "read" }, { id: "b2", pos: 2 }]);
+    await series("a", "Alpha", 2, [{ id: "a1", pos: 1, status: "read" }, { id: "a2", pos: 2, status: "read" }]);
+    expect(await q.seriesList(USER, "started")).toMatchObject([
+      { id: "b", read: 1, total: 3, next: { id: "b2" } }, { id: "a", read: 2, total: 2, next: null },
+    ]);
+  });
+});
+
+describe("?show= (5.9c AC-2)", () => {
+  it("only all is All; anything else, an array or nothing is Started", () => {
+    expect(q.parseSeriesShow("all")).toBe("all");
+    for (const raw of [undefined, "", "started", "ALL", "bogus", ["all"], ["all", "started"]]) {
+      expect(q.parseSeriesShow(raw)).toBe("started");
+    }
+  });
+});
+
 describe("the next unread (AC-1)", () => {
   it("is the lowest-position book neither read, started nor set aside", async () => {
     await series("skip", "Skip", null, [

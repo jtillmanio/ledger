@@ -2,7 +2,7 @@ import Link from "next/link";
 import { seriesHref } from "@/components/BookPlace";
 import EmptySlate from "@/components/EmptySlate";
 import { fillShare } from "@/components/WhereItSits";
-import type { SeriesSummary } from "@/db/queries";
+import type { SeriesShow, SeriesSummary } from "@/db/queries";
 
 // A series' own page (task 5.9): its address lives with the place line that links to it (TASK-125).
 export { seriesHref };
@@ -41,14 +41,36 @@ function SeriesRowItem({ s }: { s: SeriesSummary }) {
   );
 }
 
+/** The address of each cut: *Started* is the bare page, *All* is `?show=all` (task 5.9c). */
+export const SERIES_HREF: Record<SeriesShow, string> = { started: "/books/series", all: "/books/series?show=all" };
+
+const plural = (n: number) => `${n} series`;
+
+/** *Started 4 · All 5*: real links, so a reload and Back keep the cut; the open one carries `aria-current`. */
+function SeriesChips({ show, counts }: { show: SeriesShow; counts: { started: number; all: number } }) {
+  return (
+    <div className="filters genre-row series-chips" role="group" aria-label="Show">
+      {(["started", "all"] as const).map((k) => (
+        <Link key={k} prefetch={false} href={SERIES_HREF[k]} className="chip" aria-current={k === show || undefined}
+              aria-label={`${k === "started" ? "Started" : "All"}, ${plural(counts[k])}`}>
+          {k === "started" ? "Started" : "All"} <span className="n">{counts[k]}</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 /**
- * The Series page's body (task 5.9; mockup `series`): every series you have books in, each with `read /
- * total`, a meter filled with --ready (D-26) and the next book to read; in progress first, then not
- * started, then complete (the query's order). With none it is an empty slate whose one action is *Add a
- * book*.
+ * The Series page's body (task 5.9, 5.9c; mockup `series`): the series you have started or follow (*Started*,
+ * the page's own address) or every series you have books in (*All*), each with `read / total`, a meter filled
+ * with --ready (D-26) and the next book to read; in progress first, then not started, then complete (the
+ * query's order). With no series at all it is an empty slate whose one action is *Add a book*; with none
+ * started it names *All* and its count, never a blank page (the chips stay, so the way out is a tap).
  */
-export default function SeriesList({ series }: { series: SeriesSummary[] }) {
-  if (series.length === 0) {
+export default function SeriesList({ series, show, counts }: {
+  series: SeriesSummary[]; show: SeriesShow; counts: { started: number; all: number };
+}) {
+  if (counts.all === 0) {
     return (
       <main className="series-page">
         <h1 className="series-head">Series</h1>
@@ -66,9 +88,18 @@ export default function SeriesList({ series }: { series: SeriesSummary[] }) {
         <h1>Series</h1>
         <p className="lede">{SERIES_LEDE}</p>
       </div>
-      <ul className="group series-rows series-list" aria-label="Your series">
-        {series.map((s) => <SeriesRowItem key={s.id} s={s} />)}
-      </ul>
+      <SeriesChips show={show} counts={counts} />
+      {series.length === 0 ? (
+        <div className="series-list">
+          <EmptySlate title="Nothing started yet" href={SERIES_HREF.all} label={`All ${plural(counts.all)}`}>
+            A series shows here once you read or start a book in it, or follow it.
+          </EmptySlate>
+        </div>
+      ) : (
+        <ul className="group series-rows series-list" aria-label={show === "all" ? "All series" : "Started series"}>
+          {series.map((s) => <SeriesRowItem key={s.id} s={s} />)}
+        </ul>
+      )}
     </main>
   );
 }
