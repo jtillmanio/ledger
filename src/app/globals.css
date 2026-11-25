@@ -722,16 +722,16 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
    title link over it (axe counts an overlapped target as smaller), 5px below; the negative inline margin gives
    its sides back, so the text sits where it did. A *where the book sits* name is alone in its cell: a 24px flex
    box, as a title link is. */
-.row-sub a,.detail-by a,.detail-place a,.detail .frow .v a,.now-where-name a,.card-sub a,.qplace a,.ps-sub a,.pp-by a,.now-next-name a,.keep-why a{
+.row-sub a,.detail-by a,.detail-place a,.detail .frow .v a,.now-where-name a,.card-sub a,.qplace a,.ps-sub a,.pp-by a,.now-next-name a,.keep-why a,.follow-name a{
   color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.15em;
   text-decoration-color:var(--faint);padding:.125rem .25rem .3125rem;margin:0 -.25rem;border-radius:var(--r-sm)}
 .now-where-name a{display:inline-flex;align-items:center;min-height:24px;padding:0;margin:0}
 /* Task 5.9b (TASK-140): the Up next cards and the status quarter rows draw the line at 11px, so the 24px box takes
-   more below (.5rem); *Next in* and *Or keep going* name their follow in a 44px or 56px row: 24px flex boxes. */
+   more below (.5rem); *Next in*, *Or keep going* and the follow sheet's rows (TASK-141) name their follow alone in a cell: 24px flex boxes. */
 .card-sub a,.qplace a{padding-bottom:.5rem}
-.now-next-name a,.keep-why a{display:inline-flex;align-items:center;min-height:24px;padding:0 .25rem;margin:0 -.25rem}
-.row-sub a:hover,.detail-by a:hover,.detail-place a:hover,.detail .frow .v a:hover,.now-where-name a:hover,.card-sub a:hover,.qplace a:hover,.ps-sub a:hover,.pp-by a:hover,.now-next-name a:hover,.keep-why a:hover{text-decoration-color:currentColor}
-.row-sub a:focus-visible,.detail-by a:focus-visible,.detail-place a:focus-visible,.detail .frow .v a:focus-visible,.now-where-name a:focus-visible,.card-sub a:focus-visible,.qplace a:focus-visible,.ps-sub a:focus-visible,.pp-by a:focus-visible,.now-next-name a:focus-visible,.keep-why a:focus-visible{outline:2px solid var(--brand);outline-offset:0}
+.now-next-name a,.keep-why a,.follow-name a{display:inline-flex;align-items:center;min-height:24px;padding:0 .25rem;margin:0 -.25rem}
+.row-sub a:hover,.detail-by a:hover,.detail-place a:hover,.detail .frow .v a:hover,.now-where-name a:hover,.card-sub a:hover,.qplace a:hover,.ps-sub a:hover,.pp-by a:hover,.now-next-name a:hover,.keep-why a:hover,.follow-name a:hover{text-decoration-color:currentColor}
+.row-sub a:focus-visible,.detail-by a:focus-visible,.detail-place a:focus-visible,.detail .frow .v a:focus-visible,.now-where-name a:focus-visible,.card-sub a:focus-visible,.qplace a:focus-visible,.ps-sub a:focus-visible,.pp-by a:focus-visible,.now-next-name a:focus-visible,.keep-why a:focus-visible,.follow-name a:focus-visible{outline:2px solid var(--brand);outline-offset:0}
 
 /* A book's detail (task 3.5; docs/04-design.md § 13, mockup `bookdetail`): hero, About, Details, Your record,
    Reading history. One layout in the sheet and on the full page. */

@@ -1062,6 +1062,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
 .fol:last-child{border-bottom:0}
 .fol .fh{display:flex;align-items:baseline;gap:.5rem}
 .fol .fn{font-size:.9375rem;font-weight:600}
+.fol .fn a.plink{display:inline-flex;align-items:center;min-height:24px;padding:0 .25rem;margin:0 -.25rem} /* task 5.9b (TASK-141): the name alone in its cell is a 24px box */
 .fol .fk{font-size:.75rem;color:var(--muted)}
 .fol .fc{margin-left:auto;font-family:var(--mono);font-size:.75rem;color:var(--muted)}
 .fol .opts b{min-height:32px;display:inline-grid;place-items:center}
@@ -3110,18 +3111,18 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
         <div class="chips" role="group" aria-label="On deck genre" style="padding:.5rem .875rem;flex-wrap:nowrap;overflow-x:auto"><span class="chip" data-on aria-current="true">All</span><span class="chip">Fantasy</span><span class="chip">Sci-Fi</span></div>
         <h3 style="display:flex;align-items:baseline;gap:.5rem;margin:.75rem .875rem .25rem;font-size:.8125rem;font-weight:600;color:var(--ink-2)">Fantasy<span class="mono" style="font-size:.6875rem;font-weight:500;color:var(--muted)">7 books</span></h3>
         <div class="row"><div class="rb"><span class="rh"><span class="rt">The Way of Kings</span></span>
-          <div class="rs">Brandon Sanderson · Cosmere · Stormlight Archive #1</div></div></div>
+          <div class="rs"><a class="plink" href="#">Brandon Sanderson</a> · <a class="plink" href="#">Cosmere</a> · <a class="plink" href="#">Stormlight Archive</a> #1</div></div></div>
         <div class="row"><div class="rb"><span class="rh"><span class="rt">Leviathan Wakes</span></span>
-          <div class="rs">James S. A. Corey · The Expanse #1</div></div></div>
+          <div class="rs"><a class="plink" href="#">James S. A. Corey</a> · <a class="plink" href="#">The Expanse</a> #1</div></div></div>
         <div class="row"><div class="rb"><span class="rh"><span class="rt">Piranesi</span></span>
-          <div class="rs">Susanna Clarke</div></div></div>
+          <div class="rs"><a class="plink" href="#">Susanna Clarke</a></div></div></div>
 
         <div class="row"><div class="rb"><span class="rs">+ 4 more in Fantasy</span></div></div>
         <h3 style="display:flex;align-items:baseline;gap:.5rem;margin:.75rem .875rem .25rem;font-size:.8125rem;font-weight:600;color:var(--ink-2)">Sci-Fi<span class="mono" style="font-size:.6875rem;font-weight:500;color:var(--muted)">5 books</span></h3>
         <div class="row"><div class="rb"><span class="rh"><span class="rt">Leviathan Wakes</span></span>
-          <div class="rs">James S. A. Corey · The Expanse #1</div></div></div>
+          <div class="rs"><a class="plink" href="#">James S. A. Corey</a> · <a class="plink" href="#">The Expanse</a> #1</div></div></div>
         <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary</span></span>
-          <div class="rs">Andy Weir</div></div></div>
+          <div class="rs"><a class="plink" href="#">Andy Weir</a></div></div></div>
 
         <div class="row"><div class="rb"><span class="rs">+ 3 more in Sci-Fi</span></div></div>
         <h3 style="display:flex;align-items:baseline;gap:.5rem;margin:.75rem .875rem .25rem;font-size:.8125rem;font-weight:600;color:var(--ink-2)">No genre<span class="mono" style="font-size:.6875rem;font-weight:500;color:var(--muted)">1 book</span></h3>
@@ -3154,7 +3155,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="group">
       <div class="ghead">2026<span class="n">41 books</span></div>
       <div class="row"><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span>
-        <div class="rs">Brandon Sanderson &middot; Cosmere</div>
+        <div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Cosmere</a></div>
         <div class="rs" style="font-size:.75rem">Started 1 Mar &middot; finished 17 Mar &middot; 16 days</div></div></div>
       <div class="row"><div class="rb"><span class="rs">+ 40 more in 2026 &middot; earlier years below</span></div></div>
     </div>
@@ -3162,10 +3163,10 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
       <div class="ghead" aria-expanded="true">&#9662; Stopped<span class="n">2</span></div>
       <div class="row"><div class="rb"><span class="rh"><span class="rt">Rhythm of War</span><span class="rm">455k</span></span>
         <div class="rs" style="font-size:.8125rem">Lost interest at the midpoint</div>
-        <div class="rs">Brandon Sanderson &middot; Stormlight Archive #4</div>
+        <div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Stormlight Archive</a> #4</div>
         <div style="margin-top:.375rem"><span class="bdg">DNF</span></div></div></div>
       <div class="row"><div class="rb"><span class="rh"><span class="rt">The Name of the Wind</span><span class="rm">250k</span></span>
-        <div class="rs">Patrick Rothfuss &middot; Kingkiller Chronicle #1</div>
+        <div class="rs"><a class="plink" href="#">Patrick Rothfuss</a> &middot; <a class="plink" href="#">Kingkiller Chronicle</a> #1</div>
         <div style="margin-top:.375rem"><span class="bdg">DNF</span></div></div></div>
     </div>
   </div>
@@ -3195,13 +3196,13 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
       <div class="ghead">Listen next<span class="n">3 books</span></div>
       <div class="row"><span class="edge" style="background:var(--t5)"></span><button class="drag" aria-label="Reorder Project Hail Mary, position 1 of 3 in Listen next" aria-describedby="dnd-help-listen">&#8942;&#8942;</button><span class="cv m ph">PHM</span>
         <div class="rb"><span class="rh"><span class="rt">Project Hail Mary</span><span class="rm">146k</span></span>
-          <div class="rs">Andy Weir</div></div><button class="menubtn" aria-haspopup="menu" aria-label="More for Project Hail Mary">&#8943;</button></div>
+          <div class="rs"><a class="plink" href="#">Andy Weir</a></div></div><button class="menubtn" aria-haspopup="menu" aria-label="More for Project Hail Mary">&#8943;</button></div>
       <div class="row"><span class="edge" style="background:var(--t2)"></span><button class="drag" aria-label="Reorder The Hobbit, position 2 of 3 in Listen next" aria-describedby="dnd-help-listen">&#8942;&#8942;</button><span class="cv m ph">THM</span>
         <div class="rb"><span class="rh"><span class="rt">The Hobbit</span><span class="rm">95k</span></span>
-          <div class="rs">J. R. R. Tolkien · Middle-earth</div></div><button class="menubtn" aria-haspopup="menu" aria-label="More for The Hobbit">&#8943;</button></div>
+          <div class="rs"><a class="plink" href="#">J. R. R. Tolkien</a> · <a class="plink" href="#">Middle-earth</a></div></div><button class="menubtn" aria-haspopup="menu" aria-label="More for The Hobbit">&#8943;</button></div>
       <div class="row"><span class="edge" style="background:var(--t3)"></span><button class="drag" aria-label="Reorder Dune, position 3 of 3 in Listen next" aria-describedby="dnd-help-listen">&#8942;&#8942;</button><span class="cv m ph">DUN</span>
         <div class="rb"><span class="rh"><span class="rt">Dune</span><span class="rm">188k</span></span>
-          <div class="rs">Frank Herbert · Dune #1</div></div><button class="menubtn" aria-haspopup="menu" aria-label="More for Dune" aria-expanded="true">&#8943;</button></div>
+          <div class="rs"><a class="plink" href="#">Frank Herbert</a> · <a class="plink" href="#">Dune</a> #1</div></div><button class="menubtn" aria-haspopup="menu" aria-label="More for Dune" aria-expanded="true">&#8943;</button></div>
     </div>
     <div class="menu" role="menu" aria-label="More for Dune, position 3 of 3" style="position:absolute;right:.875rem;bottom:2.5rem;z-index:5;width:230px"><div class="opt" role="menuitem" tabindex="0" style="box-shadow:var(--focus-ring)">Move to top</div><div class="opt" role="menuitem" tabindex="-1">Move up</div><div class="opt" role="menuitem" tabindex="-1">Remove from Listen next</div></div>
     <p id="dnd-help-listen" class="sr-only">Space lifts a row, arrows move it within Listen next, Space drops it, Esc cancels.</p>
@@ -3220,10 +3221,10 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="group">
       <div class="ghead">2026<span class="n">9 books</span></div>
       <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listened" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">146k</span></span>
-        <div class="rs">Andy Weir</div>
+        <div class="rs"><a class="plink" href="#">Andy Weir</a></div>
         <div class="rs" style="font-size:.75rem">Started 2 Oct &middot; finished 19 Oct &middot; 17 days</div></div></div>
       <div class="row"><div class="rb"><span class="rh"><span class="rt">Warbreaker <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listened" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">226k</span></span>
-        <div class="rs">Brandon Sanderson &middot; Cosmere</div></div></div>
+        <div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Cosmere</a></div></div></div>
       <div class="row"><div class="rb"><span class="rs">+ 7 more in 2026 &middot; earlier years below</span></div></div>
     </div>
   </div>
@@ -3237,12 +3238,12 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="true" data-on>In flight<span class="n">3</span></span><span role="tab" aria-selected="false">Up next<span class="n">174</span></span><span role="tab" aria-selected="false">Done<span class="n">348</span></span></span></div>
     <div class="group">
       <div class="ghead">Reading<span class="n">2 books</span></div>
-      <div class="row"><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">245,118 words</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div></div><button class="btn sec sm" aria-label="Finished The Well of Ascension">Finished</button></div>
-      <div class="row"><div class="rb"><span class="rh"><span class="rt">Jonathan Strange &amp; Mr Norrell</span><span class="rm">308,931 words</span></span><div class="rs">Susanna Clarke</div></div><button class="btn sec sm" aria-label="Finished Jonathan Strange &amp; Mr Norrell">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">245,118 words</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #2</div></div><button class="btn sec sm" aria-label="Finished The Well of Ascension">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Jonathan Strange &amp; Mr Norrell</span><span class="rm">308,931 words</span></span><div class="rs"><a class="plink" href="#">Susanna Clarke</a></div></div><button class="btn sec sm" aria-label="Finished Jonathan Strange &amp; Mr Norrell">Finished</button></div>
     </div>
     <div class="group">
       <div class="ghead">Listening<span class="n">1 book</span></div>
-      <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">145,772 words</span></span><div class="rs">Andy Weir</div></div><button class="btn sec sm" aria-label="Finished Project Hail Mary">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">145,772 words</span></span><div class="rs"><a class="plink" href="#">Andy Weir</a></div></div><button class="btn sec sm" aria-label="Finished Project Hail Mary">Finished</button></div>
     </div>
   </div>
 </div></div></div>
@@ -3254,11 +3255,11 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="true" data-on>In flight<span class="n">2</span></span><span role="tab" aria-selected="false">Up next<span class="n">174</span></span><span role="tab" aria-selected="false">Done<span class="n">349</span></span></span></div>
     <div class="group">
       <div class="ghead">Reading<span class="n">1 book</span></div>
-      <div class="row"><div class="rb"><span class="rh"><span class="rt">Jonathan Strange &amp; Mr Norrell</span><span class="rm">308,931 words</span></span><div class="rs">Susanna Clarke</div></div><button class="btn sec sm" aria-label="Finished Jonathan Strange &amp; Mr Norrell">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Jonathan Strange &amp; Mr Norrell</span><span class="rm">308,931 words</span></span><div class="rs"><a class="plink" href="#">Susanna Clarke</a></div></div><button class="btn sec sm" aria-label="Finished Jonathan Strange &amp; Mr Norrell">Finished</button></div>
     </div>
     <div class="group">
       <div class="ghead">Listening<span class="n">1 book</span></div>
-      <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">145,772 words</span></span><div class="rs">Andy Weir</div></div><button class="btn sec sm" aria-label="Finished Project Hail Mary">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">145,772 words</span></span><div class="rs"><a class="plink" href="#">Andy Weir</a></div></div><button class="btn sec sm" aria-label="Finished Project Hail Mary">Finished</button></div>
     </div>
     <div class="toast offer" role="status" aria-live="polite"><span class="tl"><span>The Well of Ascension: read</span><span class="t2">Finished 7 November 2026</span></span><u>Undo</u><div class="kg nr" role="group" aria-labelledby="st-nr-l"><span class="kgl" id="st-nr-l">Now reading</span><button aria-label="Stop following Era One, subseries">Era One <span class="k">&middot; subseries</span> <span class="x" aria-hidden="true">&times;</span></button><button class="more" aria-haspopup="dialog">+4 &middot; Follow&hellip;</button></div><span class="cd" style="width:62%"></span></div>
   </div>
@@ -3269,12 +3270,12 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="true" data-on>In flight<span class="n">3</span></span><span role="tab" aria-selected="false">Up next<span class="n">174</span></span><span role="tab" aria-selected="false">Done<span class="n">348</span></span></span></div>
     <div class="group">
       <div class="ghead">Reading<span class="n">2 books</span></div>
-      <div class="row"><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">245,118 words</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div></div><button class="btn sec sm" aria-label="Finished The Well of Ascension">Finished</button></div>
-      <div class="row"><div class="rb"><span class="rh"><span class="rt">Jonathan Strange &amp; Mr Norrell</span><span class="rm">308,931 words</span></span><div class="rs">Susanna Clarke</div></div><button class="btn sec sm" aria-label="Finished Jonathan Strange &amp; Mr Norrell">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">245,118 words</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #2</div></div><button class="btn sec sm" aria-label="Finished The Well of Ascension">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Jonathan Strange &amp; Mr Norrell</span><span class="rm">308,931 words</span></span><div class="rs"><a class="plink" href="#">Susanna Clarke</a></div></div><button class="btn sec sm" aria-label="Finished Jonathan Strange &amp; Mr Norrell">Finished</button></div>
     </div>
     <div class="group">
       <div class="ghead">Listening<span class="n">1 book</span></div>
-      <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">145,772 words</span></span><div class="rs">Andy Weir</div></div><button class="btn sec sm" aria-label="Finished Project Hail Mary">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">145,772 words</span></span><div class="rs"><a class="plink" href="#">Andy Weir</a></div></div><button class="btn sec sm" aria-label="Finished Project Hail Mary">Finished</button></div>
     </div>
   </div>
 </div></div></div></div>
@@ -3312,12 +3313,12 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="true" data-on>In flight<span class="n">3</span></span><span role="tab" aria-selected="false">Up next<span class="n">174</span></span><span role="tab" aria-selected="false">Done<span class="n">348</span></span></span></div>
     <div class="group">
       <div class="ghead">Reading<span class="n">2 books</span></div>
-      <div class="row"><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">245,118 words</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div></div><button class="btn sec sm" aria-label="Finished The Well of Ascension">Finished</button></div>
-      <div class="row"><div class="rb"><span class="rh"><span class="rt">Jonathan Strange &amp; Mr Norrell</span><span class="rm">308,931 words</span></span><div class="rs">Susanna Clarke</div></div><button class="btn sec sm" aria-label="Finished Jonathan Strange &amp; Mr Norrell">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">245,118 words</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #2</div></div><button class="btn sec sm" aria-label="Finished The Well of Ascension">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Jonathan Strange &amp; Mr Norrell</span><span class="rm">308,931 words</span></span><div class="rs"><a class="plink" href="#">Susanna Clarke</a></div></div><button class="btn sec sm" aria-label="Finished Jonathan Strange &amp; Mr Norrell">Finished</button></div>
     </div>
     <div class="group">
       <div class="ghead">Listening<span class="n">1 book</span></div>
-      <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">145,772 words</span></span><div class="rs">Andy Weir</div></div><button class="btn sec sm" aria-label="Finished Project Hail Mary">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">145,772 words</span></span><div class="rs"><a class="plink" href="#">Andy Weir</a></div></div><button class="btn sec sm" aria-label="Finished Project Hail Mary">Finished</button></div>
     </div>
   </div></div>
 </div></div></div>
@@ -3336,6 +3337,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li><b>Counts on the tabs, in mono.</b> They are tabular data, and they are the answer to "how much is in flight" before you tap anything.</li>
     <li>The dashboard is still where you start. Its <b>Also in flight</b> and <b>Ready when you are → All 41</b> headers link here, to the matching tab. The master list still exists for searching the whole catalog; this screen is for seeing where everything stands.</li>
     <li>The comics tab keeps the thumb bar, because marking the next issue of an in-flight run is the most likely thing to do from this screen.</li>
+    <li><span class="chg">Task 5.9b (TASK-141):</span> <b>Place links.</b> The books rows&rsquo; place lines (<i>Author &middot; Universe &middot; Series #n</i>) on <i>In flight</i>, <i>Up next</i>&rsquo;s <i>Listen next</i> and <i>Done</i> link their names to their pages, underlined as the Library&rsquo;s are; the series link is the series&rsquo; name alone, its <i>#n</i> after it. A book with no series or universe draws only its author link. A press on a name opens its page and nothing else: the row&rsquo;s status control, drag handle and menu are their own targets.</li>
   </ul></div>
 </section>
 
@@ -4195,10 +4197,10 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
     <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
     <div class="group" style="position:relative">
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="true" aria-label="More for The Well of Ascension">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs">Brandon Sanderson &middot; Cosmere</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="true" aria-label="More for The Well of Ascension">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Cosmere</a></div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
       <div class="menu" role="menu" aria-label="More for The Well of Ascension" style="position:absolute;right:.875rem;top:12.25rem;z-index:5;width:210px"><div class="opt" role="menuitem" tabindex="0" style="box-shadow:var(--focus-ring)">Follow&hellip;</div></div>
     </div>
   </div>
@@ -4210,10 +4212,10 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
     <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
     <div class="group" style="position:relative">
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs">Brandon Sanderson &middot; Cosmere</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Cosmere</a></div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
 
     </div>
   </div>
@@ -4224,10 +4226,10 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="wrap" style="padding-top:0">
       <p class="lede" style="margin:.25rem 0 .75rem"><b>Reading</b> says you&rsquo;re reading it now. <b>Tracking</b> keeps it in view.</p>
       <div class="group">
-        <div class="fol"><div class="fh"><span class="fn">Mistborn</span><span class="fk">series</span><span class="fc" aria-label="1 of 7 read">1 / 7</span></div><div class="opts" role="radiogroup" aria-label="Following Mistborn"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn"><a class="plink" href="#">Mistborn</a></span><span class="fk">series</span><span class="fc" aria-label="1 of 7 read">1 / 7</span></div><div class="opts" role="radiogroup" aria-label="Following Mistborn"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
         <div class="fol"><div class="fh"><span class="fn">Era One</span><span class="fk">subseries</span><span class="fc" aria-label="1 of 3 read">1 / 3</span></div><div class="opts" role="radiogroup" aria-label="Following Era One"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
-        <div class="fol"><div class="fh"><span class="fn">Brandon Sanderson</span><span class="fk">author</span><span class="fc" aria-label="6 of 19 read">6 / 19</span></div><div class="opts" role="radiogroup" aria-label="Following Brandon Sanderson"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
-        <div class="fol"><div class="fh"><span class="fn">Cosmere</span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn"><a class="plink" href="#">Brandon Sanderson</a></span><span class="fk">author</span><span class="fc" aria-label="6 of 19 read">6 / 19</span></div><div class="opts" role="radiogroup" aria-label="Following Brandon Sanderson"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn"><a class="plink" href="#">Cosmere</a></span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
         <div class="fol"><div class="fh"><span class="fn">Epic fantasy</span><span class="fk">shelf</span><span class="fc" aria-label="14 of 38 read">14 / 38</span></div><div class="opts" role="radiogroup" aria-label="Following Epic fantasy"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
       </div>
       <div class="btnrow" style="margin-top:.75rem"><button class="btn sec sm" style="flex:0 0 auto">Close</button></div>
@@ -4241,10 +4243,10 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
     <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
     <div class="group" style="position:relative">
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs">Brandon Sanderson &middot; Cosmere</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Cosmere</a></div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
 
     </div>
   </div>
@@ -4255,8 +4257,8 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="wrap" style="padding-top:0">
       <p class="lede" style="margin:.25rem 0 .75rem"><b>Reading</b> says you&rsquo;re reading it now. <b>Tracking</b> keeps it in view.</p>
       <div class="group">
-        <div class="fol"><div class="fh"><span class="fn">Brandon Sanderson</span><span class="fk">author</span><span class="fc" aria-label="6 of 19 read">6 / 19</span></div><div class="opts" role="radiogroup" aria-label="Following Brandon Sanderson"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
-        <div class="fol"><div class="fh"><span class="fn">Cosmere</span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn"><a class="plink" href="#">Brandon Sanderson</a></span><span class="fk">author</span><span class="fc" aria-label="6 of 19 read">6 / 19</span></div><div class="opts" role="radiogroup" aria-label="Following Brandon Sanderson"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn"><a class="plink" href="#">Cosmere</a></span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
         <div class="fol"><div class="fh"><span class="fn">To-read pile</span><span class="fk">shelf</span><span class="fc" aria-label="0 of 41 read">0 / 41</span></div><div class="opts" role="radiogroup" aria-label="Following To-read pile"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>Tracking</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
       </div>
       <div class="btnrow" style="margin-top:.75rem"><button class="btn sec sm" style="flex:0 0 auto">Close</button></div>
@@ -4270,10 +4272,10 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
     <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
     <div class="group" style="position:relative">
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs">Brandon Sanderson &middot; Cosmere</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Cosmere</a></div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
 
     </div>
   </div>
@@ -4284,10 +4286,10 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="wrap" style="padding-top:0">
       <p class="lede" style="margin:.25rem 0 .75rem"><b>Reading</b> says you&rsquo;re reading it now. <b>Tracking</b> keeps it in view.</p>
       <div class="group">
-        <div class="fol"><div class="fh"><span class="fn">Mistborn</span><span class="fk">series</span><span class="fc" aria-label="1 of 7 read">1 / 7</span></div><div class="opts" role="radiogroup" aria-label="Following Mistborn"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn"><a class="plink" href="#">Mistborn</a></span><span class="fk">series</span><span class="fc" aria-label="1 of 7 read">1 / 7</span></div><div class="opts" role="radiogroup" aria-label="Following Mistborn"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
         <div class="fol"><div class="fh"><span class="fn">Era One</span><span class="fk">subseries</span><span class="fc" aria-label="1 of 3 read">1 / 3</span></div><div class="opts" role="radiogroup" aria-label="Following Era One"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
-        <div class="fol"><div class="fh"><span class="fn">Brandon Sanderson</span><span class="fk">author</span><span class="fc" aria-label="6 of 19 read">6 / 19</span></div><div class="opts" role="radiogroup" aria-label="Following Brandon Sanderson"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
-        <div class="fol"><div class="fh"><span class="fn">Cosmere</span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn"><a class="plink" href="#">Brandon Sanderson</a></span><span class="fk">author</span><span class="fc" aria-label="6 of 19 read">6 / 19</span></div><div class="opts" role="radiogroup" aria-label="Following Brandon Sanderson"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn"><a class="plink" href="#">Cosmere</a></span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
         <div class="fol"><div class="fh"><span class="fn">Epic fantasy</span><span class="fk">shelf</span><span class="fc" aria-label="14 of 38 read">14 / 38</span></div><div class="opts" role="radiogroup" aria-label="Following Epic fantasy"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
       </div>
       <div class="btnrow" style="margin-top:.75rem"><button class="btn sec sm" style="flex:0 0 auto">Close</button></div>
@@ -4329,10 +4331,10 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
     <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
     <div class="group" style="position:relative">
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
-      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs">Brandon Sanderson &middot; Cosmere</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Mistborn</a> #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs"><a class="plink" href="#">Brandon Sanderson</a> &middot; <a class="plink" href="#">Cosmere</a></div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
 
     </div>
     </div>
@@ -4342,10 +4344,10 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="wrap" style="padding-top:0">
       <p class="lede" style="margin:.25rem 0 .75rem"><b>Reading</b> says you&rsquo;re reading it now. <b>Tracking</b> keeps it in view.</p>
       <div class="group">
-        <div class="fol"><div class="fh"><span class="fn">Mistborn</span><span class="fk">series</span><span class="fc" aria-label="1 of 7 read">1 / 7</span></div><div class="opts" role="radiogroup" aria-label="Following Mistborn"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn"><a class="plink" href="#">Mistborn</a></span><span class="fk">series</span><span class="fc" aria-label="1 of 7 read">1 / 7</span></div><div class="opts" role="radiogroup" aria-label="Following Mistborn"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
         <div class="fol"><div class="fh"><span class="fn">Era One</span><span class="fk">subseries</span><span class="fc" aria-label="1 of 3 read">1 / 3</span></div><div class="opts" role="radiogroup" aria-label="Following Era One"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
-        <div class="fol"><div class="fh"><span class="fn">Brandon Sanderson</span><span class="fk">author</span><span class="fc" aria-label="6 of 19 read">6 / 19</span></div><div class="opts" role="radiogroup" aria-label="Following Brandon Sanderson"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
-        <div class="fol"><div class="fh"><span class="fn">Cosmere</span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn"><a class="plink" href="#">Brandon Sanderson</a></span><span class="fk">author</span><span class="fc" aria-label="6 of 19 read">6 / 19</span></div><div class="opts" role="radiogroup" aria-label="Following Brandon Sanderson"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn"><a class="plink" href="#">Cosmere</a></span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
         <div class="fol"><div class="fh"><span class="fn">Epic fantasy</span><span class="fk">shelf</span><span class="fc" aria-label="14 of 38 read">14 / 38</span></div><div class="opts" role="radiogroup" aria-label="Following Epic fantasy"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">On hold</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
       </div>
       <div class="btnrow" style="margin-top:.75rem"><button class="btn sec sm" style="flex:0 0 auto">Close</button></div>
@@ -4365,6 +4367,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li>A change saves at once, one write, and its toast&rsquo;s <b>Undo</b> puts back exactly what was there, row or no row (third frame: <i>Reading Cosmere &middot; universe &middot; was not followed</i>). <b>Not following sticks</b> on a series, subseries or universe: it is kept as a stored <code>off</code>, so no later finish follows it again (D-117). On an author or a shelf, never followed for you, it removes the follow. The toast stays live over the sheet (D-63) and F6 reaches it (D-116).</li>
     <li>It is the shared <code>Sheet</code>: labelled by its heading, which takes focus; Tab stays inside; Esc, Back or <b>Close</b> at its foot (as every sheet has) close it and focus returns to the row&rsquo;s &#8943;, the control that opened it. A bottom sheet on a phone and the tablet; a centred dialog over the dimmed list from 1024px, as <code>bookdetail</code>.</li>
     <li><b>Later:</b> the series, author and universe pages carry the same control (5.9, 5.11); 3.5&rsquo;s book sheet may take <i>Follow&hellip;</i> over from the row menu; 5.12 lists On hold as its own group.</li>
+    <li><span class="chg">Task 5.9b (TASK-141):</span> <b>Place links.</b> A <i>series</i>, <i>author</i> or <i>universe</i> row&rsquo;s name is a link to its page, a 24px box in its cell; a <i>subseries</i> and a <i>shelf</i> have no page and stay text. Opened from a finish&rsquo;s toast the sheet closes when a name is followed.</li>
   </ul></div>
 </section>
 
@@ -5537,29 +5540,29 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="group">
       <div class="row"><span class="cv m k5">1</span>
         <div class="rb"><span class="rh"><span class="rt">The Will of the Many</span><span class="rm">Mar</span></span>
-          <div class="rs">James Islington</div></div><button class="drag" aria-label="Reorder The Will of the Many, rank 1">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Will of the Many">&#8943;</button></div>
+          <div class="rs"><a class="plink" href="#">James Islington</a></div></div><button class="drag" aria-label="Reorder The Will of the Many, rank 1">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Will of the Many">&#8943;</button></div>
       <div class="row"><span class="cv m k1">2</span>
         <div class="rb"><span class="rh"><span class="rt">Wind and Truth</span><span class="rm">Jan</span></span>
-          <div class="rs">Brandon Sanderson · Stormlight #5</div></div><button class="drag" aria-label="Reorder Wind and Truth, rank 2">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for Wind and Truth">&#8943;</button></div>
+          <div class="rs"><a class="plink" href="#">Brandon Sanderson</a> · <a class="plink" href="#">Stormlight</a> #5</div></div><button class="drag" aria-label="Reorder Wind and Truth, rank 2">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for Wind and Truth">&#8943;</button></div>
       <div class="row"><span class="cv m k3">3</span>
         <div class="rb"><span class="rh"><span class="rt">The Butcher of the Forest</span><span class="rm">Aug</span></span>
-          <div class="rs">Premee Mohamed</div></div><button class="drag" aria-label="Reorder The Butcher of the Forest, rank 3">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Butcher of the Forest">&#8943;</button></div>
+          <div class="rs"><a class="plink" href="#">Premee Mohamed</a></div></div><button class="drag" aria-label="Reorder The Butcher of the Forest, rank 3">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Butcher of the Forest">&#8943;</button></div>
       <p class="lede" style="margin:.25rem 0">· · · ranks 4–9 · · ·</p>
       <div class="row"><span class="cv m k4">10</span>
         <div class="rb"><span class="rh"><span class="rt">Dungeon Crawler Carl</span><span class="rm">Feb</span></span>
-          <div class="rs">Matt Dinniman · DCC #1</div></div><button class="drag" aria-label="Reorder Dungeon Crawler Carl, rank 10">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for Dungeon Crawler Carl">&#8943;</button></div>
+          <div class="rs"><a class="plink" href="#">Matt Dinniman</a> · <a class="plink" href="#">DCC</a> #1</div></div><button class="drag" aria-label="Reorder Dungeon Crawler Carl, rank 10">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for Dungeon Crawler Carl">&#8943;</button></div>
       <div class="rankdiv" role="separator" aria-label="The top ten ends here" style="display:flex;align-items:center;gap:.5rem;padding:.5rem 0;font-size:.75rem;color:var(--muted)">Beyond the top ten<span style="flex:1;border-top:2px solid var(--faint-deco)"></span></div>
       <div class="row"><span class="cv m k2">11</span>
         <div class="rb"><span class="rh"><span class="rt">The Fifth Season</span><span class="rm">Apr</span></span>
-          <div class="rs">N. K. Jemisin · The Broken Earth #1</div></div><button class="drag" aria-label="Reorder The Fifth Season, rank 11">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Fifth Season">&#8943;</button></div>
+          <div class="rs"><a class="plink" href="#">N. K. Jemisin</a> · <a class="plink" href="#">The Broken Earth</a> #1</div></div><button class="drag" aria-label="Reorder The Fifth Season, rank 11">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Fifth Season">&#8943;</button></div>
       <p class="lede" style="margin:.25rem 0">· · · every other rank · · ·</p>
       <h2 class="rankhead" style="margin:0;padding:.75rem 0 .25rem;font-size:.8125rem;font-weight:600">Not ranked yet <span class="lede">2</span></h2>
       <div class="row"><span class="cv m k6"></span>
         <div class="rb"><span class="rh"><span class="rt">Hamnet</span><span class="rm">Sep</span></span>
-          <div class="rs">Maggie O’Farrell</div></div><button class="drag" aria-label="Reorder Hamnet, not ranked yet">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for Hamnet">&#8943;</button></div>
+          <div class="rs"><a class="plink" href="#">Maggie O’Farrell</a></div></div><button class="drag" aria-label="Reorder Hamnet, not ranked yet">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for Hamnet">&#8943;</button></div>
       <div class="row"><span class="cv m k1"></span>
         <div class="rb"><span class="rh"><span class="rt">The Alloy of Law</span><span class="rm">Oct</span></span>
-          <div class="rs">Brandon Sanderson · Cosmere · Mistborn #4</div></div><button class="drag" aria-label="Reorder The Alloy of Law, not ranked yet">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Alloy of Law">&#8943;</button></div>
+          <div class="rs"><a class="plink" href="#">Brandon Sanderson</a> · <a class="plink" href="#">Cosmere</a> · <a class="plink" href="#">Mistborn</a> #4</div></div><button class="drag" aria-label="Reorder The Alloy of Law, not ranked yet">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Alloy of Law">&#8943;</button></div>
     </div>
   </div>
 </div></div></div>
@@ -5598,29 +5601,29 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
       <div class="group">
         <div class="row"><span class="cv m k5">1</span>
           <div class="rb"><span class="rh"><span class="rt">The Will of the Many</span><span class="rm">Mar</span></span>
-            <div class="rs">James Islington</div></div><button class="drag" aria-label="Reorder The Will of the Many, rank 1">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Will of the Many">&#8943;</button></div>
+            <div class="rs"><a class="plink" href="#">James Islington</a></div></div><button class="drag" aria-label="Reorder The Will of the Many, rank 1">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Will of the Many">&#8943;</button></div>
         <div class="row"><span class="cv m k1">2</span>
           <div class="rb"><span class="rh"><span class="rt">Wind and Truth</span><span class="rm">Jan</span></span>
-            <div class="rs">Brandon Sanderson · Stormlight #5</div></div><button class="drag" aria-label="Reorder Wind and Truth, rank 2">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for Wind and Truth">&#8943;</button></div>
+            <div class="rs"><a class="plink" href="#">Brandon Sanderson</a> · <a class="plink" href="#">Stormlight</a> #5</div></div><button class="drag" aria-label="Reorder Wind and Truth, rank 2">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for Wind and Truth">&#8943;</button></div>
         <div class="row"><span class="cv m k3">3</span>
           <div class="rb"><span class="rh"><span class="rt">The Butcher of the Forest</span><span class="rm">Aug</span></span>
-            <div class="rs">Premee Mohamed</div></div><button class="drag" aria-label="Reorder The Butcher of the Forest, rank 3">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Butcher of the Forest">&#8943;</button></div>
+            <div class="rs"><a class="plink" href="#">Premee Mohamed</a></div></div><button class="drag" aria-label="Reorder The Butcher of the Forest, rank 3">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Butcher of the Forest">&#8943;</button></div>
         <p class="lede" style="margin:.25rem 0">· · · ranks 4–9 · · ·</p>
         <div class="row"><span class="cv m k4">10</span>
           <div class="rb"><span class="rh"><span class="rt">Dungeon Crawler Carl</span><span class="rm">Feb</span></span>
-            <div class="rs">Matt Dinniman · DCC #1</div></div><button class="drag" aria-label="Reorder Dungeon Crawler Carl, rank 10">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for Dungeon Crawler Carl">&#8943;</button></div>
+            <div class="rs"><a class="plink" href="#">Matt Dinniman</a> · <a class="plink" href="#">DCC</a> #1</div></div><button class="drag" aria-label="Reorder Dungeon Crawler Carl, rank 10">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for Dungeon Crawler Carl">&#8943;</button></div>
         <div class="rankdiv" role="separator" aria-label="The top ten ends here" style="display:flex;align-items:center;gap:.5rem;padding:.5rem 0;font-size:.75rem;color:var(--muted)">Beyond the top ten<span style="flex:1;border-top:2px solid var(--faint-deco)"></span></div>
         <div class="row"><span class="cv m k2">11</span>
           <div class="rb"><span class="rh"><span class="rt">The Fifth Season</span><span class="rm">Apr</span></span>
-            <div class="rs">N. K. Jemisin · The Broken Earth #1</div></div><button class="drag" aria-label="Reorder The Fifth Season, rank 11">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Fifth Season">&#8943;</button></div>
+            <div class="rs"><a class="plink" href="#">N. K. Jemisin</a> · <a class="plink" href="#">The Broken Earth</a> #1</div></div><button class="drag" aria-label="Reorder The Fifth Season, rank 11">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Fifth Season">&#8943;</button></div>
         <p class="lede" style="margin:.25rem 0">· · · every other rank · · ·</p>
         <h2 class="rankhead" style="margin:0;padding:.75rem 0 .25rem;font-size:.8125rem;font-weight:600">Not ranked yet <span class="lede">2</span></h2>
         <div class="row"><span class="cv m k6"></span>
           <div class="rb"><span class="rh"><span class="rt">Hamnet</span><span class="rm">Sep</span></span>
-            <div class="rs">Maggie O’Farrell</div></div><button class="drag" aria-label="Reorder Hamnet, not ranked yet">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for Hamnet">&#8943;</button></div>
+            <div class="rs"><a class="plink" href="#">Maggie O’Farrell</a></div></div><button class="drag" aria-label="Reorder Hamnet, not ranked yet">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for Hamnet">&#8943;</button></div>
         <div class="row"><span class="cv m k1"></span>
           <div class="rb"><span class="rh"><span class="rt">The Alloy of Law</span><span class="rm">Oct</span></span>
-            <div class="rs">Brandon Sanderson · Cosmere · Mistborn #4</div></div><button class="drag" aria-label="Reorder The Alloy of Law, not ranked yet">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Alloy of Law">&#8943;</button></div>
+            <div class="rs"><a class="plink" href="#">Brandon Sanderson</a> · <a class="plink" href="#">Cosmere</a> · <a class="plink" href="#">Mistborn</a> #4</div></div><button class="drag" aria-label="Reorder The Alloy of Law, not ranked yet">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Alloy of Law">&#8943;</button></div>
       </div>
     </div><div class="dk-rail">
       <div class="ctl"><span class="select" role="img" aria-label="Year: 2026; 2026, 2025, 2024 … 2009, No year">2026<span class="car">&#9662;</span></span><span class="lede">38 read so far</span></div>
@@ -5637,6 +5640,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li>A visible <b>drag handle</b> replaces invisible drag-anywhere, so reordering is discoverable.</li>
     <li><b>Every year, the whole list</b> (task 3.4b, D-101, D-122): the select holds every year with a finished read, newest first, then <i>No year</i> (reads with no date, listed, no handle: nothing to rank them in). This year's heading says <i>so far</i>. A year is its top ten, a divider, the rest of the ranks, then <i>Not ranked yet</i>; nothing is collapsed, so <i>+ Add a book to this list</i> and the cap at ten are gone: every read of the year is already here.</li>
     <li>Any book moves anywhere with 1.10's handle and ⋯ menu (<i>Move to top · Move up · Move down</i>), across the divider too; moving one up from <i>Not ranked yet</i> ranks it. Each move has an undo.</li>
+    <li><span class="chg">Task 5.9b (TASK-141):</span> <b>Place links.</b> Each row&rsquo;s place line links its author, universe and series; a press on a name opens its page and starts no drag (the drag is the handle&rsquo;s alone).</li>
   </ul></div>
 </section>
 
@@ -5650,22 +5654,22 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
       <div class="ghead">Out now<span class="n">2</span></div>
       <div class="row"><span class="cv m k5">TWM</span>
         <div class="rb"><span class="rh"><span class="rt">The Will of the Many</span><span class="rm">16 Nov</span></span>
-          <div class="rs">James Islington · Hierarchy #1</div></div><button class="btn sm" aria-label="Got it: The Will of the Many">Got it</button></div>
+          <div class="rs"><a class="plink" href="#">James Islington</a> · <a class="plink" href="#">Hierarchy</a> #1</div></div><button class="btn sm" aria-label="Got it: The Will of the Many">Got it</button></div>
       <div class="row"><span class="cv m k1">WAT</span>
         <div class="rb"><span class="rh"><span class="rt">Wind and Truth</span><span class="rm">4 Nov</span></span>
-          <div class="rs">Brandon Sanderson · Cosmere · Stormlight #5</div></div><button class="btn sm" aria-label="Got it: Wind and Truth">Got it</button></div>
+          <div class="rs"><a class="plink" href="#">Brandon Sanderson</a> · <a class="plink" href="#">Cosmere</a> · <a class="plink" href="#">Stormlight</a> #5</div></div><button class="btn sm" aria-label="Got it: Wind and Truth">Got it</button></div>
       <div class="ghead">December 2026<span class="n">1</span></div>
       <div class="row"><span class="cv m k3">TDW</span>
         <div class="rb"><span class="rh"><span class="rt">The Doors of Winter</span><span class="rm">9 Dec</span></span>
-          <div class="rs">Premee Mohamed</div></div><button class="btn sm" aria-label="Got it: The Doors of Winter">Got it</button></div>
+          <div class="rs"><a class="plink" href="#">Premee Mohamed</a></div></div><button class="btn sm" aria-label="Got it: The Doors of Winter">Got it</button></div>
       <div class="ghead">March 2027<span class="n">1</span></div>
       <div class="row"><span class="cv m k4">SPH</span>
         <div class="rb"><span class="rh"><span class="rt">Sphere of Ash</span><span class="rm">2 Mar</span></span>
-          <div class="rs">Matt Dinniman · DCC #8</div></div><button class="btn sm" aria-label="Got it: Sphere of Ash">Got it</button></div>
+          <div class="rs"><a class="plink" href="#">Matt Dinniman</a> · <a class="plink" href="#">DCC</a> #8</div></div><button class="btn sm" aria-label="Got it: Sphere of Ash">Got it</button></div>
       <div class="ghead">No date yet<span class="n">1</span></div>
       <div class="row"><span class="cv m k2">DOL</span>
         <div class="rb"><span class="rh"><span class="rt">Doors of Light</span></span>
-          <div class="rs">N. K. Jemisin</div></div><button class="btn sm" aria-label="Got it: Doors of Light">Got it</button></div>
+          <div class="rs"><a class="plink" href="#">N. K. Jemisin</a></div></div><button class="btn sm" aria-label="Got it: Doors of Light">Got it</button></div>
     </div>
   </div>
 </div></div></div>
@@ -5683,18 +5687,18 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
       <div class="ghead">Out now<span class="n">2</span></div>
       <div class="row"><span class="cv m k5">TWM</span>
         <div class="rb"><span class="rh"><span class="rt">The Will of the Many</span><span class="rm">16 Nov</span></span>
-          <div class="rs">James Islington · Hierarchy #1</div></div><button class="btn sm" aria-label="Got it: The Will of the Many">Got it</button></div>
+          <div class="rs"><a class="plink" href="#">James Islington</a> · <a class="plink" href="#">Hierarchy</a> #1</div></div><button class="btn sm" aria-label="Got it: The Will of the Many">Got it</button></div>
       <div class="row"><span class="cv m k1">WAT</span>
         <div class="rb"><span class="rh"><span class="rt">Wind and Truth</span><span class="rm">4 Nov</span></span>
-          <div class="rs">Brandon Sanderson · Cosmere · Stormlight #5</div></div><button class="btn sm" aria-label="Got it: Wind and Truth">Got it</button></div>
+          <div class="rs"><a class="plink" href="#">Brandon Sanderson</a> · <a class="plink" href="#">Cosmere</a> · <a class="plink" href="#">Stormlight</a> #5</div></div><button class="btn sm" aria-label="Got it: Wind and Truth">Got it</button></div>
       <div class="ghead">December 2026<span class="n">1</span></div>
       <div class="row"><span class="cv m k3">TDW</span>
         <div class="rb"><span class="rh"><span class="rt">The Doors of Winter</span><span class="rm">9 Dec</span></span>
-          <div class="rs">Premee Mohamed</div></div><button class="btn sm" aria-label="Got it: The Doors of Winter">Got it</button></div>
+          <div class="rs"><a class="plink" href="#">Premee Mohamed</a></div></div><button class="btn sm" aria-label="Got it: The Doors of Winter">Got it</button></div>
       <div class="ghead">No date yet<span class="n">1</span></div>
       <div class="row"><span class="cv m k2">DOL</span>
         <div class="rb"><span class="rh"><span class="rt">Doors of Light</span></span>
-          <div class="rs">N. K. Jemisin</div></div><button class="btn sm" aria-label="Got it: Doors of Light">Got it</button></div>
+          <div class="rs"><a class="plink" href="#">N. K. Jemisin</a></div></div><button class="btn sm" aria-label="Got it: Doors of Light">Got it</button></div>
     </div>
   </div>
 </div></div></div></div>
@@ -5720,18 +5724,18 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
       <div class="ghead">Out now<span class="n">2</span></div>
       <div class="row"><span class="cv m k5">TWM</span>
         <div class="rb"><span class="rh"><span class="rt">The Will of the Many</span><span class="rm">16 Nov</span></span>
-          <div class="rs">James Islington · Hierarchy #1</div></div><button class="btn sm" aria-label="Got it: The Will of the Many">Got it</button></div>
+          <div class="rs"><a class="plink" href="#">James Islington</a> · <a class="plink" href="#">Hierarchy</a> #1</div></div><button class="btn sm" aria-label="Got it: The Will of the Many">Got it</button></div>
       <div class="row"><span class="cv m k1">WAT</span>
         <div class="rb"><span class="rh"><span class="rt">Wind and Truth</span><span class="rm">4 Nov</span></span>
-          <div class="rs">Brandon Sanderson · Cosmere · Stormlight #5</div></div><button class="btn sm" aria-label="Got it: Wind and Truth">Got it</button></div>
+          <div class="rs"><a class="plink" href="#">Brandon Sanderson</a> · <a class="plink" href="#">Cosmere</a> · <a class="plink" href="#">Stormlight</a> #5</div></div><button class="btn sm" aria-label="Got it: Wind and Truth">Got it</button></div>
       <div class="ghead">December 2026<span class="n">1</span></div>
       <div class="row"><span class="cv m k3">TDW</span>
         <div class="rb"><span class="rh"><span class="rt">The Doors of Winter</span><span class="rm">9 Dec</span></span>
-          <div class="rs">Premee Mohamed</div></div><button class="btn sm" aria-label="Got it: The Doors of Winter">Got it</button></div>
+          <div class="rs"><a class="plink" href="#">Premee Mohamed</a></div></div><button class="btn sm" aria-label="Got it: The Doors of Winter">Got it</button></div>
       <div class="ghead">No date yet<span class="n">1</span></div>
       <div class="row"><span class="cv m k2">DOL</span>
         <div class="rb"><span class="rh"><span class="rt">Doors of Light</span></span>
-          <div class="rs">N. K. Jemisin</div></div><button class="btn sm" aria-label="Got it: Doors of Light">Got it</button></div>
+          <div class="rs"><a class="plink" href="#">N. K. Jemisin</a></div></div><button class="btn sm" aria-label="Got it: Doors of Light">Got it</button></div>
     </div>
   </div></div>
 </div></div></div>
@@ -5743,6 +5747,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li><b>Got it</b> moves the book to Someday (<i>to read</i>) and the row leaves with no reload; the toast, <i>Got it: Wind and Truth: to read · Was coming out</i>, offers Undo, which puts the row back and leaves no status behind. A real button named for the book, 44px on a phone row, 32px from the tablet up.</li>
     <li><b>Empty:</b> <i>Nothing coming out</i> with one action, <i>Add a book</i>. Loading is skeleton rows at the loaded size; the error state is a grey ×, never red, with <i>Try again</i>.</li>
     <li><b>Navigation:</b> <i>Coming out</i> sits under Books after <i>Top</i> and before <i>Add</i>, in the tab row, the rail and the sidebar, with a neutral calendar-and-clock icon.</li>
+    <li><span class="chg">Task 5.9b (TASK-141):</span> <b>Place links.</b> Each row&rsquo;s author, universe and series are links to their pages; the series link is its name alone.</li>
   </ul></div>
 </section>
 <section class="screen" data-id="parked">
@@ -5755,15 +5760,15 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
       <div class="ghead">Books<span class="n">4</span></div>
       <div class="row" style="flex-wrap:wrap"><span class="cv m k3">GOM</span>
         <div class="rb"><span class="rh"><span class="rt">Gardens of the Moon</span></span>
-          <div class="rs">Steven Erikson · Malazan #1</div><div class="rs">Parked 7 months</div></div><div style="flex:1 0 100%;display:flex;flex-wrap:wrap;gap:8px;padding-left:62px"><button class="btn sec sm" style="min-height:44px" aria-label="Keep parked: Gardens of the Moon">Keep parked</button><button class="btn sec sm" style="min-height:44px" aria-label="Plan Gardens of the Moon" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:44px" aria-label="Unlisted: Gardens of the Moon">Unlisted</button></div></div>
+          <div class="rs"><a class="plink" href="#">Steven Erikson</a> · <a class="plink" href="#">Malazan</a> #1</div><div class="rs">Parked 7 months</div></div><div style="flex:1 0 100%;display:flex;flex-wrap:wrap;gap:8px;padding-left:62px"><button class="btn sec sm" style="min-height:44px" aria-label="Keep parked: Gardens of the Moon">Keep parked</button><button class="btn sec sm" style="min-height:44px" aria-label="Plan Gardens of the Moon" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:44px" aria-label="Unlisted: Gardens of the Moon">Unlisted</button></div></div>
       <div class="row" style="flex-wrap:wrap"><span class="cv m k1">ANA</span>
         <div class="rb"><span class="rh"><span class="rt">Anathem</span></span>
-          <div class="rs">Neal Stephenson</div><div class="rs">Parked 4 months</div></div><div style="flex:1 0 100%;display:flex;flex-wrap:wrap;gap:8px;padding-left:62px"><button class="btn sec sm" style="min-height:44px" aria-label="Keep parked: Anathem">Keep parked</button><button class="btn sec sm" style="min-height:44px" aria-label="Pick it back up: Anathem">Pick it back up</button><button class="btn sec sm" style="min-height:44px" aria-label="Unlisted: Anathem">Unlisted</button></div></div>
+          <div class="rs"><a class="plink" href="#">Neal Stephenson</a></div><div class="rs">Parked 4 months</div></div><div style="flex:1 0 100%;display:flex;flex-wrap:wrap;gap:8px;padding-left:62px"><button class="btn sec sm" style="min-height:44px" aria-label="Keep parked: Anathem">Keep parked</button><button class="btn sec sm" style="min-height:44px" aria-label="Pick it back up: Anathem">Pick it back up</button><button class="btn sec sm" style="min-height:44px" aria-label="Unlisted: Anathem">Unlisted</button></div></div>
       <div class="row"><span class="rb"><span class="rh"><span class="rt" style="color:var(--muted)">Piranesi</span></span>
           <div class="rs">Kept parked</div></span></div>
       <div class="row" style="flex-wrap:wrap"><span class="cv m k2">NOW</span>
         <div class="rb"><span class="rh"><span class="rt">The Name of the Wind</span></span>
-          <div class="rs">Patrick Rothfuss · Kingkiller #1</div><div class="rs">Parked 2 weeks</div></div><div style="flex:1 0 100%;display:flex;flex-wrap:wrap;gap:8px;padding-left:62px"><button class="btn sec sm" style="min-height:44px" aria-label="Keep parked: The Name of the Wind">Keep parked</button><button class="btn sec sm" style="min-height:44px" aria-label="Plan The Name of the Wind" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:44px" aria-label="Unlisted: The Name of the Wind">Unlisted</button></div></div>
+          <div class="rs"><a class="plink" href="#">Patrick Rothfuss</a> · <a class="plink" href="#">Kingkiller</a> #1</div><div class="rs">Parked 2 weeks</div></div><div style="flex:1 0 100%;display:flex;flex-wrap:wrap;gap:8px;padding-left:62px"><button class="btn sec sm" style="min-height:44px" aria-label="Keep parked: The Name of the Wind">Keep parked</button><button class="btn sec sm" style="min-height:44px" aria-label="Plan The Name of the Wind" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:44px" aria-label="Unlisted: The Name of the Wind">Unlisted</button></div></div>
     </div>
     <p style="margin:24px 0 0"><button class="btn" style="min-height:44px">Done reviewing</button></p>
   </div>
@@ -5784,15 +5789,15 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
       <div class="ghead">Books<span class="n">4</span></div>
       <div class="row"><span class="cv m k3">GOM</span>
         <div class="rb"><span class="rh"><span class="rt">Gardens of the Moon</span></span>
-          <div class="rs">Steven Erikson · Malazan #1</div><div class="rs">Parked 7 months</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: Gardens of the Moon">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Plan Gardens of the Moon" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: Gardens of the Moon">Unlisted</button></div></div>
+          <div class="rs"><a class="plink" href="#">Steven Erikson</a> · <a class="plink" href="#">Malazan</a> #1</div><div class="rs">Parked 7 months</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: Gardens of the Moon">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Plan Gardens of the Moon" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: Gardens of the Moon">Unlisted</button></div></div>
       <div class="row"><span class="cv m k1">ANA</span>
         <div class="rb"><span class="rh"><span class="rt">Anathem</span></span>
-          <div class="rs">Neal Stephenson</div><div class="rs">Parked 4 months</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: Anathem">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Pick it back up: Anathem">Pick it back up</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: Anathem">Unlisted</button></div></div>
+          <div class="rs"><a class="plink" href="#">Neal Stephenson</a></div><div class="rs">Parked 4 months</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: Anathem">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Pick it back up: Anathem">Pick it back up</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: Anathem">Unlisted</button></div></div>
       <div class="row"><span class="rb"><span class="rh"><span class="rt" style="color:var(--muted)">Piranesi</span></span>
           <div class="rs">Kept parked</div></span></div>
       <div class="row"><span class="cv m k2">NOW</span>
         <div class="rb"><span class="rh"><span class="rt">The Name of the Wind</span></span>
-          <div class="rs">Patrick Rothfuss · Kingkiller #1</div><div class="rs">Parked 2 weeks</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: The Name of the Wind">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Plan The Name of the Wind" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: The Name of the Wind">Unlisted</button></div></div>
+          <div class="rs"><a class="plink" href="#">Patrick Rothfuss</a> · <a class="plink" href="#">Kingkiller</a> #1</div><div class="rs">Parked 2 weeks</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: The Name of the Wind">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Plan The Name of the Wind" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: The Name of the Wind">Unlisted</button></div></div>
     </div>
     <p style="margin:24px 0 0"><button class="btn">Done reviewing</button></p>
   </div>
@@ -5820,15 +5825,15 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
       <div class="ghead">Books<span class="n">4</span></div>
       <div class="row"><span class="cv m k3">GOM</span>
         <div class="rb"><span class="rh"><span class="rt">Gardens of the Moon</span></span>
-          <div class="rs">Steven Erikson · Malazan #1</div><div class="rs">Parked 7 months</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: Gardens of the Moon">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Plan Gardens of the Moon" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: Gardens of the Moon">Unlisted</button></div></div>
+          <div class="rs"><a class="plink" href="#">Steven Erikson</a> · <a class="plink" href="#">Malazan</a> #1</div><div class="rs">Parked 7 months</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: Gardens of the Moon">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Plan Gardens of the Moon" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: Gardens of the Moon">Unlisted</button></div></div>
       <div class="row"><span class="cv m k1">ANA</span>
         <div class="rb"><span class="rh"><span class="rt">Anathem</span></span>
-          <div class="rs">Neal Stephenson</div><div class="rs">Parked 4 months</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: Anathem">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Pick it back up: Anathem">Pick it back up</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: Anathem">Unlisted</button></div></div>
+          <div class="rs"><a class="plink" href="#">Neal Stephenson</a></div><div class="rs">Parked 4 months</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: Anathem">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Pick it back up: Anathem">Pick it back up</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: Anathem">Unlisted</button></div></div>
       <div class="row"><span class="rb"><span class="rh"><span class="rt" style="color:var(--muted)">Piranesi</span></span>
           <div class="rs">Kept parked</div></span></div>
       <div class="row"><span class="cv m k2">NOW</span>
         <div class="rb"><span class="rh"><span class="rt">The Name of the Wind</span></span>
-          <div class="rs">Patrick Rothfuss · Kingkiller #1</div><div class="rs">Parked 2 weeks</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: The Name of the Wind">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Plan The Name of the Wind" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: The Name of the Wind">Unlisted</button></div></div>
+          <div class="rs"><a class="plink" href="#">Patrick Rothfuss</a> · <a class="plink" href="#">Kingkiller</a> #1</div><div class="rs">Parked 2 weeks</div></div><div style="flex:0 0 auto;display:flex;gap:8px"><button class="btn sec sm" style="min-height:32px" aria-label="Keep parked: The Name of the Wind">Keep parked</button><button class="btn sec sm" style="min-height:32px" aria-label="Plan The Name of the Wind" aria-haspopup="dialog">Plan&hellip;</button><button class="btn sec sm" style="min-height:32px" aria-label="Unlisted: The Name of the Wind">Unlisted</button></div></div>
     </div>
     <p style="margin:24px 0 0"><button class="btn">Done reviewing</button></p>
   </div></div>
@@ -5841,6 +5846,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li><b>Done reviewing</b> records the review, whatever is left parked: the dashboard's <i>Review 3 parked &rarr;</i> and the Inbox's <i>Parked review</i> row go until the cadence comes round. Its toast offers Undo.</li>
     <li><b>Empty:</b> <i>Nothing parked.</i> with one action, <i>Open the Library</i>, and no <i>Done reviewing</i>. Loading is skeleton rows at the loaded size; the error state is a grey &times;, never red, with <i>Try again</i>.</li>
     <li><b>Navigation:</b> no nav item. Reached from the books dashboard's line, the Inbox's row and the Library's <i>Parked</i> filter, which gains a grey <i>Review parked &rarr;</i> under its chips.</li>
+    <li><span class="chg">Task 5.9b (TASK-141):</span> <b>Place links.</b> Each row&rsquo;s author, universe and series are links to their pages, and so are the same names in <i>Plan&hellip;</i>&rsquo;s picker header; a press on a name opens its page and none of the row&rsquo;s verbs.</li>
   </ul></div>
 </section>
 

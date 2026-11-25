@@ -16,6 +16,8 @@ const PlanPickerBody = dynamic(() => import("@/components/PlanPicker").then((m) 
 export type ParkedRowBook = {
   id: string; title: string; author: string | null;
   universe: string | null; series: string | null; series_position: number | null;
+  /** The ids of its author, series and universe: the picker header's names link to their pages (task 5.9b, TASK-141). */
+  author_id: string | null; series_id: string | null; universe_id: string | null;
   words: number | null; estimated: boolean;
 };
 
@@ -179,6 +181,7 @@ function PlanBody({ book, onPlanned, onUndone }: { book: ParkedRowBook; onPlanne
     <PlanPickerBody verb="Add" onConfirm={plan} onCancel={close}
       book={{
         author: book.author, universe: book.universe, series: book.series, series_position: book.series_position,
+        author_id: book.author_id, series_id: book.series_id, universe_id: book.universe_id,
         words: book.words, estimated: book.estimated,
       }} />
   );

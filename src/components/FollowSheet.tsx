@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { FollowName } from "@/components/BookPlace";
 import type { SheetOffer } from "@/components/FollowOffer";
 import { FollowOptions, useFollowChange } from "@/components/FollowOptions";
 import Sheet, { useSheetClose } from "@/components/Sheet";
@@ -28,12 +30,22 @@ import type { FollowState } from "@/db/writes";
  * pushes its own toast with the finish's chips left, and leaves; its row shows the
  * state written, and focus moves to the next chip. Setting a row by its options takes
  * that grouping's chip away.
+ *
+ * A series, universe or author's name is a link to its page (task 5.9b, TASK-141; `FollowName`: a
+ * subseries or a shelf has no page and stays text). Opened from a finish's toast the sheet lives above
+ * every page (`FollowOfferProvider`), so a navigation closes it: through `onClose`, never the sheet's own
+ * close, whose `history.back()` would undo the click.
  */
 export default function FollowSheet({ bookId, title, opener, onClose, offer }: {
   bookId: string; title: string; opener: HTMLElement | null; onClose: () => void;
   /** A finish's chips the toast doesn't show (6.24). */
   offer?: SheetOffer;
 }) {
+  const path = usePathname();
+  const opened = useRef(path);
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; });
+  useEffect(() => { if (path !== opened.current) closeRef.current(); }, [path]);
   return (
     <Sheet heading={title} opener={opener} onClose={onClose}>
       <FollowList bookId={bookId} offer={offer} />
@@ -73,7 +85,7 @@ function FollowList({ bookId, offer }: { bookId: string; offer?: SheetOffer }) {
           {groupings.map((g) => (
             <div key={`${g.kind}-${g.id}`} className="follow-row">
               <p className="follow-head">
-                <span className="follow-name">{g.name}</span>
+                <span className="follow-name"><FollowName kind={g.kind} id={g.id} name={g.name} /></span>
                 <span className="follow-kind">{g.kind}</span>
                 <span className="follow-count mono">{g.read} / {g.total}</span>
               </p>

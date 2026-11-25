@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import BookPlace from "@/components/BookPlace";
 import EmptySlate from "@/components/EmptySlate";
 import ParkedDone from "@/components/ParkedDone";
 import ParkedRow from "@/components/ParkedRow";
@@ -8,7 +9,7 @@ import { bookHref } from "@/components/StatusBookRow";
 import { parkedBooks, parkedReview } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
 import { today } from "@/lib/finish-date";
-import { bookSub, releaseDay } from "@/lib/format";
+import { bookSub, releaseDay, subParts } from "@/lib/format";
 import { isParkedMidRead, parkedAge } from "@/lib/parked";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,7 @@ export default async function ParkedPage() {
                 <ParkedRow key={b.id} midRead={isParkedMidRead({ status: "parked", started_on_precision: b.started_on_precision })}
                   book={{
                     id: b.id, title: b.title, author: b.author, universe: b.universe, series: b.series,
+                    author_id: b.author_id, series_id: b.series_id, universe_id: b.universe_id,
                     series_position: b.series_position, words: b.words, estimated: b.estimated,
                   }}>
                   {/* The same box with or without a cover, so a cover arriving moves no row (task 4.3). */}
@@ -58,7 +60,7 @@ export default async function ParkedPage() {
                         <Link href={bookHref(b.id)} scroll={false} prefetch={false}>{b.title}</Link>
                       </span>
                     </span>
-                    {bookSub(b) && <span className="row-sub">{bookSub(b)}</span>}
+                    {bookSub(b) && <span className="row-sub"><BookPlace parts={subParts(b)} /></span>}
                     <span className="row-dates">{parkedAge(b.parked_on, day)}</span>
                   </span>
                 </ParkedRow>

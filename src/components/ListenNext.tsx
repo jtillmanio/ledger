@@ -1,11 +1,12 @@
 "use client";
 
+import BookPlace from "@/components/BookPlace";
 import BookStatus from "@/components/BookStatus";
 import { ArtCover } from "@/components/Cover";
 import { Headphones } from "@/components/nav/Icons";
 import ReorderList from "@/components/ReorderList";
 import type { ListenNextBook } from "@/db/queries";
-import { bookSub, listenGlyph, wordsK } from "@/lib/format";
+import { bookSub, listenGlyph, subParts, wordsK } from "@/lib/format";
 import { listenCall } from "@/lib/listen-queue";
 import { LISTEN_NEXT } from "@/lib/status-tabs";
 
@@ -48,7 +49,7 @@ export default function ListenNext({ rows }: { rows: ListenNextBook[] }) {
             <span className="qbody">
               <span className="qtitle">{b.title}{glyph && <> <Headphones label={glyph} /></>}</span>
               <span className="qmeta">
-                {bookSub(b) && <span className="mono qplace">{bookSub(b)}</span>}
+                {bookSub(b) && <span className="mono qplace"><BookPlace parts={subParts(b)} /></span>}
                 {wordsK(b.word_count) && <span className="mono qwords">{wordsK(b.word_count)}</span>}
               </span>
               <BookStatus bookId={b.id} title={b.title} menu={false} glyph={false} listened={b.listened}

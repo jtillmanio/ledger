@@ -62,7 +62,16 @@ async function db<T>(fn: (sql: TestSql) => Promise<T>): Promise<T> {
 /** The settings row as the suite found it, put back after the last test. */
 let settingsBefore: { parked_review: string; parked_reviewed_on: string | null } | null = null;
 
-const clean = () => db((sql) => sql`DELETE FROM books WHERE id LIKE ${P + "%"}`);
+// Task 5.9b, 2 of 3 (TASK-141): NEW is in a series, by an author, in a universe; MID is by the same author alone. OLD keeps no
+// place line: the loading skeleton is drawn for a row without one.
+const PL = { au: `${P}au`, un: `${P}un`, se: `${P}se` };
+
+const clean = () => db(async (sql) => {
+  await sql`DELETE FROM books WHERE id LIKE ${P + "%"}`;
+  await sql`DELETE FROM book_series WHERE id = ${PL.se}`;
+  await sql`DELETE FROM book_universes WHERE id = ${PL.un}`;
+  await sql`DELETE FROM authors WHERE id = ${PL.au}`;
+});
 
 /** Every book as the tests start them: the three parked on their days (MID with its start), FILLER at 1 in the quarter. */
 const reset = () => db(async (sql) => {
@@ -92,10 +101,15 @@ test.beforeAll(async () => {
     return found ? { parked_review: found.parked_review as string, parked_reviewed_on: found.parked_reviewed_on as string | null } : null;
   });
   await db(async (sql) => {
+    await sql`INSERT INTO authors (id, name) VALUES (${PL.au}, 'Pr Author')`;
+    await sql`INSERT INTO book_universes (id, name) VALUES (${PL.un}, 'Pr World')`;
+    await sql`INSERT INTO book_series (id, name, author_id) VALUES (${PL.se}, 'Pr Cycle', ${PL.au})`;
     for (const b of [...PARKED, FILLER]) {
       await sql`INSERT INTO books (id, title) VALUES (${b.id}, ${b.title})`;
       await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${b.id}, 'to_read')`;
     }
+    await sql`UPDATE books SET author_id = ${PL.au}, series_id = ${PL.se}, series_position = 5, universe_id = ${PL.un} WHERE id = ${NEW.id}`;
+    await sql`UPDATE books SET author_id = ${PL.au} WHERE id = ${MID.id}`;
   });
 });
 test.beforeEach(reset);
@@ -367,4 +381,75 @@ test("the loading skeleton's row is the loaded row's size, within 2px, on a phon
     expect(Math.abs(sk.height - loaded.height), `${width}px: skeleton ${sk.height}px, loaded ${loaded.height}px`).toBeLessThanOrEqual(2);
     await screenshot(page, info, `parked-review-loading-${width}`);
   }
+});
+
+// --- Task 5.9b, 2 of 3 (TASK-141; F-38, D-134): the review's rows and the Plan… picker's header link their names ---
+
+const placeLine = (page: Page, title: string) => row(page, title).locator(".row-sub").first();
+// Visible first: a streamed page holds its content in a hidden node until it swaps in, and a role query skips it.
+const hrefsOf = async (l: Locator) => {
+  await expect(l).toBeVisible();
+  return l.getByRole("link").evaluateAll((as) => as.map((a) => [a.textContent, a.getAttribute("href")]));
+};
+
+test("5.9b AC-1, AC-2, AC-4: a row links its author, universe and series; a book with no series or universe draws only its author link; every width, light and dark", ONCE, async ({ page }, info) => {
+  // Pinned to one project (it sets its own viewport and theme), so each theme is emulated here and its frames named for it.
+  for (const [width, height, colorScheme] of VIEWPORTS.flatMap(([w, h]) => (["light", "dark"] as const).map((c) => [w, h, c] as const))) {
+    await page.setViewportSize({ width, height });
+    await page.emulateMedia({ colorScheme });
+    await page.goto("/parked");
+    await expect(rows(page)).toHaveCount(3);
+    await expect(placeLine(page, NEW.title)).toHaveText("Pr Author · Pr World · Pr Cycle #5");
+    expect(await hrefsOf(placeLine(page, NEW.title))).toEqual([
+      ["Pr Author", `/books/authors/${PL.au}`], ["Pr World", `/books/universes/${PL.un}`], ["Pr Cycle", `/books/series/${PL.se}`],
+    ]);
+    await expect(placeLine(page, NEW.title).getByRole("link", { name: "Pr Cycle", exact: true })).toBeVisible();
+    expect(await hrefsOf(placeLine(page, MID.title))).toEqual([["Pr Author", `/books/authors/${PL.au}`]]);
+    for (const link of await placeLine(page, NEW.title).getByRole("link").all()) {
+      expect((await link.boundingBox())!.height, `a place link at ${width}px ${colorScheme}`).toBeGreaterThanOrEqual(24);
+    }
+    await expectNoHorizontalScroll(page);
+    await expectNoDanger(page);
+    await expectNoAxeViolations(page, AXE);
+    expect(await contrastFailures(page), `${width}px ${colorScheme}`).toEqual([]);
+    if (width === 360 || width === 1280) await screenshot(page, info, `5.9b-parked-links-${width}-${colorScheme}`);
+  }
+});
+
+test("5.9b AC-3: a place link opens its page and fires none of the row's verbs", ONCE, async ({ page }) => {
+  await page.goto("/parked");
+  const plan = row(page, NEW.title).getByRole("button", { name: `Plan ${NEW.title}`, exact: true });
+  await hydrated(plan);
+  await placeLine(page, NEW.title).getByRole("link", { name: "Pr Cycle", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/books/series/${PL.se}$`));
+  expect(await stored(NEW.id)).toMatchObject({ status: "parked", parkedOn: NEW.parkedOn, plan: [] });
+  await page.goBack();
+  await expect(row(page, NEW.title)).toHaveCount(1);
+  await expect(row(page, NEW.title).locator(".parked-kept")).toHaveCount(0);
+  await expect(toast(page)).toHaveCount(0);
+});
+
+test("5.9b AC-1, AC-3: Plan…'s picker header links the names too, each 24px, and a link opens its page without planning", ONCE, async ({ page }) => {
+  await page.goto("/parked");
+  const plan = row(page, NEW.title).getByRole("button", { name: `Plan ${NEW.title}`, exact: true });
+  await hydrated(plan);
+  await plan.click();
+  const sheet = page.getByRole("dialog", { name: NEW.title });
+  const by = sheet.locator(".pp-by");
+  await expect(by).toContainText("Pr Author · Pr World · Pr Cycle #5");
+  expect(await hrefsOf(by)).toEqual([
+    ["Pr Author", `/books/authors/${PL.au}`], ["Pr World", `/books/universes/${PL.un}`], ["Pr Cycle", `/books/series/${PL.se}`],
+  ]);
+  for (const link of await by.getByRole("link").all()) {
+    expect((await link.boundingBox())!.height, "a place link in a sheet").toBeGreaterThanOrEqual(24);
+  }
+  // The open sheet meets the floor in both themes: axe and contrast (AC-4).
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    await expectNoAxeViolations(page, AXE);
+    expect(await contrastFailures(page), `the picker header, ${colorScheme}`).toEqual([]);
+  }
+  await by.getByRole("link", { name: "Pr Cycle", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/books/series/${PL.se}$`));
+  expect(await stored(NEW.id)).toMatchObject({ status: "parked", plan: [] });
 });

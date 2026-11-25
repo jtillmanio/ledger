@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import BookPlace from "@/components/BookPlace";
 import Cover from "@/components/Cover";
 import { Headphones } from "@/components/nav/Icons";
 import { useRankSorter, type SorterRead } from "@/components/RankSorter";
 import ReorderList, { type MoveResult, type ReorderRow } from "@/components/ReorderList";
 import { bookHref } from "@/components/StatusBookRow";
 import type { RankChange } from "@/db/writes";
+import { partText, type PlacePart } from "@/lib/format";
 
 /** The first ten of a year's ranking are its top ten (D-101): read off the order, never stored. */
 export const TOP_TEN = 10;
@@ -18,8 +20,8 @@ export type TopRow = ReorderRow & {
   readId: number | null;
   bookId: string;
   rank: number | null;
-  /** *Author · Universe · Series #n* (task 2.2j). */
-  sub: string;
+  /** *Author · Universe · Series #n* (task 2.2j), in parts so each name links to its page (task 5.9b, TASK-141). */
+  place: PlacePart[];
   /** The finish month, *Mar*, on an exact finish; null otherwise. */
   month: string | null;
   listened: boolean;
@@ -40,7 +42,7 @@ async function rankCall(method: "POST" | "DELETE", body: unknown) {
 }
 
 const sorterRead = (r: TopRow): SorterRead => ({
-  readId: r.readId, bookId: r.bookId, title: r.title, sub: r.sub, cover: r.cover, pending: r.pending, rank: r.rank,
+  readId: r.readId, bookId: r.bookId, title: r.title, sub: r.place.map(partText).join(" · "), cover: r.cover, pending: r.pending, rank: r.rank,
 });
 
 /** What a row draws between its handle and its menu: the cover with its rank, the title, the line; an unranked row's *Rank it*. */
@@ -57,9 +59,9 @@ function Body({ r, rank }: { r: TopRow; rank?: (opener: HTMLElement) => void }) 
           <Link href={bookHref(r.bookId)} scroll={false} prefetch={false} className="qtitle-link">{r.title}</Link>
           {r.listened && <> <Headphones label="Listened" /></>}
         </span>
-        {(r.sub || r.month) && (
+        {(r.place.length > 0 || r.month) && (
           <span className="qmeta">
-            {r.sub && <span className="qplace">{r.sub}</span>}
+            {r.place.length > 0 && <span className="qplace"><BookPlace parts={r.place} /></span>}
             {r.month && <span className="mono qwords">{r.month}</span>}
           </span>
         )}

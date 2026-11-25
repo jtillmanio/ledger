@@ -87,10 +87,20 @@ const stored = () => db(async (sql) =>
     .map((r) => `${r.book_id}:${r.year_rank ?? "-"}`));
 const START = [...RANKED.map((id, i) => `${id}:${i + 1}`), ...UNRANKED.map((id) => `${id}:-`)];
 
+// Task 5.9b, 2 of 3 (TASK-141): the first ranked book is in a series, by an author, in a universe; the second is by
+// the same author alone.
+const PL = { au: "e2e-top-pl-au", un: "e2e-top-pl-un", se: "e2e-top-pl-se" };
+
 test.beforeAll(async () => {
   await db(async (sql) => {
     await sql`INSERT INTO books (id, title) SELECT id, 'Top ' || substr(id, 9) FROM unnest(${ALL}::text[]) id
               ON CONFLICT (id) DO NOTHING`;
+    await sql`INSERT INTO authors (id, name) VALUES (${PL.au}, 'Top Author') ON CONFLICT (id) DO NOTHING`;
+    await sql`INSERT INTO book_universes (id, name) VALUES (${PL.un}, 'Top World') ON CONFLICT (id) DO NOTHING`;
+    await sql`INSERT INTO book_series (id, name, author_id) VALUES (${PL.se}, 'Top Cycle', ${PL.au}) ON CONFLICT (id) DO NOTHING`;
+    await sql`UPDATE books SET author_id = ${PL.au}, series_id = ${PL.se}, series_position = 3, universe_id = ${PL.un}
+              WHERE id = ${RANKED[0]}`;
+    await sql`UPDATE books SET author_id = ${PL.au} WHERE id = ${RANKED[1]}`;
     await sql`INSERT INTO book_status (user_id, book_id, status) SELECT ${E2E_USER}, id, 'read' FROM unnest(${ALL}::text[]) id
               ON CONFLICT (user_id, book_id) DO NOTHING`;
   });
@@ -103,6 +113,9 @@ test.afterAll(async () => {
     await sql`DELETE FROM read_events WHERE user_id = ${E2E_USER} AND book_id = ANY(${ALL})`;
     await sql`DELETE FROM book_status WHERE user_id = ${E2E_USER} AND book_id = ANY(${ALL})`;
     await sql`DELETE FROM books WHERE id = ANY(${ALL})`;
+    await sql`DELETE FROM book_series WHERE id = ${PL.se}`;
+    await sql`DELETE FROM book_universes WHERE id = ${PL.un}`;
+    await sql`DELETE FROM authors WHERE id = ${PL.au}`;
   });
 });
 
@@ -580,4 +593,41 @@ test("the title links meet the UX floor at 360 and 1280: a --brand focus ring, 2
     await page.goBack();
     await expect(dialogs(page)).toHaveCount(0);
   }
+});
+
+// --- Task 5.9b, 2 of 3 (TASK-141; F-38, D-134): a row's place line links its names ---------------------------------
+
+const place = (page: Page, id: string) => rows(page).filter({ hasText: titleOf(id) }).locator(".qplace");
+const linksOf = (line: Locator) => line.getByRole("link").evaluateAll((as) => as.map((a) => [a.textContent, a.getAttribute("href")]));
+
+test("5.9b AC-1, AC-2, AC-4: a row links its author, universe and series; a book with no series draws no series link", FLOOR, async ({ page }, info) => {
+  await open(page);
+  await expect(place(page, RANKED[0])).toHaveText("Top Author · Top World · Top Cycle #3");
+  expect(await linksOf(place(page, RANKED[0]))).toEqual([
+    ["Top Author", `/books/authors/${PL.au}`], ["Top World", `/books/universes/${PL.un}`], ["Top Cycle", `/books/series/${PL.se}`],
+  ]);
+  // The series link is named by the series alone: the #3 is outside it.
+  await expect(place(page, RANKED[0]).getByRole("link", { name: "Top Cycle", exact: true })).toBeVisible();
+  await expect(place(page, RANKED[1])).toHaveText("Top Author");
+  expect(await linksOf(place(page, RANKED[1]))).toEqual([["Top Author", `/books/authors/${PL.au}`]]);
+  // The row's own links are still the title and the handle, and no place link is inside either.
+  await expect(rows(page).first().locator("a a, button a")).toHaveCount(0);
+  for (const link of await place(page, RANKED[0]).getByRole("link").all()) {
+    expect((await link.boundingBox())!.height, "each place link is 24px or more").toBeGreaterThanOrEqual(24);
+  }
+  await floor(page);
+  await screenshot(page, info, "5.9b-top-books-links");
+});
+
+test("5.9b AC-3: a press on a place link opens its page and starts no drag: the ranking is as it was", ONCE, async ({ page }) => {
+  await open(page);
+  const link = place(page, RANKED[0]).getByRole("link", { name: "Top Cycle", exact: true });
+  await hydrated(rows(page).first().getByRole("button", { name: /^Reorder / }));
+  await link.click();
+  await expect(page).toHaveURL(new RegExp(`/books/series/${PL.se}$`));
+  expect(await stored()).toEqual(START);
+  await page.goBack();
+  await expect(titles(page)).toHaveText([...RANKED, ...UNRANKED].map(titleOf));
+  await expect(page.locator(".toast")).toHaveCount(0);
+  expect(await stored()).toEqual(START);
 });

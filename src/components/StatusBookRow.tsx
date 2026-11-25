@@ -1,6 +1,7 @@
 import Link from "next/link";
+import BookPlace from "@/components/BookPlace";
 import { Headphones } from "@/components/nav/Icons";
-import { bookSub, listenGlyph, wordsK } from "@/lib/format";
+import { bookSub, listenGlyph, subParts, wordsK } from "@/lib/format";
 
 /**
  * A book on a status tab that has no handle (task 1.9): In flight, a bare-year
@@ -13,7 +14,8 @@ import { bookSub, listenGlyph, wordsK } from "@/lib/format";
  * row's end, in the same `.row-verbs` the queue rows use. `control` (task 1.17b) is the
  * book's status control, under the sub-line; the page fills it for the rows that carry one.
  * `reason` (task 5.5) is a *Stopped* row's: why the book was stopped, grey under the title;
- * with none, no line is drawn.
+ * with none, no line is drawn. With the ids of its author, series and universe (task 5.9b, TASK-141),
+ * the sub-line's names are links to their pages (`BookPlace`).
  */
 /** A book's own route (task 3.5): its sheet from a list, its page on a direct load. */
 export const bookHref = (id: string) => `/book/${encodeURIComponent(id)}`;
@@ -23,6 +25,7 @@ export default function StatusBookRow({ book, meta, dates = null, reason = null,
     /** Links the title to the book's sheet (task 3.5). */
     id?: string;
     title: string; author: string | null; series: string | null; series_position: number | null; universe: string | null;
+    author_id?: string | null; series_id?: string | null; universe_id?: string | null;
     word_count: number | null;
     status?: string; listened?: boolean;
   };
@@ -50,7 +53,7 @@ export default function StatusBookRow({ book, meta, dates = null, reason = null,
         {shown && <span className="row-meta mono">{shown}</span>}
       </span>
       {reason && <span className="row-reason">{reason}</span>}
-      {bookSub(book) && <span className="row-sub">{bookSub(book)}</span>}
+      {bookSub(book) && <span className="row-sub"><BookPlace parts={subParts(book)} /></span>}
       {dates && <span className="row-dates">{dates}</span>}
       {control && <div className="row-control">{control}</div>}
     </>

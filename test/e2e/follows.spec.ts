@@ -511,3 +511,54 @@ test.describe("a finish from Reading follows (2.2h)", () => {
     }
   });
 });
+
+// --- Task 5.9b, 2 of 3 (TASK-141; F-38, D-134): the follow sheet's rows link what they name -------------------------
+
+const LINKED = [
+  [SERIES.name, `/books/series/${SERIES.id}`], [AUTHOR.name, `/books/authors/${AUTHOR.id}`], [UNIVERSE.name, `/books/universes/${UNIVERSE.id}`],
+];
+
+test("5.9b AC-1, AC-2, AC-4: the series, author and universe names are links to their pages, the subseries and the shelf stay text, each link 24px", FLOOR, async ({ page }, info) => {
+  await openLibrary(page);
+  const { sheet } = await openFollow(page);
+  expect(await sheet.locator(".follow-name a").evaluateAll((as) => as.map((a) => [a.textContent, a.getAttribute("href")]))).toEqual(LINKED);
+  // A series link is named by the series alone.
+  await expect(sheet.getByRole("link", { name: SERIES.name, exact: true })).toBeVisible();
+  // A subseries and a shelf have no page: their names are text.
+  await expect(sheet.locator(".follow-head", { hasText: SUBSERIES.name }).locator("a")).toHaveCount(0);
+  await expect(sheet.locator(".follow-head", { hasText: SHELF.name }).locator("a")).toHaveCount(0);
+  for (const link of await sheet.locator(".follow-name a").all()) {
+    expect((await link.boundingBox())!.height, "a place link in a sheet").toBeGreaterThanOrEqual(24);
+  }
+  await expectNoHorizontalScroll(page);
+  await expectNoAxeViolations(page, AXE);
+  expect(await contrastFailures(page)).toEqual([]);
+  await screenshot(page, info, "5.9b-follow-sheet-links");
+});
+
+test("5.9b AC-3: a name in the follow sheet opens its page and changes no follow", AT_360, async ({ page }) => {
+  await openLibrary(page);
+  const { sheet } = await openFollow(page);
+  const before = await follows();
+  await sheet.getByRole("link", { name: AUTHOR.name, exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/books/authors/${AUTHOR.id}$`));
+  expect(await follows()).toEqual(before);
+});
+
+test.describe("the sheet a finish's toast opens (5.9b)", () => {
+  test.beforeEach(() => setStatus(TWO.id, "reading"));
+
+  test("5.9b: a name in it opens its page and the sheet, which lives above every page, closes with the navigation", AT_360, async ({ page }) => {
+    await openLibrary(page);
+    await finishInLibrary(page);
+    await hydrated(more(page));
+    await more(page).click();
+    await expect(finishSheet(page)).toBeVisible();
+    await finishSheet(page).getByRole("link", { name: SERIES.name, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/books/series/${SERIES.id}$`));
+    await expect(finishSheet(page)).toHaveCount(0);
+    // Nothing is left inert behind it: the page takes a click.
+    await expect(page.locator("[inert]")).toHaveCount(0);
+    expect(await follows()).toMatchObject({ series: "reading", author: "reading" });
+  });
+});
