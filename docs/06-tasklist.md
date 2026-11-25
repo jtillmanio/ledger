@@ -354,7 +354,7 @@ with the task that first reads it.
 |  | 0.14d | A plan-only run is never main's baseline | S | _From TASK-113 (PR #317); Phase 0's, listed here beside 0.14b; not a cutover gate_ | 0.14b |
 | ✅ | 0.14c → TASK-114 | Every page is measured | M | _Owner, 2026-11-17; Phase 0's, listed here beside 0.13; pulled ahead of 1.26 with 0.13, which builds on it (D-172); budgets from a hand run while the switch is off (owner, 2026-11-23)_ | 0.14b |
 |  | 0.14e → TASK-138 | Series, author and universe pages are measured | S | _From TASK-114 (PR #319); Phase 0's, listed here beside 0.14c; not a cutover gate; budgets from a measured run, automatic or by hand_ | 0.14c |
-|  | 0.14f | The books screens that wait a second are timed and explained | S | _Owner intake, 2026-11-24; Phase 0's, listed here beside 0.14e; not a cutover gate; Check proposed_ | 0.14c |
+|  | 0.14f → TASK-150 | The books screens that wait a second are timed and explained | S | _Owner intake, 2026-11-24; Phase 0's, listed here beside 0.14e; not a cutover gate; Check proposed_ | 0.14c |
 | ✅ | 0.15 → TASK-134, TASK-135, TASK-136 | The browser suite runs by area, with a critical set always | L | _Owner, 2026-11-20 (PR #308; amends D-80, D-141, D-161); Phase 0's, listed here beside 0.13; not a cutover gate_ | — |
 |  | 0.16 | An area run takes the shards its plan needs | S | _From TASK-136 (PR #329; D-174); Phase 0's, listed here beside 0.15; not a cutover gate; Check proposed_ | 0.15 |
 |  | 1.31 → TASK-115 | Settle the Owner checklist before the books cutover | S | _Owner, 2026-11-14 (from TASK-084, PR #255); Check proposed_ | — |
@@ -374,7 +374,7 @@ with the task that first reads it.
 |---|---|---|---|---|---|
 | ✅ | 2.0 → TASK-045 | Settings | S |  | — |
 | ✅ | 2.0b → TASK-053 | Type a setting, and hold to step | S |  | 2.0 |
-|  | 2.0c | A pace change reaches the plan without a reload | S | _Owner intake, 2026-11-24; Check proposed_ | 2.0, 2.10 |
+|  | 2.0c → TASK-153 | A pace change reaches the plan without a reload | S | _Owner intake, 2026-11-24; Check proposed_ | 2.0, 2.10 |
 | ✅ | 2.1 → TASK-046 | Capacity view | M |  | 1.7, 2.0 |
 |  | 2.1b | Reading sessions — after-the-fact entry | S |  | 2.0 |
 | ✅ | 2.2 → TASK-049 | Books dashboard | M |  | 1.7, 1.8, 2.1 |
@@ -405,7 +405,7 @@ with the task that first reads it.
 | ✅ | 2.8 → TASK-068 | Place the unquartered | M | _Pulled ahead of 1.26 (D-139)_ | — |
 | ✅ | 2.10 → TASK-069, TASK-070 | Plan page as the full-size rail | M | _Pulled ahead of 1.26 (D-139)_ | 1.7, 2.1, 2.2 |
 | ✅ | 2.10b → TASK-071, TASK-072 | Plan a year or a quarter, with suggestions | M | _Pulled ahead of 1.26 (D-139)_ | 2.3, 2.10, 1.15, 1.21, 2.2c, 2.2d |
-|  | 2.10c | Suggestions keep series order, and the sheet can search | M | _Owner intake, 2026-11-24; Check proposed_ | 2.10b, 1.22 |
+|  | 2.10c → TASK-154, TASK-155 | Suggestions keep series order, and the sheet can search | M | _Owner intake, 2026-11-24; Check proposed_ | 2.10b, 1.22 |
 
 ## M12: The comics dashboard and the telescope — Next
 
@@ -492,13 +492,13 @@ with the task that first reads it.
 |---|---|---|---|---|---|
 | ✅ | 4.4 → TASK-081, TASK-082, TASK-083 | Sync with Calibre, both ways: one command, by hand or weekly | M | _Pulled ahead of 1.26 (D-133)_ | 1.18, 1.21, 1.14c, 5.17 |
 | ✅ | 4.4b → TASK-128 | A year-only Calibre date isn't rewritten every sync | S | _From TASK-082, TASK-083 (PR #267, PR #270), 2026-11-23; pulled ahead of 1.26 (D-172): before the owner turns `CALIBRE_SYNC_READS` on; Check proposed_ | 4.4 |
-|  | 4.4c | A listen's date in Calibre, and a date changed on either side | M | _Owner intake, 2026-11-24 (D-184); takes Calibre's dates only once `CALIBRE_SYNC_READS` is on; Check proposed_ | 4.4b, 1.17b |
+|  | 4.4c → TASK-157, TASK-158 | A listen's date in Calibre, and a date changed on either side | M | _Owner intake, 2026-11-24 (D-184); takes Calibre's dates only once `CALIBRE_SYNC_READS` is on; Check proposed_ | 4.4b, 1.17b |
 | ✅ | 4.6 → TASK-129 | Decide a waiting Calibre near spelling on the Calibre page | S | _From TASK-083 (PR #270); pulled ahead of 1.26 (D-172); Check proposed_ | 4.4 |
 |  | 4.6b → TASK-139 | Flag a book the sync created under a new author | S | _From TASK-129 (PR #326); Check proposed_ | 4.6 |
 |  | 4.1 | Metron backfill | M |  | — |
 | ✅ | 4.2 → TASK-084 | Open Library and Hardcover backfill | M | _Pulled ahead of 1.26 (D-139)_ | — |
 | ✅ | 4.3 → TASK-085, TASK-086, TASK-087 | Covers in the UI | S |  | — |
-|  | 4.3b | Covers load small, behind their placeholder | S | _Owner intake, 2026-11-24; Check proposed_ | 4.3 |
+|  | 4.3b → TASK-156 | Covers load small, behind their placeholder | S | _Owner intake, 2026-11-24; Check proposed_ | 4.3 |
 | ✅ | 4.5 → TASK-088, TASK-089 | Calibre's genres on every screen | M | _Pulled ahead of 1.26 (D-139)_ | 1.18c |
 | ✅ | 4.5b → TASK-090 | On deck by genre | S | _Pulled ahead of 1.26 (D-139)_ | 4.5, 1.9 |
 
@@ -516,19 +516,19 @@ with the task that first reads it.
 | ✅ | 5.1b → TASK-124 | Take a book off a shelf | M | _Owner, 2026-11-18 (for TASK-119, 3.5b's Shelves Edit); Check proposed_ | 5.1 |
 | ✅ | 5.5 → TASK-098 | DNF with a reason field | S | _Pulled ahead of 1.26 (D-139); builds the closing card 5.4 reuses_ | — |
 | ✅ | 5.7 → TASK-099, TASK-100 | Books coming out | M |  | 1.4c, 1.8 |
-|  | 5.7b | Coming out lets a book go: Remove, and Calibre having it | S | _Owner intake, 2026-11-24 (D-185); Check proposed_ | 5.7, 4.4 |
+|  | 5.7b → TASK-159, TASK-160 | Coming out lets a book go: Remove, and Calibre having it | S | _Owner intake, 2026-11-24 (D-185); Check proposed_ | 5.7, 4.4 |
 | ✅ | 5.9 → TASK-101, TASK-102, TASK-125 | Series page from `series_progress` | M |  | — |
 |  | 5.9b → TASK-140, TASK-141, TASK-142 | Every other place line links its names | M | _From TASK-125 (PR #330); Check proposed_ | 5.9, 5.11 |
-|  | 5.9c | The Series list opens on what you've started | S | _Owner intake, 2026-11-24; Check proposed_ | 5.9 |
+|  | 5.9c → TASK-161 | The Series list opens on what you've started | S | _Owner intake, 2026-11-24; Check proposed_ | 5.9 |
 | ✅ | 5.11 → TASK-103 | Author and universe pages, and the follow control | M |  | 1.15, 5.9 |
-|  | 5.11b | Universes: every universe in one list | S | _Owner intake, 2026-11-24; Check proposed_ | 5.11, 5.9c |
+|  | 5.11b → TASK-162 | Universes: every universe in one list | S | _Owner intake, 2026-11-24; Check proposed_ | 5.11, 5.9c |
 | ✅ | 5.12 → TASK-104, TASK-105 | In the middle of, and completed: one page for every medium | M |  | 1.9, 1.15, 2.2c, 2.2d |
 | ✅ | 5.14 → TASK-106, TASK-107 | Audiobooks: a queue to listen next | M | _Pulled ahead of 1.26 (D-139)_ | 1.23, 1.9 |
 | ✅ | 5.15 → TASK-108, TASK-109, TASK-110, TASK-127, TASK-111 | Parked: put a book away, and review it on a schedule | M | _Pulled ahead of 1.26 (D-139)_ | 1.9, 1.17, 1.21, 2.2, 2.3 |
 | ✅ | 5.17 → TASK-092, TASK-093, TASK-094 | What you own: physical copies and audiobooks | M | _Pulled ahead of 1.26 (D-132)_ | 2.2e, 1.4, 1.21 |
 | ✅ | 5.17b → TASK-122, TASK-123 | Own it from Search and By hand | S | _From TASK-094 (PR #268)_ | 5.17 |
 | ✅ | 5.18 → TASK-130 | A Parked book stays out of the plan and the listen queue, through every undo | S | _From TASK-127 and TASK-111 (PR #304, PR #311); pulled ahead of 1.26 (D-172); Check proposed_ | 5.15 |
-|  | 1.17c | Log a past read of a book already read | S | _Owner intake, 2026-11-24; Phase 1's, listed here with the book surfaces; not a cutover gate; Check proposed_ | 1.17b |
+|  | 1.17c → TASK-151, TASK-152 | Log a past read of a book already read | S | _Owner intake, 2026-11-24; Phase 1's, listed here with the book surfaces; not a cutover gate; Check proposed_ | 1.17b |
 
 ## M18: Comic surfaces — Later
 
@@ -603,8 +603,8 @@ with the task that first reads it.
 |  | 6.22 | A row's `⋯` menu stays on screen | S | _From TASK-093 (PR #266); placed in M21 by the 2026-11-23 coverage recount; Check proposed_ | — |
 |  | 6.24 → TASK-143, TASK-144, TASK-145, TASK-146 | Built screens follow the mediums review | M | _From TASK-126 (6.23, D-177); placed in M21 by the 2026-11-24 coverage recount; Check proposed_ | 6.23 |
 |  | 6.25 → TASK-147, TASK-148, TASK-149 | Navigation for four and five media | M | _From TASK-126 (6.23, D-178); before 9.0; placed in M21 by the 2026-11-24 coverage recount; Check proposed_ | 6.23 |
-|  | 6.26 | The Library's genre row scrolls smoothly, with arrows you can hold | S | _Owner intake, 2026-11-24; after TASK-145 (6.24), which redraws the phone's filters; Check proposed_ | 4.5 |
-|  | 6.27 | Plainer words on every built screen | M | _Owner intake, 2026-11-24; before 6.9, which passes over the finished screens; Check proposed_ | — |
+|  | 6.26 → TASK-163 | The Library's genre row scrolls smoothly, with arrows you can hold | S | _Owner intake, 2026-11-24; after TASK-145 (6.24), which redraws the phone's filters; Check proposed_ | 4.5 |
+|  | 6.27 → TASK-164, TASK-165, TASK-166 | Plainer words on every built screen | M | _Owner intake, 2026-11-24; before 6.9, which passes over the finished screens; Check proposed_ | — |
 |  | 6.9 | Revisit the theme | M |  | — |
 
 ## M22: AI-assisted curation — Later
