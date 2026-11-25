@@ -1,7 +1,7 @@
 ---
 id: TASK-144
 title: 6.24 Built screens follow the mediums review (2 of 4) — grey Remove from Listen next, steppers on --sunk
-status: In progress
+status: Review
 depends_on: []
 size: S
 model: sonnet
@@ -29,7 +29,7 @@ planned_at_commit: 64dd15c
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves *Remove from Listen next resolves to no --danger colour* and *the batch and finish sheets' stepper buttons resolve to --sunk*, and redraws `status` and `batch`. TASK-143, TASK-145 and TASK-146 prove the rest):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves *Remove from Listen next resolves to no --danger colour* and *the batch and finish sheets' stepper buttons resolve to --sunk*, and redraws `status` and `batch`. TASK-143, TASK-145 and TASK-146 prove the rest):
 browser test at 360px, light and dark: *Remove from Listen next* resolves to
 no `--danger` colour; finishing a book in a series shows one *Now reading*
 chip and *+N · Follow…*, and *Keep going?* is in the *Follow…* sheet; the
@@ -38,10 +38,10 @@ shows *Owned* and *Sort* as dropdown chips in one row and the genre row, and
 nothing scrolls sideways; `design/mockups.html`'s `blist`, `status`,
 `finishoffer`, `batch` and `settings` frames are redrawn from the review and
 it gains the six 834px frames.
-- [ ] AC-2: Given the Listen next row menu open, *Remove from Listen next*'s text and icon resolve to the same computed colours as *Remove from shelf*'s in both themes, and its undo still puts the book back where it was.
-- [ ] AC-3: The batch sheet's and the finish sheet's − and + buttons and number resolve to the same background as Settings' stepper (`--sunk`) in both themes, and their text keeps 4.5:1 on it.
-- [ ] AC-4: These controls meet the UX floor (`docs/04-design.md` § 10. The UX floor): contrast in both themes, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
-- [ ] AC-5: `design/mockups.html` §§ `status` (*Listen next*) and `batch` and the finish sheet are redrawn from E8 and E11, and their `design/mockups-index.md` rows say so.
+- [x] AC-2: Given the Listen next row menu open, *Remove from Listen next*'s text and icon resolve to the same computed colours as *Remove from shelf*'s in both themes, and its undo still puts the book back where it was.
+- [x] AC-3: The batch sheet's and the finish sheet's − and + buttons and number resolve to the same background as Settings' stepper (`--sunk`) in both themes, and their text keeps 4.5:1 on it.
+- [x] AC-4: These controls meet the UX floor (`docs/04-design.md` § 10. The UX floor): contrast in both themes, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-5: `design/mockups.html` §§ `status` (*Listen next*) and `batch` and the finish sheet are redrawn from E8 and E11, and their `design/mockups-index.md` rows say so.
 
 ## Out of scope
 
@@ -65,6 +65,10 @@ it gains the six 834px frames.
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- The batch and finish sheets' steppers still lack Settings' typed number and held buttons (MR-D18's first half, this task's Out of scope; nothing tracked it) → docs/05-roadmap.md § 6.24b (new; Check proposed), docs/06-tasklist.md § M21
+- `thisorthat`'s toast frame redrawn here as one *Now reading* chip and *+3 · Follow…*, so its note and frame agree (D-183); its 834px frame stays TASK-146's → not tracked: done in this PR (plan revision, the note's own frame)
+- The finish sheet's *Year only* radio overlays its label, so a plain click on the label text is intercepted (seen by ui-verifier; not caused by this task) → docs/05-roadmap.md § 6.24b (a sentence in its body; Check unchanged)
 
 ## Plan
 
@@ -109,7 +113,10 @@ Approved by the owner 2026-11-25. Worktree `.claude/worktrees/task-144`, branch 
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 FAIL (1: `e2e-shards.test.ts`, the new spec untimed tipped the 8-shard plan to 1.036) → fixed (shard-times estimates) | Verify R2 PASS | e2e `w390-light`, both specs 15/15 PASS | CI R1 PASS (`3de0491`)
+- Audit R1 PASS (stepper-surface, grey-Remove and control-states tests fail on the pre-task code; the two floor tests pass on both, as a no-new-violations floor does)
+- Spec R1 APPROVE (note: `thisorthat`'s toast frame still drew two chips → redrawn `dfefffb`) | UI R1 PASS (360 light and dark, glances at 390–1280, no console errors)
+- Plan revisions: thisorthat's toast frame; `shard-times.json` (not in Files likely touched)
 
 ## Blocked
 
@@ -117,7 +124,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1 (spec, UI), 1 test audit
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (two small additions noted in the Review log: the thisorthat frame, shard-times)
