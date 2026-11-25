@@ -7,7 +7,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
-import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, screenshot } from "./helpers";
+import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
 
 // A check with no layout in it: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
@@ -102,6 +102,47 @@ test("the genre chips are named links in one row that scrolls sideways, never th
   await expectNoAxeViolations(page, AXE);
   expect(await contrastFailures(page)).toEqual([]);
   await screenshot(page, info, "library-genres");
+});
+
+// Task 6.24 (TASK-145, MR-D20, frame E7, AC-1, AC-2): Owned and Sort are two dropdown chips on one row, above the
+// genre row, each naming its choice; nothing scrolls sideways. Sets its own viewports and themes: runs once.
+test("the Owned and Sort dropdown chips share one row above the genre row at every width, light and dark, and nothing scrolls sideways (AC-1, AC-2, AC-5)", ONCE, async ({ page }, info) => {
+  const owned = page.getByRole("button", { name: /^Owned: / });
+  const sort = page.getByRole("button", { name: /^Sort: / });
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    for (const [width, height] of [[360, 780], [390, 844], [412, 915], [768, 1024], [1024, 768], [1280, 800]]) {
+      await page.setViewportSize({ width, height });
+      await open(page, "/books/list?genre=E2E%20Gen%20Alpha");
+      const label = `${width}px ${colorScheme}`;
+      await expect(owned).toHaveText("Owned: Any");
+      await expect(sort).toHaveText("Sort: Series");
+      // One row: the chips' boxes share a top edge, and the genre row is below it.
+      const [o, s, g] = await Promise.all([owned.boundingBox(), sort.boundingBox(), genres(page).boundingBox()]);
+      expect(o!.y, `chip tops at ${label}`).toBe(s!.y);
+      expect(g!.y, `genre row under the chips at ${label}`).toBeGreaterThanOrEqual(o!.y + o!.height);
+      // The chips are in the "More filters" group, which comes before the genres in the page.
+      const order = await page.locator("main > .filters:not([role=search])").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")));
+      expect(order.slice(-2)).toEqual(["More filters", "Genre"]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth), `scrollWidth at ${label}`).toBe(width);
+      await expectNoHorizontalScroll(page);
+      expect(await contrastFailures(page), label).toEqual([]);
+      await screenshot(page, info, `library-dropdowns-${width}-${colorScheme}`);
+
+      // Each opens within the screen, and the page still doesn't scroll sideways.
+      for (const [chip, group] of [[owned, "Owned"], [sort, "Sort"]] as const) {
+        await hydrated(chip);
+        await chip.click();
+        const box = (await page.getByRole("group", { name: group, exact: true }).boundingBox())!;
+        expect(box.x, `${group} list at ${label}`).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width, `${group} list at ${label}`).toBeLessThanOrEqual(width);
+        await expectNoHorizontalScroll(page);
+        expect(await contrastFailures(page), `${group} open at ${label}`).toEqual([]);
+        await screenshot(page, info, `library-dropdowns-${group.toLowerCase()}-${width}-${colorScheme}`);
+        await page.keyboard.press("Escape");
+      }
+    }
+  }
 });
 
 // Sets its own viewports and themes: runs once, in w390-light.

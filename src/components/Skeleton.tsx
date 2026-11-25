@@ -13,6 +13,7 @@
  * measured against test/e2e/fixtures/*.html; the task that builds each one
  * re-measures its skeleton.
  */
+import { Fragment } from "react";
 import RailLegend from "@/components/RailLegend";
 
 /** The page a `loading.tsx` paints: busy, and one "Loading" for a screen reader. */
@@ -31,23 +32,30 @@ export function Bar({ w, className = "" }: { w: string; className?: string }) {
 
 /** A list screen: title, count line, its filter chip groups, then rows of title
  * + sub-line. `filters` is how many lines of chips each group wraps to, so the
- * rows start where the loaded rows will. `sort` ends the first group with the
- * Library's Sort control. */
-export function ListSkeleton({ rows = 8, filters = [1], search = false, sort = false, book = false }:
-  { rows?: number; filters?: number[]; search?: boolean; sort?: boolean; book?: boolean }) {
+ * rows start where the loaded rows will. `dropdowns` draws the Library's row of
+ * two dropdown chips (*Owned*, *Sort*, task 6.24) after the first group. */
+export function ListSkeleton({ rows = 8, filters = [1], search = false, dropdowns = false, book = false }:
+  { rows?: number; filters?: number[]; search?: boolean; dropdowns?: boolean; book?: boolean }) {
   return (
     <LoadingMain>
       <Bar w="9rem" className="sk-h1" />
       <Bar w="7rem" className="sk-line" />
       {search && <span className="sk sk-input" />}
       {filters.map((lines, g) => (
-        <div key={g} className="filters" aria-hidden="true">
-          {Array.from({ length: lines * 3 }, (_, n) => (
-            <Bar key={n} w={`${5.5 + ((n * 7 + g) % 4) * 0.5}rem`} className="sk-chip" />
-          ))}
-          {/* The Library's Sort, which ends its first group (task 2.2e): the same wrapper, so it wraps where the control does. */}
-          {sort && g === 0 && <span className="sort"><Bar w="12.5rem" className="sk-sort" /></span>}
-        </div>
+        <Fragment key={g}>
+          <div className="filters" aria-hidden="true">
+            {Array.from({ length: lines * 3 }, (_, n) => (
+              <Bar key={n} w={`${5.5 + ((n * 7 + g) % 4) * 0.5}rem`} className="sk-chip" />
+            ))}
+          </div>
+          {/* The Library's Owned and Sort chips, a row of their own under the status chips (task 6.24, MR-D20). */}
+          {dropdowns && g === 0 && (
+            <div className="filters" aria-hidden="true">
+              <Bar w="6.5rem" className="sk-chip sk-dd" />
+              <Bar w="7.5rem" className="sk-chip sk-dd" />
+            </div>
+          )}
+        </Fragment>
       ))}
       {book ? <BookRowsSkeleton rows={rows} /> : <RunRowsSkeleton rows={rows} />}
     </LoadingMain>

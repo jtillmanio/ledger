@@ -50,12 +50,12 @@ export const otherDir = (dir: Dir): Dir => (dir === "asc" ? "desc" : "asc");
 /** The sort's name for a direction: *Longest first*. */
 export const dirWords = (sort: Sort, dir: Dir) => SORT_INFO[sort].words[dir];
 
+/** "Shortest first" reads mid-sentence in lower case; "A–Z" keeps its capitals. */
+const midSentence = (words: string) => (/^[A-Z][a-z]/.test(words) ? words.charAt(0).toLowerCase() + words.slice(1) : words);
+
 /** The reverse link's name: it says which way the list runs now and where it would go. */
 export function reverseName(sort: Sort, dir: Dir): string {
-  const to = dirWords(sort, otherDir(dir));
-  // "Shortest first" reads mid-sentence in lower case; "A–Z" keeps its capitals.
-  const mid = /^[A-Z][a-z]/.test(to) ? to.charAt(0).toLowerCase() + to.slice(1) : to;
-  return `${dirWords(sort, dir)}; reverse to ${mid}`;
+  return `${dirWords(sort, dir)}; reverse to ${midSentence(dirWords(sort, otherDir(dir)))}`;
 }
 
 export type LibraryParams = {
@@ -93,3 +93,44 @@ export function genreChipHref(current: Pick<LibraryParams, "status" | "level" | 
   const { status, level, owned, sort, dir } = current;
   return libraryHref({ status, level, genre, owned, sort, dir });
 }
+
+/** One line in a dropdown chip's list (task 6.24, MR-D20): a link into the Library, and whether it is the choice made. */
+export type Choice = { label: string; href: string; current: boolean; divider?: boolean };
+
+/** The *Owned* values (task 5.17, D-132) with their words; `undefined` is no filter, *Any*. */
+const OWNED_WORDS: [string | undefined, string][] = [
+  [undefined, "Any"], ["physical", "Physical"], ["audio", "Audiobook"], ["ebook", "Ebook"], ["none", "Not owned"],
+];
+
+/**
+ * The *Owned* dropdown's choices: every other filter, the search and the order ride along, as on every chip.
+ * Built where the list is drawn, in the browser, so they are not in the page's HTML or its payload until the
+ * dropdown opens (the route's byte budget, D-175). A value the page doesn't know is no filter: *Any*.
+ */
+export function ownedChoices(params: LibraryParams): Choice[] {
+  const now = OWNED_WORDS.some(([o]) => o === params.owned) ? params.owned : undefined;
+  return OWNED_WORDS.map(([o, label]) => ({ label, href: libraryHref({ ...params, owned: o }), current: o === now }));
+}
+
+/** The *Owned* chip's text: *Owned: Any*, *Owned: Not owned*. */
+export const ownedChipText = (owned?: string) => `Owned: ${OWNED_WORDS.find(([o]) => o === owned)?.[1] ?? "Any"}`;
+
+/**
+ * The *Sort* dropdown's choices: the seven sorts, each opening in its own direction, then the two directions of the
+ * sort now chosen (the old reverse link's two ends: the chip row has no room for a third chip).
+ */
+export function sortChoices(params: LibraryParams, sort: Sort, dir: Dir): Choice[] {
+  const sorts = SORTS.map((s) => ({
+    label: SORT_INFO[s].name, href: libraryHref({ ...params, sort: s, dir: SORT_INFO[s].dir }), current: s === sort,
+  }));
+  const dirs = ([SORT_INFO[sort].dir, otherDir(SORT_INFO[sort].dir)] as Dir[]).map((d, n) => ({
+    label: dirWords(sort, d), href: libraryHref({ ...params, sort, dir: d }), current: d === dir, ...(n === 0 && { divider: true }),
+  }));
+  return [...sorts, ...dirs];
+}
+
+/** The *Sort* chip's text: *Sort: Length*. */
+export const sortChipText = (sort: Sort) => `Sort: ${SORT_INFO[sort].name}`;
+
+/** The *Sort* chip's name for assistive tech: its text and the way the list runs, *Sort: Length, longest first*. */
+export const sortChipName = (sort: Sort, dir: Dir) => `${sortChipText(sort)}, ${midSentence(dirWords(sort, dir))}`;

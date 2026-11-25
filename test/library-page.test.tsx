@@ -7,7 +7,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { UndoProvider } from "../src/components/Undo";
-import { genreChipHref, libraryHref, parseSort, reverseName } from "../src/lib/library-sort";
+import {
+  genreChipHref, libraryHref, ownedChipText, ownedChoices, parseSort, reverseName, sortChipName, sortChoices,
+} from "../src/lib/library-sort";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("@/lib/auth", () => ({ requireUserId: async () => "test-user" }));
@@ -58,12 +60,11 @@ describe("the Library page (AC-3, AC-4)", () => {
 
   it("keeps sort and dir on every chip, whichever filter is chosen", async () => {
     const { doc } = await render({ status: "to_read", level: "quarter", q: "the", sort: "length", dir: "asc" });
-    // The reverse link is the one that changes the direction: it is checked on its own below.
-    const chips = [...doc.querySelectorAll<HTMLAnchorElement>("a.chip")].filter((a) => !a.closest(".sort"))
+    const chips = [...doc.querySelectorAll<HTMLAnchorElement>("a.chip")]
       .map((a) => a.getAttribute("href")!).filter((h) => h.startsWith("/books/list"));
-    // Everything, Reading, To read, Read, Unlisted, Parked (task 5.15), the five levels, the four Owned chips
-    // (task 5.17) and three genres: no year chip (task 3.4b, D-122).
-    expect(chips).toHaveLength(18);
+    // Everything, Reading, To read, Read, Unlisted, Parked (task 5.15), the five levels and three genres: no
+    // year chip (task 3.4b, D-122), and no Owned or reverse link: those are the dropdown chips' (task 6.24).
+    expect(chips).toHaveLength(14);
     for (const href of chips) {
       const p = new URL(href, "http://x").searchParams;
       expect(p.get("sort"), href).toBe("length");
@@ -77,23 +78,40 @@ describe("the Library page (AC-3, AC-4)", () => {
     const { doc } = await render({ status: "read" });
     const links = hrefs(doc);
     expect(links.filter((h) => h.includes("sort="))).toEqual([]);
-    // Only the reverse link has a dir: Series A–Z reversed is Z–A.
-    expect(links.filter((h) => h.includes("dir="))).toEqual(["/books/list?status=read&dir=desc"]);
+    // The directions are the Sort dropdown's, drawn when it opens (sortChoices): no link here has a dir.
+    expect(links.filter((h) => h.includes("dir="))).toEqual([]);
     expect(links).toContain("/books/list");
     expect(links).toContain("/books/list?status=to_read");
   });
 
-  it("draws a real select named Sort and a reverse link that says which way it runs", async () => {
+  // Task 6.24 (TASK-145, MR-D20, frame E7, AC-1, AC-2): Owned and Sort are two dropdown chips on one row, between
+  // the status chips and the genre row; no select, no reverse link, no Owned links in the document.
+  it("draws Owned and Sort as two dropdown chips in one row, then the genre row, and no select or Owned links (AC-1, AC-2)", async () => {
     const { doc } = await render({ status: "to_read", sort: "length" });
-    const select = doc.querySelector<HTMLSelectElement>("select#library-sort")!;
-    expect(doc.querySelector(`label[for="${select.id}"]`)?.textContent).toBe("Sort");
-    expect([...select.options].map((o) => o.textContent))
-      .toEqual(["Series", "Title", "Author", "Length", "Published", "Finished", "Plan order"]);
-    expect(select.querySelector("option[selected]")?.textContent).toBe("Length");
-    const reverse = doc.querySelector<HTMLAnchorElement>(".sort a")!;
-    expect(reverse.getAttribute("aria-label")).toBe("Longest first; reverse to shortest first");
-    expect(reverse.textContent).toContain("Longest first");
-    expect(reverse.getAttribute("href")).toBe("/books/list?status=to_read&sort=length&dir=asc");
+    const row = doc.querySelector('[role="group"][aria-label="More filters"]')!;
+    const chips = [...row.querySelectorAll<HTMLButtonElement>("button")];
+    expect(chips.map((b) => b.textContent)).toEqual(["Owned: Any", "Sort: Length"]);
+    expect(chips.map((b) => b.getAttribute("aria-label"))).toEqual([null, "Sort: Length, longest first"]);
+    expect(chips.map((b) => b.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
+    expect(chips.every((b) => b.classList.contains("chip") && b.classList.contains("dd"))).toBe(true);
+    // The choices are drawn when a chip opens: none of their links are in the page.
+    expect(row.querySelectorAll("a")).toHaveLength(0);
+    expect(doc.querySelector("select")).toBeNull();
+    expect(doc.querySelector(".sort")).toBeNull();
+    expect(doc.querySelector('[role="group"][aria-label="Owned"]')).toBeNull();
+    expect(doc.querySelector('a[href*="owned="]')).toBeNull();
+    // Status chips, then the row, then the genres.
+    const groups = [...doc.querySelectorAll("main > .filters:not([role=search])")];
+    expect(groups.map((g) => g.getAttribute("aria-label"))).toEqual([null, "To read level", "More filters", "Genre"]);
+  });
+
+  it("names the chips by their choice: Owned: Physical, Sort: Title, and the way the list runs (AC-2)", async () => {
+    const { doc } = await render({ owned: "physical", sort: "title", dir: "desc" });
+    const chips = [...doc.querySelectorAll<HTMLButtonElement>('[aria-label="More filters"] button')];
+    expect(chips.map((b) => b.textContent)).toEqual(["Owned: Physical", "Sort: Title"]);
+    expect(chips[1].getAttribute("aria-label")).toBe("Sort: Title, Z–A");
+    // An owned value it doesn't know is Any.
+    expect((await render({ owned: "paper" })).doc.querySelector('[aria-label="More filters"] button')?.textContent).toBe("Owned: Any");
   });
 
   it("prints an estimated count with its ~", async () => {
@@ -223,61 +241,58 @@ describe("the Library's genres (task 4.5)", () => {
 });
 
 // Task 5.17 (TASK-093, D-121, D-132): the Owned filter is a chip row in the URL that every other link keeps.
-describe("the Library's Owned filter (task 5.17, AC-3)", () => {
+describe("the Library's Owned filter (task 5.17, AC-3; a dropdown chip since task 6.24)", () => {
   const params = (href: string) => new URL(href, "http://x").searchParams;
-  const ownedGroup = (doc: Document) => doc.querySelector('[role="group"][aria-label="Owned"]');
 
-  it("draws Physical · Audiobook · Ebook · Not owned as links in a group named Owned", async () => {
-    const { doc } = await render({});
-    const chips = [...ownedGroup(doc)!.querySelectorAll<HTMLAnchorElement>("a.chip")];
-    expect(chips.map((a) => a.textContent)).toEqual(["Physical", "Audiobook", "Ebook", "Not owned"]);
-    expect(chips.map((a) => params(a.getAttribute("href")!).get("owned"))).toEqual(["physical", "audio", "ebook", "none"]);
-    // None chosen: none current, and Everything is.
-    expect(chips.map((a) => a.getAttribute("aria-current"))).toEqual([null, null, null, null]);
-    expect(queries.listBooks).toHaveBeenLastCalledWith("test-user", expect.objectContaining({ owned: undefined }));
+  it("lists Any · Physical · Audiobook · Ebook · Not owned, each a link with its own owned value (AC-3)", () => {
+    const choices = ownedChoices({});
+    expect(choices.map((c) => c.label)).toEqual(["Any", "Physical", "Audiobook", "Ebook", "Not owned"]);
+    expect(choices.map((c) => params(c.href).get("owned"))).toEqual([null, "physical", "audio", "ebook", "none"]);
+    // None chosen: Any is the current choice, and only it.
+    expect(choices.map((c) => c.current)).toEqual([true, false, false, false, false]);
+    expect(choices[0].href).toBe("/books/list");
   });
 
-  it("with Read, Title and Physical chosen, both chips are current, listBooks gets all three, and every other link keeps owned", async () => {
+  it("marks the chosen one current, and Any is the way back, dropping only owned (AC-3)", () => {
+    const choices = ownedChoices({ status: "read", sort: "title", owned: "physical" });
+    expect(choices.map((c) => c.current)).toEqual([false, true, false, false, false]);
+    expect(choices.find((c) => c.label === "Any")!.href).toBe("/books/list?status=read&sort=title");
+    expect(choices.find((c) => c.label === "Ebook")!.href).toBe("/books/list?status=read&owned=ebook&sort=title");
+  });
+
+  it("keeps the search, the level, the genre and the order (AC-3)", () => {
+    const audio = ownedChoices({ status: "to_read", level: "on_deck", genre: "Fantasy", q: "the", sort: "length", dir: "asc" })
+      .find((c) => c.label === "Audiobook")!;
+    expect(audio.href).toBe("/books/list?status=to_read&level=on_deck&genre=Fantasy&owned=audio&q=the&sort=length&dir=asc");
+  });
+
+  it("treats an owned value it doesn't know as Any (AC-3)", () => {
+    expect(ownedChoices({ owned: "paper" }).map((c) => c.current)).toEqual([true, false, false, false, false]);
+    expect(ownedChipText("paper")).toBe("Owned: Any");
+    expect(ownedChipText("none")).toBe("Owned: Not owned");
+  });
+
+  it("with Read, Title and Physical chosen, listBooks gets all three, and every other link keeps owned", async () => {
     const { doc } = await render({ status: "read", sort: "title", owned: "physical" });
     expect(queries.listBooks).toHaveBeenLastCalledWith("test-user",
       expect.objectContaining({ status: "read", owned: "physical", sort: "title", dir: "asc" }));
     const named = (name: string) => [...doc.querySelectorAll<HTMLAnchorElement>("a.chip")].find((a) => a.textContent === name)!;
     expect(named("Read").getAttribute("aria-current")).toBe("true");
-    expect(named("Physical").getAttribute("aria-current")).toBe("true");
     expect(named("Everything").getAttribute("aria-current")).toBe("false");
-
     // Everything clears it (and the status), keeping the order.
     expect(named("Everything").getAttribute("href")).toBe("/books/list?sort=title");
-    // The current chip is the way back: it drops owned and keeps the rest.
-    expect(named("Physical").getAttribute("href")).toBe("/books/list?status=read&sort=title");
 
-    // Every other link into the Library keeps owned=physical: the status chips, the genres, the other
-    // Owned chips (with their own value) and the reverse link.
-    const others = hrefs(doc).filter((h) => h !== "/books/list?sort=title" && h !== "/books/list?status=read&sort=title");
-    expect(others.length).toBeGreaterThanOrEqual(11);
-    for (const href of others) {
-      const owned = params(href).get("owned");
-      expect(owned, href).not.toBeNull();
-      if (!["audio", "ebook", "none"].includes(owned!)) expect(owned, href).toBe("physical");
-    }
+    // Every other link into the Library keeps owned=physical: the status chips and the genres.
+    const others = hrefs(doc).filter((h) => h !== "/books/list?sort=title");
+    expect(others.length).toBeGreaterThanOrEqual(8);
+    for (const href of others) expect(params(href).get("owned"), href).toBe("physical");
     expect(others).toContain("/books/list?status=to_read&owned=physical&sort=title");
     expect(others).toContain("/books/list?status=read&genre=Fantasy&owned=physical&sort=title");
-    expect(others).toContain("/books/list?status=read&owned=audio&sort=title");
-    expect(doc.querySelector<HTMLAnchorElement>(".sort a")!.getAttribute("href"))
-      .toBe("/books/list?status=read&owned=physical&sort=title&dir=desc");
   });
 
-  it("an Owned chip keeps the search, the level and the genre too", async () => {
-    const { doc } = await render({ status: "to_read", level: "on_deck", genre: "Fantasy", q: "the" });
-    const audio = [...ownedGroup(doc)!.querySelectorAll<HTMLAnchorElement>("a.chip")].find((a) => a.textContent === "Audiobook")!;
-    expect(audio.getAttribute("href")).toBe("/books/list?status=to_read&level=on_deck&genre=Fantasy&owned=audio&q=the");
-  });
-
-  it("ignores an owned value it doesn't know: nothing filtered, no chip current", async () => {
+  it("ignores an owned value it doesn't know: nothing filtered, no link carries it", async () => {
     const { doc } = await render({ owned: "paper" });
     expect(queries.listBooks).toHaveBeenLastCalledWith("test-user", expect.objectContaining({ owned: undefined }));
-    const chips = [...ownedGroup(doc)!.querySelectorAll<HTMLAnchorElement>("a.chip")];
-    expect(chips.map((a) => a.getAttribute("aria-current"))).toEqual([null, null, null, null]);
     expect(hrefs(doc).filter((h) => h.includes("paper"))).toEqual([]);
   });
 
@@ -377,6 +392,40 @@ describe("the sort in the URL (AC-3)", () => {
     expect(parseSort("banana", "desc")).toEqual({ sort: "series", dir: "asc" });
     expect(parseSort("length", "up")).toEqual({ sort: "series", dir: "asc" });
     expect(parseSort(["length", "title"])).toEqual({ sort: "series", dir: "asc" });
+  });
+
+  // Task 6.24 (TASK-145, AC-3): the Sort dropdown's choices, built where it opens.
+  it("lists the seven sorts, each opening in its own direction, then the current sort's two directions (AC-3)", () => {
+    const choices = sortChoices({ status: "read", q: "the" }, "length", "desc");
+    expect(choices.map((c) => c.label)).toEqual([
+      "Series", "Title", "Author", "Length", "Published", "Finished", "Plan order", "Longest first", "Shortest first",
+    ]);
+    expect(choices.map((c) => c.current)).toEqual([false, false, false, true, false, false, false, true, false]);
+    // A new sort opens in its own direction and keeps every filter and the search.
+    expect(choices[1].href).toBe("/books/list?status=read&q=the&sort=title");
+    expect(choices[3].href).toBe("/books/list?status=read&q=the&sort=length");
+    expect(choices[0].href).toBe("/books/list?status=read&q=the");
+    // A direction keeps the sort.
+    expect(choices[7].href).toBe("/books/list?status=read&q=the&sort=length");
+    expect(choices[8].href).toBe("/books/list?status=read&q=the&sort=length&dir=asc");
+    // One divider, before the directions.
+    expect(choices.filter((c) => c.divider).map((c) => c.label)).toEqual(["Longest first"]);
+  });
+
+  it("marks the direction the list runs, in either order (AC-3)", () => {
+    const asc = sortChoices({ owned: "audio" }, "length", "asc");
+    expect(asc.slice(7).map((c) => [c.label, c.current])).toEqual([["Longest first", false], ["Shortest first", true]]);
+    expect(asc[8].href).toBe("/books/list?owned=audio&sort=length&dir=asc");
+    const title = sortChoices({}, "title", "desc");
+    expect(title.slice(7).map((c) => [c.label, c.current])).toEqual([["A–Z", false], ["Z–A", true]]);
+    expect(title[8].href).toBe("/books/list?sort=title&dir=desc");
+  });
+
+  it("names the Sort chip by its sort and the way it runs (AC-2)", () => {
+    expect(sortChipName("length", "desc")).toBe("Sort: Length, longest first");
+    expect(sortChipName("length", "asc")).toBe("Sort: Length, shortest first");
+    expect(sortChipName("title", "asc")).toBe("Sort: Title, A–Z");
+    expect(sortChipName("finished", "desc")).toBe("Sort: Finished, most recent first");
   });
 
   it("names the reverse by where it goes", () => {

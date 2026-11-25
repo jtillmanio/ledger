@@ -1,9 +1,10 @@
 // @area: books
 // Task 5.17, part 2 of 3 (TASK-093, D-121, D-132, D-152): what you own, in the Library, in a browser.
 // A row's `⋯` carries *I own it on paper* and *I own the audiobook*: each writes one owned_copies row of its
-// format, the sub-line says so without a reload, and the toast's Undo removes the row. The *Owned* chips
-// (*Physical · Audiobook · Ebook · Not owned*) list exactly their books, combine with a status chip and a
-// sort, keep the search, and survive a reload; every other link keeps `owned`, and *Everything* clears it.
+// format, the sub-line says so without a reload, and the toast's Undo removes the row. The *Owned* dropdown chip
+// (task 6.24, MR-D20: *Any · Physical · Audiobook · Ebook · Not owned*) lists exactly its books, combines with a
+// status chip and a sort, keeps the search, and survives a reload; every other link keeps `owned`, and
+// *Everything* clears it.
 // The books are made here under `E2E Own` titles the rest of the suite doesn't use, removed after the last test.
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
@@ -68,8 +69,23 @@ const ownedRows = (bookId: string) =>
   withSql((sql) => sql<{ format: string }[]>`SELECT format FROM owned_copies WHERE book_id = ${bookId} ORDER BY format`)
     .then((rows) => rows.map((r) => r.format));
 
-const owned = (page: Page) => page.getByRole("group", { name: "Owned" });
-const ownedChip = (page: Page, name: string) => owned(page).getByRole("link", { name, exact: true });
+// The Owned dropdown chip (task 6.24): named by its choice, it opens a group of links.
+const ownedChip = (page: Page) => page.getByRole("button", { name: /^Owned: / });
+const ownedList = (page: Page) => page.getByRole("group", { name: "Owned", exact: true });
+const sortChip = (page: Page) => page.getByRole("button", { name: /^Sort: / });
+/** Opens the Owned chip and chooses one of its links. */
+async function chooseOwned(page: Page, name: string) {
+  await hydrated(ownedChip(page));
+  await ownedChip(page).click();
+  await ownedList(page).getByRole("link", { name, exact: true }).click();
+  await expect(ownedList(page)).toHaveCount(0);
+}
+/** Opens the Sort chip and chooses one of its links. */
+async function chooseSort(page: Page, name: string) {
+  await hydrated(sortChip(page));
+  await sortChip(page).click();
+  await page.getByRole("group", { name: "Sort", exact: true }).getByRole("link", { name, exact: true }).click();
+}
 /** The status row: the `.filters` that holds *Everything*. */
 const statusChip = (page: Page, name: string) => page.locator(".filters")
   .filter({ has: page.getByRole("link", { name: "Everything", exact: true }) }).getByRole("link", { name, exact: true });
@@ -80,7 +96,7 @@ const toast = (page: Page) => page.locator(".toast");
 async function open(page: Page, path: string) {
   await page.goto(path);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Library");
-  await expect(owned(page)).toBeVisible();
+  await expect(ownedChip(page)).toBeVisible();
 }
 
 /** Opens a row's `⋯` and answers its menu. */
@@ -143,7 +159,7 @@ test("a book with an ebook, a paper copy and an audiobook names all three (AC-2)
   await expect(row(page, "E2E Own All Three").locator(".row-sub")).toHaveText("Physical · Audiobook · Ebook");
 });
 
-test("each Owned chip lists exactly its books, with Read and Title, and survives a reload (AC-1)", async ({ page }) => {
+test("each Owned choice lists exactly its books, with Read and Title, and survives a reload (AC-1, AC-3)", async ({ page }) => {
   await open(page, `/books/list?status=read&sort=title&q=${encodeURIComponent("E2E Own")}`);
   // Every live read book of ours, the soft-deleted one nowhere.
   await expect(titles(page)).toHaveText(["E2E Own All Three", "E2E Own Audio", "E2E Own Ebook", "E2E Own Nothing", "E2E Own Paper"]);
@@ -155,31 +171,39 @@ test("each Owned chip lists exactly its books, with Read and Title, and survives
     ["Not owned", "none", ["E2E Own Nothing"]],
   ];
   for (const [name, value, books] of expected) {
-    await ownedChip(page, name).click();
+    await chooseOwned(page, name);
     await expect(page).toHaveURL(new RegExp(`owned=${value}`));
     await expect(page).toHaveURL(/status=read/);
     await expect(page).toHaveURL(/sort=title/);
-    await expect(ownedChip(page, name)).toHaveAttribute("aria-current", "true");
+    await expect(ownedChip(page)).toHaveText(`Owned: ${name}`);
     await expect(statusChip(page, "Read")).toHaveAttribute("aria-current", "true");
     await expect(titles(page)).toHaveText(books);
 
     await page.reload();
-    await expect(ownedChip(page, name)).toHaveAttribute("aria-current", "true");
+    await hydrated(ownedChip(page));
+    await expect(ownedChip(page)).toHaveText(`Owned: ${name}`);
     await expect(statusChip(page, "Read")).toHaveAttribute("aria-current", "true");
-    await expect(page.locator("#library-sort")).toHaveValue("title");
+    await expect(sortChip(page)).toHaveText("Sort: Title");
     await expect(titles(page)).toHaveText(books);
+    // The list marks the choice made, and only it.
+    await ownedChip(page).click();
+    await expect(ownedList(page).getByRole("link", { name, exact: true })).toHaveAttribute("aria-current", "true");
+    await expect(ownedList(page).locator('[aria-current="true"]')).toHaveCount(1);
+    await page.keyboard.press("Escape");
   }
 
-  // The chosen chip is the way back: the rest stays.
-  await ownedChip(page, "Not owned").click();
+  // Any is the way back: it drops owned, and the rest stays.
+  await chooseOwned(page, "Any");
   await expect(page).not.toHaveURL(/owned=/);
+  await expect(page).toHaveURL(/status=read/);
+  await expect(ownedChip(page)).toHaveText("Owned: Any");
   await expect(titles(page)).toHaveCount(5);
 });
 
 test("Read + Physical + Title from the URL; a status chip and the sort keep owned, Everything clears it (AC-3)", async ({ page }) => {
   await open(page, "/books/list?status=read&sort=title&owned=physical");
   await expect(statusChip(page, "Read")).toHaveAttribute("aria-current", "true");
-  await expect(ownedChip(page, "Physical")).toHaveAttribute("aria-current", "true");
+  await expect(ownedChip(page)).toHaveText("Owned: Physical");
   // Only read physical books, in title order: ours among them, the to-read and the deleted one not.
   const shown = await titles(page).allTextContents();
   expect(shown.filter((t) => t.startsWith("E2E Own"))).toEqual(["E2E Own All Three", "E2E Own Paper"]);
@@ -192,39 +216,50 @@ test("Read + Physical + Title from the URL; a status chip and the sort keep owne
   await expect(titles(page).filter({ hasText: "E2E Own Paper Next" })).toHaveCount(1);
   await expect(titles(page).filter({ hasText: /^E2E Own Paper$/ })).toHaveCount(0);
 
-  await hydrated(page.locator("#library-sort"));
-  await page.locator("#library-sort").selectOption("length");
+  await chooseSort(page, "Length");
   await expect(page).toHaveURL(/sort=length/);
   await expect(page).toHaveURL(/owned=physical/);
-  await expect(ownedChip(page, "Physical")).toHaveAttribute("aria-current", "true");
+  await expect(ownedChip(page)).toHaveText("Owned: Physical");
 
   await statusChip(page, "Everything").click();
   await expect(page).not.toHaveURL(/owned=/);
   await expect(page).not.toHaveURL(/status=/);
-  await expect(owned(page).locator('[aria-current="true"]')).toHaveCount(0);
+  await expect(ownedChip(page)).toHaveText("Owned: Any");
 });
 
-test("an Owned chip with no match draws the list's empty state (AC-5)", async ({ page }) => {
+test("an Owned choice with no match draws the list's empty state (AC-5)", async ({ page }) => {
   await open(page, `/books/list?q=${encodeURIComponent("E2E Own Nothing")}`);
-  await ownedChip(page, "Audiobook").click();
+  await chooseOwned(page, "Audiobook");
   await expect(page).toHaveURL(/owned=audio/);
   await expect(page.locator(".rows .empty").first()).toHaveText("Nothing matches. Try a broader filter.");
   await expect(titles(page)).toHaveCount(0);
 });
 
-test("the Owned chips and the menu's items are named and big enough; axe and contrast hold (AC-5)", FLOOR, async ({ page }, info) => {
+test("the Owned chip, its choices and the row's menu items are named and big enough; axe and contrast hold (AC-5)", FLOOR, async ({ page }, info) => {
   await open(page, `/books/list?owned=physical&q=${encodeURIComponent("E2E Own")}`);
   const width = page.viewportSize()!.width;
-  // The UX floor: nothing interactive under 24px. The row is the status chips' size, a line of its own.
-  const chips = owned(page).getByRole("link");
-  await expect(chips).toHaveText(["Physical", "Audiobook", "Ebook", "Not owned"]);
-  for (const box of await chips.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON() as DOMRect))) {
-    expect(box.height, `chip height at ${width}px`).toBeGreaterThanOrEqual(24);
-    expect(box.width).toBeGreaterThanOrEqual(24);
+  // The UX floor: 44px on the phone, nothing interactive under 24px from the tablet up.
+  const floor = width < 768 ? 44 : 24;
+  const box = (await ownedChip(page).boundingBox())!;
+  expect(box.height, `Owned chip height at ${width}px`).toBeGreaterThanOrEqual(floor);
+  expect(box.width).toBeGreaterThanOrEqual(24);
+  await expectNoHorizontalScroll(page);
+  await expectNoAxeViolations(page, AXE);
+  expect(await contrastFailures(page)).toEqual([]);
+
+  await hydrated(ownedChip(page));
+  await ownedChip(page).click();
+  const choices = ownedList(page).getByRole("link");
+  await expect(choices).toHaveText(["Any", "Physical", "Audiobook", "Ebook", "Not owned"]);
+  for (const b of await choices.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON() as DOMRect))) {
+    expect(b.height, `Owned choice height at ${width}px`).toBeGreaterThanOrEqual(floor);
+    expect(b.width).toBeGreaterThanOrEqual(24);
   }
   await expectNoHorizontalScroll(page);
   await expectNoAxeViolations(page, AXE);
   expect(await contrastFailures(page)).toEqual([]);
+  await screenshot(page, info, "library-owned-chip");
+  await page.keyboard.press("Escape");
 
   const m = await menu(page, "E2E Own Paper");
   const items = m.getByRole("menuitem");
