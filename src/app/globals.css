@@ -423,6 +423,10 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 .group{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-lg);
   overflow:hidden;box-shadow:var(--sh-1)}
 .group + .group{margin-top:.75rem}
+/* A group that holds a dropdown chip (task 6.25, *Start on*) lets its open menu out: `overflow:hidden` would clip it
+   to the group's box, so a pointer could only hit the first choice. Its rows have no fill of their own, so the
+   rounded corners lose nothing. */
+.group:has(.menu-wrap){overflow:visible}
 .ghead{display:flex;align-items:center;gap:.5rem;padding:.625rem .875rem;background:var(--raise);
   border-bottom:1px solid var(--rule);font-size:.8125rem;font-weight:600}
 .ghead .n{margin-left:auto;font-size:.75rem;color:var(--muted);font-weight:400}
