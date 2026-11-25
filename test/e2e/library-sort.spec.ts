@@ -12,7 +12,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
 import Loading from "../../src/app/books/list/loading";
-import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
+import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour } from "./helpers";
 
 // A check with no layout in it: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
@@ -177,7 +177,18 @@ test("the Sort chip is named and its choices are big enough, shut and open; axe,
   expect(await contrastFailures(page)).toEqual([]);
   await expectNoHorizontalScroll(page);
 
+  // No hue (.claude/rules/ui.md): shut, the chip is grey (--muted text, --faint-deco outline); open, it is --ink.
+  const colours = () => sort(page).evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return { color: cs.color, border: cs.borderTopColor };
+  });
+  expect(await colours(), "shut chip").toEqual({ color: await tokenColour(page, "--muted"), border: await tokenColour(page, "--faint-deco") });
+
   await sort(page).click();
+  // Chips fade between states, so wait for the colour to settle.
+  await expect.poll(colours, { message: "open chip" }).toEqual({ color: await tokenColour(page, "--ink"), border: await tokenColour(page, "--ink") });
+  // The choice made is --ink too, never a hue.
+  await expect(sortList(page).getByRole("link", { name: "Length", exact: true })).toHaveCSS("color", await tokenColour(page, "--ink"));
   const links = sortList(page).getByRole("link");
   await expect(links).toHaveCount(9);
   for (const b of await links.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON() as DOMRect))) {
@@ -189,7 +200,8 @@ test("the Sort chip is named and its choices are big enough, shut and open; axe,
   expect(list.x).toBeGreaterThanOrEqual(0);
   expect(list.x + list.width).toBeLessThanOrEqual(width);
   await expectNoHorizontalScroll(page);
-  await expectNoAxeViolations(page, AXE);
+  // Open, the list covers the first rows' links: axe checks the list and the chip, as for a toast.
+  await expectNoAxeViolations(page, AXE, ".chipmenu");
   expect(await contrastFailures(page)).toEqual([]);
   await screenshot(page, info, "library-sort-controls");
 });

@@ -9,7 +9,9 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
-import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled } from "./helpers";
+import {
+  FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled, tokenColour,
+} from "./helpers";
 
 // A check with no layout in it: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
@@ -247,8 +249,19 @@ test("the Owned chip, its choices and the row's menu items are named and big eno
   await expectNoAxeViolations(page, AXE);
   expect(await contrastFailures(page)).toEqual([]);
 
+  // No hue (.claude/rules/ui.md): shut, the chip is grey (--muted text, --faint-deco outline); open, it is --ink.
+  const colours = () => ownedChip(page).evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return { color: cs.color, border: cs.borderTopColor };
+  });
+  expect(await colours(), "shut chip").toEqual({ color: await tokenColour(page, "--muted"), border: await tokenColour(page, "--faint-deco") });
+
   await hydrated(ownedChip(page));
   await ownedChip(page).click();
+  // Chips fade between states, so wait for the colour to settle.
+  await expect.poll(colours, { message: "open chip" }).toEqual({ color: await tokenColour(page, "--ink"), border: await tokenColour(page, "--ink") });
+  // The choice made (Physical, from the URL) is --ink too, never a hue.
+  await expect(ownedList(page).getByRole("link", { name: "Physical", exact: true })).toHaveCSS("color", await tokenColour(page, "--ink"));
   const choices = ownedList(page).getByRole("link");
   await expect(choices).toHaveText(["Any", "Physical", "Audiobook", "Ebook", "Not owned"]);
   for (const b of await choices.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON() as DOMRect))) {
@@ -256,7 +269,8 @@ test("the Owned chip, its choices and the row's menu items are named and big eno
     expect(b.width).toBeGreaterThanOrEqual(24);
   }
   await expectNoHorizontalScroll(page);
-  await expectNoAxeViolations(page, AXE);
+  // Open, the list covers the first rows' links: axe checks the list and the chip, as for a toast.
+  await expectNoAxeViolations(page, AXE, ".chipmenu");
   expect(await contrastFailures(page)).toEqual([]);
   await screenshot(page, info, "library-owned-chip");
   await page.keyboard.press("Escape");
