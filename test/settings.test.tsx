@@ -219,7 +219,7 @@ describe("the screen reads the row live (AC-2)", () => {
     const render = async () => renderToStaticMarkup(<UndoProvider>{await Page()}</UndoProvider>);
     const chip = (html: string) => html.match(/<button[^>]*aria-label="Start on: ([^"]*)"[^>]*>([^<]*)</);
     const none = await render();
-    expect(none).toMatch(/id="[^"]+">Start on<\/span>/);
+    expect(none).toMatch(/<span class="k">Start on<\/span>/);
     expect(chip(none)?.[1]).toBe("Last used");
     expect(chip(none)?.[2]).toBe("Last used");
     // The Appearance group holds the row, after Show covers.
