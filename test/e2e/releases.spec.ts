@@ -298,6 +298,9 @@ test("5.9b AC-1, AC-2, AC-4: a wanted book links its author, universe and series
 
     await page.goto("/books/releases");
     const line = (title: string) => page.locator(".book-row", { hasText: title }).locator(".row-sub");
+    // Visible first: a streamed page holds its content in a hidden node until it swaps in, and a role query skips it.
+    await expect(line("E2E Rl Serial")).toBeVisible();
+    await expect(line("E2E Rl Lone")).toBeVisible();
     const hrefs = (title: string) => line(title).getByRole("link").evaluateAll((as) => as.map((a) => [a.textContent, a.getAttribute("href")]));
     await expect(line("E2E Rl Serial")).toHaveText("Rl Author · Rl World · Rl Cycle #6");
     expect(await hrefs("E2E Rl Serial")).toEqual([

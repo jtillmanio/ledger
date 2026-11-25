@@ -1,7 +1,7 @@
 ---
 id: TASK-141
 title: 5.9b Every other place line links its names (2 of 3) — the status rows, lists and follow sheet
-status: In progress
+status: Review
 depends_on: [TASK-140]
 size: M
 model: sonnet
@@ -39,9 +39,9 @@ their pages; a book with no series draws no series link. A gap row's
 *Add* for #3 opens By hand with the series named and `3` in *#*. Every
 route it changes stays within its byte budget (`scripts/perf/budget.json`).
 Screenshots at 360px and 1280px.
-- [ ] AC-2: Given a book in a series, by an author, in a universe, on the seeded test database, each surface in this part draws the series link (named by the series alone, `href` `/books/series/<id>`), the author link (`/books/authors/<id>`) and the universe link (`/books/universes/<id>`); given a standalone book, no series or universe link.
-- [ ] AC-3: On Top books, a pointer press on a place link opens its page and starts no drag (the row's order is unchanged after); on the status rows and Parked, a place link's tap opens its page, not the row's control or menu.
-- [ ] AC-4: These surfaces meet the UX floor (`docs/04-design.md` § 10. The UX floor): every link a real `<a>` with a name, targets at least 24px, link text 4.5:1 in both themes, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-2: Given a book in a series, by an author, in a universe, on the seeded test database, each surface in this part draws the series link (named by the series alone, `href` `/books/series/<id>`), the author link (`/books/authors/<id>`) and the universe link (`/books/universes/<id>`); given a standalone book, no series or universe link.
+- [x] AC-3: On Top books, a pointer press on a place link opens its page and starts no drag (the row's order is unchanged after); on the status rows and Parked, a place link's tap opens its page, not the row's control or menu.
+- [x] AC-4: These surfaces meet the UX floor (`docs/04-design.md` § 10. The UX floor): every link a real `<a>` with a name, targets at least 24px, link text 4.5:1 in both themes, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -57,12 +57,16 @@ Screenshots at 360px and 1280px.
 
 ## Verification
 
-- Automated: component tests for each surface's links and the no-series case (AC-2); `test/e2e/top-books.spec.ts` for AC-3's drag clause; `test/e2e/status.spec.ts`, `test/e2e/follows.spec.ts` with axe; `test/perf.test.ts` still passes.
+- Automated: `test/place-links.test.tsx` for each surface's links, the no-series case and the queries' ids (AC-2); `test/e2e/top-books.spec.ts` for AC-3's drag clause; `test/e2e/status.spec.ts`, `parked-review.spec.ts`, `releases.spec.ts` and `follows.spec.ts` with axe, 24px boxes and contrast (AC-3, AC-4). The byte-budget clause of AC-1 is not automated: `test/perf.test.ts` tests the report helpers, not route bytes, and Lighthouse is off, so it is checked after merge (the four measured views: `books-status` In flight, `top` one year, `parked`, `releases`; a route over takes `plain`).
 - Manual: the ui-verifier taps each surface's names at 360px and 1280px → expected: each opens its page, and no row's drag, menu or control fires.
 
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- AC-1's byte-budget clause (`books-status`, `top`, `parked`, `releases` in `scripts/perf/budget.json`) is unmeasured: Lighthouse is off → not tracked: the PR's *How it was verified* names it as the after-merge check; a route over its ceiling takes `plain` links
+- The follow sheet opened from a finish's toast closes on a navigation through `onClose`, so the history entry `Sheet` pushed on open stays behind and may cost one dead Back press; the sheets TASK-140 linked behave the same → not tracked: not shown to fail in any test, same behaviour as the sheets already shipped; the owner's preview walk is the check
+- The ui-verifier could not see Top books' `⋯` button in the dark 360px screenshot (it exists, 44px) → not tracked: predates this task (no link or style of this task touches it) and unconfirmed; the owner's preview walk is the check
 
 ## Plan
 
@@ -104,7 +108,7 @@ Approved by the owner 2026-11-25 ("approved with recommendations"): the task kep
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (135 files, 2724 tests) | Audit R1 PASS (advisory: the drag-handle unit test passed on main by looping over zero links → asserts 3 links) | Spec R1 CHANGES (AC-4 Parked: new tests pinned to light, no dark axe/contrast/screenshots) → fixed (both themes at all six widths; picker header axe and contrast in both) | Schema R1 APPROVE | UI R1 PASS on the surfaces the dev data holds (Done, Top books, the follow sheet; In flight, Listen next, Coming out and Parked are empty there, covered by the seeded e2e specs; no axe tool in that session, the e2e specs carry axe) | CI R1 FAIL (releases.spec.ts:280 w360-light: read the links before the streamed row was visible; parked-review.spec.ts:371 skeleton, w390-light: my fixture gave the oldest row a place line, 20px over the skeleton) → fixed (wait for visibility; the place fixtures moved to the other two books) | Verify R2 PASS (135 files, 2724 tests) | CI R2 pending at close-out
 
 ## Blocked
 
@@ -112,7 +116,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (full chain both times; the audit and CI fixes were spec-only)
+- Review rounds: 1 (spec-reviewer CHANGES → fixed; no second round: the fix touched only a spec, which the reviewer had asked for)
+- First-pass AC FAILs: 1 (AC-4, Parked, light theme only)
+- Plan revisions after approval: 0

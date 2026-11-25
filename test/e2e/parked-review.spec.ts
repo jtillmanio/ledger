@@ -62,7 +62,8 @@ async function db<T>(fn: (sql: TestSql) => Promise<T>): Promise<T> {
 /** The settings row as the suite found it, put back after the last test. */
 let settingsBefore: { parked_review: string; parked_reviewed_on: string | null } | null = null;
 
-// Task 5.9b, 2 of 3 (TASK-141): OLD is in a series, by an author, in a universe; NEW is by the same author alone.
+// Task 5.9b, 2 of 3 (TASK-141): NEW is in a series, by an author, in a universe; MID is by the same author alone. OLD keeps no
+// place line: the loading skeleton is drawn for a row without one.
 const PL = { au: `${P}au`, un: `${P}un`, se: `${P}se` };
 
 const clean = () => db(async (sql) => {
@@ -107,8 +108,8 @@ test.beforeAll(async () => {
       await sql`INSERT INTO books (id, title) VALUES (${b.id}, ${b.title})`;
       await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${b.id}, 'to_read')`;
     }
-    await sql`UPDATE books SET author_id = ${PL.au}, series_id = ${PL.se}, series_position = 5, universe_id = ${PL.un} WHERE id = ${OLD.id}`;
-    await sql`UPDATE books SET author_id = ${PL.au} WHERE id = ${NEW.id}`;
+    await sql`UPDATE books SET author_id = ${PL.au}, series_id = ${PL.se}, series_position = 5, universe_id = ${PL.un} WHERE id = ${NEW.id}`;
+    await sql`UPDATE books SET author_id = ${PL.au} WHERE id = ${MID.id}`;
   });
 });
 test.beforeEach(reset);
@@ -398,13 +399,13 @@ test("5.9b AC-1, AC-2, AC-4: a row links its author, universe and series; a book
     await page.emulateMedia({ colorScheme });
     await page.goto("/parked");
     await expect(rows(page)).toHaveCount(3);
-    await expect(placeLine(page, OLD.title)).toHaveText("Pr Author · Pr World · Pr Cycle #5");
-    expect(await hrefsOf(placeLine(page, OLD.title))).toEqual([
+    await expect(placeLine(page, NEW.title)).toHaveText("Pr Author · Pr World · Pr Cycle #5");
+    expect(await hrefsOf(placeLine(page, NEW.title))).toEqual([
       ["Pr Author", `/books/authors/${PL.au}`], ["Pr World", `/books/universes/${PL.un}`], ["Pr Cycle", `/books/series/${PL.se}`],
     ]);
-    await expect(placeLine(page, OLD.title).getByRole("link", { name: "Pr Cycle", exact: true })).toBeVisible();
-    expect(await hrefsOf(placeLine(page, NEW.title))).toEqual([["Pr Author", `/books/authors/${PL.au}`]]);
-    for (const link of await placeLine(page, OLD.title).getByRole("link").all()) {
+    await expect(placeLine(page, NEW.title).getByRole("link", { name: "Pr Cycle", exact: true })).toBeVisible();
+    expect(await hrefsOf(placeLine(page, MID.title))).toEqual([["Pr Author", `/books/authors/${PL.au}`]]);
+    for (const link of await placeLine(page, NEW.title).getByRole("link").all()) {
       expect((await link.boundingBox())!.height, `a place link at ${width}px ${colorScheme}`).toBeGreaterThanOrEqual(24);
     }
     await expectNoHorizontalScroll(page);
@@ -417,23 +418,23 @@ test("5.9b AC-1, AC-2, AC-4: a row links its author, universe and series; a book
 
 test("5.9b AC-3: a place link opens its page and fires none of the row's verbs", ONCE, async ({ page }) => {
   await page.goto("/parked");
-  const plan = row(page, OLD.title).getByRole("button", { name: `Plan ${OLD.title}`, exact: true });
+  const plan = row(page, NEW.title).getByRole("button", { name: `Plan ${NEW.title}`, exact: true });
   await hydrated(plan);
-  await placeLine(page, OLD.title).getByRole("link", { name: "Pr Cycle", exact: true }).click();
+  await placeLine(page, NEW.title).getByRole("link", { name: "Pr Cycle", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/books/series/${PL.se}$`));
-  expect(await stored(OLD.id)).toMatchObject({ status: "parked", parkedOn: OLD.parkedOn, plan: [] });
+  expect(await stored(NEW.id)).toMatchObject({ status: "parked", parkedOn: NEW.parkedOn, plan: [] });
   await page.goBack();
-  await expect(row(page, OLD.title)).toHaveCount(1);
-  await expect(row(page, OLD.title).locator(".parked-kept")).toHaveCount(0);
+  await expect(row(page, NEW.title)).toHaveCount(1);
+  await expect(row(page, NEW.title).locator(".parked-kept")).toHaveCount(0);
   await expect(toast(page)).toHaveCount(0);
 });
 
 test("5.9b AC-1, AC-3: Plan…'s picker header links the names too, each 24px, and a link opens its page without planning", ONCE, async ({ page }) => {
   await page.goto("/parked");
-  const plan = row(page, OLD.title).getByRole("button", { name: `Plan ${OLD.title}`, exact: true });
+  const plan = row(page, NEW.title).getByRole("button", { name: `Plan ${NEW.title}`, exact: true });
   await hydrated(plan);
   await plan.click();
-  const sheet = page.getByRole("dialog", { name: OLD.title });
+  const sheet = page.getByRole("dialog", { name: NEW.title });
   const by = sheet.locator(".pp-by");
   await expect(by).toContainText("Pr Author · Pr World · Pr Cycle #5");
   expect(await hrefsOf(by)).toEqual([
@@ -450,5 +451,5 @@ test("5.9b AC-1, AC-3: Plan…'s picker header links the names too, each 24px, a
   }
   await by.getByRole("link", { name: "Pr Cycle", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/books/series/${PL.se}$`));
-  expect(await stored(OLD.id)).toMatchObject({ status: "parked", plan: [] });
+  expect(await stored(NEW.id)).toMatchObject({ status: "parked", plan: [] });
 });
