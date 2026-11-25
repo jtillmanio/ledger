@@ -1,7 +1,7 @@
 ---
 id: TASK-142
 title: 5.9b Every other place line links its names (3 of 3) — Add books' results, and a gap row fills By hand
-status: Review
+status: Done
 depends_on: [TASK-140, TASK-141]
 size: M
 model: sonnet
