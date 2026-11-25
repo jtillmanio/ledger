@@ -212,6 +212,26 @@ describe("NAV_ITEMS (AC-2)", () => {
     }
   });
 
+  // Task 5.11b (TASK-162): the Universes list has no nav item (6.25 is fitting the rails to five media); the tab
+  // on Series reaches it, so Series stays current on it. A universe's own page is not the list.
+  it("keeps Series current on the Universes list, in every bar, with no nav item of its own (task 5.11b)", () => {
+    const books = mediumItems(NAV_ITEMS, "books");
+    expect(NAV_ITEMS.filter((i) => i.href.startsWith("/books/universes"))).toEqual([]);
+    expect(currentItem(books, "/books/universes")?.id).toBe("books-series");
+    expect(currentItem(books, "/books/universes/cosmere")).toBeUndefined();
+    expect(currentItem(books, "/books/universes-and-more")).toBeUndefined();
+    nav.pathname = "/books/universes";
+    const current = (html: string) => [...html.matchAll(/<a [^>]*aria-current="page"[^>]*>(?:(?!<\/a>).)*<\/a>/g)].map((m) => m[0]);
+    for (const [name, html] of Object.entries(bars())) {
+      expect(current(html).filter((a) => a.includes('href="/books/series"') && a.includes(">Series<")), name).toHaveLength(1);
+      expect(html, name).not.toContain('href="/books/universes"');
+    }
+    nav.pathname = "/books/universes/cosmere";
+    for (const [name, html] of Object.entries(bars())) {
+      expect(current(html).filter((a) => a.includes(">Series<")), name).toHaveLength(0);
+    }
+  });
+
   it("keeps the unbuilt screens out: Search, Tracks", () => {
     const off = ["search", "comics-tracks"];
     for (const id of off) expect(NAV_ITEMS.find((i) => i.id === id)?.enabled, id).toBe(false);

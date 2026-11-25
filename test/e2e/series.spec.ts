@@ -212,7 +212,8 @@ test("4 read of a stated 3 reads 4 / 3 and the meter is full, not overflowing (A
 
 test("Series is current in the tab row, the rail and the sidebar, whichever this width draws (AC-4)", FLOOR, async ({ page }) => {
   await open(page);
-  const current = page.locator('a[aria-current="page"][href="/books/series"]').filter({ visible: true });
+  // The nav's item: the *Series · Universes* row in the page (task 5.11b) carries the same href and `aria-current`.
+  const current = page.locator('a[aria-current="page"][href="/books/series"]:not(.list-tabs > a)').filter({ visible: true });
   await expect(current).toHaveCount(1);
   await expect(current).toContainText("Series");
   await expect(page.locator('a[aria-current="page"][href="/books/shelves"]').filter({ visible: true })).toHaveCount(0);
@@ -230,7 +231,7 @@ test("the floor on the list: axe, contrast, 24px targets, nothing red, no sidewa
 test("the empty state: No series yet and one action, Add a book, to /books/add; the floor; screenshots (AC-6)", FEEL, async ({ page }, info) => {
   await open(page);
   // The shared database always holds series, so the empty list's own markup stands in for the loaded <main>.
-  await swapMain(page, renderToStaticMarkup(createElement(SeriesList, { series: [], show: "started", counts: { started: 0, all: 0 } })));
+  await swapMain(page, renderToStaticMarkup(createElement(SeriesList, { series: [], show: "started", counts: { started: 0, all: 0, universes: 0 } })));
   const slate = page.locator(".slate");
   await expect(slate).toContainText("No series yet");
   await expect(slate.getByRole("link", { name: "Add a book" })).toHaveAttribute("href", "/books/add");
@@ -642,7 +643,7 @@ test("the chips are links of 44px at phone widths, with the floor on both cuts; 
 test("nothing started: chips and a slate that names All and its count, never a blank page; the floor; screenshots (5.9c AC-3)", FEEL, async ({ page }, info) => {
   await open(page);
   // The shared database always holds started series, so the empty cut's own markup stands in for the loaded <main>.
-  await swapMain(page, renderToStaticMarkup(createElement(SeriesList, { series: [], show: "started", counts: { started: 0, all: 3 } })));
+  await swapMain(page, renderToStaticMarkup(createElement(SeriesList, { series: [], show: "started", counts: { started: 0, all: 3, universes: 0 } })));
   const slate = page.locator(".slate");
   await expect(slate).toContainText("Nothing started yet");
   await expect(slate.getByRole("link")).toHaveCount(1);

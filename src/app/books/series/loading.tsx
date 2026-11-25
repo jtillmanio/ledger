@@ -8,6 +8,8 @@ export default function Loading() {
     <LoadingMain>
       <div className="series-page" aria-hidden="true">
         <div className="series-head"><Bar w="6rem" className="sk-h1" /><Bar w="16rem" className="sk-line" /></div>
+        {/* The *Series · Universes* row (task 5.11b): `.sk-tabs` is its 44px and the rule under it. */}
+        <Bar w="100%" className="sk-tabs" />
         <div className="filters genre-row series-chips">
           {/* `sk-dd` is 44px below 768px and 1.85rem above, as the loaded chips are. */}
           {["5.5rem", "4.5rem"].map((w) => <Bar key={w} w={w} className="sk-chip sk-dd" />)}

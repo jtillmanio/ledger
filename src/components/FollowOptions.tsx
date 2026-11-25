@@ -4,15 +4,9 @@ import { useState } from "react";
 import { useUndo } from "@/components/Undo";
 import type { Grouping } from "@/db/queries";
 import type { FollowState } from "@/db/writes";
-import { followEntry, notFollowing, postFollow } from "@/lib/follow-offer";
+import { followEntry, middle, notFollowing, postFollow } from "@/lib/follow-offer";
 
-/**
- * The middle option's words (task 2.2h, D-118): *On hold* while the thing is
- * part-read, at least one book read and one left, else *Tracking*. Both store
- * `tracking`; the label is worked out here, never stored (hard rule 2).
- */
-export const middle = (g: Pick<Grouping, "read" | "unread">) => (g.read > 0 && g.unread > 0 ? "On hold" : "Tracking");
-
+// The middle option reads *On hold* on something part-read (`middle`, task 2.2h, D-118).
 const OPTIONS: { state: FollowState | null; label: (g: Grouping) => string }[] = [
   { state: "reading", label: () => "Reading" },
   { state: "tracking", label: (g) => middle(g) },

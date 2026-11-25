@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BookListTabs from "@/components/BookListTabs";
 import { seriesHref } from "@/components/BookPlace";
 import EmptySlate from "@/components/EmptySlate";
 import { fillShare } from "@/components/WhereItSits";
@@ -65,15 +66,18 @@ function SeriesChips({ show, counts }: { show: SeriesShow; counts: { started: nu
  * the page's own address) or every series you have books in (*All*), each with `read / total`, a meter filled
  * with --ready (D-26) and the next book to read; in progress first, then not started, then complete (the
  * query's order). With no series at all it is an empty slate whose one action is *Add a book*; with none
- * started it names *All* and its count, never a blank page (the chips stay, so the way out is a tap).
+ * started it names *All* and its count, never a blank page (the chips stay, so the way out is a tap). The
+ * *Series · Universes* row (task 5.11b) is under the title in every state.
  */
 export default function SeriesList({ series, show, counts }: {
-  series: SeriesSummary[]; show: SeriesShow; counts: { started: number; all: number };
+  series: SeriesSummary[]; show: SeriesShow; counts: { started: number; all: number; universes: number };
 }) {
+  const tabs = <BookListTabs current="series" counts={{ series: counts.all, universes: counts.universes }} />;
   if (counts.all === 0) {
     return (
       <main className="series-page">
         <h1 className="series-head">Series</h1>
+        {tabs}
         <div className="series-list">
           <EmptySlate title="No series yet" href="/books/add" label="Add a book">
             A series shows up here once a book you add belongs to one.
@@ -88,6 +92,7 @@ export default function SeriesList({ series, show, counts }: {
         <h1>Series</h1>
         <p className="lede">{SERIES_LEDE}</p>
       </div>
+      {tabs}
       <SeriesChips show={show} counts={counts} />
       {series.length === 0 ? (
         <div className="series-list">

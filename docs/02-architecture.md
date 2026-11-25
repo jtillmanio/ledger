@@ -345,6 +345,7 @@ tables.
     | `/books/releases` | 10,100 | 8,000 | 23 | 100 |
     | `/books/shelves` | 10,300 | 5,300 | 23 | 100 |
     | `/books/shelves/[id]` | 11,400 | 12,000 | 25 | 100 |
+    | `/books/universes` | 10,300 | 5,300 | 23 | 100 |
     | `/books/add` | 11,200 | 23,300 | 23 | 100 |
     | `/books/top` | 12,100 | 10,000 | 24 | 100 |
     | `/book/[id]` | 11,000 | 28,900 | 27 | 100 |
@@ -364,7 +365,10 @@ tables.
     its spine row opens tapped. Its ceilings start at the book page's (the same
     `RouteSheet` and detail layout), unmeasured; with no baseline yet, the growth
     check skips it by name. If its first measurement plus 25% comes out above
-    them, writing that is a raise and takes a decision, as any raise does. `/parked`'s tap starts on
+    them, writing that is a raise and takes a decision, as any raise does. The Universes list
+    (`/books/universes`, task 5.11b) is the same: its ceilings start at `/books/shelves`' (the same
+    list rows and chips), unmeasured, because `LIGHTHOUSE_MODE` is off and no run has measured it; its tap
+    starts on `/books/series`, whose *Universes* tab opens it (it has no nav item). `/parked`'s tap starts on
     the Library's *Parked* filter. Unmeasured, with their reasons in the test: the
     two sheets' own intercept pages, and the series, a series', an author's and a universe's
     pages (5.9, 5.11), which roadmap 0.14e measures.

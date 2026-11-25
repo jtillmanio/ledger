@@ -27,6 +27,14 @@ export async function postFollow(kind: FollowKind, id: string, state: FollowValu
   return ((await res.json()) as { prior: FollowValue | null }).prior;
 }
 
+/**
+ * The middle option's words (task 2.2h, D-118): *On hold* while the thing is part-read, at least one book read
+ * and one left, else *Tracking*. Both store `tracking`; the label is worked out here, never stored (hard rule
+ * 2). Here, not in `FollowOptions`' client module, so a server component (the Universes list, task 5.11b) can
+ * call it.
+ */
+export const middle = (g: { read: number; unread: number }) => (g.read > 0 && g.unread > 0 ? "On hold" : "Tracking");
+
 const WORDS: Record<FollowState, string> = { reading: "Reading", tracking: "Tracking" };
 /** `off` and no row are both *Not following* to you. */
 const was = (s: FollowValue | null) => (s && s !== "off" ? `was ${s}` : "was not followed");
