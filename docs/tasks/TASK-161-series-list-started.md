@@ -1,14 +1,14 @@
 ---
 id: TASK-161
 title: 5.9c The Series list opens on what you've started
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: c6e2918
 ---
 
 # TASK-161 — 5.9c The Series list opens on what you've started
@@ -61,9 +61,33 @@ chip shows its count. The Library has no *All series* link, and the nav's
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- 0.14e's `/books/series` route: the page now opens on *Started*, so its measured budget is that view, and the Library no longer links to it (the books nav's *Series* is the tap). (approved at plan) → planned: `docs/tasks/TASK-138-measure-series-author-universe-pages.md` § Context
+- AC-4's "both routes stay within their budgets": `/books/series` has no budget until 0.14e (TASK-138); this task holds the Library to its budget and leaves the series page on `UNMEASURED`. Say so in the PR's **How it was verified** (owner, at plan, 2026-11-25). (approved at plan) → planned: not tracked: stated in the PR; the budget is 0.14e's
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+*Approved by the owner 2026-11-25 (all four plan questions agreed: the budget reading above, the empty-state copy below, ledger_test_2 freed from the merged task-142 worktree, implement on Sonnet).*
+
+### Steps
+
+1. `src/db/queries.ts`: one shared SQL fragment for *started*: the series is followed (`series_progress.follow_state IN ('tracking', 'reading')`; a stored `off` already reads NULL), or a live book in it has `book_status.status IN ('read', 'reading', 'listening', 'dnf')` for this user (EXISTS). `seriesList(userId, show: SeriesShow = "all")` applies it in the WHERE when `show = "started"` (the cut is in SQL; the `next` lateral runs only for the rows shown); order unchanged. New `seriesCounts(userId)` → `{ started, all }`, one aggregate over the same `series_progress` rows (`books_listed > 0`), `COUNT(*) FILTER (WHERE <started>)`. Default `"all"` keeps `test/series-page.test.ts` and `test/unlisted.test.ts` callers unchanged. Export `type SeriesShow = "started" | "all"` and `parseSeriesShow` (only `"all"` is All; anything else, an array or none is Started).
+2. `src/app/books/series/page.tsx`: `searchParams: Promise<{ show?: string | string[] }>`; `show = parseSeriesShow(...)`; `Promise.all([seriesList(userId, show), seriesCounts(userId)])`; passes `series`, `show`, `counts` to `SeriesList`.
+3. `src/components/SeriesList.tsx`: props `{ series, show, counts }`. Under the head, a chip row as Progress draws it: `<div className="filters genre-row series-chips" role="group" aria-label="Show">`, two `Link prefetch={false}` chips, `/books/series` (*Started*) and `/books/series?show=all` (*All*), `className="chip"`, `aria-current` on the open one, text `Started <span className="n">{n}</span>`, `aria-label` *Started, 4 series* (*1 series*). States: `counts.all === 0` → today's *No series yet* slate, no chips; Started with no rows (`counts.started === 0`) → chips, then `EmptySlate` title **Nothing started yet**, text *A series shows here once you read or start a book in it, or follow it.*, one action **All {n} series** → `/books/series?show=all`. The lede stays.
+4. `src/app/books/series/loading.tsx`: a chip-row skeleton at the loaded size (two chip bars in `filters genre-row series-chips`), so the list doesn't jump.
+5. `src/app/books/list/page.tsx`: the `<p className="list-series-line">` foot and its comment go. `src/app/globals.css`: `.list-series-line` leaves the four rules (`.list-parked-line` stays); add `.series-page .series-chips{margin:...}` as `.progress-page .prog-chips` (chips 44px at phone come from `.genre-row .chip`).
+6. `design/mockups.html` § `series`: the chip row (*Started 4 · All 5*, Started current) on the 360, 834 and desktop list frames, The Expanse (0 / 9, not followed) gone from them; a new 360 frame for Started with none started (chips, *Nothing started yet* slate, **All 5 series**). § `blist`: the *All series →* foot line comes out of the first frame. `design/mockups-index.md`: the `series` and `blist` rows say so (task 5.9c), line ranges updated.
+
+**Files** (12; over 8, kept whole at the owner's OK: a split breaks AC-1, the verbatim Check across both pages, and 6 of the 12 are tests and the redraw files `ui.redrawFiles` requires): `src/db/queries.ts`, `src/app/books/series/page.tsx`, `src/components/SeriesList.tsx`, `src/app/books/series/loading.tsx` (not in Files likely touched: the skeleton draws the new chip row), `src/app/books/list/page.tsx`, `src/app/globals.css`, `design/mockups.html`, `design/mockups-index.md`, `test/series-page.test.ts` (not listed: the query tests live here, on the TEST database), `test/series-list.test.tsx`, `test/e2e/series.spec.ts`, `test/library-page.test.tsx` (not listed: its foot-link test now asserts the link is gone).
+
+### Test strategy
+
+- AC-1: `test/series-page.test.ts` *the Started cut (5.9c)*: a series with a read book, one followed Tracking with none read, one with only To-read books (plus reading/listening/DNF/Reading-follow/`off`-follow/other-user/soft-deleted-book cases): `seriesList(USER, "started")` ids are the first two, `"all"` all three, `seriesCounts` `{ started: 2, all: 3 }`. `test/e2e/series.spec.ts` new E2E series (`e2e-sc-*`: READ, TRACK, TODO): `/books/series` lists READ and TRACK, not TODO; *All* lists all three; each chip's count equals the rows it lists (the shared DB holds real series); `/books/list` has no `a[href="/books/series"]` in `main`; the visible nav's *Series* from `/books/list` opens `/books/series` with *Started* current; FLOOR (axe, screenshots at every width, light and dark; 360 and 1280 among them).
+- AC-2: spec, ONCE: `?show=bogus` → *Started* `aria-current`, TODO absent; *All* → reload → *All* current → Back → *Started* current.
+- AC-3: `test/series-list.test.tsx`: Started with no rows draws the slate with one link, **All 3 series** → `/books/series?show=all`, and the chips; `counts.all === 0` keeps *No series yet*. Spec, FEEL: the empty markup swapped into `<main>`, the floor, screenshots.
+- AC-4: `series-list.test.tsx`: chips are `<a>` with the hrefs, `aria-current="true"` only on the open one, the counts and aria-labels. Spec, FLOOR: chip height ≥ 44 below 768px, contrast and axe in both themes, screenshots at each `ui.viewports` width. Budget: the Library's budget via Lighthouse when the switch is on; `/books/series` stays on `UNMEASURED` (0.14e).
+- Existing: the spec's "in progress first" and "no stated total" tests open `?show=all` (NONE isn't started); `library-page.test.tsx`'s foot test asserts no `/books/series` link and no `.list-series-line`.
+
+**Risks**: the *started* EXISTS runs per series row; `series_progress` already joins every book, so cost is flat. The e2e counts read a shared database, so they are compared with the rows drawn, never with a constant.
 
 ## Review log
 
