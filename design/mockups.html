@@ -321,6 +321,8 @@ button.era{width:100%;font:inherit;color:inherit;text-align:left;border-left:0;b
 .chip.dd{gap:.25rem;cursor:pointer}
 .chip.dd .car{color:var(--faint);font-size:.6875rem}
 .frame[data-w="phone"] .chip.dd{min-height:44px}
+/* Series' Started · All chips (task 5.9c): real links, 44px on the phone, the count in mono. */
+.frame[data-w="phone"] .chips.sr .chip{min-height:44px}
 
 /* hero */
 .hero{background:var(--surface);border:1px solid var(--rule);border-radius:16px;padding:.875rem;
@@ -3893,7 +3895,6 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
           <div style="margin-top:.375rem;display:flex;align-items:center;gap:.5rem"><span class="bdg">listening</span><svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></div></div>
         <span class="chev">&#8250;</span></div>
     </div>
-    <p class="rs" style="margin-top:1rem;font-size:.8125rem"><a href="#" style="display:inline-flex;align-items:center;gap:.25rem;min-height:24px;color:var(--muted);text-decoration:underline;text-decoration-color:var(--faint-deco);text-underline-offset:3px">All series <span aria-hidden="true">&rarr;</span></a></p>
     <p class="lede" style="margin-top:.75rem">Tap a row to set status, date, or rating.</p>
     <a class="fab">+ Add books</a>
   </div>
@@ -4224,6 +4225,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
 
 <div class="notes">
 <p><span class="chg">Nov 2026, task 5.9 part 3 (TASK-125, F-38, D-134):</span> a row&rsquo;s author, universe and series are <b>links to their own pages</b> (the author&rsquo;s and universe&rsquo;s from 5.11, the series&rsquo; from 5.9), underlined in <code>--faint</code>; the <code>#n</code> follows the series&rsquo; link, so the link is named by the series alone; the genre and what you own stay text. The old <i>Series</i> section at the foot of the list (forty rows and <i>Show all</i>) is one grey line, <b>All series &rarr;</b>, to the Series list: its bytes paid for the rows&rsquo; links within the Library&rsquo;s budget.</p>
+  <p><span class="chg">Nov 2026, task 5.9c (TASK-161, F-38):</span> that <b>All series &rarr;</b> line is gone from the foot: the books nav&rsquo;s <i>Series</i> is the way to the Series list, so the Library does not repeat it.</p>
 <p><span class="chg">Nov 2026, task 5.14 (F-59):</span> a row&rsquo;s <code>&#8943;</code> carries <b>Queue to listen</b> (the frame with <i>I don&rsquo;t own it on paper</i> open), after <i>Plan for&hellip;</i> on a to-read book and before <i>Follow&hellip;</i>, on every status but <i>Listening</i> and <i>Parked</i>. It puts the book at the end of <i>Listen next</i> on the status screen&rsquo;s <i>Up next</i>; the toast says <i>Added to Listen next</i> with the title, and its Undo takes it off. A book already queued stays where it is: <i>Already in Listen next</i>, nothing to undo.</p>
 <p><span class="chg">Nov 2026, task 5.15 (TASK-109, F-66, D-105):</span> <b>Park</b> follows <i>DNF</i> on the status control (the first phone and desktop frames, and the frames with <i>Reading</i> pressed and with <i>Read</i> being chosen for a Reading book; the book sheet&rsquo;s <i>Your record</i> too, on <code>bookdetail</code>) and in a row&rsquo;s <code>&#8943;</code>, for a book To read, Reading or Listening only; it is grey as DNF is, because parking is not a warning. It saves at once: the book leaves its plan (its quarter closes up) and the listen queue, and the toast&rsquo;s Undo puts back the status, the period and the place. <b>Parked &middot; N</b> follows <i>Unlisted &middot; N</i> (phone, tablet and desktop), in the URL with the sort and the Owned filter, and is not drawn when nothing is parked; a Parked row (<i>Yumi and the Nightmare Painter</i>) has a grey <i>parked</i> badge and nothing beside it, since the review is <code>/parked</code>&rsquo;s (TASK-111). A search finds it; Add books tags it <i>Parked</i>.</p><h3>Library</h3>
   <p><span class="chg">v3 changes:</span> the expanded row is visibly expanded — raised background, status buttons, two real actions.</p>
@@ -5175,6 +5177,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   <div class="wrap">
     <h1 class="t">Series</h1>
     <p class="lede">Every series you have books in, and the next one to read</p>
+    <div class="chips sr" role="group" aria-label="Show" style="margin:.75rem 0 0"><span class="chip" data-on aria-current="true">Started <span class="mono">4</span></span><span class="chip">All <span class="mono">5</span></span></div>
     <div class="group" style="margin-top:.75rem">
       <article class="row"><a class="row-link" href="#" aria-label="Open The Dark Tower"></a>
         <div class="rb"><span class="rh"><span class="rt">The Dark Tower</span><span class="rm mono">3 / 8</span></span>
@@ -5186,11 +5189,6 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
           <div class="rs">Brandon Sanderson</div>
           <div class="rs">Next up <span class="w">Wind and Truth</span> <span class="mono">#5</span></div>
           <div class="meter"><i style="width:40%"></i></div></div><span class="chev">&#8250;</span></article>
-      <article class="row"><a class="row-link" href="#" aria-label="Open The Expanse"></a>
-        <div class="rb"><span class="rh"><span class="rt">The Expanse</span><span class="rm mono">0 / 9</span></span>
-          <div class="rs">James S. A. Corey</div>
-          <div class="rs">Next up <span class="w">Leviathan Wakes</span> <span class="mono">#1</span></div>
-          <div class="meter"><i style="width:0%"></i></div></div><span class="chev">&#8250;</span></article>
       <article class="row"><a class="row-link" href="#" aria-label="Open The Hunger Games"></a>
         <div class="rb"><span class="rh"><span class="rt">The Hunger Games</span><span class="rm mono">3 / 3</span></span>
           <div class="rs">Suzanne Collins</div>
@@ -5211,10 +5209,20 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="slate"><b>No series yet</b><p>A series shows up here once a book you add belongs to one.</p><a class="btn sm" href="#">Add a book</a></div>
   </div>
 </div></div></div>
+<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><a class="iconbtn" aria-label="Settings"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></a></nav>
+  <div class="wrap">
+    <h1 class="t">Series</h1>
+    <p class="lede">Every series you have books in, and the next one to read</p>
+    <div class="chips sr" role="group" aria-label="Show" style="margin:.75rem 0 0"><span class="chip" data-on aria-current="true">Started <span class="mono">0</span></span><span class="chip">All <span class="mono">5</span></span></div>
+    <div class="slate"><b>Nothing started yet</b><p>A series shows here once you read or start a book in it, or follow it.</p><a class="btn sm" href="#">All 5 series</a></div>
+  </div>
+</div></div></div>
 <div class="frame" data-w="tab"><div class="frame-in"><div class="app" data-theme="light" data-medium="books"><nav class="rail" aria-label="Main"><span class="rail-word" aria-hidden="true">L</span><div class="rg"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="rl">Dashboard</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 7a2 2 0 0 0-2 2v11"/><path d="M5.803 18H5a2 2 0 0 0 0 4h9.5a.5.5 0 0 0 .5-.5V21"/><path d="M9 15V4a2 2 0 0 1 2-2h9.5a.5.5 0 0 1 .5.5v14a.5.5 0 0 1-.5.5H11a2 2 0 0 1 0-4h10"/></svg></span><span class="rl">Library</span></a><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M10 2v8l3-3 3 3V2"/><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg></span><span class="rl">Series</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></span><span class="rl">Top</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span><span class="rl">Add</span></a></div></nav><div class="tabmain">
   <div class="wrap">
     <h1 class="t">Series</h1>
     <p class="lede">Every series you have books in, and the next one to read</p>
+    <div class="chips sr" role="group" aria-label="Show" style="margin:.75rem 0 0"><span class="chip" data-on aria-current="true">Started <span class="mono">4</span></span><span class="chip">All <span class="mono">5</span></span></div>
     <div class="group" style="margin-top:.75rem">
       <article class="row"><a class="row-link" href="#" aria-label="Open The Dark Tower"></a>
         <div class="rb"><span class="rh"><span class="rt">The Dark Tower</span><span class="rm mono">3 / 8</span></span>
@@ -5226,14 +5234,14 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
           <div class="rs">Brandon Sanderson</div>
           <div class="rs">Next up <span class="w">Wind and Truth</span> <span class="mono">#5</span></div>
           <div class="meter"><i style="width:40%"></i></div></div><span class="chev">&#8250;</span></article>
-      <article class="row"><a class="row-link" href="#" aria-label="Open The Expanse"></a>
-        <div class="rb"><span class="rh"><span class="rt">The Expanse</span><span class="rm mono">0 / 9</span></span>
-          <div class="rs">James S. A. Corey</div>
-          <div class="rs">Next up <span class="w">Leviathan Wakes</span> <span class="mono">#1</span></div>
-          <div class="meter"><i style="width:0%"></i></div></div><span class="chev">&#8250;</span></article>
       <article class="row"><a class="row-link" href="#" aria-label="Open The Hunger Games"></a>
         <div class="rb"><span class="rh"><span class="rt">The Hunger Games</span><span class="rm mono">3 / 3</span></span>
           <div class="rs">Suzanne Collins</div>
+          <div class="rs"><span aria-hidden="true">&#10003;</span> All read</div>
+          <div class="meter"><i style="width:100%"></i></div></div><span class="chev">&#8250;</span></article>
+      <article class="row"><a class="row-link" href="#" aria-label="Open Wayfarers"></a>
+        <div class="rb"><span class="rh"><span class="rt">Wayfarers</span><span class="rm mono">4 / 3</span></span>
+          <div class="rs">Becky Chambers</div>
           <div class="rs"><span aria-hidden="true">&#10003;</span> All read</div>
           <div class="meter"><i style="width:100%"></i></div></div><span class="chev">&#8250;</span></article>
     </div>
@@ -5260,6 +5268,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   <div class="main"><div class="wrap">
     <h1 class="t">Series</h1>
     <p class="lede">Every series you have books in, and the next one to read</p>
+    <div class="chips sr" role="group" aria-label="Show" style="margin:.75rem 0 0"><span class="chip" data-on aria-current="true">Started <span class="mono">4</span></span><span class="chip">All <span class="mono">5</span></span></div>
     <div class="group" style="margin-top:.75rem">
       <article class="row"><a class="row-link" href="#" aria-label="Open The Dark Tower"></a>
         <div class="rb"><span class="rh"><span class="rt">The Dark Tower</span><span class="rm mono">3 / 8</span></span>
@@ -5271,11 +5280,6 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
           <div class="rs">Brandon Sanderson</div>
           <div class="rs">Next up <span class="w">Wind and Truth</span> <span class="mono">#5</span></div>
           <div class="meter"><i style="width:40%"></i></div></div><span class="chev">&#8250;</span></article>
-      <article class="row"><a class="row-link" href="#" aria-label="Open The Expanse"></a>
-        <div class="rb"><span class="rh"><span class="rt">The Expanse</span><span class="rm mono">0 / 9</span></span>
-          <div class="rs">James S. A. Corey</div>
-          <div class="rs">Next up <span class="w">Leviathan Wakes</span> <span class="mono">#1</span></div>
-          <div class="meter"><i style="width:0%"></i></div></div><span class="chev">&#8250;</span></article>
       <article class="row"><a class="row-link" href="#" aria-label="Open The Hunger Games"></a>
         <div class="rb"><span class="rh"><span class="rt">The Hunger Games</span><span class="rm mono">3 / 3</span></span>
           <div class="rs">Suzanne Collins</div>
@@ -5391,12 +5395,14 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
 <div class="notes"><h3>Series</h3>
   <ul>
     <li><b>Task 5.9, parts 1 and 2 (F-38, product B6; D-26, D-90):</b> every series you have a live book in, each with its author, <span class="mono">read / total</span> in mono, the next book to read and a meter. Calibre owns the series (D-90); nothing here is stored (hard rule 2): the counts come from <code>series_progress</code>, the next book from the books themselves.</li>
+    <li><b>Started · All (task 5.9c, TASK-161, F-38):</b> the page opens on <i>Started</i>: a series you have read a book in, have one in hand (reading, listening) or a DNF in, or follow as <i>Tracking</i> or <i>Reading</i>; a series with only To-read books is not started. <i>Started 4 &middot; All 5</i> are real links (<code>/books/series</code>, <code>?show=all</code>), each with its count in mono, <code>aria-current</code> on the open one and 44px on the phone, so a reload and Back keep the chip; any other <code>?show=</code> is <i>Started</i>. The cut is in the query, so the default reads fewer rows. The Library no longer links here: the books nav&rsquo;s <i>Series</i> is the tap.</li>
     <li><b>Order:</b> in progress first, then not started, then complete, each by name. A series with one live book is listed; a series whose books are all removed is not.</li>
     <li><b>Counts:</b> the total is the stated one, else the live books listed, and a removed book is on neither count. More read than the stated total (<i>Wayfarers</i>, <span class="mono">4 / 3</span>) draws a full meter, not an overflowing one, and the true counts stay beside the name.</li>
     <li><b>Next up</b> is the lowest-position book you have neither read, started nor set aside: a book being read or listened to is in hand and a DNF is set aside, so neither is named; a book with no position comes after every positioned one. A complete series says <i>All read</i> and names none; a part-read series whose rest is in hand or not in your library draws no line.</li>
     <li><b>The meter</b> is the list-row <code>.meter</code> the Shelves rows use, filled with <code>--ready</code> (D-26).</li>
     <li><b>Rows are links (task 5.9, part 2):</b> a row's name opens the series' page, whose accessible name is the series' name; the whole row is the target and ends in the chevron, as a shelf's row does.</li>
-    <li><b>Empty:</b> <i>No series yet</i> with one action, <i>Add a book</i>. Loading is skeleton rows at the loaded size; the error state is a grey &times;, never red, with <i>Try again</i>. One column at every width: there is no action to put in a rail.</li>
+    <li><b>Nothing started (task 5.9c):</b> with series but none started, the chips stay and one slate says <i>Nothing started yet</i>, <i>A series shows here once you read or start a book in it, or follow it.</i>, with one action naming <i>All</i> and its count (<i>All 5 series</i>); never a blank page.</li>
+    <li><b>Empty:</b> <i>No series yet</i> with one action, <i>Add a book</i>, and no chips. Loading is skeleton rows at the loaded size; the error state is a grey &times;, never red, with <i>Try again</i>. One column at every width: there is no action to put in a rail.</li>
     <li><b>Navigation:</b> <i>Series</i> sits under Books after <i>Shelves</i> and before <i>Top</i>, in the tab row, the rail and the sidebar, with a neutral book-marked icon.</li>
     <li><b>A series' page (task 5.9, part 2; the last four frames):</b> <i>&lsaquo; Series</i>, the name, its author, <span class="mono">read / total</span> in mono, a meter filled with <code>--ready</code> and 2.2c's follow control, <i>Reading &middot; Tracking &middot; Not following</i> (the middle reads <i>On hold</i> on a part-read series, D-118; <i>Not following</i> is stored as <code>off</code>, D-117). Then its books in position order, each with its status as the Library says it (<i>&#10003; Read</i>, <i>&#9696; Reading</i>, <i>Q1 2027</i>, <i>Someday</i>, <i>Not on your list</i>; glyph and words, never colour alone), the dates a Read book carries, and <b>Next up</b> on the next unread. At 1024px and up the count, meter and follow sit in the rail beside the list.</li>
     <li><b>Next up</b> is the list's rule: the first book in order you have neither read, started nor set aside. In the frames <i>#4 Wizard and Glass</i> is marked; a book in hand or a DNF is passed over; a complete series marks none.</li>

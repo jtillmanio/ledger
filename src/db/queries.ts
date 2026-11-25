@@ -1251,7 +1251,7 @@ export type SeriesSummary = {
  * `series_progress` now: the Library's own Series section and its `seriesProgress` were removed in task 5.9's
  * third part (TASK-125).
  */
-export async function seriesList(userId: string): Promise<SeriesSummary[]> {
+export async function seriesList(userId: string, show: SeriesShow = "all"): Promise<SeriesSummary[]> {
   return sql<SeriesSummary[]>`
     SELECT p.series_id AS id, p.name, p.author, p.books_read::int AS read, p.total_books::int AS total,
            CASE WHEN p.books_read >= p.total_books THEN NULL ELSE n.next END AS next
@@ -1266,8 +1266,40 @@ export async function seriesList(userId: string): Promise<SeriesSummary[]> {
       LIMIT 1
     ) n ON true
     WHERE p.user_id = ${userId} AND p.books_listed > 0
+      AND (${show === "all"}::boolean OR p.follow_state IN ('tracking', 'reading') OR EXISTS (
+        SELECT 1 FROM books sb JOIN book_status ss ON ss.book_id = sb.id AND ss.user_id = ${userId}
+        WHERE sb.series_id = p.series_id AND sb.deleted_at IS NULL
+          AND ss.status IN ('read', 'reading', 'listening', 'dnf')))
     ORDER BY CASE WHEN p.books_read >= p.total_books THEN 2 WHEN p.books_read = 0 THEN 1 ELSE 0 END,
              lower(p.name COLLATE "default"), p.series_id`;
+}
+
+/** The Series list's two cuts (task 5.9c): *Started* (the default) or *All*. */
+export type SeriesShow = "started" | "all";
+
+/** `?show=`: only `all` is All; anything else, an array or nothing is Started, so a hand-typed value never breaks the page. */
+export function parseSeriesShow(raw: string | string[] | undefined): SeriesShow {
+  return raw === "all" ? "all" : "started";
+}
+
+/**
+ * How many series each cut of the Series list holds, for the chips (task 5.9c): one aggregate over the same
+ * rows. A series is *started* (D-26 keeps "read" meaning the book) when you follow it (`tracking` or `reading`;
+ * a stored `off` already reads NULL in `series_progress`) or a live book in it is read, in hand (reading,
+ * listening) or a DNF; to-read, unlisted, parked and unmarked books alone do not start it. The same test is
+ * `seriesList`'s cut, written out in both because the query-budget harness counts a nested `sql` fragment as a
+ * query. Derived here, never stored (hard rule 2); a removed book counts for nothing (hard rule 4).
+ */
+export async function seriesCounts(userId: string): Promise<{ started: number; all: number }> {
+  const [row] = await sql<{ started: number; all: number }[]>`
+    SELECT COUNT(*) FILTER (WHERE p.follow_state IN ('tracking', 'reading') OR EXISTS (
+             SELECT 1 FROM books sb JOIN book_status ss ON ss.book_id = sb.id AND ss.user_id = ${userId}
+             WHERE sb.series_id = p.series_id AND sb.deleted_at IS NULL
+               AND ss.status IN ('read', 'reading', 'listening', 'dnf')))::int AS started,
+           COUNT(*)::int AS "all"
+    FROM series_progress p
+    WHERE p.user_id = ${userId} AND p.books_listed > 0`;
+  return row;
 }
 
 /** A live book on one series' page (task 5.9): where it sits, your status for it and the dates the Library row shows. */

@@ -10,9 +10,11 @@ import { describe, expect, it, vi } from "vitest";
 import SeriesList from "../src/components/SeriesList";
 import SeriesError from "../src/app/books/series/error";
 import Loading from "../src/app/books/series/loading";
-import type { SeriesSummary } from "../src/db/queries";
+import type { SeriesShow, SeriesSummary } from "../src/db/queries";
 
-const render = (series: SeriesSummary[]) => renderToStaticMarkup(createElement(SeriesList, { series }));
+// `counts` default to the rows given, as a page whose cut is every series would pass them (task 5.9c).
+const render = (series: SeriesSummary[], show: SeriesShow = "all", counts = { started: series.length, all: series.length }) =>
+  renderToStaticMarkup(createElement(SeriesList, { series, show, counts }));
 const row = (over: Partial<SeriesSummary> = {}): SeriesSummary => ({
   id: "s", name: "Stormlight", author: "Brandon Sanderson", read: 3, total: 5,
   next: { id: "n", title: "Oathbringer", position: 3 }, ...over,
@@ -76,6 +78,59 @@ describe("a row (AC-1, AC-2, AC-3)", () => {
 
   it("the meter is aria-hidden: the count beside the name says it in words", () => {
     expect(render([row()])).toMatch(/<span class="meter" aria-hidden="true">/);
+  });
+});
+
+// Task 5.9c (TASK-161, AC-3, AC-4): the page opens on the series you have started, with *All* a tap away.
+// The chips are real links with their counts, `aria-current` on the open one; none started draws a slate that
+// names *All*, never a blank page; no series at all keeps *No series yet* and no chips.
+describe("the chips (5.9c AC-4)", () => {
+  const chips = (html: string) => [...html.matchAll(/<a ([^>]*class="chip"[^>]*)>(.*?)<\/a>/g)].map((m) => ({
+    href: /href="([^"]*)"/.exec(m[1])![1], label: /aria-label="([^"]*)"/.exec(m[1])![1],
+    current: /aria-current="true"/.test(m[1]), text: m[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+  }));
+
+  it("are two links, Started (the bare page) and All (?show=all), each with its count", () => {
+    const html = render([row()], "started", { started: 4, all: 5 });
+    expect(html).toContain('role="group" aria-label="Show"');
+    expect(chips(html)).toEqual([
+      { href: "/books/series", label: "Started, 4 series", current: true, text: "Started 4" },
+      { href: "/books/series?show=all", label: "All, 5 series", current: false, text: "All 5" },
+    ]);
+  });
+
+  it("put aria-current on the open one only", () => {
+    expect(chips(render([row()], "all", { started: 4, all: 5 })).map((c) => c.current)).toEqual([false, true]);
+  });
+
+  it("say '1 series' for one", () => {
+    expect(chips(render([row()], "all", { started: 1, all: 1 })).map((c) => c.label)).toEqual(["Started, 1 series", "All, 1 series"]);
+  });
+
+  it("the skeleton draws the same chip row, so the list does not jump", () => {
+    const html = renderToStaticMarkup(createElement(Loading));
+    expect(html).toContain("filters genre-row series-chips");
+    expect(html.match(/sk-chip/g)).toHaveLength(2);
+  });
+});
+
+describe("nothing started (5.9c AC-3)", () => {
+  it("draws the chips and a slate whose one action names All and its count", () => {
+    const html = render([], "started", { started: 0, all: 3 });
+    expect(html).toContain("Nothing started yet");
+    expect(html).toContain("A series shows here once you read or start a book in it, or follow it.");
+    expect([...html.matchAll(/<a [^>]*class="btn sm"[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>|<a [^>]*href="([^"]*)"[^>]*class="btn sm"[^>]*>([^<]*)<\/a>/g)]
+      .map((m) => [m[1] ?? m[3], m[2] ?? m[4]])).toEqual([["/books/series?show=all", "All 3 series"]]);
+    expect(html).toContain("series-chips");
+    expect(html).not.toContain("series-rows");
+    expect(html).not.toContain("No series yet");
+  });
+
+  it("no series at all keeps No series yet, with no chips", () => {
+    const html = render([], "started", { started: 0, all: 0 });
+    expect(html).toContain("No series yet");
+    expect(html).not.toContain("series-chips");
+    expect(html).not.toContain("Nothing started yet");
   });
 });
 

@@ -177,12 +177,6 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
           </article>
         ))}
       </SheetLinks>
-
-      {/* Every series has its own list and pages now (task 5.9): the foot says where, in one line, in place of
-          the forty rows it drew (TASK-125: their bytes paid for the rows' series links). */}
-      <p className="list-series-line">
-        <Link prefetch={false} href="/books/series">All series <span aria-hidden="true">→</span></Link>
-      </p>
     </main>
   );
 }

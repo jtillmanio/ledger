@@ -161,12 +161,11 @@ describe("the Library page (AC-3, AC-4)", () => {
     expect(sub.querySelectorAll("a")).toHaveLength(0);
   });
 
-  it("ends with one link to every series, in place of the old Series section and its Show all", async () => {
+  it("has no Series section, no Show all and no link to the series list: the books nav's Series is the tap (5.9c)", async () => {
     const { doc } = await render({ sort: "length" });
     expect([...doc.querySelectorAll("h2")].map((h) => h.textContent)).not.toContain(expect.stringMatching(/^Series/));
-    const foot = doc.querySelector(".list-series-line a")!;
-    expect(foot.getAttribute("href")).toBe("/books/series");
-    expect(foot.textContent).toBe("All series →");
+    expect(doc.querySelector(".list-series-line")).toBeNull();
+    expect(doc.querySelector('main a[href="/books/series"]')).toBeNull();
     expect(doc.querySelector('a[href*="series=all"]')).toBeNull();
   });
 });

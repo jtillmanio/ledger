@@ -21,6 +21,10 @@
 // `3` in *#*, focus in the first empty field; saving adds the book at #3 and the page's gap row is gone. Add books
 // with no new parameter, or `?q=` alone, opens on Search as before. The form meets the floor as it opens.
 //
+// Task 5.9c (TASK-161; F-38): the page opens on *Started* (a book read, in hand or DNF, or a follow of Tracking or
+// Reading), with *All* a tap away (`?show=`, real links with their counts and `aria-current`); any other value is
+// *Started*; with none started a slate names *All*; the Library's *All series* line is gone.
+//
 // The series and books are made here, under E2E ids no other spec uses, and removed after the last test.
 // The database holds real series too, so rows are found by name, never by index on the whole list.
 import { expect, test, type Page } from "@playwright/test";
@@ -76,8 +80,16 @@ const FOLLOW = { id: "e2e-sp-follow", name: "E2E Sp Follow", total: 3 as number 
 // A gap row's *Add* writes a book (TASK-142), so it has a series of its own: GAP's tests only read.
 const FILL = { id: "e2e-sp-fill", name: "E2E Sp Fill", total: 4 as number | null,
   books: [pbook("fill", 1, "read"), pbook("fill", 2, "reading"), pbook("fill", 4, null)] };
+// The Started cut (task 5.9c, TASK-161): one with a read book, one followed Tracking with none read, and one with
+// only To-read books. `e2e-sc-*`, so the older tests' order check (E2E Se) never sees them.
+const sbook = (series: string, n: number, status: Book["status"]): Book =>
+  ({ id: `e2e-sc-${series}-${n}`, title: `E2E Sc ${series} Book ${n}`, pos: n, status });
+const SCREAD = { id: "e2e-sc-read", name: "E2E Sc Read", total: 2 as number | null, books: [sbook("read", 1, "read"), sbook("read", 2, null)] };
+const SCTRACK = { id: "e2e-sc-track", name: "E2E Sc Track", total: 2 as number | null, books: [sbook("track", 1, null), sbook("track", 2, null)] };
+const SCTODO = { id: "e2e-sc-todo", name: "E2E Sc Todo", total: 2 as number | null, books: [sbook("todo", 1, "to_read"), sbook("todo", 2, "to_read")] };
+const CUT = [SCREAD, SCTRACK, SCTODO];
 const PAGES = [GAP, OPEN, SOFT, EMPTY, FOLLOW, FILL];
-const ALL = [...SERIES, ...PAGES];
+const ALL = [...SERIES, ...PAGES, ...CUT];
 const IDS = ALL.flatMap((s) => s.books.map((b) => b.id));
 
 async function withSql<T>(work: (sql: TestSql) => Promise<T>): Promise<T> {
@@ -112,6 +124,7 @@ test.beforeAll(async () => {
         if (b.status) await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${b.id}, ${b.status})`;
       }
     }
+    await sql`INSERT INTO series_follows (user_id, series_id, state) VALUES (${E2E_USER}, ${SCTRACK.id}, 'tracking')`;
   });
 });
 test.afterAll(clean);
@@ -119,8 +132,9 @@ test.afterAll(clean);
 const rows = (page: Page) => page.locator(".series-rows > li");
 const rowOf = (page: Page, name: string) => rows(page).filter({ has: page.locator(".rt", { hasText: new RegExp(`^${name}$`) }) });
 
-async function open(page: Page) {
-  await page.goto("/books/series");
+/** The list, on *Started* (the page's own address) or on *All* (`?show=all`; NONE is not started, so its tests open this). */
+async function open(page: Page, all = false) {
+  await page.goto(all ? "/books/series?show=all" : "/books/series");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Series");
   await expect(rowOf(page, PART.name)).toHaveCount(1);
 }
@@ -171,7 +185,7 @@ test("a part-read series reads 3 / 5, its meter filled with --ready, and names t
 });
 
 test("a series with no stated total counts its listed books; a complete one names none (AC-1)", FLOOR, async ({ page }) => {
-  await open(page);
+  await open(page, true);
   const none = rowOf(page, NONE.name);
   await expect(none.locator(".rm")).toHaveText("0 / 2");
   await expect(none.locator(".series-next")).toContainText(NONE.books[0].title);
@@ -182,7 +196,7 @@ test("a series with no stated total counts its listed books; a complete one name
 });
 
 test("in progress first, then not started, then complete, each by name (AC-2)", FLOOR, async ({ page }) => {
-  await open(page);
+  await open(page, true);
   const names = await rows(page).locator(".rt").allTextContents();
   expect(names.filter((n) => n.startsWith("E2E Se "))).toEqual([PART.name, NONE.name, DONE.name, OVER.name]);
 });
@@ -216,7 +230,7 @@ test("the floor on the list: axe, contrast, 24px targets, nothing red, no sidewa
 test("the empty state: No series yet and one action, Add a book, to /books/add; the floor; screenshots (AC-6)", FEEL, async ({ page }, info) => {
   await open(page);
   // The shared database always holds series, so the empty list's own markup stands in for the loaded <main>.
-  await swapMain(page, renderToStaticMarkup(createElement(SeriesList, { series: [] })));
+  await swapMain(page, renderToStaticMarkup(createElement(SeriesList, { series: [], show: "started", counts: { started: 0, all: 0 } })));
   const slate = page.locator(".slate");
   await expect(slate).toContainText("No series yet");
   await expect(slate.getByRole("link", { name: "Add a book" })).toHaveAttribute("href", "/books/add");
@@ -237,11 +251,19 @@ test("the error state: a neutral line and a real Try again; the floor; screensho
 // The skeleton's first row is measured against a loaded row of the same lines: Done's (the name and count, the
 // author, one *All read* line) is two .rs lines, as the skeleton draws.
 test("the loading skeleton's row is the loaded row's size, within 2px (AC-6)", FLOOR, async ({ page }) => {
-  await open(page);
+  await open(page, true);
   const loaded = (await rowOf(page, PART.name).boundingBox())!;
   const done = (await rowOf(page, DONE.name).boundingBox())!;
+  const chips = (await page.locator(".series-chips").boundingBox())!;
+  const firstRow = (await rows(page).first().boundingBox())!;
   await swapMain(page, renderToStaticMarkup(createElement(SeriesLoading)));
+  // The chip row (5.9c) is the loaded height too (44px at phone), and the list sits the same distance beneath
+  // it: no jump when the page arrives. Measured from the chips, so the title block above them is not in it.
+  const skChips = (await page.locator(".series-chips").boundingBox())!;
+  expect(Math.abs(skChips.height - chips.height), `skeleton chips ${skChips.height}px, loaded ${chips.height}px`).toBeLessThanOrEqual(2);
   const sk = (await page.locator(".series-rows > li").first().boundingBox())!;
+  expect(Math.abs((sk.y - skChips.y) - (firstRow.y - chips.y)),
+    `list ${sk.y - skChips.y}px under the chips, loaded ${firstRow.y - chips.y}px`).toBeLessThanOrEqual(2);
   // Part and Done each have a name line, an author line and one more line (Next up / All read): the skeleton's size.
   expect(Math.abs(loaded.height - done.height), "loaded rows differ").toBeLessThanOrEqual(2);
   expect(Math.abs(sk.height - done.height), `skeleton ${sk.height}px, loaded ${done.height}px`).toBeLessThanOrEqual(2);
@@ -549,4 +571,83 @@ test("the book page's Series fact names the series as a link to its page (AC-3)"
   await expect(fact.getByRole("link", { name: GAP.name, exact: true })).toHaveAttribute("href", href(GAP.id));
   await fact.getByRole("link", { name: GAP.name, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${href(GAP.id)}$`));
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// The Series list opens on what you've started (task 5.9c, TASK-161; F-38)
+
+const chip = (page: Page, name: "Started" | "All") => page.locator(".series-chips").getByRole("link", { name: new RegExp(`^${name},`) });
+// The shared database holds real series, so a chip's count is compared with the rows drawn, never with a constant.
+const chipCount = async (page: Page, name: "Started" | "All") => Number(await chip(page, name).locator(".n").textContent());
+
+test("Started lists the read and the tracked series, not the to-read one; All lists all three; each chip shows its count (5.9c AC-1)", ONCE, async ({ page }) => {
+  await open(page);
+  await expect(chip(page, "Started")).toHaveAttribute("aria-current", "true");
+  await expect(rowOf(page, SCREAD.name)).toHaveCount(1);
+  await expect(rowOf(page, SCTRACK.name)).toHaveCount(1);
+  await expect(rowOf(page, SCTODO.name)).toHaveCount(0);
+  const started = await rows(page).count();
+  expect(await chipCount(page, "Started")).toBe(started);
+  await chip(page, "All").click();
+  await expect(page).toHaveURL(/\/books\/series\?show=all$/);
+  for (const s of CUT) await expect(rowOf(page, s.name)).toHaveCount(1);
+  const all = await rows(page).count();
+  expect(await chipCount(page, "All")).toBe(all);
+  expect(all).toBeGreaterThan(started);
+  await expect(chip(page, "All")).toHaveAttribute("aria-current", "true");
+});
+
+test("the Library has no All series link, and the nav's Series opens the page on Started (5.9c AC-1)", ONCE, async ({ page }) => {
+  await page.goto("/books/list");
+  await expect(page.locator(".filters").first()).toBeVisible();
+  await expect(page.locator('main a[href="/books/series"]')).toHaveCount(0);
+  await expect(page.locator(".list-series-line")).toHaveCount(0);
+  await page.locator('a[href="/books/series"]').filter({ visible: true }).click();
+  await expect(page).toHaveURL(/\/books\/series$/);
+  await expect(chip(page, "Started")).toHaveAttribute("aria-current", "true");
+});
+
+test("any other ?show= shows Started; All survives a reload, and Back returns to Started (5.9c AC-2)", ONCE, async ({ page }) => {
+  await page.goto("/books/series?show=bogus");
+  await expect(chip(page, "Started")).toHaveAttribute("aria-current", "true");
+  await expect(chip(page, "All")).not.toHaveAttribute("aria-current");
+  await expect(rowOf(page, SCREAD.name)).toHaveCount(1);
+  await expect(rowOf(page, SCTODO.name)).toHaveCount(0);
+  await open(page);
+  await chip(page, "All").click();
+  await expect(page).toHaveURL(/show=all$/);
+  await page.reload();
+  await expect(chip(page, "All")).toHaveAttribute("aria-current", "true");
+  await expect(rowOf(page, SCTODO.name)).toHaveCount(1);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/books\/series$/);
+  await expect(chip(page, "Started")).toHaveAttribute("aria-current", "true");
+  await expect(rowOf(page, SCTODO.name)).toHaveCount(0);
+});
+
+test("the chips are links of 44px at phone widths, with the floor on both cuts; screenshots (5.9c AC-4)", FLOOR, async ({ page }, info) => {
+  const phone = page.viewportSize()!.width < 768;
+  for (const all of [false, true]) {
+    await open(page, all);
+    await expect(page.locator(".series-chips [aria-current]")).toHaveCount(1);
+    for (const name of ["Started", "All"] as const) {
+      const box = (await chip(page, name).boundingBox())!;
+      expect(box.height, `${name} chip`).toBeGreaterThanOrEqual(phone ? 44 : 24);
+    }
+    await floor(page);
+    await screenshot(page, info, all ? "series-all" : "series-started");
+  }
+});
+
+test("nothing started: chips and a slate that names All and its count, never a blank page; the floor; screenshots (5.9c AC-3)", FEEL, async ({ page }, info) => {
+  await open(page);
+  // The shared database always holds started series, so the empty cut's own markup stands in for the loaded <main>.
+  await swapMain(page, renderToStaticMarkup(createElement(SeriesList, { series: [], show: "started", counts: { started: 0, all: 3 } })));
+  const slate = page.locator(".slate");
+  await expect(slate).toContainText("Nothing started yet");
+  await expect(slate.getByRole("link")).toHaveCount(1);
+  await expect(slate.getByRole("link", { name: "All 3 series" })).toHaveAttribute("href", "/books/series?show=all");
+  await expect(page.locator(".series-chips a")).toHaveCount(2);
+  await floor(page);
+  await screenshot(page, info, "series-nothing-started");
 });

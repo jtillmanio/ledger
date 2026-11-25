@@ -459,6 +459,11 @@ and notes where it went.
       plan page" become the plan page. TASK-067 built and tested it that way. If
       you want the card on the dashboard instead, say so, and it moves (from
       TASK-067, PR #248).
+- [ ] Add a roadmap item (next free ID in phase 6, with a **Check:** for you to agree): the
+      loading skeleton of Progress (`src/app/progress/loading.tsx`)
+      draws its chips with `sk-chip` alone (1.85rem), but the loaded chips are 44px tall below 768px, so
+      the list jumps about 14px on a phone. `sk-chip sk-dd` is the fix, as the Series and Library skeletons
+      have it (from TASK-161, PR #349; found by spec-reviewer).
 
 ---
 
