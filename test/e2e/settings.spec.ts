@@ -531,6 +531,30 @@ test("Start on meets the floor: a named chip and real buttons at 44px on the pho
   await expectNoHorizontalScroll(page);
 });
 
+// `locator.click()` scrolls a clipped container to reach its target; a finger or a mouse cannot. So this hits each
+// choice where a pointer would land (the group clips what overflows it: `.group{overflow:hidden}`), and clicks
+// Books at its centre with the mouse.
+test("Start on's open menu is not clipped by its group: every choice is what a pointer hits at its centre, and a real click on Books chooses it (TASK-147 AC-5)", FLOOR, async ({ page }) => {
+  await open(page);
+  await hydrated(startChip(page));
+  await startChip(page).click();
+  for (const name of ["Last used", "Comics", "Books", "Watch"] as const) {
+    const hit = await startChoice(page, name).evaluate((el) => {
+      // Scroll the page as a person would (never the group, which is what is under test), then see what is there.
+      const mid = () => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+      if (mid()[1] > innerHeight - 8 || mid()[1] < 8) window.scrollBy(0, mid()[1] - innerHeight / 2);
+      const [x, y] = mid();
+      const top = document.elementFromPoint(x, y);
+      return top === el || el.contains(top) ? "" : `${top?.tagName}.${top?.className} ${top?.textContent?.slice(0, 30)}`;
+    });
+    expect(hit, `${name} is under the pointer at its centre`).toBe("");
+  }
+  const box = (await startChoice(page, "Books").boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(startChip(page, "Books")).toBeVisible();
+  expect((await page.context().cookies()).find((c) => c.name === "ledger_start")?.value).toBe("books");
+});
+
 test("Start on is keyboard-operable: ArrowDown opens it on the current choice, the arrows move, Enter chooses, Esc closes and focus returns to the chip (TASK-147 AC-5)", ONCE, async ({ page }) => {
   await open(page);
   const chip = startChip(page);
