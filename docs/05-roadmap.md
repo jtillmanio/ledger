@@ -6007,6 +6007,31 @@ it is converted.
     string is in `design/mockups.html` where it draws it; the browser suite
     passes; the rules are in `docs/04-design.md` § 11.
 
+- ☐ 6.28 **The Library's genre row: *All genres* and a count on each chip** · S.
+  From TASK-145 (6.24, 3 of 4; PR #346). Frame E7 (`design/MR-E-Review-2.dc.html`,
+  MR-D20) draws more than 6.24's *Owned* and *Sort* dropdowns: a *Genre ▾*
+  dropdown chip, an *All genres* chip that is current while no genre is
+  chosen, and a count on each genre chip (*Fantasy · 212*). TASK-145 built the
+  two dropdowns and left these out (the task and MR-D20 name only those).
+  - ***All genres*** starts the row, current while no genre is chosen, and
+    clears the genre (the status, level, owned filter and order stay).
+  - **A count on each chip**, from `listCounts` (it already returns each
+    genre's books), set apart as the status chips' counts are (`.chip .n`),
+    named in words for assistive tech (*Fantasy, 212 books*).
+  - ***Genre ▾*** is a question for the plan: the row already holds every
+    genre, so a dropdown of them is only worth drawing if E7's reason holds on
+    the phone. Draw it or say why not.
+  - The chips add bytes to `/books/list` (about forty chips, each with a
+    count): the plan states them and keeps the route within its budget.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first) in
+    the browser (0.11) at 360px, light and dark: with no genre chosen the
+    genre row's first chip is *All genres* and is current; choosing a genre
+    makes that chip current and *All genres* not, and *All genres* returns the
+    URL to no `genre` with the status and order kept; each genre chip reads
+    *Name · n* where n is `listCounts`' count for it, and its accessible name
+    says the count in words; the row still scrolls by touch and the page does
+    not scroll sideways. Axe passes and `/books/list` stays within its budget.
+
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M
 

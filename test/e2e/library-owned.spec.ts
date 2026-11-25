@@ -269,7 +269,7 @@ test("the Owned chip, its choices and the row's menu items are named and big eno
     expect(b.width).toBeGreaterThanOrEqual(24);
   }
   await expectNoHorizontalScroll(page);
-  // Open, the list covers the first rows' links: axe checks the list and the chip, as for a toast.
+  // Open, the list covers the first rows' links, so axe checks the list alone, as for a toast.
   await expectNoAxeViolations(page, AXE, ".chipmenu");
   expect(await contrastFailures(page)).toEqual([]);
   await screenshot(page, info, "library-owned-chip");

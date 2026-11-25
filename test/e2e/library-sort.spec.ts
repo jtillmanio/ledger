@@ -200,7 +200,7 @@ test("the Sort chip is named and its choices are big enough, shut and open; axe,
   expect(list.x).toBeGreaterThanOrEqual(0);
   expect(list.x + list.width).toBeLessThanOrEqual(width);
   await expectNoHorizontalScroll(page);
-  // Open, the list covers the first rows' links: axe checks the list and the chip, as for a toast.
+  // Open, the list covers the first rows' links, so axe checks the list alone, as for a toast.
   await expectNoAxeViolations(page, AXE, ".chipmenu");
   expect(await contrastFailures(page)).toEqual([]);
   await screenshot(page, info, "library-sort-controls");

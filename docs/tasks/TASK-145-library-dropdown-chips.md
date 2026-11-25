@@ -1,7 +1,7 @@
 ---
 id: TASK-145
 title: 6.24 Built screens follow the mediums review (3 of 4) — the Library's dropdown chips
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: sonnet
@@ -30,7 +30,7 @@ On the phone, the Library's *Owned* and *Sort* controls fit on one row as dropdo
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves *the Library shows Owned and Sort as dropdown chips in one row and the genre row, and nothing scrolls sideways*, and redraws `blist`. TASK-143, TASK-144 and TASK-146 prove the rest):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves *the Library shows Owned and Sort as dropdown chips in one row and the genre row, and nothing scrolls sideways*, and redraws `blist`. TASK-143, TASK-144 and TASK-146 prove the rest):
 browser test at 360px, light and dark: *Remove from Listen next* resolves to
 no `--danger` colour; finishing a book in a series shows one *Now reading*
 chip and *+N · Follow…*, and *Keep going?* is in the *Follow…* sheet; the
@@ -39,9 +39,9 @@ shows *Owned* and *Sort* as dropdown chips in one row and the genre row, and
 nothing scrolls sideways; `design/mockups.html`'s `blist`, `status`,
 `finishoffer`, `batch` and `settings` frames are redrawn from the review and
 it gains the six 834px frames.
-- [ ] AC-2: At 360px, the *Owned* and *Sort* chips' boxes share one top edge, each chip names its current choice (*Owned: Any*, *Sort: Title* or the frame's words), and `document.documentElement.scrollWidth` equals the viewport width.
-- [ ] AC-3: Given the *Owned* chip, when it is opened and *Owned* is chosen, then the URL carries the owned filter and the list shows exactly the owned books, as the chips did; the same for each sort and direction, and a reload keeps both.
-- [ ] AC-4: Each dropdown opens and closes by keyboard (Enter or Space opens, Esc closes and returns focus to its chip), its choices are reachable by Tab or arrows, and the current choice is marked for assistive tech (`aria-current` or `aria-checked`).
+- [x] AC-2: At 360px, the *Owned* and *Sort* chips' boxes share one top edge, each chip names its current choice (*Owned: Any*, *Sort: Title* or the frame's words), and `document.documentElement.scrollWidth` equals the viewport width.
+- [x] AC-3: Given the *Owned* chip, when it is opened and *Owned* is chosen, then the URL carries the owned filter and the list shows exactly the owned books, as the chips did; the same for each sort and direction, and a reload keeps both.
+- [x] AC-4: Each dropdown opens and closes by keyboard (Enter or Space opens, Esc closes and returns focus to its chip), its choices are reachable by Tab or arrows, and the current choice is marked for assistive tech (`aria-current` or `aria-checked`).
 - [ ] AC-5: The Library's filters meet the UX floor (`docs/04-design.md` § 10. The UX floor): every chip at least 44px tall, text 4.5:1 in both themes, no hue on a chip, axe reports no new violations, and screenshots at each `ui.viewports` width, light and dark; `/books/list` stays within its byte budget.
 
 ## Out of scope
@@ -68,7 +68,8 @@ it gains the six 834px frames.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- E7 also draws a *Genre ▾* dropdown chip, an *All genres* chip and a count on each genre chip (*Fantasy · 212*); the task and MR-D20 name only *Owned* and *Sort*, so they are not built here: a candidate item in `docs/05-roadmap.md` phase 6 (approved at plan, owner 2026-11-25).
+- E7 also draws a *Genre ▾* dropdown chip, an *All genres* chip and a count on each genre chip (*Fantasy · 212*); the task and MR-D20 name only *Owned* and *Sort*, so they are not built here (approved at plan, owner 2026-11-25) → docs/05-roadmap.md § 6.28 (new)
+- The plan's test strategy named `test/library-sort.test.ts` for the choice-list tests; that file needs the database, so they are in `test/library-page.test.tsx` (pure functions, no database) → not tracked: done in this PR (plan revision, test location only)
 
 ## Plan
 
@@ -113,7 +114,7 @@ Risks and open questions:
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL (control-states.test.ts: a `border-radius` that wasn't a `--r-*` token) → R2 PASS (tsc, lint, `test:no-e2e`) | CI R1 FAIL (library-sort and library-owned floor tests, w768, w1024, w1280-light: axe target-size counted the first row's title link against the open list) → R2 PASS (all ten shards; the run was cancelled by the fix's push, so the fix is the gate) | Audit R1 PASS | Spec R1 CHANGES (AC-5 no-hue assertion unwritten) → R2 APPROVE | UI R1 PASS (360 to 1280px, light and dark, 0 console errors) | Schema n/a | Drift R1 update first (behind 1; both changed `design/mockups.html`, `design/mockups-index.md`, `src/app/globals.css`; main changed `src/db/queries.ts`) → rebased | Lighthouse not run (`LIGHTHOUSE_MODE` is not set)
 
 ## Blocked
 
@@ -121,7 +122,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (plus 1 CI fix round)
+- Review rounds: 2 (spec-reviewer; test-auditor and ui-verifier 1 each)
+- First-pass AC FAILs: 1 (AC-5's no-hue check, found by spec-reviewer)
+- Plan revisions after approval: 1 (the choice-list tests are in `test/library-page.test.tsx`, not `test/library-sort.test.ts`, which needs the database)
