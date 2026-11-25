@@ -5242,7 +5242,7 @@ it is converted.
     user, survives a reload, and shows in the view's `follow_state`. *Not
     following* deletes the row. No count or state column is added.
 
-- ☐ 5.11b **Universes: every universe in one list** · S. Owner intake,
+- ☑ 5.11b **Universes: every universe in one list** · S. Owner intake,
   2026-11-24 (*where are universes?*) and 2026-11-25 (*yes, let's build the
   universe list*). A universe's page (5.11) is reached only from its name on a
   book row; nothing lists them. Depends on 5.9c, whose chips it copies.

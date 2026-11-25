@@ -521,7 +521,7 @@ with the task that first reads it.
 | ✅ | 5.9b → TASK-140, TASK-141, TASK-142 | Every other place line links its names | M | _From TASK-125 (PR #330); Check proposed_ | 5.9, 5.11 |
 | ✅ | 5.9c → TASK-161 | The Series list opens on what you've started | S | _Owner intake, 2026-11-24; Check proposed_ | 5.9 |
 | ✅ | 5.11 → TASK-103 | Author and universe pages, and the follow control | M |  | 1.15, 5.9 |
-|  | 5.11b → TASK-162 | Universes: every universe in one list | S | _Owner intake, 2026-11-24; Check proposed_ | 5.11, 5.9c |
+| ✅ | 5.11b → TASK-162 | Universes: every universe in one list | S | _Owner intake, 2026-11-24; Check proposed_ | 5.11, 5.9c |
 | ✅ | 5.12 → TASK-104, TASK-105 | In the middle of, and completed: one page for every medium | M |  | 1.9, 1.15, 2.2c, 2.2d |
 | ✅ | 5.14 → TASK-106, TASK-107 | Audiobooks: a queue to listen next | M | _Pulled ahead of 1.26 (D-139)_ | 1.23, 1.9 |
 | ✅ | 5.15 → TASK-108, TASK-109, TASK-110, TASK-127, TASK-111 | Parked: put a book away, and review it on a schedule | M | _Pulled ahead of 1.26 (D-139)_ | 1.9, 1.17, 1.21, 2.2, 2.3 |

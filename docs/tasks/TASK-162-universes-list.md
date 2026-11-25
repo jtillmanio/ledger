@@ -1,7 +1,7 @@
 ---
 id: TASK-162
 title: 5.11b Universes: every universe in one list
-status: In progress
+status: Review
 depends_on: [TASK-161]
 size: M
 model: sonnet
@@ -28,7 +28,7 @@ Every universe the owner has books in is listed on one page, reached from a *Uni
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim):
+- [x] AC-1 (roadmap **Check:**, verbatim):
 with the test database, three universes: one with a read book, one followed
 with none read, and one with only To-read books. `/books/universes` lists
 the first two, *All* adds the third, and each row links to
@@ -36,9 +36,9 @@ the first two, *All* adds the third, and each row links to
 The Series page's *Universes* tab opens it and carries `aria-current`
 there. `scripts/perf/routes.mjs` and `budget.json` have a route for it.
 Screenshots at 360px and 1280px; axe passes.
-- [ ] AC-2: Given a universe followed Tracking and part-read, its row says *On hold* (D-118), as its page does.
-- [ ] AC-3: Given no universes, the page draws an empty state saying where universes come from (Calibre's `#superseries`).
-- [ ] AC-4: The page meets the UX floor (`docs/04-design.md` § 10. The UX floor): states drawn (empty, loading, error), meters fill with `--ready`, the tabs are links with names and counts, 44 px targets at phone widths, contrast in both themes, and screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-2: Given a universe followed Tracking and part-read, its row says *On hold* (D-118), as its page does.
+- [x] AC-3: Given no universes, the page draws an empty state saying where universes come from (Calibre's `#superseries`).
+- [x] AC-4: The page meets the UX floor (`docs/04-design.md` § 10. The UX floor): states drawn (empty, loading, error), meters fill with `--ready`, the tabs are links with names and counts, 44 px targets at phone widths, contrast in both themes, and screenshots at each `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -64,8 +64,10 @@ Screenshots at 360px and 1280px; axe passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Candidate decision: sibling list pages (*Series · Universes*) are joined by a row of real links carrying `aria-current="page"`, styled as the `.tabs` strip, not by `Tablist` (`role="tab"`, `aria-selected`), which is for one page's panels; the Check asks for `aria-current` → `docs/review/decisions.md` (approved at plan)
+- Candidate decision: sibling list pages (*Series · Universes*) are joined by a row of real links carrying `aria-current="page"`, styled as the `.tabs` strip, not by `Tablist` (`role="tab"`, `aria-selected`), which is for one page's panels; the Check asks for `aria-current` → `docs/review/decisions.md` § D-187 (approved at plan)
 - The `universes` route's perf ceilings start at `/books/shelves`'s, unmeasured (`LIGHTHOUSE_MODE` is off; owner, plan gate 2026-11-25), as #334 did for `issue`; a first measurement above them is a raise and needs a decision → `docs/02-architecture.md` § Performance budget, stated beside the route (approved at plan)
+- `test/e2e/series.spec.ts` needed two edits the plan did not list: its `SeriesList` counts gain `universes`, and the nav-current check excludes the in-page tab row (`:not(.list-tabs > a)`) → not tracked: done in this PR (plan revision)
+- The empty *No universes yet* and *No series yet* states, the skeleton and the error state can't be reached in a browser on the shared database; they are drawn from static markup in the e2e spec and tested as markup → not tracked: accepted as is, the pattern 5.9 and 5.9c use
 
 ## Plan
 
@@ -149,7 +151,7 @@ the gate: the tab row is **not** `Tablist` (it uses `role="tab"`/`aria-selected`
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (tsc, lint, `test:no-e2e`; the touched specs in `w390-light`: one test of mine fixed first, `a[href="/books/universes"]` also matched the Started chip) | CI R1 PASS (`check`, e2e full 10/10, Vercel; Lighthouse off) | Audit R1 PASS | Spec R1 APPROVE | Schema R1 APPROVE | UI R1 PASS (360 to 1280px, light and dark; the empty states are not reachable on the dev database) | Round 2: no reviewer's files changed after approval, so none re-run.
 
 ## Blocked
 
@@ -157,7 +159,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1 (`test/e2e/series.spec.ts`, above)
