@@ -1,14 +1,14 @@
 ---
 id: TASK-147
 title: 6.25 Navigation for four and five media (1 of 3) — Start on, for what / opens
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: e1b1401
 ---
 
 # TASK-147 — 6.25 Navigation for four and five media (1 of 3) — Start on, for what / opens
@@ -69,9 +69,33 @@ Books, `/` opens `/books`; axe reports no new violations at each width.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Candidate decision: *Start on* is a per-device cookie (`ledger_start`), not a `reading_settings` column, so a phone and a desktop can each open somewhere different and no schema changes (MR-D7; owner chose the cookie at the plan gate, 2026-11-25). Destination: `docs/review/decisions.md`, a new D-n row, written at close-out. (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-25 (owner: per-device cookie, not a column). Worktree `.claude/worktrees/task-147`, slot `ledger_test_3` / port 3201.
+
+**Steps**
+
+1. `src/lib/last-medium.ts`: `START_COOKIE = "ledger_start"`; `startMedium(start, last)`: a stored value naming a built medium (`MEDIA`) wins, else `pickMedium(last)` (first visit → comics). A client writer after `writeCoversCookie`: *Last used* deletes the cookie, a medium sets it (year, Lax, Secure on https); returns whether it reads back.
+2. `src/app/route.ts`: `/` redirects with `startMedium(ledger_start, ledger_medium)`.
+3. `src/components/ChipMenu.tsx`: a choice is a link (`href`, as now) or a button (`onSelect`); the keyboard code selects `.chipmenu .opt`, not `a`; a button choice closes the menu and returns focus to the chip. The Library's two chips are unchanged (`library-sort.spec.ts`, `library-owned.spec.ts` are the regression check).
+4. `src/components/StartOn.tsx` (new): the *Start on* row, a `.frow` with the label and a `ChipMenu` (E17's `chip dd`), choices *Last used* · Comics · Books · Watch (one per `MEDIA`), the stored one `aria-current`; chip text the choice, name `Start on: <choice>`, group `Start on`, `align="end"`. A choice shows at once and writes the cookie; a read-back failure puts it back and raises the failed-write line with Retry (as `ShowCovers`). No fetch, nothing to the database.
+5. `src/app/settings/page.tsx`: read `ledger_start` from `cookies()` (first paint), the row under *Show covers* in *Appearance*.
+6. `src/app/settings/loading.tsx`: a matching skeleton row in Appearance (the loading-geometry test counts rows). Not in "Files likely touched".
+7. `design/mockups.html` § `settings`: a *Start on* · *Last used* ▾ (`chip dd`) row in the phone, 834px and desktop Appearance groups; the 834px note line no longer says the row is left for 6.25. `design/mockups-index.md` § `settings`: names the row.
+
+**Files**: the seven above plus three test files. ChipMenu.tsx and loading.tsx are outside "Files likely touched" (reasons in steps 3 and 6).
+
+**Test strategy** (each test written first and seen to fail)
+
+- AC-2, AC-3: `test/redirect.test.ts`, new `describe("GET / with Start on (TASK-147)")`: Last used + ledger_medium=watch → `/watch`; nothing → `/comics`; ledger_start=books + ledger_medium=comics → `/books`; ledger_start=bogus/`__proto__` → as Last used; plus the writer's set / delete / read-back on a fake document.
+- AC-4 (first paint, no database): `test/settings.test.tsx`: the page with no cookie, `ledger_start=books` and garbage draws the chip as *Last used*, *Books*, *Last used*; no `reading_settings` row is written.
+- AC-1's clause: `test/e2e/settings.spec.ts`, `@floor` (every width, light and dark): choose Books, visit `/comics`, `page.goto("/")` → `/books`; then *Last used* → `/` opens `/comics`. The setting is cleared after.
+- AC-4 in the browser: the choice survives a reload; no request to `/api/settings` while choosing.
+- AC-5: 44px chip and choices on the phone, contrast, axe (the spec's `AXE` list), no sideways scroll, the keyboard (ArrowDown opens, arrows move, Esc closes and focus returns to the chip); one `@at-w390-light` test screenshots the open menu at every `ui.viewports` width (360, 390, 412, 768, 1024, 1280), light and dark.
+
+**Risks**: ChipMenu is shared (the Library's chips). E17 draws the row at 834px only; the phone and desktop frames copy it.
 
 ## Review log
 
