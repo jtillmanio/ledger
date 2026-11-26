@@ -346,10 +346,10 @@ tables.
     | `/books/shelves` | 10,300 | 5,300 | 23 | 100 |
     | `/books/shelves/[id]` | 11,400 | 12,000 | 25 | 100 |
     | `/books/universes` | 10,300 | 5,300 | 23 | 100 |
-    | `/books/series` | – | – | – | – |
-    | `/books/series/[id]` | – | – | – | – |
-    | `/books/authors/[id]` | – | – | – | – |
-    | `/books/universes/[id]` | – | – | – | – |
+    | `/books/series` | 15,500 | 3,900 | 23 | 100 |
+    | `/books/series/[id]` | 12,400 | 6,400 | 25 | 100 |
+    | `/books/authors/[id]` | 16,600 | 5,500 | 24 | 100 |
+    | `/books/universes/[id]` | 11,800 | 6,400 | 25 | 100 |
     | `/books/add` | 11,200 | 23,300 | 23 | 100 |
     | `/books/top` | 12,100 | 10,000 | 24 | 100 |
     | `/book/[id]` | 11,000 | 28,900 | 27 | 100 |
@@ -375,8 +375,8 @@ tables.
     starts on `/books/series`, whose *Universes* tab opens it (it has no nav item). `/parked`'s tap starts on
     the Library's *Parked* filter. Unmeasured, with their reasons in the test: the
     two sheets' own intercept pages. The series list, a series', an author's and a
-    universe's page (5.9, 5.11, roadmap 0.14e) have routes, and their ceilings (`–`
-    above) come from the first measured run: the list is the bare
+    universe's page (5.9, 5.11, roadmap 0.14e) are measured from the hand run 45773843077
+    (D-175's ceilings, task 0.14e): the list is the bare
     `/books/series`, which opens on *Started* (5.9c), tapped from the books nav's
     *Series*; a series' and a universe's page take the first row of their list, and
     an author's the first author link on Top's place line (a Library place link is a
