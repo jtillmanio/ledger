@@ -912,15 +912,22 @@ WITH span AS (
                       AND (pp.period = p_target OR s.quarter IS NULL AND pp.year = s.year))
 ), held AS (
   -- Books waiting on an earlier unread book of their series or subseries (2.10c).
+  -- Two EXISTS, not one with an OR inside: the series probe then uses
+  -- books_live_series_idx, and the call costs what it did before the filter
+  -- (~26 ms at 1.4k books; one OR'd probe took ~71).
   SELECT b.id
   FROM books b
   WHERE b.deleted_at IS NULL
-    AND EXISTS (SELECT 1 FROM books e
-                LEFT JOIN book_status es ON es.user_id = p_user AND es.book_id = e.id
-                WHERE e.deleted_at IS NULL
-                  AND (es.status IS NULL OR es.status IN ('to_read', 'unlisted', 'parked'))
-                  AND (e.series_id = b.series_id AND e.series_position < b.series_position
-                       OR e.subseries_id = b.subseries_id AND e.subseries_position < b.subseries_position))
+    AND (EXISTS (SELECT 1 FROM books e
+                 LEFT JOIN book_status es ON es.user_id = p_user AND es.book_id = e.id
+                 WHERE e.deleted_at IS NULL
+                   AND e.series_id = b.series_id AND e.series_position < b.series_position
+                   AND (es.status IS NULL OR es.status IN ('to_read', 'unlisted', 'parked')))
+         OR EXISTS (SELECT 1 FROM books e
+                    LEFT JOIN book_status es ON es.user_id = p_user AND es.book_id = e.id
+                    WHERE e.deleted_at IS NULL
+                      AND e.subseries_id = b.subseries_id AND e.subseries_position < b.subseries_position
+                      AND (es.status IS NULL OR es.status IN ('to_read', 'unlisted', 'parked'))))
 ), top_genre AS (
   -- Each live book's top-level genres, Calibre's (book_genre_levels, task
   -- 4.5); one spelling of each whatever its case, so
