@@ -1,7 +1,7 @@
 ---
 id: TASK-148
 title: 6.25 Navigation for four and five media (2 of 3) — the phone's medium button, search and tab row
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -34,7 +34,7 @@ On the phone, the top bar reads *Ledger* · the current medium as a button that 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves every 360px clause: the medium button and its sheet, the search button and the gear, nothing sideways, no thumb-bar search slot, the tab row's divider, *Inbox* and *Progress*, and axe at 360px. TASK-147 and TASK-149 prove the rest):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves every 360px clause: the medium button and its sheet, the search button and the gear, nothing sideways, no thumb-bar search slot, the tab row's divider, *Inbox* and *Progress*, and axe at 360px. TASK-147 and TASK-149 prove the rest):
 browser test, light and dark: at 360px the bar shows the current medium as a
 44px button whose sheet lists every built medium with the current one
 `aria-current`, a 44px search button and the gear, nothing scrolls sideways,
@@ -44,11 +44,11 @@ divider, *Inbox* and *Progress*; at 834px the rail names every medium; at
 focus return work in; at 1280px the sidebar lists every medium with the
 current one expanded and an *Across media* group; with *Start on* set to
 Books, `/` opens `/books`; axe reports no new violations at each width.
-- [ ] AC-2: On `/books`, the medium button's accessible name includes *Books*, it carries `aria-haspopup="dialog"` and `aria-expanded`; pressing it opens the sheet with focus inside, choosing Comics navigates to `/comics` and closes the sheet, and Esc or Back closes it with focus returned to the button.
-- [ ] AC-3: On a screen with no medium (`/inbox`, `/settings`), the medium button names the medium the tab row draws (the last used, as 2.2i does today).
-- [ ] AC-4: The comics, books and watch dashboards' thumb bars have no slot named *Search*, and each keeps its mark verb in slot 1; the run detail's slot 3 is still `+` (Add issues).
-- [ ] AC-5: The bar and sheet meet the UX floor (`docs/04-design.md` § 10. The UX floor): every button at least 44px, every control a real button or link with a name, text 4.5:1 in both themes, reduced motion respected on the sheet, axe reports no new violations, and screenshots at 360, 390 and 412px, light and dark.
-- [ ] AC-6: `design/mockups.html`'s phone bars and tab rows are redrawn from A5–A7 (and `palette` from F16 for the bar's search), and `design/mockups-index.md`'s rows say so.
+- [x] AC-2: On `/books`, the medium button's accessible name includes *Books*, it carries `aria-haspopup="dialog"` and `aria-expanded`; pressing it opens the sheet with focus inside, choosing Comics navigates to `/comics` and closes the sheet, and Esc or Back closes it with focus returned to the button.
+- [x] AC-3: On a screen with no medium (`/inbox`, `/settings`), the medium button names the medium the tab row draws (the last used, as 2.2i does today).
+- [x] AC-4: The comics, books and watch dashboards' thumb bars have no slot named *Search*, and each keeps its mark verb in slot 1; the run detail's slot 3 is still `+` (Add issues).
+- [x] AC-5: The bar and sheet meet the UX floor (`docs/04-design.md` § 10. The UX floor): every button at least 44px, every control a real button or link with a name, text 4.5:1 in both themes, reduced motion respected on the sheet, axe reports no new violations, and screenshots at 360, 390 and 412px, light and dark.
+- [x] AC-6: `design/mockups.html`'s phone bars and tab rows are redrawn from A5–A7 (and `palette` from F16 for the bar's search), and `design/mockups-index.md`'s rows say so.
 
 ## Out of scope
 
@@ -77,8 +77,13 @@ Books, `/` opens `/books`; axe reports no new violations at each width.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The *Switch medium* sheet's rows draw icon and name only; each medium's *Now* in a few words and its mono count (D-178, A6) need each medium's data in the shell, so they are a roadmap item of their own (owner, at the plan gate: option c) (approved at plan)
-- For TASK-149: search now lives in `src/components/nav/SearchButton.tsx`; the desktop header's slot 3 (`slots("header")` in `src/components/ThumbBar.tsx`) imports it, which is the *Search* verb 6.25 drops from the headers; the tab row's divider is `.tabdiv` (approved at plan)
+- The *Switch medium* sheet's rows draw icon and name only; each medium's *Now* in a few words and its mono count (D-178, A6) need each medium's data in the shell, so they are a roadmap item of their own (owner, at the plan gate: option c) → docs/05-roadmap.md § 6.29 (new; Check proposed; its row in docs/06-tasklist.md § M21) (approved at plan)
+- For TASK-149: search now lives in `src/components/nav/SearchButton.tsx`; the desktop header's slot 3 (`slots("header")` in `src/components/ThumbBar.tsx`) imports it, which is the *Search* verb 6.25 drops from the headers; the across-media items are still the `global` items, drawn after `.tabdiv` → docs/tasks/TASK-149-rails-and-sidebar-for-five-media.md § Context (approved at plan)
+- The sheet's foot line (A6) said `/` opens the medium used last, untrue since *Start on* (TASK-147) → not tracked: done in this PR (plan revision, spec review round 1)
+- The phone frames in `design/mockups.html` drawn without a tab row before 2.2i still have none; this PR redrew the bars and the tab rows that exist → not tracked: `design/mockups-index.md` § Nov 2026, mediums review says so in the phone bar's row
+- `docs/06-tasklist.md`'s coverage line still reads 213/213 (recounted 2026-11-25); 6.28 (PR #346) and 6.29 (this PR) were added since → not tracked: the next coverage recount (`/milestones --coverage`) restates it
+- UI walk note: page-wide axe reports `region` on `.actionbar` (a div outside `main`) on /books and /watch; this PR only took a child out of it, and the bar's and the sheet's own axe runs are clean → not tracked: pre-existing, outside the task, and the shell specs' axe rule sets don't include `region`
+- Test audit note: `test/e2e/mockup-tablet.spec.ts`'s index-row test matches prose (*redrawn (task 6.25, TASK-148)*); the structural tests carry AC-6 → not tracked: accepted as is (optional, auditor)
 
 ## Plan
 
@@ -111,7 +116,7 @@ Approved 2026-11-26 (owner: "approve (with recommendations)": the sheet's *Now* 
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+E2E-touched R1 FAIL(6: the button's name read "Books , switch medium"; Inbox's text before its count; two specs' races) → R2 FAIL(2: the bar's aria-label in a normalisation; a row measured before the medium streamed in) → R3 PASS | Verify R1 FAIL(1: `test/e2e-guard.test.ts` pins the renamed @critical title) → R2 PASS → R3 FAIL(1: tsc, the audit fix's style-tag handle typed `Node`) → R4 PASS | Close-out check R1 APPROVE | CI R1 PASS (0b85005, every project, 10 shards) | Spec R1 APPROVE (3 notes: foot line vs *Start on*, a stale comment, the plan's `router.replace` wording; all done) | Audit R1 CHANGES (AC-5's reduced-motion check could not fail) → R2 PASS | UI R1 PASS (360/390/412, light and dark; note: axe `region` on `.actionbar` outside the bar and sheet, its markup untouched here)
 
 ## Blocked
 
@@ -119,7 +124,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 4 (plus 3 rounds of the touched browser specs)
+- Review rounds: spec 1, audit 2, UI 1
+- First-pass AC FAILs: 1 (AC-5's reduced-motion test was vacuous; the behaviour held)
+- Plan revisions after approval: 1 (settings.spec.ts and e2e-guard.test.ts follow the new bar; `aria-label`; the sheet's history via `router.push`; spec-review notes)
