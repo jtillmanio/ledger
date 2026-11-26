@@ -875,6 +875,13 @@ WHERE q.rank = 1 AND (q.status IS NULL OR q.status IN ('to_read', 'unlisted'));
 -- parking). A book already planned in the target is left out (for a year, a
 -- book planned anywhere in it); one planned elsewhere carries its period
 -- (to_read_level's), for the sheet's *Move here*.
+-- Series order (task 2.10c, F-65): every group but on_deck leaves out a book
+-- whose series (by series_position) or subseries (by subseries_position) has
+-- an earlier live book still unread: no status, to_read, unlisted or parked.
+-- Reading, listening, read and DNF count as started. A position compares only
+-- where both books have one, so a book with none is never held and never holds.
+-- On deck is the owner's own pick (D-37), listed as it is. Universe order isn't
+-- used: a universe's later series start fresh.
 CREATE OR REPLACE FUNCTION plan_suggestions(p_user text, p_target text, p_room bigint, p_today date)
 RETURNS TABLE (book_id text, reason text, detail text, rank int, status text, unlisted boolean,
                period text, words int, word_source text)
@@ -903,6 +910,17 @@ WITH span AS (
     AND NOT EXISTS (SELECT 1 FROM plan_period pp
                     WHERE pp.user_id = p_user AND pp.book_id = b.id
                       AND (pp.period = p_target OR s.quarter IS NULL AND pp.year = s.year))
+), held AS (
+  -- Books waiting on an earlier unread book of their series or subseries (2.10c).
+  SELECT b.id
+  FROM books b
+  WHERE b.deleted_at IS NULL
+    AND EXISTS (SELECT 1 FROM books e
+                LEFT JOIN book_status es ON es.user_id = p_user AND es.book_id = e.id
+                WHERE e.deleted_at IS NULL
+                  AND (es.status IS NULL OR es.status IN ('to_read', 'unlisted', 'parked'))
+                  AND (e.series_id = b.series_id AND e.series_position < b.series_position
+                       OR e.subseries_id = b.subseries_id AND e.subseries_position < b.subseries_position))
 ), top_genre AS (
   -- Each live book's top-level genres, Calibre's (book_genre_levels, task
   -- 4.5); one spelling of each whatever its case, so
@@ -966,8 +984,11 @@ WITH span AS (
     HAVING NOT bool_or(lower(t.genre) IN (SELECT genre FROM read_genre))
   ) g
 ), picked AS (
+  -- A held book is dropped before its group is picked, so one also On deck
+  -- lands there (group 4 is exempt).
   SELECT DISTINCT ON (c.book_id) c.*
   FROM cand c JOIN book b ON b.id = c.book_id
+  WHERE c.grp = 4 OR NOT EXISTS (SELECT 1 FROM held h WHERE h.id = c.book_id)
   ORDER BY c.book_id, c.grp, c.narrow, c.ord
 )
 SELECT p.book_id,

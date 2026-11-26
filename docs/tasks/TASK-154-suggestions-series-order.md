@@ -1,14 +1,14 @@
 ---
 id: TASK-154
 title: 2.10c Suggestions keep series order, and the sheet can search (1 of 2) — series order in every group
-status: Ready
+status: In progress
 depends_on: []
 size: S
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 08ffa2c
 ---
 
 # TASK-154 — 2.10c Suggestions keep series order, and the sheet can search (1 of 2) — series order in every group
@@ -62,9 +62,29 @@ Screenshots at 360px and 1280px; axe passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The `plan_suggestions` row in the data model's views table should say a book whose series or subseries has an earlier unread book is listed only under On deck (2.10c) (approved at plan) → docs/03-data-model.md § 3. Views
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-26.
+
+**Steps**
+
+1. Tests first, `test/plan-suggestions.test.ts`, a new `describe` (confirm each fails on the current function):
+   - AC-1: books `c-1`…`c-4`, 50k each, To read, unfollowed, each also tempting every other group (a Q2 release, added last week, an unread genre); 200k of room (40 min × 200 wpm, 530k planned). Only `c-1`, under *Fits the room left*; `c-1` read → `c-2`, not `c-3`/`c-4`; `c-1` Reading → `c-2`; `c-3` On deck → under *On deck*. An author followed Reading with two series and a standalone: *More from* lists the first unread book of each series and the standalone.
+   - The holding statuses: no status, Unlisted, Parked hold the next book; Listening and DNF don't; a soft-deleted earlier book doesn't.
+   - AC-2: a subseries inside a series whose earlier books are read: its book 2 never, with book 1 unread or Parked, the subseries also followed Reading (so *Next in a series* is covered); with book 1 read, book 2 is (control).
+   - AC-3: a book with no `series_position` is suggested with an earlier book unread, and its own unread status holds nothing.
+2. `etl/views.sql` `plan_suggestions`: a `held` CTE, each live book whose series (by `series_position`) or subseries (by `subseries_position`) has an earlier live book with status none, `to_read`, `unlisted` or `parked`; `picked` drops held books from every group but *On deck* (grp 4) before its `DISTINCT ON`, so a held On deck book still lands there and ranks stay 1…n. Positions compare only where both are set (AC-3 falls out). Columns unchanged; the header comment says so.
+3. AC-4: the existing cases and `etl/test_views.sql` unchanged (their fixtures hold none of their listed books back).
+
+**Files**: `etl/views.sql` (the filter), `test/plan-suggestions.test.ts` (the tests), this task file. `etl/test_views.sql` is not touched: the columns don't change.
+
+**Test strategy**: AC-1 to AC-3 as the `describe` above; AC-4 the existing file unchanged. `npm run test:db:reset`, the file alone, then `verify.full`; `test/e2e/plan-sheet.spec.ts` still holds (only `s-4` is newly held, which nothing asserts listed), proved by CI.
+
+**Risks**: a planned earlier book still holds the next (the rule is by status; built as written). A universe or subseries follow whose next book is held by series order suggests nothing rather than a later one. Performance: `books_live_series_idx` covers the series lookup; ~1.4k books.
+
+**Size**: S, two code files, no schema, no UI.
 
 ## Review log
 
