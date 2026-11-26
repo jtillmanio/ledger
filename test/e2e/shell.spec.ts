@@ -534,12 +534,12 @@ test.describe("the phone's medium button, search and gear (6.25)", () => {
       if (width === 360) {
         // Even a sheet given a 300ms transition doesn't move under reduced motion (globals.css stops every
         // transition and animation, UX-N01); without the preference the same probe reports it.
-        await page.addStyleTag({ content: ".sheet{transition:transform 300ms ease}" });
+        const injected = await page.addStyleTag({ content: ".sheet{transition:transform 300ms ease}" });
         expect(await motion(page)).toEqual([]);
         await page.emulateMedia({ reducedMotion: "no-preference" });
         expect(await motion(page)).toContainEqual(expect.stringMatching(/^sheet transition 0\.3s/));
         await page.emulateMedia({ reducedMotion: "reduce" });
-        await page.evaluate(() => document.querySelector("head style:last-of-type")!.remove());
+        await injected.evaluate((el) => el.remove());
         expect(await motion(page)).toEqual([]);
       }
       await screenshot(page, testInfo, `medium-sheet-${width}-books`);
