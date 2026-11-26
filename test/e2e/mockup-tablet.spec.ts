@@ -608,6 +608,15 @@ test.describe("6.25 AC-6 · the tablet rails and desktop sidebars from A8–A9",
     expect(cur).toBe(surface);
   });
 
+  test("no desktop header and no thumb bar draws Search: it is in the bar, the rail and the sidebar (MR-D2, MR-D4)", () => {
+    // Every Search the mockup draws is the phone bar's button, the rail's foot item or the sidebar's row.
+    const labelled = [...MOCKUP.matchAll(/<(\w+) class="([^"]*)"[^>]*aria-label="Search \(Ctrl K\)"/g)].map((m) => `${m[1]}.${m[2]}`);
+    expect(labelled.length).toBeGreaterThan(100);
+    expect([...new Set(labelled)]).toEqual(["a.iconbtn search"]);
+    for (const head of MOCKUP.match(/<header class="bd-head"[\s\S]*?<\/header>/g) ?? []) expect(head).not.toMatch(/Search/);
+    for (const bar of MOCKUP.match(/<div class="actionbar[^"]*"[\s\S]*?<\/div>/g) ?? []) expect(bar).not.toMatch(/Search|i-search|r="8"/);
+  });
+
   test("design/mockups-index.md says the rails and sidebars are redrawn, and that no frame draws the icon rail", () => {
     const start = INDEX.indexOf("## Nov 2026, mediums review");
     const row = INDEX.slice(start).split("\n").find((l) => l.startsWith("| The tablet rail and the desktop sidebar"))!;

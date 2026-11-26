@@ -102,6 +102,8 @@ Approved 2026-11-26 (owner: "Approve"; the well's media are 58 × 46 as A8 draws
 
 **Revision 1 (Phase 2)**: A9 draws a right chevron on each closed media row, so `Icons.tsx` gains `chevron-right` and `items.ts`' `IconName` names it. The new buttons inside the navs (Search, the switch, the open medium's row) join the control-state matrix as `.rail button` and `.side button` (`globals.css`, `test/control-states.test.ts`). The 1024px menu's screenshot is taken under reduced motion: a full-page capture restarts its 150ms entrance and caught it half-faded. Every rail and sidebar in the mockup is rebuilt from one model (the frame's medium, the old current item), since eight later rails were stubs with no media group or foot.
 
+**Revision 2 (spec review R1; owner: "Yes, in this PR")**: `design/mockups.html`'s two desktop `bdash` headers still drew the *Search* verb this task removes (AC-5, MR-D4); they drop it. The 16 dashboard thumb bars that still drew a search slot (MR-D2, left by TASK-148's redraw) drop it too, since 6.25 ticks with this PR. `mockup-tablet.spec.ts` checks that no desktop header or thumb bar draws Search, and the index row says so.
+
 **Risks**: at 1024 the switch names the set the rail draws, and a screen under no medium (`/inbox`) still draws comics' set (`mediumFor`, unchanged). The menu is imported statically; if `test/perf.test.ts` or the byte budgets object, it loads on first open as `MediumSheet` does. Size: 13–15 files, no schema; kept whole (part 3 of an agreed split; AC-6 binds the redraw, as TASK-148's did).
 
 ## Review log
