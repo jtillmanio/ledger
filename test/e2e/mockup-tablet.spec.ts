@@ -615,6 +615,8 @@ test.describe("6.25 AC-6 · the tablet rails and desktop sidebars from A8–A9",
     expect([...new Set(labelled)]).toEqual(["a.iconbtn search"]);
     for (const head of MOCKUP.match(/<header class="bd-head"[\s\S]*?<\/header>/g) ?? []) expect(head).not.toMatch(/Search/);
     for (const bar of MOCKUP.match(/<div class="actionbar[^"]*"[\s\S]*?<\/div>/g) ?? []) expect(bar).not.toMatch(/Search|i-search|r="8"/);
+    // Nor does a note name Search as a header or thumb-bar verb (bdash's *The verbs*).
+    expect(MOCKUP).not.toMatch(/desktop header <i>Search|finished &middot; search<\/i>/);
   });
 
   test("design/mockups-index.md says the rails and sidebars are redrawn, and that no frame draws the icon rail", () => {
