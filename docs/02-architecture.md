@@ -367,11 +367,13 @@ tables.
     the `@modal` intercept. An issue's page (task 3.5, TASK-080) is measured the
     same way from the small run's first issue: the full page loaded, the sheet
     its spine row opens tapped. Its ceilings start at the book page's (the same
-    `RouteSheet` and detail layout), unmeasured; with no baseline yet, the growth
+    `RouteSheet` and detail layout); with no baseline yet, the growth
     check skips it by name. If its first measurement plus 25% comes out above
     them, writing that is a raise and takes a decision, as any raise does. The Universes list
     (`/books/universes`, task 5.11b) is the same: its ceilings start at `/books/shelves`' (the same
-    list rows and chips), unmeasured, because `LIGHTHOUSE_MODE` is off and no run has measured it; its tap
+    list rows and chips). Hand run 45773843077 (task 0.14e) measured both under those copied ceilings
+    (the issue page 9,043 / 5,517 / 20, the Universes list 9,316 / 851 / 18: document + RSC, own JS,
+    requests), and the ceilings stay as they are until a decision rewrites them; the Universes list's tap
     starts on `/books/series`, whose *Universes* tab opens it (it has no nav item). `/parked`'s tap starts on
     the Library's *Parked* filter. Unmeasured, with their reasons in the test: the
     two sheets' own intercept pages. The series list, a series', an author's and a

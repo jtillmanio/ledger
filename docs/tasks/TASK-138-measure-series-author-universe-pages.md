@@ -1,7 +1,7 @@
 ---
 id: TASK-138
 title: 0.14e Series, author and universe pages are measured
-status: In progress
+status: Review
 depends_on: []
 size: S
 model: sonnet
@@ -29,15 +29,15 @@ The four books pages 0.14c's guard found unmeasured (the series list, a series' 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `scripts/perf/routes.mjs` and `scripts/perf/budget.json` have a route
+- [x] AC-1 (roadmap **Check:**, verbatim): `scripts/perf/routes.mjs` and `scripts/perf/budget.json` have a route
 for each of `/books/series`, a series' page, an author's page and a universe's
 page, each with a tap from a screen that links to it and a budget from a
 measured run of the branch's preview (automatic or by hand); the four are
 gone from `UNMEASURED` in `test/perf.test.ts`, which still passes on the real
 `src/app`, and the PR's Lighthouse comment shows a tap time for each.
-- [ ] AC-2: Given the four routes, each route's path for a series, author and universe page resolves at run time from the preview's data (no id written into `routes.mjs`), and `test/perf.test.ts`'s route checks pass for each (a tap target named, a budget present for each metric the other routes carry).
-- [ ] AC-3: `UNMEASURED` in `test/perf.test.ts` holds exactly the two intercept sheets (`/@modal/(.)book/[id]`, `/@modal/(.)comics/[runId]/issue/[issueId]`) after the change, and the page guard still fails on a fixture page that is in neither list.
-- [ ] AC-4: The PR's *How it was verified* names the run the budgets came from (its id or link) and shows each new ceiling beside its measurement.
+- [x] AC-2: Given the four routes, each route's path for a series, author and universe page resolves at run time from the preview's data (no id written into `routes.mjs`), and `test/perf.test.ts`'s route checks pass for each (a tap target named, a budget present for each metric the other routes carry).
+- [x] AC-3: `UNMEASURED` in `test/perf.test.ts` holds exactly the two intercept sheets (`/@modal/(.)book/[id]`, `/@modal/(.)comics/[runId]/issue/[issueId]`) after the change, and the page guard still fails on a fixture page that is in neither list.
+- [x] AC-4: The PR's *How it was verified* names the run the budgets came from (its id or link) and shows each new ceiling beside its measurement.
 
 ## Out of scope
 
@@ -59,7 +59,10 @@ gone from `UNMEASURED` in `test/perf.test.ts`, which still passes on the real
 
 ## Follow-ups
 
-_Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+- `shelf` fails as not measured on every preview (live has no shelf, so the preview's Neon branch has none), which turns hand run 45773843077 red → not tracked: already tracked in docs/OWNER-CHECKLIST.md § Actions from follow-ups (make a books shelf on live, from TASK-114 and TASK-133)
+- The architecture's Performance budget still called `/books/universes` and the issue page unmeasured; run 45773843077 measured both under their copied ceilings → docs/02-architecture.md § Performance budget (fixed in this PR, approved at close-out)
+- The copied ceilings of `universes` and `issue` sit well above their measurements (the issue page's own JS 5,517 against 28,900) → not tracked: rewriting a ceiling is out of scope here (D-175); the growth check (D-142) gates them once main has a run that measured them
+- An author's page made 66 requests to other origins (book covers) → not tracked: requests to other origins aren't budgeted (D-142), and the page is under every ceiling
 
 ## Plan
 
@@ -92,7 +95,7 @@ Approved by the owner, 2026-11-25 ("approve and recommended rule"): the ceilings
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (tsc, lint; 3 vitest timeouts under load, all pass alone) | CI R1 PASS | Spec R1 APPROVE (before measurement) | Audit R1 PASS | Lighthouse hand run 45773772516: no preview for docs-only head 0bdd370, measured nothing → 45773843077 on c1b66ab's preview: the four measured, `shelf` not measured (owner checklist) | Verify R2 PASS | Spec R2 APPROVE | Audit R2 PASS | Lighthouse hand run 45775859334 on 52c93df, for the PR comment (owner, at close-out)
 
 ## Blocked
 
@@ -100,7 +103,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0

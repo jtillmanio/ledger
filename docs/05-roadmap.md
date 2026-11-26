@@ -382,7 +382,7 @@ skipped one, it returns null.
 
 ---
 
-### ☐ 0.14e Series, author and universe pages are measured · S
+### ☑ 0.14e Series, author and universe pages are measured · S
 From TASK-114 (0.14c, PR #319). 0.14c's guard found four pages beyond the
 eight it measured: `/books/series` (5.9), a series' page `/books/series/[id]`
 (5.9), an author's page `/books/authors/[id]` and a universe's page

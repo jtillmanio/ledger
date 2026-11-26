@@ -353,7 +353,7 @@ with the task that first reads it.
 | ✅ | 0.14b → TASK-113 | Automatic runs are debounced and capped | M | _Owner, 2026-11-17 (D-158); Phase 0's, listed here beside 0.13; not a cutover gate_ | 0.14 |
 |  | 0.14d | A plan-only run is never main's baseline | S | _From TASK-113 (PR #317); Phase 0's, listed here beside 0.14b; not a cutover gate_ | 0.14b |
 | ✅ | 0.14c → TASK-114 | Every page is measured | M | _Owner, 2026-11-17; Phase 0's, listed here beside 0.13; pulled ahead of 1.26 with 0.13, which builds on it (D-172); budgets from a hand run while the switch is off (owner, 2026-11-23)_ | 0.14b |
-|  | 0.14e → TASK-138 | Series, author and universe pages are measured | S | _From TASK-114 (PR #319); Phase 0's, listed here beside 0.14c; not a cutover gate; budgets from a measured run, automatic or by hand_ | 0.14c |
+| ✅ | 0.14e → TASK-138 | Series, author and universe pages are measured | S | _From TASK-114 (PR #319); Phase 0's, listed here beside 0.14c; not a cutover gate; budgets from a measured run, automatic or by hand_ | 0.14c |
 |  | 0.14f → TASK-150 | The books screens that wait a second are timed and explained | S | _Owner intake, 2026-11-24; Phase 0's, listed here beside 0.14e; not a cutover gate; Check proposed_ | 0.14c |
 | ✅ | 0.15 → TASK-134, TASK-135, TASK-136 | The browser suite runs by area, with a critical set always | L | _Owner, 2026-11-20 (PR #308; amends D-80, D-141, D-161); Phase 0's, listed here beside 0.13; not a cutover gate_ | — |
 |  | 0.16 | An area run takes the shards its plan needs | S | _From TASK-136 (PR #329; D-174); Phase 0's, listed here beside 0.15; not a cutover gate; Check proposed_ | 0.15 |
