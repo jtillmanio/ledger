@@ -1060,10 +1060,6 @@ const UNMEASURED: Record<string, string> = {
   "/@modal/(.)book/[id]": "the book sheet, an intercept with no URL of its own: the book route's tap opens it from the Library",
   "/@modal/(.)comics/[runId]/issue/[issueId]":
     "the issue sheet, an intercept with no URL of its own: the issue route's tap opens it from a run's spine (task 3.5)",
-  "/books/series": "drawn by 5.9, outside 0.14c's eight: its route and budget are roadmap 0.14e",
-  "/books/series/[id]": "drawn by 5.9, outside 0.14c's eight: its route and budget are roadmap 0.14e",
-  "/books/authors/[id]": "drawn by 5.11, outside 0.14c's eight: its route and budget are roadmap 0.14e",
-  "/books/universes/[id]": "drawn by 5.11, outside 0.14c's eight: its route and budget are roadmap 0.14e",
 };
 
 
@@ -1204,6 +1200,35 @@ describe("the route list (scripts/perf/routes.mjs)", () => {
     for (const id of ["releases", "shelves", "books-add", "top"]) {
       expect(by[id].tap, id).toEqual({ from: "/books", selector: `a[href="${eight[id as keyof typeof eight]}"]` });
     }
+  });
+
+  it("has a route for each of 0.14e's four books pages, tapped from a screen that links to it, ids resolved at run time", () => {
+    const by = Object.fromEntries(ROUTES.map((r) => [r.id, r]));
+    // The series list: the bare path is the Started view (5.9c), reached from the books nav's Series item.
+    expect(by.series).toMatchObject({ path: "/books/series", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/series"]' } });
+    expect(by.series.resolve).toBeUndefined();
+    // A series' page, an author's and a universe's: ids are the owner's data, so each takes the first matching link
+    // on the page that lists it, and the tap clicks that same link (no id is written into the route list).
+    const pages = {
+      "series-page": { path: "/books/series/[id]", from: "/books/series", selector: '.series-row a[href^="/books/series/"]' },
+      // Top's place line links an author through BookPlace's <Link>; the Library's place links are bare anchors.
+      author: { path: "/books/authors/[id]", from: "/books/top", selector: '.qplace a[href^="/books/authors/"]' },
+      universe: { path: "/books/universes/[id]", from: "/books/universes", selector: '.series-row a[href^="/books/universes/"]' },
+    };
+    for (const [id, p] of Object.entries(pages)) {
+      expect(by[id]?.path, id).toBe(p.path);
+      expect(by[id].signedIn, id).toBe(true);
+      expect(by[id].resolve, id).toEqual({ from: p.from, selector: p.selector });
+      expect(by[id].tap, id).toEqual({ from: p.from, selector: p.selector });
+      expect(by[id].tap.from, id).not.toBe(p.path);
+      expect(by[id].tap.selector, id).toMatch(/^.*a\[href/);
+      // No literal id in the route: after the entity's slash comes only a quote or the [id] pattern.
+      expect(JSON.stringify(by[id]), id).not.toMatch(/\/books\/(series|authors|universes)\/[^[\s"\\]/);
+    }
+  });
+
+  it("lists as unmeasured only the two intercept sheets (task 0.14e)", () => {
+    expect(Object.keys(UNMEASURED).sort()).toEqual(["/@modal/(.)book/[id]", "/@modal/(.)comics/[runId]/issue/[issueId]"]);
   });
 
   it("follows the 1.8c moves: the dashboard, the run list, and run taps that start from the list", () => {

@@ -346,6 +346,10 @@ tables.
     | `/books/shelves` | 10,300 | 5,300 | 23 | 100 |
     | `/books/shelves/[id]` | 11,400 | 12,000 | 25 | 100 |
     | `/books/universes` | 10,300 | 5,300 | 23 | 100 |
+    | `/books/series` | 15,500 | 3,900 | 23 | 100 |
+    | `/books/series/[id]` | 12,400 | 6,400 | 25 | 100 |
+    | `/books/authors/[id]` | 16,600 | 5,500 | 24 | 100 |
+    | `/books/universes/[id]` | 11,800 | 6,400 | 25 | 100 |
     | `/books/add` | 11,200 | 23,300 | 23 | 100 |
     | `/books/top` | 12,100 | 10,000 | 24 | 100 |
     | `/book/[id]` | 11,000 | 28,900 | 27 | 100 |
@@ -363,15 +367,22 @@ tables.
     the `@modal` intercept. An issue's page (task 3.5, TASK-080) is measured the
     same way from the small run's first issue: the full page loaded, the sheet
     its spine row opens tapped. Its ceilings start at the book page's (the same
-    `RouteSheet` and detail layout), unmeasured; with no baseline yet, the growth
+    `RouteSheet` and detail layout); with no baseline yet, the growth
     check skips it by name. If its first measurement plus 25% comes out above
     them, writing that is a raise and takes a decision, as any raise does. The Universes list
     (`/books/universes`, task 5.11b) is the same: its ceilings start at `/books/shelves`' (the same
-    list rows and chips), unmeasured, because `LIGHTHOUSE_MODE` is off and no run has measured it; its tap
+    list rows and chips). Hand run 45773843077 (task 0.14e) measured both under those copied ceilings
+    (the issue page 9,043 / 5,517 / 20, the Universes list 9,316 / 851 / 18: document + RSC, own JS,
+    requests), and the ceilings stay as they are until a decision rewrites them; the Universes list's tap
     starts on `/books/series`, whose *Universes* tab opens it (it has no nav item). `/parked`'s tap starts on
     the Library's *Parked* filter. Unmeasured, with their reasons in the test: the
-    two sheets' own intercept pages, and the series, a series', an author's and a universe's
-    pages (5.9, 5.11), which roadmap 0.14e measures.
+    two sheets' own intercept pages. The series list, a series', an author's and a
+    universe's page (5.9, 5.11, roadmap 0.14e) are measured from the hand run 45773843077
+    (D-175's ceilings, task 0.14e): the list is the bare
+    `/books/series`, which opens on *Started* (5.9c), tapped from the books nav's
+    *Series*; a series' and a universe's page take the first row of their list, and
+    an author's the first author link on Top's place line (a Library place link is a
+    bare anchor, which loads the page whole), each logged as the shelf's is.
 
     How each number got here, and every raise under the rule before 0.13 (PR
     #80 to #319), is in `docs/perf-budget-history.md`.

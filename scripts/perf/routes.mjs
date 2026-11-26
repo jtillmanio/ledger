@@ -66,6 +66,31 @@ export const ROUTES = [
   },
   // The Universes list (task 5.11b) has no nav item: Series' tab row reaches it, so the tap starts on Series.
   { id: "universes", path: "/books/universes", signedIn: true, tap: { from: "/books/series", selector: 'a[href="/books/universes"]' } },
+  // Task 0.14e: the series list, a series', an author's and a universe's page (5.9, 5.11). The bare /books/series
+  // opens on Started (5.9c; ?show=all is All), so that view is what is measured. Series is the books medium's nav item,
+  // so its tap starts on the dashboard, as the Library's does.
+  { id: "series", path: "/books/series", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/series"]' } },
+  // A series, an author and a universe are yours, not authored: each takes the first link the page that lists it
+  // draws, which the tap opens too (resolvedPath). A preview with none fails the route as not measured, never skips it.
+  // A SeriesList row is a <Link>.
+  {
+    id: "series-page", path: "/books/series/[id]", signedIn: true,
+    resolve: { from: "/books/series", selector: '.series-row a[href^="/books/series/"]' },
+    tap: { from: "/books/series", selector: '.series-row a[href^="/books/series/"]' },
+  },
+  // An author's name is a BookPlace <Link> on Top's place line. The Library's place links are bare anchors, which
+  // load the page whole: the tap times a client navigation inside the page, which a full load would end.
+  {
+    id: "author", path: "/books/authors/[id]", signedIn: true,
+    resolve: { from: "/books/top", selector: '.qplace a[href^="/books/authors/"]' },
+    tap: { from: "/books/top", selector: '.qplace a[href^="/books/authors/"]' },
+  },
+  // A UniversesList row is a <Link>, as a series' is.
+  {
+    id: "universe", path: "/books/universes/[id]", signedIn: true,
+    resolve: { from: "/books/universes", selector: '.series-row a[href^="/books/universes/"]' },
+    tap: { from: "/books/universes", selector: '.series-row a[href^="/books/universes/"]' },
+  },
   { id: "books-add", path: "/books/add", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/add"]' } },
   { id: "top", path: "/books/top", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/top"]' } },
   // A book's page: the Library's first book. The Lighthouse load is the full page (a direct load: a reload or a
