@@ -1,7 +1,7 @@
 ---
 id: TASK-154
 title: 2.10c Suggestions keep series order, and the sheet can search (1 of 2) — series order in every group
-status: Review
+status: Done
 depends_on: []
 size: S
 model: opus
