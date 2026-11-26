@@ -76,12 +76,14 @@ describe("NAV_ITEMS (AC-2)", () => {
 
     nav.pathname = "/books";
     const current = (html: string) => [...html.matchAll(/<a [^>]*aria-current="page"[^>]*>(?:(?!<\/a>).)*<\/a>/g)].map((m) => m[0]);
-    for (const name of ["the tablet rail", "the sidebar"] as const) {
+    // The rail: the well's Books and the Dashboard item, both to /books and both current there. The sidebar:
+    // the Dashboard item, under the open Books row (a disclosure, not a link: 6.25, A9). The Library isn't.
+    for (const [name, links] of [["the tablet rail", 2], ["the sidebar", 1]] as const) {
       const html = bars()[name];
-      // The switch and the Dashboard item, both to /books and both current there; the Library isn't.
-      expect(current(html).filter((a) => a.includes('href="/books"')), name).toHaveLength(2);
+      expect(current(html).filter((a) => a.includes('href="/books"')), name).toHaveLength(links);
       expect(current(html).filter((a) => a.includes("Library")), name).toHaveLength(0);
     }
+    expect(bars()["the sidebar"]).toMatch(/<button [^>]*class="mrow"[^>]*aria-expanded="true"[^>]*>(?:(?!<\/button>).)*>Books</);
     const phone = renderToString(<MediaBar />);
     // The medium button names Books (6.25); the tab row's Dashboard is the current link to /books.
     expect(mediumButton(phone)).toContain(">Books<");
@@ -253,12 +255,16 @@ describe("NAV_ITEMS (AC-2)", () => {
     for (const id of off) expect(NAV_ITEMS.find((i) => i.id === id)?.enabled, id).toBe(false);
     for (const [name, html] of Object.entries({ ...bars(), "the switch medium sheet": sheet() })) {
       expect(html, name).not.toMatch(/Tracks|href="\/search"/);
-      // The phone bar draws search's button and says why it does nothing until 6.1 (D-178); nothing else does.
-      if (name !== "the phone bar") expect(html, name).not.toMatch(/Ctrl K/);
     }
-    const search = /<button [^>]*aria-label="Search \(Ctrl K\)"[^>]*>/.exec(renderToString(<MediaBar />))?.[0];
-    expect(search).toContain('aria-disabled="true"');
-    expect(search).toContain('title="Search isn&#x27;t built yet"');
+    // Every bar draws search's button once and says why it does nothing until 6.1 (D-178; the rail and the
+    // sidebar since TASK-149); the sheet draws none.
+    for (const [name, html] of Object.entries(bars())) {
+      const search = [...html.matchAll(/<button [^>]*aria-label="Search \(Ctrl K\)"[^>]*>/g)].map((m) => m[0]);
+      expect(search, name).toHaveLength(1);
+      expect(search[0], name).toContain('aria-disabled="true"');
+      expect(search[0], name).toContain('title="Search isn&#x27;t built yet"');
+    }
+    expect(sheet()).not.toMatch(/Ctrl K/);
   });
 
   it("Settings is on (task 2.0): the foot of the rail and the sidebar, and the phone bar's gear", () => {
@@ -578,6 +584,127 @@ describe("currentItem", () => {
   it("is nothing outside the medium", () => {
     expect(currentItem(medium, "/inbox")).toBeUndefined();
     expect(currentItem(medium, "/books/list")).toBeUndefined();
+  });
+});
+
+// 6.25, 3 of 3 (TASK-149, D-178, MR-D4, MR-D5): every medium one tap away where it fits by name (the
+// 834px rail, the 1280px sidebar), one switch button away where it doesn't (the 1024px icon rail).
+const MEDIA_ITEMS = () => inGroupMedia(NAV_ITEMS);
+const between = (html: string, open: RegExp, close: string) => {
+  const at = html.search(open);
+  expect(at, String(open)).toBeGreaterThan(-1);
+  return html.slice(at, html.indexOf(close, at) + close.length);
+};
+const hrefs = (html: string) => [...html.matchAll(/href="([^"#]+)"/g)].map((m) => m[1]);
+
+describe("the tablet rail (6.25, A8)", () => {
+  beforeEach(() => { nav.pathname = "/books"; });
+  const rail = (items?: NavItem[]) => renderToString(<NavRail items={items} inbox={<>6</>} />);
+  const well = (html: string) => between(html, /<div role="group" aria-label="Medium" class="rail-well">/, "</div>");
+
+  it("names every built medium in its well, in nav order, each a link to its dashboard, Books current on /books (AC-2)", () => {
+    const html = well(rail());
+    expect(hrefs(html)).toEqual(MEDIA_ITEMS().map((m) => m.href));
+    expect([...html.matchAll(/<span class="rl">([^<]+)<\/span>/g)].map((m) => m[1])).toEqual(MEDIA_ITEMS().map((m) => m.label));
+    const current = [...html.matchAll(/<a [^>]*aria-current="page"[^>]*>/g)].map((m) => m[0]);
+    expect(current).toHaveLength(1);
+    expect(current[0]).toContain('href="/books"');
+    for (const m of MEDIA_ITEMS()) expect(html, m.id).toContain(`href="#i-${m.icon}"`);
+    // An unbuilt medium has no place in the well.
+    expect(hrefs(well(rail(flip("watch"))))).not.toContain("/watch");
+  });
+
+  it("then the medium's items, a rule, Inbox with its count and Progress; Search and Settings at the foot (AC-2)", () => {
+    const html = rail();
+    const at = (needle: string) => html.indexOf(needle);
+    expect(at('class="rail-well"')).toBeLessThan(at('href="/books/list"'));
+    expect(at('href="/books/add"')).toBeLessThan(at('class="rail-rule"'));
+    expect(at('class="rail-rule"')).toBeLessThan(at('href="/inbox"'));
+    expect(at('href="/inbox"')).toBeLessThan(at('href="/progress"'));
+    expect(at('href="/progress"')).toBeLessThan(at('aria-label="Search (Ctrl K)"'));
+    expect(at('aria-label="Search (Ctrl K)"')).toBeLessThan(at('href="/settings"'));
+    expect(html).toMatch(/href="\/inbox"[^>]*>(?:(?!<\/a>).)*<span class="count">6<\/span><\/a>/);
+    // The search button reads like the items around it: an icon in the pill over its name.
+    expect(html).toMatch(/<button [^>]*class="ri"[^>]*aria-label="Search \(Ctrl K\)"[^>]*>(?:(?!<\/button>).)*<span class="rl">Search<\/span><\/button>/);
+  });
+});
+
+describe("the desktop sidebar and icon rail (6.25, A9, A10)", () => {
+  beforeEach(() => { nav.pathname = "/books"; });
+  const side = (items?: NavItem[]) => renderToString(<Sidebar items={items} inbox={<>6</>} />);
+  const media = (html: string) => between(html, /<ul class="side-media"/, "</ul>");
+
+  it("puts Search · Ctrl K under the wordmark, then the switch, then Media (AC-4)", () => {
+    const html = side();
+    const at = (needle: string) => html.indexOf(needle);
+    expect(at(">Ledger<")).toBeLessThan(at('aria-label="Search (Ctrl K)"'));
+    expect(html).toMatch(/aria-label="Search \(Ctrl K\)"[^>]*>(?:(?!<\/button>).)*<span class="nl">Search<\/span><span class="kbd" aria-hidden="true">Ctrl K<\/span>/);
+    expect(at('aria-label="Search (Ctrl K)"')).toBeLessThan(at('class="medswitch"'));
+    expect(at('class="medswitch"')).toBeLessThan(at(">Media<"));
+    expect(at(">Media<")).toBeLessThan(at('class="side-media"'));
+  });
+
+  it("lists every built medium under Media, Books open with its items nested, the others links to their dashboards (AC-4)", () => {
+    const list = media(side());
+    // Labelled by its visible heading.
+    const label = /<ul class="side-media" aria-labelledby="([^"]+)"/.exec(list)![1];
+    expect(side()).toContain(`id="${label}">Media</span>`);
+    const rows = [...list.matchAll(/<li[^>]*>(?:(?!<\/li>).)*<\/li>/g)].map((m) => m[0]);
+    expect(rows).toHaveLength(MEDIA_ITEMS().length);
+    MEDIA_ITEMS().forEach((m, n) => {
+      expect(rows[n], m.id).toContain(`>${m.label}</span>`);
+      if (m.medium === "books") {
+        expect(rows[n]).toMatch(/^<li class="side-open" data-open="true">/);
+        const button = /<button [^>]*class="mrow"[^>]*>/.exec(rows[n])![0];
+        expect(button).toContain('aria-expanded="true"');
+        const controls = /aria-controls="([^"]+)"/.exec(button)![1];
+        const nest = between(rows[n], new RegExp(`<div id="${controls}" class="side-items">`), "</div>");
+        expect(hrefs(nest)).toEqual(BOOKS_ITEMS.map(hrefOf));
+        expect(/<button [^>]*class="mrow".*?<\/button>/.exec(rows[n])![0]).toContain('href="#i-chevron-down"');
+      } else {
+        // A one-line link to its dashboard: no disclosure, no nested items.
+        expect(rows[n]).toMatch(new RegExp(`^<li><a [^>]*class="mrow"[^>]*href="${m.href}"|^<li><a [^>]*href="${m.href}"[^>]*class="mrow"`));
+        expect(rows[n], m.id).not.toContain("aria-expanded");
+        expect(hrefs(rows[n]), m.id).toEqual([m.href]);
+        expect(rows[n]).toContain('href="#i-chevron-right"');
+      }
+    });
+    // Another medium opens its own set: on /comics, Comics is the open row and Books a link.
+    nav.pathname = "/comics/runs";
+    const comics = media(side());
+    expect(comics).toMatch(/<li class="side-open" data-open="true"><button [^>]*aria-expanded="true"[^>]*>(?:(?!<\/button>).)*>Comics</);
+    expect(comics).toMatch(/<li><a [^>]*href="\/books"/);
+    // An unbuilt medium has no row.
+    expect(hrefs(media(side(flip("watch"))))).not.toContain("/watch");
+  });
+
+  it("has an Across media group: Inbox with its count, then Progress (AC-4)", () => {
+    const html = side();
+    const group = between(html, /<div role="group" aria-labelledby="[^"]+" class="side-across">/, "</a></div>");
+    const label = /aria-labelledby="([^"]+)" class="side-across"/.exec(group)![1];
+    expect(group).toContain(`id="${label}">Across media</span>`);
+    expect(hrefs(group)).toEqual(["/inbox", "/progress"]);
+    expect(group).toMatch(/href="\/inbox"[^>]*>(?:(?!<\/a>).)*<span class="count">6<\/span><\/a>/);
+    // After Media, before Settings at the foot.
+    expect(html.indexOf('class="side-media"')).toBeLessThan(html.indexOf('class="side-across"'));
+    expect(html.indexOf('class="side-across"')).toBeLessThan(html.indexOf('href="/settings"'));
+  });
+
+  it("the icon rail's switch names the medium and opens a menu: a 48 × 44 button, its icon and a chevron (AC-3)", () => {
+    for (const m of MEDIA_ITEMS()) {
+      nav.pathname = m.href;
+      const button = /<button [^>]*class="medswitch"[^>]*>(?:(?!<\/button>).)*<\/button>/.exec(side())![0];
+      expect(button, m.id).toContain('type="button"');
+      expect(button, m.id).toContain(`aria-label="${m.label}, switch medium"`);
+      expect(button, m.id).toContain('aria-haspopup="menu"');
+      expect(button, m.id).toContain('aria-expanded="false"');
+      expect(button, m.id).toContain(`href="#i-${m.icon}"`);
+      expect(button, m.id).toContain('href="#i-chevron-down"');
+    }
+    // The menu is drawn only once opened (shell.spec.ts drives it); the sprite has the chevrons.
+    expect(side()).not.toContain('role="menu"');
+    const sprite = renderToString(<IconSprite />);
+    for (const icon of ["chevron-down", "chevron-right"]) expect(sprite, icon).toContain(`id="i-${icon}"`);
   });
 });
 

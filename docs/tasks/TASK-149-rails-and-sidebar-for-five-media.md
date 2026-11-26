@@ -1,14 +1,14 @@
 ---
 id: TASK-149
 title: 6.25 Navigation for four and five media (3 of 3) — the tablet rail, the icon rail's menu and the sidebar
-status: Ready
+status: In progress
 depends_on: [TASK-147, TASK-148]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: f8c9a9f
 ---
 
 # TASK-149 — 6.25 Navigation for four and five media (3 of 3) — the tablet rail, the icon rail's menu and the sidebar
@@ -79,7 +79,30 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-26 (owner: "Approve"; the well's media are 58 × 46 as A8 draws them, AC-6's 56px read as the rail's screen and across-media items).
+
+**Steps**
+
+1. `src/components/nav/SearchButton.tsx`: takes optional children, so the rail and the sidebar draw their own Search, the same `aria-disabled` button named *Search (Ctrl K)* that says *Search isn't built yet* until 6.1. Ctrl K binds nothing.
+2. `NavRail.tsx` (768–1023px, A8): under the *L*, a `--sunk` well (`role="group"`, *Medium*) of every built medium, 58 × 46, icon over an 11px name, the current one a raised `--surface` pill; then the medium's items (56px), a rule, Inbox (badge) and Progress; Search, then Settings and sync at the foot. The middle scrolls when the window is short; the foot stays.
+3. `MediumMenu.tsx` (new, after `Menu.tsx`): a 48 × 44 button, the current medium's icon and a chevron, named "Books, switch medium", `aria-haspopup="menu"`, `aria-expanded`; its `role="menu"` is a link (`menuitem`) per built medium, the current one `aria-current` with a grey check. Opening focuses the first item; ArrowUp/ArrowDown/Home/End move; Esc closes with focus back on the button; Tab and a click elsewhere close. Placed absolutely beside the 64px rail (`.side`'s backdrop-filter already contains it, as the tooltips).
+4. `Sidebar.tsx`: one markup, CSS choosing per width (no flash at hydration). Order: wordmark → Search (*Search · Ctrl K* at 1280, an icon with a tooltip at 1024) → the switch (1024–1279 only) → *Media* (1280+: a 36px row per built medium; the current one a disclosure button, `aria-expanded`, its items nested under it at 34px, current `--raise` + 3px `--m-*` bar; the others one-line links to their dashboards) → *Across media* (Inbox with its mono count, Progress; a rule and icons at 1024) → Settings and sync. At 1024–1279 only the nested items show, as the icon column.
+5. `src/components/ThumbBar.tsx`: the header's *Search* verb goes (slot 3 of a dashboard's header is empty); the verbs keep D-25's order, primary last.
+6. `src/app/globals.css`: the well, the menu, the media list and the across-media group, tokens only; the sidebar's old `.seg`/`.sm` rules go. The 1280 sidebar scrolls when the window is short.
+7. `design/mockups.html`: a one-off scratchpad script (not committed) redraws the 25 tablet rails from A8 (the well of the built media, Progress after Inbox; books' items as A8 lists them) and the 55 desktop sidebars from A9 (Search · Ctrl K, *Media* with the frame's medium open, *Across media*). No frame draws the 1024px icon rail; `design/mockups-index.md`'s row says so.
+
+**Files**: `src/components/nav/{NavRail,Sidebar,SearchButton}.tsx`, `src/components/nav/MediumMenu.tsx` (new), `src/components/ThumbBar.tsx`, `src/app/globals.css`, `design/mockups.html`, `design/mockups-index.md`, `test/nav-items.test.tsx`, `test/thumb-bar.test.tsx`, `test/e2e/{shell,thumb-bar,mockup-tablet}.spec.ts`; possibly `test/e2e/{books-dashboard,settings}.spec.ts` where they read the old media links. Not in *Files likely touched*: `SearchButton.tsx`, `test/thumb-bar.test.tsx`, `test/e2e/thumb-bar.spec.ts` (AC-5), `test/e2e/mockup-tablet.spec.ts` (AC-6). `items.ts` needs no new group: `media` and `global` already are (TASK-148).
+
+**Test strategy**
+
+- AC-1 (834/1024/1280 clauses, axe), AC-2, AC-3, AC-4: `test/e2e/shell.spec.ts`, light and dark at 834, 1024 and 1280, with axe at each width.
+- AC-5: `test/thumb-bar.test.tsx` (each kind's header names, no *Search (Ctrl K)*) and `test/e2e/thumb-bar.spec.ts` at 1024+.
+- AC-6: `shell.spec.ts` (target sizes, names, the menu's reduced motion probe, screenshots at 768, 1024 and 1280 light and dark); `mockup-tablet.spec.ts` (every rail has the well and Progress; every sidebar has Search · Ctrl K, *Media* with one open medium, *Across media*; the index row says redrawn).
+- The groups: `test/nav-items.test.tsx` (the well, the media list, the switch, Search drawn and inert in the rail and sidebar).
+
+**Revision 1 (Phase 2)**: A9 draws a right chevron on each closed media row, so `Icons.tsx` gains `chevron-right` and `items.ts`' `IconName` names it. The new buttons inside the navs (Search, the switch, the open medium's row) join the control-state matrix as `.rail button` and `.side button` (`globals.css`, `test/control-states.test.ts`). The 1024px menu's screenshot is taken under reduced motion: a full-page capture restarts its 150ms entrance and caught it half-faded. Every rail and sidebar in the mockup is rebuilt from one model (the frame's medium, the old current item), since eight later rails were stubs with no media group or foot.
+
+**Risks**: at 1024 the switch names the set the rail draws, and a screen under no medium (`/inbox`) still draws comics' set (`mediumFor`, unchanged). The menu is imported statically; if `test/perf.test.ts` or the byte budgets object, it loads on first open as `MediumSheet` does. Size: 13–15 files, no schema; kept whole (part 3 of an agreed split; AC-6 binds the redraw, as TASK-148's did).
 
 ## Review log
 

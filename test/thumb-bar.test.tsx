@@ -67,11 +67,11 @@ const sent = () => fetchMock.mock.calls.map(([url, init]) => [url, JSON.parse((i
 const toastLines = () => [...container.ownerDocument.querySelectorAll(".toast-label, .toast-detail")].map((n) => n.textContent);
 
 describe("the slots are fixed (AC-2)", () => {
-  it("comics: Mark #141 read · + batch on the bar, Search · + batch · Mark #141 read in the header", () => {
+  it("comics: Mark #141 read · + batch on the bar, + batch · Mark #141 read in the header", () => {
     draw(comics());
-    // Search left the thumb bar for the phone's top bar (6.25, D-178); the desktop header keeps it until TASK-149.
+    // Search left the thumb bar for the phone's top bar and the header for the sidebar (6.25, D-178).
     expect(bar()).toEqual(["Mark #141 read", "+ batch"]);
-    expect(header()).toEqual(["Search (Ctrl K)", "+ batch", "Mark #141 read"]);
+    expect(header()).toEqual(["+ batch", "Mark #141 read"]);
   });
 
   it("the mark is the primary and the only filled slot: .btn, then .btn.sec, then the run's icon button", () => {
@@ -100,6 +100,27 @@ describe("the slots are fixed (AC-2)", () => {
     }
   });
 
+  it("no dashboard header carries a Search verb, and each keeps D-25's order, primary last (6.25, D-178, TASK-149 AC-5)", () => {
+    // [config, the header's names in order]: the bar's slots reversed, Search gone; the primary (the
+    // filled .btn that isn't .sec) is the last control.
+    const dashboards: [BarConfig, string[]][] = [
+      [comics(), ["+ batch", "Mark #141 read"]],
+      [{ kind: "empty", verb: { label: "Start Uncanny X-Men", href: "/comics/uncanny" } }, ["Start Uncanny X-Men"]],
+      [reading, ["Finished The Fifth Season", "Log pages"]],
+      [{ kind: "books", book: null, next: { id: "lhd", title: "The Left Hand of Darkness" } }, ["Start The Left Hand of Darkness"]],
+      [{ kind: "books", book: null, next: null }, ["Pick a book"]],
+      [{ kind: "watch" }, ["+ Add", "Mark S2 watched"]],
+    ];
+    for (const [config, expected] of dashboards) {
+      draw(config);
+      expect(header(), config.kind).toEqual(expected);
+      expect(container.querySelector(".headverbs .search, .headverbs [href='/search'], .headverbs [aria-label^='Search']"), config.kind)
+        .toBeNull();
+      const last = container.querySelector(".headverbs > :last-child")!;
+      expect(last.classList.contains("btn") && !last.classList.contains("sec"), `${config.kind}: primary last`).toBe(true);
+    }
+  });
+
   it("names the issue by its full label when the run spans series, and truncates with a title", () => {
     draw(comics({ upcoming: krakoa, single: false }));
     expect(bar()[0]).toBe("Mark X-Men (2019) #8 read");
@@ -120,29 +141,29 @@ describe("the slots are fixed (AC-2)", () => {
   it("an empty state is Start {next} and nothing else: no batch, no finish", () => {
     draw({ kind: "empty", verb: { label: "Start Uncanny X-Men", href: "/comics/uncanny" } });
     expect(bar()).toEqual(["Start Uncanny X-Men"]);
-    expect(header()).toEqual(["Search (Ctrl K)", "Start Uncanny X-Men"]);
+    expect(header()).toEqual(["Start Uncanny X-Men"]);
     expect(container.querySelector(".actionbar a")!.getAttribute("href")).toBe("/comics/uncanny");
   });
 
   it("with nothing to start it offers Pick a run, and watch offers Save to inbox", () => {
     draw({ kind: "empty", verb: { label: "Pick a run", href: "/comics/runs" } });
-    expect(header()).toEqual(["Search (Ctrl K)", "Pick a run"]);
+    expect(header()).toEqual(["Pick a run"]);
     draw({ kind: "empty", verb: { label: "Save to inbox", href: "/inbox" } });
-    expect(header()).toEqual(["Search (Ctrl K)", "Save to inbox"]);
+    expect(header()).toEqual(["Save to inbox"]);
   });
 
-  it("books with one in hand: Log progress · ✓ finished; the header says Search · Finished it · Log pages (task 2.2)", () => {
+  it("books with one in hand: Log progress · ✓ finished; the header says Finished it · Log pages (task 2.2)", () => {
     draw(reading);
     expect(bar()).toEqual(["Log progress", "Finished The Fifth Season"]);
     expect([...container.querySelectorAll(".actionbar > *")].map((el) => el.textContent)).toEqual(["Log progress", "✓ finished"]);
-    expect(header()).toEqual(["Search (Ctrl K)", "Finished The Fifth Season", "Log pages"]);
+    expect(header()).toEqual(["Finished The Fifth Season", "Log pages"]);
     expect(container.querySelector(".headverbs > .btn.sec")!.textContent).toBe("Finished it");
   });
 
   it("books between books: Start {the top of the plan}, named in full, and no finish (task 2.2)", () => {
     draw({ kind: "books", book: null, next: { id: "lhd", title: "The Left Hand of Darkness" } });
     expect(bar()).toEqual(["Start The Left Hand of Darkness"]);
-    expect(header()).toEqual(["Search (Ctrl K)", "Start The Left Hand of Darkness"]);
+    expect(header()).toEqual(["Start The Left Hand of Darkness"]);
     expect(container.querySelector<HTMLElement>(".headverbs .btn")!.title).toBe("Start The Left Hand of Darkness");
   });
 

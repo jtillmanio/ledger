@@ -531,6 +531,92 @@ test.describe("6.25 AC-6 · the phone bars and tab rows from A5–A7", ONCE, () 
   });
 });
 
+// Task 6.25 (TASK-149, AC-6): every 834px rail redrawn from A8 and every desktop sidebar from A9 (D-178).
+// No frame draws the 1024px icon rail; A10 stays its drawing, and the index says so.
+test.describe("6.25 AC-6 · the tablet rails and desktop sidebars from A8–A9", ONCE, () => {
+  const MEDIA = ["Comics", "Books", "Watch"];
+  /** The medium of the frame a nav sits in (its .app's data-medium), or null. */
+  const navs = (re: RegExp) => [...MOCKUP.matchAll(re)].map((m) => {
+    const frame = MOCKUP.lastIndexOf('<div class="frame" data-w=', m.index);
+    const section = /data-id="([\w-]+)"/.exec(MOCKUP.slice(MOCKUP.lastIndexOf("<section", m.index)))?.[1];
+    return { html: m[0], medium: /data-medium="(\w+)"/.exec(MOCKUP.slice(frame, m.index))?.[1] ?? null, where: `${section}@${m.index}` };
+  });
+  const rails = navs(/<nav class="rail" aria-label="Main">[\s\S]*?<\/nav>/g);
+  const sides = navs(/<aside class="side">[\s\S]*?<\/aside>/g);
+  const label = (a: string) => a.replace(/<svg[\s\S]*?<\/svg>/g, "").replace(/<span class="(rcount|kbd)">[^<]*<\/span>/g, "").replace(/<[^>]+>/g, "").trim();
+
+  test("every 834px rail: the L, a well naming every medium (the frame's own current), its screens, a rule, Inbox, Progress, then Search and Settings", () => {
+    expect(rails.length).toBeGreaterThanOrEqual(25);
+    for (const r of rails) {
+      const well = /<div class="rwell" role="group" aria-label="Medium">([\s\S]*?)<\/div>/.exec(r.html);
+      expect(well, r.where).not.toBeNull();
+      const media = [...well![1].matchAll(/<a class="rw"( aria-current="page")?>([\s\S]*?)<\/a>/g)];
+      expect(media.map((m) => label(m[2])), r.where).toEqual(MEDIA);
+      expect(media.filter((m) => m[1]).map((m) => label(m[2]).toLowerCase()), r.where).toEqual(r.medium ? [r.medium] : []);
+      // After the well: the rule, Inbox with its count and Progress, then the foot.
+      const tail = r.html.slice(r.html.indexOf('<span class="rrule">'));
+      expect([...tail.matchAll(/<a class="ri"[^>]*>([\s\S]*?)<\/a>/g)].map((m) => label(m[1])), r.where)
+        .toEqual(["Inbox", "Progress", "Search", "Settings"]);
+      expect(tail, r.where).toMatch(/<span class="rcount">\d+<\/span>/);
+      expect(r.html.indexOf("rail-word"), r.where).toBeLessThan(r.html.indexOf("rwell"));
+    }
+    // Books' rails list A8's nine screens.
+    const books = rails.find((r) => r.medium === "books")!;
+    const screens = /<div class="rg">([\s\S]*?)<\/div>/.exec(books.html)![1];
+    expect([...screens.matchAll(/<span class="rl">([^<]+)<\/span>/g)].map((m) => m[1]))
+      .toEqual(["Dashboard", "Status", "Library", "Plan", "Shelves", "Series", "Top", "Coming out", "Add"]);
+  });
+
+  test("every desktop sidebar: Search · Ctrl K under the wordmark, Media with the frame's medium open and its screens nested, and Across media", () => {
+    expect(sides.length).toBeGreaterThanOrEqual(55);
+    for (const s of sides) {
+      const at = (needle: string) => s.html.indexOf(needle);
+      expect(at('<div class="brand">Ledger</div>'), s.where).toBeLessThan(at('<a class="sx">'));
+      expect(s.html, s.where).toMatch(/<a class="sx"><svg[\s\S]*?<\/svg>Search<span class="kbd">Ctrl K<\/span><\/a>/);
+      expect(at('<a class="sx">'), s.where).toBeLessThan(at('<div class="grp">Media</div>'));
+      // One open row, the frame's medium (Comics on a screen under none), its screens nested after it.
+      const open = [...s.html.matchAll(/<button type="button" class="mrow" aria-expanded="true">([\s\S]*?)<\/button>\s*<div class="nest">([\s\S]*?)<\/div>/g)];
+      expect(open, s.where).toHaveLength(1);
+      expect(label(open[0][1]).toLowerCase(), s.where).toBe(s.medium ?? "comics");
+      expect(open[0][2].match(/<a[ >]/g)!.length, s.where).toBeGreaterThanOrEqual(5);
+      // Every other medium a one-line row, no disclosure; every medium once, in order.
+      const rows = [...s.html.matchAll(/class="mrow"[^>]*>([\s\S]*?)<\/(a|button)>/g)].map((m) => label(m[1]));
+      expect(rows, s.where).toEqual(MEDIA);
+      expect(s.html.match(/aria-expanded/g), s.where).toHaveLength(1);
+      // Across media: Inbox with its count, then Progress; Settings at the foot.
+      const across = s.html.slice(at('<div class="grp">Across media</div>'));
+      expect([...across.matchAll(/<a[^>]*>([\s\S]*?)<\/a>/g)].map((m) => label(m[1])), s.where).toEqual(["Inbox", "Progress", "Settings"]);
+      expect(across, s.where).toMatch(/Inbox<span class="kbd">\d+<\/span>/);
+      // The old every-medium-expanded list is gone (MR-D4).
+      expect(s.html, s.where).not.toMatch(/<div class="grp">(Comics|Books|Watch)<\/div>/);
+    }
+  });
+
+  test("the rail's well items are 58 × 46 and the current one a raised --surface pill, as drawn", async ({ page }) => {
+    const f = await openTab(page, "bdash");
+    const media = f.locator(".rail .rwell .rw");
+    await expect(media).toHaveCount(3);
+    for (const item of await media.all()) expect([(await box(item)).width, (await box(item)).height]).toEqual([58, 46]);
+    const [cur, surface] = await f.locator(".rail").evaluate((rail) => {
+      const probe = document.createElement("i");
+      probe.style.background = "var(--surface)";
+      rail.append(probe);
+      const s = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return [getComputedStyle(rail.querySelector('.rw[aria-current]')!).backgroundColor, s];
+    });
+    expect(cur).toBe(surface);
+  });
+
+  test("design/mockups-index.md says the rails and sidebars are redrawn, and that no frame draws the icon rail", () => {
+    const start = INDEX.indexOf("## Nov 2026, mediums review");
+    const row = INDEX.slice(start).split("\n").find((l) => l.startsWith("| The tablet rail and the desktop sidebar"))!;
+    expect(row).toMatch(/redrawn \(task 6\.25, TASK-149\)/);
+    expect(row).toMatch(/No frame here draws the 1024px icon rail/);
+    expect(row).toMatch(/\| 6\.25 \(\*\*redrawn\*\*\) \|$/);
+  });
+});
+
 test.describe("AC-4 · design/mockups-index.md after TASK-146", ONCE, () => {
   const row = (id: string) => INDEX.split("\n").find((l) => l.startsWith(`| \`${id}\` |`));
 

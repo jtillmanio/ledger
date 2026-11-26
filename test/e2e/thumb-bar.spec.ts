@@ -96,7 +96,7 @@ for (const where of ["dash", "run"] as const) {
       await screenshot(page, testInfo, `thumb-${where}`);
     });
 
-    test("the slots are Mark · second (· Add issues on the run), and the header is Search · second · Mark (AC-2; 6.25, AC-4)", FLOOR, async ({ page }) => {
+    test("the slots are Mark · second (· Add issues on the run), and the header is second · Mark, no Search (AC-2; 6.25, TASK-148 AC-4, TASK-149 AC-5)", FLOOR, async ({ page }) => {
       await open(page, where);
       const names = (sel: string) => page.locator(sel).evaluateAll((els) =>
         els.map((el) => el.getAttribute("aria-label") ?? el.textContent?.trim()));
@@ -106,8 +106,10 @@ for (const where of ["dash", "run"] as const) {
       } else {
         // Search left the thumb bar for the phone's top bar (6.25, D-178).
         expect(await names(".actionbar > *")).toEqual([`Mark #${NEXT} read`, "+ batch"]);
-        // In the DOM, and visible from 1024px: the same verbs, primary last; Search until TASK-149 drops it.
-        expect(await names(".headverbs > *")).toEqual(["Search (Ctrl K)", "+ batch", `Mark #${NEXT} read`]);
+        // In the DOM, and visible from 1024px: the same verbs, primary last, and no Search: it is in the
+        // sidebar and the icon rail (6.25, D-178, TASK-149 AC-5).
+        expect(await names(".headverbs > *")).toEqual(["+ batch", `Mark #${NEXT} read`]);
+        await expect(page.locator(".headverbs").getByRole("button", { name: /search/i })).toHaveCount(0);
         if (wide(page)) await expect(page.locator(".headverbs")).toBeVisible();
         else await expect(page.locator(".headverbs")).toBeHidden();
       }
@@ -390,14 +392,14 @@ test("on a run spanning two series the verb names the issue in full (AC-1, M-10)
   expect(E2E_LONG_LABEL).toContain("Amazing Spider-Man");
 });
 
-test("an empty dashboard is Start {next} and nothing else; the header is Search · Start {next} (AC-2; 6.25, AC-4)", ONCE, async ({ page }) => {
+test("an empty dashboard is Start {next} and nothing else; the header is Start {next} alone (AC-2; 6.25, TASK-148 AC-4, TASK-149 AC-5)", ONCE, async ({ page }) => {
   await db((sql) => sql`DELETE FROM issue_progress WHERE user_id = ${E2E_USER}`);
   try {
     await page.goto("/comics");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     const names = await page.locator(".headverbs > *").evaluateAll((els) =>
       els.map((el) => el.getAttribute("aria-label") ?? el.textContent?.trim()));
-    expect(names).toEqual(["Search (Ctrl K)", expect.stringMatching(/^Start /)]);
+    expect(names).toEqual([expect.stringMatching(/^Start /)]);
     expect(await page.locator(".actionbar > *").count()).toBe(1);
   } finally {
     await db(async (sql) => {
