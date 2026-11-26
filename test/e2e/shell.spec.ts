@@ -417,6 +417,17 @@ test.describe("the phone's medium button, search and gear (6.25)", () => {
   const THEMES = { tag: ["@at-w390-light", "@at-w390-dark"] };
   const button = (page: Page) => page.locator(".bar .medbtn");
   const dialog = (page: Page) => page.getByRole("dialog", { name: "Switch medium" });
+  /** Each element of the open sheet whose animation or transition lasts longer than 0s: "class kind duration". */
+  const motion = (page: Page) => page.locator(".sheet-host").evaluate((host) =>
+    [host, ...host.querySelectorAll("*")].flatMap((el) => {
+      const cs = getComputedStyle(el);
+      const long = (list: string) => list.split(",").map((d) => d.trim()).filter((d) => parseFloat(d) > 0);
+      const name = (el.getAttribute("class") ?? el.tagName.toLowerCase()).split(" ")[0];
+      return [
+        ...long(cs.animationDuration).filter(() => cs.animationName !== "none").map((d) => `${name} animation ${d}`),
+        ...long(cs.transitionDuration).map((d) => `${name} transition ${d}`),
+      ];
+    }));
   const RULES = [
     "color-contrast", "link-name", "button-name", "aria-dialog-name", "aria-allowed-attr", "aria-valid-attr-value",
     "landmark-unique", "aria-hidden-focus", "svg-img-alt", "target-size", "nested-interactive",
@@ -518,9 +529,19 @@ test.describe("the phone's medium button, search and gear (6.25)", () => {
       await screenshot(page, testInfo, `medium-bar-${width}-books`);
       await button(page).click();
       await expect(dialog(page)).toBeVisible();
-      const moving = await page.locator(".sheet-host").evaluate((host) =>
-        host.getAnimations({ subtree: true }).filter((a) => a.playState === "running").length);
-      expect(moving, `at ${width}`).toBe(0);
+      // Nothing in the sheet, its scrim or its rows moves: every animation and transition lasts 0s.
+      expect(await motion(page), `at ${width}`).toEqual([]);
+      if (width === 360) {
+        // Even a sheet given a 300ms transition doesn't move under reduced motion (globals.css stops every
+        // transition and animation, UX-N01); without the preference the same probe reports it.
+        await page.addStyleTag({ content: ".sheet{transition:transform 300ms ease}" });
+        expect(await motion(page)).toEqual([]);
+        await page.emulateMedia({ reducedMotion: "no-preference" });
+        expect(await motion(page)).toContainEqual(expect.stringMatching(/^sheet transition 0\.3s/));
+        await page.emulateMedia({ reducedMotion: "reduce" });
+        await page.evaluate(() => document.querySelector("head style:last-of-type")!.remove());
+        expect(await motion(page)).toEqual([]);
+      }
       await screenshot(page, testInfo, `medium-sheet-${width}-books`);
       await page.keyboard.press("Escape");
       await expect(dialog(page)).toHaveCount(0);
