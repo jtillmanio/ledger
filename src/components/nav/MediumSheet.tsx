@@ -72,7 +72,10 @@ export function MediumList({ items, medium, pathname }: { items: NavItem[]; medi
           );
         })}
       </ul>
-      <p className="medfoot">Each medium opens on its dashboard. <span className="mono">/</span> opens the one you used last.</p>
+      {/* A6's line, with Settings → Start on (6.25, TASK-147), which can name the medium / opens. */}
+      <p className="medfoot">
+        Each medium opens on its dashboard. <span className="mono">/</span> opens the one you used last, unless Settings → Start on names one.
+      </p>
     </>
   );
 }

@@ -435,6 +435,11 @@ describe("the Switch medium sheet (6.25, D-178, AC-1)", () => {
     expect(sheet(NAV_ITEMS, null)).not.toContain("aria-current");
   });
 
+  it("says where each medium opens and what / opens, Start on included (A6; TASK-147)", () => {
+    const foot = /<p class="medfoot">(.*?)<\/p>/.exec(sheet())![1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    expect(foot).toBe("Each medium opens on its dashboard. / opens the one you used last, unless Settings → Start on names one.");
+  });
+
   it("each row carries its medium's icon, and the sprite draws the chevron, the check and the magnifier", () => {
     for (const m of inGroupMedia(NAV_ITEMS)) expect(sheet(), m.id).toContain(`href="#i-${m.icon}"`);
     const sprite = renderToString(<IconSprite />);
