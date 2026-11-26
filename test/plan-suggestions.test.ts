@@ -367,3 +367,171 @@ describe("the row's place line (TASK-072, D-134)", () => {
     expect(rows.find((r) => r.id === "af-1")).toMatchObject({ universe: null, series: null, seriesPosition: null });
   });
 });
+
+// Task 2.10c, part 1 (TASK-154, F-65): no group but On deck suggests a book whose series or subseries has an
+// earlier live book still unread (no status, To read, Unlisted or Parked); Reading, Listening, read and DNF count
+// as started. On deck is the owner's own pick (D-37) and lists as it is.
+describe("series order in every group but On deck (TASK-154, 2.10c)", () => {
+  /** 530k planned in Q2 at 40 min × 200 wpm leaves 200k of room, as 630k leaves 100k in the room test above. */
+  async function room200k() {
+    await sql`INSERT INTO reading_settings (user_id, minutes_per_day, words_per_minute) VALUES (${USER}, 40, 200)`;
+    await book("planned", { words: 530_000 }); await status("planned", "to_read"); await plan("planned", Q2, 1);
+  }
+
+  /**
+   * The Check's series: books c-1…c-4, none followed, all To read, 50k words each. Books 2–4 also tempt every
+   * group before *Fits the room left* that a To-read book can reach (a release in Q2, added last week) and the one
+   * after it (a genre unread this year), so "never in any group" is tested in each.
+   */
+  async function checkSeries() {
+    await room200k();
+    await sql`INSERT INTO book_series (id, name) VALUES ('c', 'Series c')`;
+    await book("c-1", { series: "c", position: 1, words: 50_000 }); await status("c-1", "to_read");
+    for (const i of [2, 3, 4]) {
+      const id = `c-${i}`;
+      await book(id, { series: "c", position: i, words: 50_000, genre: "Horror" }); await status(id, "to_read");
+      await sql`INSERT INTO releases (book_id, release_date) VALUES (${id}, '2027-05-04')`;
+      await sql`UPDATE books SET added_at = '2026-11-03T15:00:00Z' WHERE id = ${id}`;
+    }
+  }
+
+  const ids = (rows: { id: string }[]) => rows.map((r) => r.id);
+
+  it("suggests book 1 under Fits the room left and never books 2–4 in any group (AC-1)", async () => {
+    await checkSeries();
+    const rows = await q.planSuggestions(USER, Q2, TODAY);
+    expect(groupOf(rows, "c-1")).toEqual(["fits_room"]);
+    for (const id of ["c-2", "c-3", "c-4"]) expect(ids(rows), id).not.toContain(id);
+  });
+
+  it("with book 1 read suggests book 2 and not 3–4 (AC-1)", async () => {
+    await checkSeries();
+    await read("c-1");
+    const rows = await q.planSuggestions(USER, Q2, TODAY);
+    expect(ids(rows)).toContain("c-2");
+    for (const id of ["c-1", "c-3", "c-4"]) expect(ids(rows), id).not.toContain(id);
+  });
+
+  it("with book 1 Reading suggests book 2 and not 3–4 (AC-1)", async () => {
+    await checkSeries();
+    await status("c-1", "reading");
+    const rows = await q.planSuggestions(USER, Q2, TODAY);
+    expect(ids(rows)).toContain("c-2");
+    for (const id of ["c-1", "c-3", "c-4"]) expect(ids(rows), id).not.toContain(id);
+  });
+
+  it("lists book 3 put On deck under On deck, and still neither book 2 nor book 4 (AC-1)", async () => {
+    await checkSeries();
+    await plan("c-3", "on_deck");
+    const rows = await q.planSuggestions(USER, Q2, TODAY);
+    expect(groupOf(rows, "c-3")).toEqual(["on_deck"]);
+    expect(groupOf(rows, "c-1")).toEqual(["fits_room"]);
+    for (const id of ["c-2", "c-4"]) expect(ids(rows), id).not.toContain(id);
+  });
+
+  it("an author followed Reading lists only the first unread book of each of the author's series under More from (AC-1)", async () => {
+    await sql`INSERT INTO author_follows (user_id, author_id, state) VALUES (${USER}, 'af', 'reading')`;
+    await sql`INSERT INTO book_series (id, name) VALUES ('a', 'Series a'), ('b', 'Series b')`;
+    for (const s of ["a", "b"]) {
+      for (const i of [1, 2, 3]) { await book(`${s}-${i}`, { author: "af", series: s, position: i }); await status(`${s}-${i}`, "to_read"); }
+    }
+    await read("b-1");
+    // A book in no series is held by nothing.
+    await book("solo", { author: "af" }); await status("solo", "to_read");
+    const rows = await q.planSuggestions(USER, Q2, TODAY);
+    expect(idsIn(rows, "from_author").sort()).toEqual(["a-1", "b-2", "solo"]);
+    for (const id of ["a-2", "a-3", "b-3"]) expect(ids(rows), id).not.toContain(id);
+  });
+
+  it.each([
+    ["no status", null, true],
+    ["Unlisted", "unlisted", true],
+    ["Parked", "parked", true],
+    ["Listening", "listening", false],
+    ["DNF", "dnf", false],
+  ] as const)("an earlier book at %s holds the next one back: %s", async (_, first, holds) => {
+    await room200k();
+    await sql`INSERT INTO book_series (id, name) VALUES ('h', 'Series h')`;
+    await book("h-1", { series: "h", position: 1 });
+    await book("h-2", { series: "h", position: 2, words: 50_000 }); await status("h-2", "to_read");
+    if (first === "parked") {
+      await sql`INSERT INTO book_status (user_id, book_id, status, parked_on) VALUES (${USER}, 'h-1', 'parked', '2026-11-01')`;
+    } else if (first) {
+      await status("h-1", first);
+    }
+    const rows = await q.planSuggestions(USER, Q2, TODAY);
+    if (holds) expect(ids(rows)).not.toContain("h-2");
+    else expect(groupOf(rows, "h-2")).toEqual(["fits_room"]);
+  });
+
+  it("a soft-deleted earlier book holds nothing back", async () => {
+    await room200k();
+    await sql`INSERT INTO book_series (id, name) VALUES ('d', 'Series d')`;
+    await book("d-1", { series: "d", position: 1 }); await status("d-1", "to_read");
+    await book("d-2", { series: "d", position: 2, words: 50_000 }); await status("d-2", "to_read");
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 'd-1'`;
+    expect(groupOf(await q.planSuggestions(USER, Q2, TODAY), "d-2")).toEqual(["fits_room"]);
+  });
+
+  /**
+   * AC-2's fixture: series p with books 1–2 read; subseries ps under it, its two books without a series position
+   * (so only the subseries' own order can hold book 2 back), book 2 To read and 50k words.
+   */
+  async function subseries(first: "to_read" | "parked" | "read") {
+    await room200k();
+    await sql`INSERT INTO book_series (id, name) VALUES ('p', 'Series p')`;
+    await book("p-1", { series: "p", position: 1 }); await book("p-2", { series: "p", position: 2 });
+    await read("p-1"); await read("p-2");
+    await sql`INSERT INTO book_subseries (id, name, series_id) VALUES ('ps', 'Subseries ps', 'p')`;
+    for (const i of [1, 2]) {
+      await sql`INSERT INTO books (id, title, author_id, series_id, subseries_id, subseries_position, word_count, word_count_source)
+        VALUES (${`ps-${i}`}, ${`Title ps-${i}`}, 'au', 'p', 'ps', ${i}, 50000, 'stated')`;
+    }
+    await status("ps-2", "to_read");
+    if (first === "parked") {
+      await sql`INSERT INTO book_status (user_id, book_id, status, parked_on) VALUES (${USER}, 'ps-1', 'parked', '2026-11-01')`;
+    } else if (first === "read") {
+      await read("ps-1");
+    } else {
+      await status("ps-1", "to_read");
+    }
+  }
+
+  it("never suggests a subseries' book 2 while its book 1 is unread, inside a series whose earlier books are read (AC-2)", async () => {
+    await subseries("to_read");
+    const rows = await q.planSuggestions(USER, Q2, TODAY);
+    expect(ids(rows)).not.toContain("ps-2");
+    expect(groupOf(rows, "ps-1")).toEqual(["fits_room"]);
+  });
+
+  it("nor with book 1 parked, even with the subseries followed Reading (AC-2)", async () => {
+    await subseries("parked");
+    await sql`INSERT INTO subseries_follows (subseries_id, state) VALUES ('ps', 'reading')`;
+    // A parked book isn't open, so follow_next offers book 2: the series order is what holds it back.
+    expect((await sql`SELECT book_id FROM follow_next WHERE user_id = ${USER} AND kind = 'subseries'`).map((r) => r.book_id))
+      .toEqual(["ps-2"]);
+    expect(ids(await q.planSuggestions(USER, Q2, TODAY))).not.toContain("ps-2");
+  });
+
+  it("suggests the subseries' book 2 once book 1 is read (AC-2)", async () => {
+    await subseries("read");
+    await sql`INSERT INTO subseries_follows (subseries_id, state) VALUES ('ps', 'reading')`;
+    expect(groupOf(await q.planSuggestions(USER, Q2, TODAY), "ps-2")).toEqual(["next_in_series"]);
+  });
+
+  it("a book with no series position in a series is never held back and never holds another back (AC-3)", async () => {
+    await room200k();
+    await sql`INSERT INTO book_series (id, name) VALUES ('x', 'Series x'), ('y', 'Series y')`;
+    // x: book 1 unread holds book 2, but not the book with no position.
+    await book("x-1", { series: "x", position: 1, words: 50_000 }); await status("x-1", "to_read");
+    await book("x-2", { series: "x", position: 2, words: 50_000 }); await status("x-2", "to_read");
+    await book("x-n", { series: "x", words: 50_000 }); await status("x-n", "to_read");
+    // y: the unread book with no position holds nothing; book 1 is read, so book 2 is next.
+    await book("y-n", { series: "y", words: 50_000 }); await status("y-n", "to_read");
+    await book("y-1", { series: "y", position: 1 }); await read("y-1");
+    await book("y-2", { series: "y", position: 2, words: 50_000 }); await status("y-2", "to_read");
+    const rows = await q.planSuggestions(USER, Q2, TODAY);
+    for (const id of ["x-1", "x-n", "y-n", "y-2"]) expect(groupOf(rows, id), id).toEqual(["fits_room"]);
+    expect(ids(rows)).not.toContain("x-2");
+  });
+});
