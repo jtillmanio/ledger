@@ -539,7 +539,7 @@ test.describe("the phone's medium button, search and gear (6.25)", () => {
         await page.emulateMedia({ reducedMotion: "no-preference" });
         expect(await motion(page)).toContainEqual(expect.stringMatching(/^sheet transition 0\.3s/));
         await page.emulateMedia({ reducedMotion: "reduce" });
-        await injected.evaluate((el) => el.remove());
+        await injected.evaluate((el) => (el as Element).remove());
         expect(await motion(page)).toEqual([]);
       }
       await screenshot(page, testInfo, `medium-sheet-${width}-books`);
