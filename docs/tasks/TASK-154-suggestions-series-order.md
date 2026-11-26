@@ -1,7 +1,7 @@
 ---
 id: TASK-154
 title: 2.10c Suggestions keep series order, and the sheet can search (1 of 2) — series order in every group
-status: In progress
+status: Review
 depends_on: []
 size: S
 model: opus
@@ -27,7 +27,7 @@ The plan sheet never suggests a later book of a series while an earlier one is s
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves its suggestion clauses, TASK-155 the search, the screenshots and axe):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves its suggestion clauses, TASK-155 the search, the screenshots and axe):
 with
 the test database: a series with books 1–4, none followed, all To read, each
 50k words, and 200k of room left: the sheet for 2027 Q2 suggests book 1 under
@@ -38,9 +38,9 @@ book of each of the author's series under *More from*. Typing two letters of a
 title in the sheet's search lists that book with its place line and no read
 book; *Put in Q2* on it writes one `reading_plan` row and Undo removes it.
 Screenshots at 360px and 1280px; axe passes.
-- [ ] AC-2: Given a subseries whose book 1 is unread inside a series whose earlier books are read, the subseries' book 2 is never suggested; given book 1 parked, book 2 isn't either.
-- [ ] AC-3: Given a book with no `series_position` in a series, it is never held back and never holds another back.
-- [ ] AC-4: `test/plan-suggestions.test.ts`'s existing cases still pass unchanged (2.10b's Check).
+- [x] AC-2: Given a subseries whose book 1 is unread inside a series whose earlier books are read, the subseries' book 2 is never suggested; given book 1 parked, book 2 isn't either.
+- [x] AC-3: Given a book with no `series_position` in a series, it is never held back and never holds another back.
+- [x] AC-4: `test/plan-suggestions.test.ts`'s existing cases still pass unchanged (2.10b's Check).
 
 ## Out of scope
 
@@ -62,7 +62,9 @@ Screenshots at 360px and 1280px; axe passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The `plan_suggestions` row in the data model's views table should say a book whose series or subseries has an earlier unread book is listed only under On deck (2.10c) (approved at plan) → docs/03-data-model.md § 3. Views
+- The `plan_suggestions` row in the data model's views table says a book whose series or subseries has an earlier unread book is listed only under On deck (2.10c) (approved at plan) → docs/03-data-model.md § 3. Views
+- Roadmap 2.10c and its task list row stay open until TASK-155 (the search) is Done → not tracked: TASK-155 finishes the item, and its close-out ticks it
+- A planned earlier book (To read, in a plan row) still holds the next one back, since the rule is by status; raised at the plan gate and built as written → not tracked: the roadmap rule is explicit and the owner approved the plan with it
 
 ## Plan
 
@@ -90,13 +92,17 @@ Approved by the owner 2026-11-26.
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS (plan-sheet.spec.ts w390-light 13/13) | CI R1 PASS (every area) | Spec R1 APPROVE | Schema R1 APPROVE (MINOR: time the held probe) → ~71 ms vs ~26 ms pre-task at 1.4k books; split into two EXISTS → ~27 ms
+- Verify R2 PASS | Schema R2 APPROVE | Spec R2 APPROVE | Audit R1 PASS (11 discriminating, 4 controls) | CI R2 (9c54b40) PASS
+- Drift R1 update first (behind 1; main changed src/app/globals.css, task 6.25) → rebased clean | Verify R3 PASS (plan-sheet.spec.ts w390-light 13/13) | CI R3 on the rebased head
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2 (round 2 for the reviewer-asked performance fix)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
