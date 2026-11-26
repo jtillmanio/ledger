@@ -272,9 +272,10 @@ a{color:inherit;text-decoration:none}
 
 .sprite{position:absolute;width:0;height:0;overflow:hidden}
 .app{--m:var(--brand)}
-.app[data-medium="comics"]{--m:var(--m-comics)}
-.app[data-medium="books"]{--m:var(--m-books)}
-.app[data-medium="watch"]{--m:var(--m-watch)}
+/* The phone bar's medium button names its medium on every screen, /inbox included, so it sets --m itself (6.25). */
+.app[data-medium="comics"],.medbtn[data-medium="comics"]{--m:var(--m-comics)}
+.app[data-medium="books"],.medbtn[data-medium="books"]{--m:var(--m-books)}
+.app[data-medium="watch"],.medbtn[data-medium="watch"]{--m:var(--m-watch)}
 .ico{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;
   stroke-linecap:round;stroke-linejoin:round}
 .grow{flex:1}
@@ -284,12 +285,34 @@ a{color:inherit;text-decoration:none}
   -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
   backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
   border-bottom:1px solid var(--glass-edge);box-shadow:var(--glass-hi)}
-.bar .home{display:inline-flex;align-items:center;min-height:44px;margin-right:auto;
+.bar .home{display:inline-flex;align-items:center;min-height:44px;
   font:italic 500 22px/28px var(--display);letter-spacing:-.01em}
-.bar .media{display:flex;gap:.125rem}
-.bar .media a,.tabrow .tab{display:inline-flex;align-items:center;min-height:44px;padding:0 .625rem;
+/* The phone bar (6.25, D-178, frame A5): Ledger · the current medium as a 44px button with a chevron,
+   underlined in its --m-* (data identity, beside its name) · search · the gear. At 360px:
+   16 + 62 + 8 + 86 (Comics, the longest) + 44 + 44 + 4 = 264px whatever the medium (STYLE_GUIDE §17.1). */
+.bar .medbtn{display:inline-flex;align-items:center;gap:.25rem;min-height:44px;margin-right:auto;padding:0 .5rem 0 .625rem;
+  border:0;border-radius:var(--r-sm);background:none;color:var(--ink);font:inherit;font-size:.875rem;font-weight:600;
+  white-space:nowrap;cursor:pointer;box-shadow:inset 0 -2px 0 var(--m)}
+.bar .medbtn:not([data-medium]){box-shadow:none}
+.bar .medbtn[aria-expanded="true"]{background:var(--sunk)}
+.bar .medbtn .ico{width:16px;height:16px;color:var(--muted)}
+.bar .search{margin-right:-.25rem;border-color:transparent;background:none}
+.bar .search .ico{width:22px;height:22px}
+.tabrow .tab{display:inline-flex;align-items:center;min-height:44px;padding:0 .625rem;
   border-radius:var(--r-sm);color:var(--muted);font-size:.875rem;font-weight:500;white-space:nowrap}
-.bar .media a[aria-current],.tabrow .tab[aria-current]{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--m)}
+.tabrow .tab[aria-current]{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--m)}
+/* The tab row's end (D-178, frame A7): a 1px --rule-2 divider, then the pages across media; Inbox's count in mono. */
+.tabrow .tabdiv{flex:none;align-self:center;width:1px;height:20px;margin:0 .375rem;background:var(--rule-2)}
+.tabrow .tab .count{margin-left:.375rem;color:var(--muted);font-size:.8125rem;font-weight:500}
+/* Switch medium (frame A6): a row per medium, its icon and name; the current one aria-current with a grey check. */
+.medlist{list-style:none;margin:.625rem 0 0;padding:0}
+.medrow{display:flex;align-items:center;gap:.75rem;min-height:52px;padding:0 .625rem;border-radius:var(--r-md);
+  color:var(--ink);font-weight:500}
+.medrow .ico{color:var(--ink-2)}
+.medrow[aria-current]{background:var(--raise);font-weight:600}
+.medrow[aria-current] .ico:last-child{color:var(--muted)}
+.medrow-name{flex:1}
+.medfoot{margin:.75rem 0 0;font-size:.8125rem;color:var(--muted)}
 /* The tab row (2.2i, D-120): the second line of the bar, 44px tall, scrolling sideways inside itself.
    10px above it and 10px of bar padding above the first line make the 64px line; 9px here because the
    bar's 1px bottom border is inside --bar-h. Its focus ring is inset: overflow-x would clip an outer one. */

@@ -1,14 +1,14 @@
 ---
 id: TASK-148
 title: 6.25 Navigation for four and five media (2 of 3) — the phone's medium button, search and tab row
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: da316c2
 ---
 
 # TASK-148 — 6.25 Navigation for four and five media (2 of 3) — the phone's medium button, search and tab row
@@ -77,9 +77,37 @@ Books, `/` opens `/books`; axe reports no new violations at each width.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The *Switch medium* sheet's rows draw icon and name only; each medium's *Now* in a few words and its mono count (D-178, A6) need each medium's data in the shell, so they are a roadmap item of their own (owner, at the plan gate: option c) (approved at plan)
+- For TASK-149: search now lives in `src/components/nav/SearchButton.tsx`; the desktop header's slot 3 (`slots("header")` in `src/components/ThumbBar.tsx`) imports it, which is the *Search* verb 6.25 drops from the headers; the tab row's divider is `.tabdiv` (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-26 (owner: "approve (with recommendations)": the sheet's *Now* line and count deferred, option c).
+
+**Steps**
+
+1. `src/components/nav/SearchButton.tsx` (new): `SearchVerb` moved out of `ThumbBar.tsx` (a small file, so the shell doesn't import BatchSheet and the rest). Drawn and `aria-disabled` with its reason until 6.1 enables the `search` item.
+2. `MediaBar.tsx`: *Ledger* · the medium button · search · gear; the *Media* nav of links goes. The button is 44px with a chevron, `aria-haspopup="dialog"`, `aria-expanded`, named "<Medium>, switch medium", underlined in its `--m-*` through `data-medium` on the button (so it holds on `/inbox` and `/settings`). With no medium (a screen under none) it names the tab row's medium (AC-3); before one is known (a first visit), *Media*.
+3. `MediumSheet.tsx` (new), on the shared `Sheet`: a row link per built medium (`inGroup(items, "media")`), icon and name; the current one `aria-current` with a grey check; the foot line *Each medium opens on its dashboard. / opens the one you used last.* Choosing one replaces the sheet's history entry (`router.replace`), so Back never has a dead press; choosing the dashboard you are on just closes. Loaded on first open with `next/dynamic` (preloaded on pointerdown/focus), so the shared JS doesn't grow.
+4. `TabRow.tsx`: the medium's items, a 1px `--rule-2` divider (`.tabdiv`, `aria-hidden`), then *Inbox* with its mono count and *Progress*. `ShellFrame.tsx` hands the streamed `inbox` node to `MediaBar` (the rail's cached query, no new query).
+5. `ThumbBar.tsx`: slot 3 of the comics, empty, books and watch thumb bars is empty (no Search); the header (`slots("header")`) keeps *Search* until TASK-149; the run detail keeps `+` (Add issues).
+6. `Icons.tsx` + `items.ts` (`IconName`): `chevron-down`, `check`. `globals.css`: the medium button, divider and sheet rows, tokens only; `.home` loses `margin-right:auto` to the medium button.
+7. `design/mockups.html`: a one-off script (scratchpad, not committed) redraws every phone bar (124) and phone tab row from A5–A7; `palette`'s bar search is drawn as its opener (F16). `design/mockups-index.md`'s Nov 2026 rows say redrawn.
+
+**Files**: `src/components/nav/{MediaBar,TabRow,Icons,items,ShellFrame,SearchButton (new),MediumSheet (new)}.tsx|ts`, `src/components/ThumbBar.tsx`, `src/app/globals.css`, `design/mockups.html`, `design/mockups-index.md`, `test/nav-items.test.tsx`, `test/thumb-bar.test.tsx`, `test/e2e/{shell,tab-row,thumb-bar}.spec.ts`. Not in *Files likely touched*: `SearchButton.tsx`, `ShellFrame.tsx`, `test/e2e/library-sort.spec.ts` (line 287 reads the old Media nav), `test/e2e/mockup-tablet.spec.ts` (AC-6).
+
+**Test strategy**
+
+- AC-1 (360px clauses), AC-5: `test/e2e/shell.spec.ts`, light and dark at 360: button, search and gear 44px; the sheet lists every built medium with the current one `aria-current`; no sideways scroll; no dashboard thumb bar has a search slot; the tab row ends divider, Inbox, Progress; axe; reduced motion on the sheet; screenshots 360/390/412 light and dark.
+- AC-2: `shell.spec.ts`: from `/books`, open, choose Comics → `/comics`, sheet gone; Esc and Back return focus to the button.
+- AC-3: `tab-row.spec.ts`: `/inbox` and `/settings` after `/books`, and a fresh load with the medium cookie.
+- AC-4: `test/thumb-bar.test.tsx` and `thumb-bar.spec.ts`: no *Search (Ctrl K)* in any dashboard's bar slots; the run's slot 3 is *Add issues*.
+- The bar and row in `test/nav-items.test.tsx`: the button's attributes, no Media nav, the divider before Inbox.
+- AC-6: `mockup-tablet.spec.ts`: every phone bar has the medium button and search before the gear; every phone tab row ends divider, Inbox, Progress.
+
+**Revision 1 (Phase 2)**: `test/e2e/settings.spec.ts:200` left /settings through the old bar's Comics link; it now leaves through the sheet (a test-only change, like `library-sort.spec.ts`); `test/e2e-guard.test.ts` pins the `@critical` navigation test by title, renamed to *the Switch medium sheet's Watch row goes there*. The medium button is named by `aria-label` ("Books, switch medium"): as a flex box, text spread over its children read "Books , switch medium".
+
+**Risks**: `shell.spec.ts:189,391` and `library-sort.spec.ts:287` click the old Media links (they move to the sheet); the tab row's Inbox is named "Inbox 6", so its specs match it by `href`.
 
 ## Review log
 

@@ -279,12 +279,12 @@ test("a tap outside closes a dropdown, and opening one closes the other (AC-4)",
 
 test("the nav says Library where it draws medium items, and the heading says it everywhere (AC-1, AC-4)", ONCE, async ({ page }, info) => {
   const h1 = page.getByRole("heading", { level: 1 });
-  // The phone's media switch marks Books, and since 2.2i its tab row lists Library once, marked current.
+  // The phone's medium button names Books (6.25), and since 2.2i its tab row lists Library once, marked current.
   for (const width of [360, 412]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/books/list");
     await expect(h1).toHaveText("Library");
-    await expect(page.getByRole("navigation", { name: "Media" }).getByRole("link", { name: "Books" })).toHaveAttribute("aria-current", "page");
+    await expect(page.locator(".bar .medbtn")).toHaveAccessibleName("Books, switch medium");
     const tab = page.getByRole("navigation", { name: "Screens" }).getByRole("link", { name: "Library" });
     await expect(page.getByRole("link", { name: "Library" })).toHaveCount(1);
     await expect(tab).toHaveAttribute("aria-current", "page");

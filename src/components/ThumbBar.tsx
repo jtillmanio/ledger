@@ -10,7 +10,7 @@ import type { RangeChoice } from "@/components/RangeSheet";
 import { useUndo } from "@/components/Undo";
 import { useBookWrite } from "@/components/useBookWrite";
 import { Icon } from "@/components/nav/Icons";
-import { NAV_ITEMS } from "@/components/nav/items";
+import SearchButton from "@/components/nav/SearchButton";
 import { issueName } from "@/lib/format";
 import { BOOKS_NEXT_HREF } from "@/lib/status-tabs";
 import { markPlacement, markRangeRead } from "@/lib/mark";
@@ -19,11 +19,13 @@ export type { Upcoming };
 
 /**
  * What the three slots hold (D-25, task 1.8b). Slot 1 is the medium's mark
- * verb, primary; slot 2 its second verb; slot 3 search, or `+` Add issues on the
- * run detail. What differs between media is what fills a slot, not the slot.
+ * verb, primary; slot 2 its second verb; slot 3 `+` Add issues on the run
+ * detail. Search left the dashboards' thumb bars for the phone's top bar (6.25,
+ * D-178), so a dashboard's bar has no slot 3; the desktop header still draws it
+ * as Search until TASK-149. What differs between media is what fills a slot, not the slot.
  */
 export type BarConfig =
-  /** A comics dashboard with a run in hand: Mark #141 read · + batch · Search. */
+  /** A comics dashboard with a run in hand: Mark #141 read · + batch. */
   | { kind: "comics"; runId: string; title: string; read: number; total: number; upcoming: Upcoming[]; single: boolean }
   /** The run detail: Mark #141 read · Mark through… · + (Add issues). The page owns the rows, so it owns the writes. */
   | {
@@ -31,12 +33,12 @@ export type BarConfig =
     onMark: () => Promise<boolean>;
     onRange: (ids: number[], choice: RangeChoice) => Promise<void>;
   }
-  /** Nothing in hand: Search · Start {next}, with no batch or finish verb. */
+  /** Nothing in hand: Start {next}, with no batch or finish verb. */
   | { kind: "empty"; verb: { label: string; href: string } }
   /**
-   * The books dashboard (task 2.2). With a book in hand: Log progress · ✓ finished · Search, the
+   * The books dashboard (task 2.2). With a book in hand: Log progress · ✓ finished, the
    * header *Search · Finished it · Log pages*; logging waits for 2.1b's sessions. With none
-   * (*Between books*): Start {the top of the plan} · Search, or Pick a book with nothing planned.
+   * (*Between books*): Start {the top of the plan}, or Pick a book with nothing planned.
    */
   | { kind: "books"; book: BookRef & { status: "reading" | "listening" } | null; next: BookRef | null }
   /** Watch (8.7): Mark S2 watched · + Add. Built here, drawn by the dashboard that 8.7 adds. */
@@ -59,24 +61,6 @@ export function markVerb(next: Upcoming | undefined, single: boolean) {
   if (!next) return { idle: "All read", done: "All read" };
   const name = issueName(next.label, single);
   return { idle: `Mark ${name} read`, done: `✓ ${name} read` };
-}
-
-// Search is 6.1: until the item is enabled the slot is drawn and says why it does nothing.
-const SEARCH = NAV_ITEMS.find((i) => i.id === "search");
-
-function SearchVerb() {
-  if (SEARCH?.enabled) {
-    return (
-      <Link href={SEARCH.href} className="iconbtn" aria-label="Search (Ctrl K)" title="Search (Ctrl K)">
-        <Icon name="search" />
-      </Link>
-    );
-  }
-  return (
-    <button type="button" className="iconbtn" aria-label="Search (Ctrl K)" aria-disabled="true" title="Search isn't built yet">
-      <Icon name="search" />
-    </button>
-  );
 }
 
 /** A verb whose screen doesn't exist yet: drawn in its slot, `aria-disabled`, with the reason as its title. */
@@ -209,6 +193,9 @@ export function VerbsProvider({ config, refresh = () => {}, children }: {
   const slots: Api["slots"] = (where) => {
     // Books name the same two verbs differently in the header than on the bar (design 14.6).
     const header = where === "header";
+    // A dashboard's slot 3: Search in the desktop header (until TASK-149), nothing on the thumb bar,
+    // since search is in the phone's top bar on every screen (6.25, D-178).
+    const search = header ? <SearchButton /> : null;
     switch (config.kind) {
       case "comics":
       case "run":
@@ -226,7 +213,7 @@ export function VerbsProvider({ config, refresh = () => {}, children }: {
               </button>
             ),
           third: config.kind === "comics"
-            ? <SearchVerb />
+            ? search
             // No prefetch: the add screen's queries wait for the tap (task 1.3c).
             : (
               <Link prefetch={false} href={`/comics/${encodeURIComponent(config.runId)}/add`} className="iconbtn" aria-label="Add issues" title="Add issues">
@@ -242,14 +229,14 @@ export function VerbsProvider({ config, refresh = () => {}, children }: {
             </Link>
           ),
           second: null,
-          third: <SearchVerb />,
+          third: search,
         };
       case "books":
         if (config.book) {
           return {
             primary: <Waiting label={header ? "Log pages" : "Log progress"} reason={LOG_WAITS} />,
             second: <FinishVerb book={config.book} label={header ? "Finished it" : "✓ finished"} />,
-            third: <SearchVerb />,
+            third: search,
           };
         }
         // Between books there is no second verb: nothing is in hand to finish (§14.6).
@@ -262,13 +249,13 @@ export function VerbsProvider({ config, refresh = () => {}, children }: {
               </Link>
             ),
           second: null,
-          third: <SearchVerb />,
+          third: search,
         };
       case "watch":
         return {
           primary: <Waiting label="Mark S2 watched" reason="Watch arrives in 8.7" />,
           second: <Waiting secondary label="+ Add" reason="Watch arrives in 8.7" />,
-          third: <SearchVerb />,
+          third: search,
         };
     }
   };

@@ -5,6 +5,7 @@
 // (the w390-light project); the screenshots and the sideways-scroll check run
 // at every width, light and dark, and under reduced motion.
 import { expect, test, type Page } from "@playwright/test";
+import { NAV_ITEMS } from "../../src/components/nav/items";
 import { testSql } from "../db";
 import {
   E2E_INBOX_COUNT, E2E_LONG_RUN_ID, E2E_RUN_ID, FLOOR, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot,
@@ -13,6 +14,8 @@ import {
 // Sets its own viewport: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
 const DASHBOARDS = ["/comics", "/books", "/watch"];
+// Every built medium, from the list the sheet draws: a fourth medium (9.0) is covered without editing this file.
+const MEDIA = NAV_ITEMS.filter((i) => i.group === "media" && i.enabled);
 
 const size = (page: Page, width: number, height = 900) => page.setViewportSize({ width, height });
 
@@ -183,15 +186,18 @@ test("from 1024 no dashboard draws the in-inbox chip, and the sidebar's Inbox sh
   }
 });
 
-test("at 360 Watch is untruncated in the media bar, and /comics has at most one solid brand fill above the fold", ONCE, async ({ page }) => {
+test("at 360 the medium button names each medium untruncated, and /comics has at most one solid brand fill above the fold", ONCE, async ({ page }) => {
   await size(page, 360, 780);
+  // Comics is the longest name the bar is measured with (STYLE_GUIDE §17.1).
+  for (const media of MEDIA) {
+    await page.goto(media.href);
+    const name = page.locator(".bar .medbtn .medbtn-name");
+    await expect(name).toHaveText(media.label);
+    expect(await name.evaluate((el) => el.scrollWidth <= el.clientWidth), media.label).toBe(true);
+    const box = (await page.locator(".bar .medbtn").boundingBox())!;
+    expect(box.x + box.width, media.label).toBeLessThanOrEqual(360);
+  }
   await page.goto("/comics");
-  const watch = page.locator('.bar nav[aria-label="Media"] a[href="/watch"]');
-  await expect(watch).toHaveText("Watch");
-  const fits = await watch.evaluate((el) => el.scrollWidth <= el.clientWidth);
-  const box = (await watch.boundingBox())!;
-  expect(fits).toBe(true);
-  expect(box.x + box.width).toBeLessThanOrEqual(360);
 
   const brand = await colourOf(page, "--brand");
   const fills = await page.evaluate((target) =>
@@ -237,15 +243,21 @@ test("scrolled 400px, everything that sticks but .bar sits at or below --bar-h",
   }
 });
 
-test("every phone route renders exactly the same media nav", ONCE, async ({ page }) => {
+test("every phone route renders exactly the same bar but for the medium it names", ONCE, async ({ page }) => {
   await size(page, 390);
   const seen = new Set<string>();
   for (const path of ["/comics", "/comics/runs", `/comics/${E2E_RUN_ID}`, "/books/list", "/books/add", "/watch", "/inbox"]) {
     await page.goto(path);
-    // The tab row (2.2i) differs by medium and screen on purpose; tab-row.spec.ts covers it.
+    await hydrated(page.locator(".bar .medbtn"));
+    // The tab row (2.2i) differs by medium and screen on purpose; tab-row.spec.ts covers it. The
+    // medium button names the medium (6.25); its own tests are below.
     seen.add(await page.locator(".bar").evaluate((bar) => {
       const copy = bar.cloneNode(true) as HTMLElement;
       copy.querySelector(".tabrow")?.remove();
+      const medium = copy.querySelector(".medbtn")!;
+      medium.removeAttribute("data-medium");
+      medium.removeAttribute("aria-label");
+      medium.querySelector(".medbtn-name")!.textContent = "";
       return copy.innerHTML;
     }).then((html) => html.replace(/ aria-current="page"/g, "")));
   }
@@ -385,12 +397,135 @@ test.describe("/watch (AC-5)", () => {
     await page.goto("/comics");
   });
 
-  test("the media bar's Watch link goes there", { tag: ["@at-w390-light", "@critical"] }, async ({ page }) => {
+  test("the Switch medium sheet's Watch row goes there", { tag: ["@at-w390-light", "@critical"] }, async ({ page }) => {
     await size(page, 390);
     await page.goto("/comics");
-    await page.locator('.bar nav[aria-label="Media"] a[href="/watch"]').click();
+    const button = page.locator(".bar .medbtn");
+    await hydrated(button);
+    await button.click();
+    await page.getByRole("dialog", { name: "Switch medium" }).getByRole("link", { name: "Watch" }).click();
     await page.waitForURL("**/watch");
-    await expect(page.locator('.bar nav[aria-label="Media"] a[href="/watch"]')).toHaveAttribute("aria-current", "page");
+    await expect(button).toHaveAccessibleName("Watch, switch medium");
+    await page.goto("/comics"); // the last-medium cookie back where other specs expect it
+  });
+});
+
+// Roadmap 6.25 (D-178, MR-D1, MR-D2, frames A5–A7): on the phone the bar names the current medium as a
+// button that opens Switch medium, search sits left of the gear, and the thumb bar has no search slot.
+test.describe("the phone's medium button, search and gear (6.25)", () => {
+  // Light and dark: the same checks once in each theme's 390 project, at the widths they set.
+  const THEMES = { tag: ["@at-w390-light", "@at-w390-dark"] };
+  const button = (page: Page) => page.locator(".bar .medbtn");
+  const dialog = (page: Page) => page.getByRole("dialog", { name: "Switch medium" });
+  const RULES = [
+    "color-contrast", "link-name", "button-name", "aria-dialog-name", "aria-allowed-attr", "aria-valid-attr-value",
+    "landmark-unique", "aria-hidden-focus", "svg-img-alt", "target-size", "nested-interactive",
+  ];
+
+  test("at 360 the bar is a 44px medium button, a 44px search button and the gear; its sheet lists every built medium, the current one aria-current; nothing scrolls sideways; no dashboard's thumb bar has a search slot; axe (AC-1, AC-5)", THEMES, async ({ page }, testInfo) => {
+    await size(page, 360, 780);
+    for (const media of MEDIA) {
+      await page.goto(media.href);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible(); // past the skeleton
+      await hydrated(button(page));
+      await expect(button(page)).toHaveAccessibleName(`${media.label}, switch medium`);
+      await expect(page.locator(".bar .search")).toHaveAccessibleName("Search (Ctrl K)");
+      await expect(page.locator(".bar .gear")).toHaveAccessibleName("Settings");
+      // Search says why it does nothing until 6.1 builds it.
+      await expect(page.locator(".bar .search")).toHaveAttribute("aria-disabled", "true");
+      await expect(page.locator(".bar .search")).toHaveAttribute("title", "Search isn't built yet");
+      for (const [control, square] of [[button(page), false], [page.locator(".bar .search"), true], [page.locator(".bar .gear"), true]] as const) {
+        const box = (await control.boundingBox())!;
+        expect(box.height, `${media.label}: height`).toBeGreaterThanOrEqual(44);
+        if (square) expect(box.width, `${media.label}: width`).toBeGreaterThanOrEqual(44);
+        expect(box.x + box.width, `${media.label}: inside 360`).toBeLessThanOrEqual(360);
+      }
+      await expectNoHorizontalScroll(page);
+      // The dashboard's thumb bar: the mark verb first, and no search in any slot (AC-4's clause of AC-1).
+      const thumb = page.locator(".actionbar.thumb");
+      await expect(thumb).toBeVisible();
+      await expect(thumb.getByRole("button", { name: /search/i })).toHaveCount(0);
+      await expect(thumb.getByRole("link", { name: /search/i })).toHaveCount(0);
+      // The tab row ends with the divider, Inbox and Progress.
+      const tail = await page.locator(".bar .tabrow").evaluate((nav) =>
+        [...nav.children].slice(-3).map((el) => (el.classList.contains("tabdiv") ? "divider" : el.getAttribute("href"))));
+      expect(tail, media.label).toEqual(["divider", "/inbox", "/progress"]);
+      await expectNoAxeViolations(page, RULES, "header.bar");
+      await screenshot(page, testInfo, `medium-bar-360${media.href.replace("/", "-")}`);
+
+      await button(page).click();
+      await expect(dialog(page)).toBeVisible();
+      await expect(button(page)).toHaveAttribute("aria-expanded", "true");
+      const rows = dialog(page).getByRole("link");
+      await expect(rows).toHaveText(MEDIA.map((m) => m.label));
+      await expect(dialog(page).locator("[aria-current]")).toHaveCount(1);
+      await expect(dialog(page).locator("[aria-current]")).toHaveAttribute("href", media.href);
+      for (const row of await rows.all()) expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await expectNoHorizontalScroll(page);
+      await expectNoAxeViolations(page, RULES, ".sheet");
+      await screenshot(page, testInfo, `medium-sheet-360${media.href.replace("/", "-")}`);
+      await page.keyboard.press("Escape");
+      await expect(dialog(page)).toHaveCount(0);
+    }
+    await page.goto("/comics"); // the last-medium cookie back where other specs expect it
+  });
+
+  test("from /books the button opens the sheet with focus inside; Comics goes to /comics and closes it; Esc and Back close it with focus on the button (AC-2)", ONCE, async ({ page }) => {
+    await size(page, 360, 780);
+    await page.goto("/books");
+    await hydrated(button(page));
+    await expect(button(page)).toHaveAccessibleName(/Books/);
+    await expect(button(page)).toHaveAttribute("aria-haspopup", "dialog");
+    await expect(button(page)).toHaveAttribute("aria-expanded", "false");
+    const focusInside = () => dialog(page).evaluate((d) => d.contains(document.activeElement));
+
+    // Esc closes it, and focus returns to the button.
+    await button(page).click();
+    await expect(dialog(page)).toBeVisible();
+    expect(await focusInside()).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(dialog(page)).toHaveCount(0);
+    await expect(button(page)).toBeFocused();
+    await expect(button(page)).toHaveAttribute("aria-expanded", "false");
+
+    // So does Back, without leaving /books.
+    await button(page).click();
+    await expect(dialog(page)).toBeVisible();
+    await page.goBack();
+    await expect(dialog(page)).toHaveCount(0);
+    await expect(page).toHaveURL(/\/books$/);
+    await expect(button(page)).toBeFocused();
+
+    // Choosing Comics goes there and closes the sheet; one Back returns to /books.
+    await button(page).click();
+    await dialog(page).getByRole("link", { name: "Comics" }).click();
+    await page.waitForURL("**/comics");
+    await expect(dialog(page)).toHaveCount(0);
+    await expect(button(page)).toHaveAccessibleName("Comics, switch medium");
+    await page.goBack();
+    await expect(page).toHaveURL(/\/books$/);
+    await expect(button(page)).toHaveAccessibleName("Books, switch medium");
+    await page.goto("/comics");
+  });
+
+  test("the sheet does not move under reduced motion, and screenshots of the bar and sheet at 360, 390 and 412px (AC-5)", THEMES, async ({ page }, testInfo) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    for (const width of [360, 390, 412]) {
+      await size(page, width, 800);
+      await page.goto("/books");
+      await hydrated(button(page));
+      await expectNoHorizontalScroll(page);
+      await screenshot(page, testInfo, `medium-bar-${width}-books`);
+      await button(page).click();
+      await expect(dialog(page)).toBeVisible();
+      const moving = await page.locator(".sheet-host").evaluate((host) =>
+        host.getAnimations({ subtree: true }).filter((a) => a.playState === "running").length);
+      expect(moving, `at ${width}`).toBe(0);
+      await screenshot(page, testInfo, `medium-sheet-${width}-books`);
+      await page.keyboard.press("Escape");
+      await expect(dialog(page)).toHaveCount(0);
+    }
+    await page.goto("/comics");
   });
 });
 
