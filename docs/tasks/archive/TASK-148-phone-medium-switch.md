@@ -1,7 +1,7 @@
 ---
 id: TASK-148
 title: 6.25 Navigation for four and five media (2 of 3) — the phone's medium button, search and tab row
-status: Review
+status: Done
 depends_on: []
 size: M
 model: opus
