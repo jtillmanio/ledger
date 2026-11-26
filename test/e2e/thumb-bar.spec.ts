@@ -96,7 +96,7 @@ for (const where of ["dash", "run"] as const) {
       await screenshot(page, testInfo, `thumb-${where}`);
     });
 
-    test("the slots are Mark · second · third, and the header is Search · second · Mark (AC-2)", FLOOR, async ({ page }) => {
+    test("the slots are Mark · second (· Add issues on the run), and the header is Search · second · Mark (AC-2; 6.25, AC-4)", FLOOR, async ({ page }) => {
       await open(page, where);
       const names = (sel: string) => page.locator(sel).evaluateAll((els) =>
         els.map((el) => el.getAttribute("aria-label") ?? el.textContent?.trim()));
@@ -104,8 +104,9 @@ for (const where of ["dash", "run"] as const) {
         expect(await names(".actionbar > *")).toEqual([`Mark #${NEXT} read`, "Mark through…", "Add issues"]);
         await expect(page.locator(".headverbs")).toHaveCount(0);
       } else {
-        expect(await names(".actionbar > *")).toEqual([`Mark #${NEXT} read`, "+ batch", "Search (Ctrl K)"]);
-        // In the DOM, and visible from 1024px: the same verbs, primary last.
+        // Search left the thumb bar for the phone's top bar (6.25, D-178).
+        expect(await names(".actionbar > *")).toEqual([`Mark #${NEXT} read`, "+ batch"]);
+        // In the DOM, and visible from 1024px: the same verbs, primary last; Search until TASK-149 drops it.
         expect(await names(".headverbs > *")).toEqual(["Search (Ctrl K)", "+ batch", `Mark #${NEXT} read`]);
         if (wide(page)) await expect(page.locator(".headverbs")).toBeVisible();
         else await expect(page.locator(".headverbs")).toBeHidden();
@@ -389,7 +390,7 @@ test("on a run spanning two series the verb names the issue in full (AC-1, M-10)
   expect(E2E_LONG_LABEL).toContain("Amazing Spider-Man");
 });
 
-test("an empty dashboard is Search · Start {next} and nothing else (AC-2)", ONCE, async ({ page }) => {
+test("an empty dashboard is Start {next} and nothing else; the header is Search · Start {next} (AC-2; 6.25, AC-4)", ONCE, async ({ page }) => {
   await db((sql) => sql`DELETE FROM issue_progress WHERE user_id = ${E2E_USER}`);
   try {
     await page.goto("/comics");
@@ -397,7 +398,7 @@ test("an empty dashboard is Search · Start {next} and nothing else (AC-2)", ONC
     const names = await page.locator(".headverbs > *").evaluateAll((els) =>
       els.map((el) => el.getAttribute("aria-label") ?? el.textContent?.trim()));
     expect(names).toEqual(["Search (Ctrl K)", expect.stringMatching(/^Start /)]);
-    expect(await page.locator(".actionbar > *").count()).toBe(2);
+    expect(await page.locator(".actionbar > *").count()).toBe(1);
   } finally {
     await db(async (sql) => {
       for (let n = 1; n <= E2E_READ_COUNT; n++) await markRead(sql, E2E_USER, E2E_RUN_ID, `e2e-comic-${n}`);

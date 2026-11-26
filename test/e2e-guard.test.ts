@@ -245,7 +245,8 @@ describe("the planned list: what Playwright schedules, by area (0.15)", () => {
       ["the books and comics dashboards loading", "routes.spec.ts", /^each route answers with its own screen$/],
       ["the add flow", "book-search.spec.ts", /^adding one creates one books row/],
       ["a status write and its Undo", "dnf-reason.spec.ts", /^the toast's Undo after a reason leaves the book reading/],
-      ["navigation between media", "shell.spec.ts", /^the media bar's Watch link goes there$/],
+      // The phone's media are in the Switch medium sheet since 6.25 (D-178).
+      ["navigation between media", "shell.spec.ts", /^the Switch medium sheet's Watch row goes there$/],
       ["an error state", "dnf-reason.spec.ts", /^a reason that didn't save says so with Retry/],
     ];
     const critical = lists.core.filter(isCritical);

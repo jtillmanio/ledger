@@ -461,6 +461,76 @@ test.describe("AC-3 · the drawn gear on every phone bar", ONCE, () => {
   });
 });
 
+// Task 6.25 (TASK-148, AC-6): every phone bar and tab row redrawn from the mediums review's A5–A7, and
+// palette's bar search from F16 (D-178).
+test.describe("6.25 AC-6 · the phone bars and tab rows from A5–A7", ONCE, () => {
+  test("every phone bar reads Ledger · the medium button · search · the gear, with no media links", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 1100 });
+    await page.setContent(MOCKUP, { waitUntil: "load" });
+    const bars = await page.evaluate(() =>
+      [...document.querySelectorAll("nav.bar")].map((bar) => {
+        const kids = [...bar.children];
+        const medium = bar.querySelector(".medbtn");
+        return {
+          where: `${bar.closest("section")?.getAttribute("data-id")} ${bar.closest(".frame")?.getAttribute("data-w")}`,
+          order: kids.map((el) => (el.matches("span.home") ? "home" : el.matches("button.medbtn") ? "medium"
+            : el.matches("a.iconbtn.search") ? "search" : el.matches('a.iconbtn[aria-label="Settings"]') ? "gear" : el.outerHTML.slice(0, 40))),
+          name: medium?.getAttribute("aria-label") ?? "",
+          text: medium?.textContent ?? "",
+          data: medium?.getAttribute("data-medium") ?? "",
+          popup: medium?.getAttribute("aria-haspopup") ?? "",
+          search: bar.querySelector(".search")?.getAttribute("aria-label") ?? "",
+          links: bar.querySelectorAll("a.tab").length,
+        };
+      }),
+    );
+    expect(bars.length).toBeGreaterThan(100);
+    expect(bars.filter((b) => b.order.join(" ") !== "home medium search gear").map((b) => `${b.where}: ${b.order.join(" ")}`)).toEqual([]);
+    for (const b of bars) {
+      expect(["Comics", "Books", "Watch"], b.where).toContain(b.text);
+      expect(b.name, b.where).toBe(`${b.text}, switch medium`);
+      expect(b.data, b.where).toBe(b.text.toLowerCase());
+      expect(b.popup, b.where).toBe("dialog");
+      expect(b.search, b.where).toBe("Search (Ctrl K)");
+      expect(b.links, b.where).toBe(0);
+    }
+  });
+
+  test("the bar's search is the app's magnifier and the chevron the app's, from Icons.tsx", () => {
+    const icons = readFileSync("src/components/nav/Icons.tsx", "utf8");
+    const circle = /search: \(<><circle ([^/]+)\/>/.exec(icons)![1].trim();
+    const chevron = /"chevron-down": \(<path d="([^"]+)"/.exec(icons)![1];
+    const bar = /<nav class="bar"[^>]*>[\s\S]*?<\/nav>/.exec(frameMarkup("settings", "phone"))![0];
+    expect(bar).toContain(`<circle ${circle}`);
+    expect(bar).toContain(`d="${chevron}"`);
+  });
+
+  test("every phone tab row ends with the divider, Inbox with its count, and Progress", () => {
+    const rows = [...MOCKUP.matchAll(/<nav class="tabrow"[^>]*>([\s\S]*?)<\/nav>/g)].map((m) => m[1]);
+    expect(rows.length).toBeGreaterThan(30);
+    for (const row of rows) {
+      expect(row).toMatch(/<span class="tabdiv" aria-hidden="true"><\/span><a( aria-current="page")?>Inbox <span class="count">\d+<\/span><\/a><a>Progress<\/a>$/);
+      expect(row.match(/class="tabdiv"/g)).toHaveLength(1);
+    }
+  });
+
+  test("palette's bar search is drawn as the palette's opener (F16)", () => {
+    const section = MOCKUP.slice(MOCKUP.indexOf('data-id="palette"'));
+    const own = section.slice(0, section.indexOf("</section>"));
+    const searches = [...own.matchAll(/<a class="iconbtn search"[^>]*>/g)].map((m) => m[0]);
+    expect(searches.length).toBeGreaterThan(0);
+    for (const s of searches) expect(s).toContain('aria-expanded="true"');
+    expect(MOCKUP.match(/<a class="iconbtn search"[^>]*aria-expanded="true"/g)).toHaveLength(searches.length);
+  });
+
+  test("design/mockups-index.md says the phone bars, tab rows and palette's search are redrawn", () => {
+    const start = INDEX.indexOf("## Nov 2026, mediums review");
+    const rows = INDEX.slice(start).split("\n");
+    expect(rows.find((l) => l.startsWith("| The phone media bar and tab row"))).toMatch(/redrawn \(task 6\.25, TASK-148\)/);
+    expect(rows.find((l) => l.startsWith("| `palette` (phone)"))).toMatch(/redrawn \(task 6\.25, TASK-148\)/);
+  });
+});
+
 test.describe("AC-4 · design/mockups-index.md after TASK-146", ONCE, () => {
   const row = (id: string) => INDEX.split("\n").find((l) => l.startsWith(`| \`${id}\` |`));
 

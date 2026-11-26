@@ -197,7 +197,9 @@ test("a press waiting to be saved is sent when the screen is left", ONCE, async 
   await open(page);
   await press(page, "Increase", "Words a minute").click();
   await expect(output(page, "Words a minute")).toHaveText("190");
-  await page.getByRole("link", { name: "Comics" }).first().click();
+  // Leave through the phone bar's Switch medium sheet (6.25, D-178).
+  await page.locator(".bar .medbtn").click();
+  await page.getByRole("dialog", { name: "Switch medium" }).getByRole("link", { name: "Comics" }).click();
   await expect(page).toHaveURL(/\/comics$/);
   const sql = testSql();
   try {

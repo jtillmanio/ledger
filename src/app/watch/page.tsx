@@ -8,8 +8,8 @@ export const metadata: Metadata = { title: "Watch · Ledger" };
 // The shell and nothing more (task 1.8): the nav is the first thing to link here.
 // Watch is built in 8.x; it opens on Search alone and, when TMDB has nothing,
 // falls back to Save to inbox (D-28). Nothing is in hand yet, so the thumb bar
-// holds the empty state's verbs (task 1.8b): Search and Save to inbox. 8.7 puts
-// Mark S2 watched and + Add there once a show can be watched.
+// holds the empty state's verb (task 1.8b): Save to inbox; search is in the phone's
+// top bar (6.25, D-178). 8.7 puts Mark S2 watched and + Add there once a show can be watched.
 export default async function Watch() {
   await requireUserId();
   return (

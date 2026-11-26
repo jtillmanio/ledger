@@ -257,9 +257,9 @@ The second design review is drawn in `design/MR-Main.dc.html` and the sixteen `d
 
 | Frame here | Superseded by (Mediums-Review) | Redrawn by |
 |---|---|---|
-| The phone media bar and tab row on every phone frame | A5–A7, `MR-A-Navigation-1`: the medium button, the *Switch medium* sheet, search left of the gear, *Activity* after *Progress* (D-178) | 6.25 |
+| The phone media bar and tab row on every phone frame | A5–A7, `MR-A-Navigation-1`: the medium button, the *Switch medium* sheet, search left of the gear, *Activity* after *Progress* (D-178); redrawn (task 6.25, TASK-148): every phone bar reads *Ledger* · the medium button · search · the gear (a screen under no medium names the one its screens follow), and every tab row ends with the divider, *Inbox* (count) and *Progress*; the sheet itself stays A6's (its *Now* lines and counts are a later item), *Activity* waits for 6.17, and the phone frames drawn without a tab row before 2.2i still have none | 6.25 |
 | The tablet rail and the desktop sidebar and icon rail on every 834px and desktop frame | A8–A10, `MR-A-Navigation-2` (D-178) | 6.25 |
-| `palette` (phone) | F16, `MR-F-Unbuilt-2`: search from the phone bar | 6.1 (the bar's search button: 6.25) |
+| `palette` (phone) | F16, `MR-F-Unbuilt-2`: search from the phone bar; the bar's search button redrawn (task 6.25, TASK-148) as the palette's opener (`aria-expanded`) | 6.1 (the bar's search button: 6.25, **redrawn**) |
 | `watchlist` | B1–B6, `MR-B1-Watch-dashboard-1`: the season as the unit, no Reorder, franchise → seasons (D-179) | 8.7 |
 | `watchempty` | B27, `MR-B2-Watch-screens-2` | 8.7 |
 | `status` (watch notes), `states` (watch's empty slates) | B7–B15, `MR-B1-Watch-dashboard-2` | 8.8 |

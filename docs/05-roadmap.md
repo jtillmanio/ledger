@@ -6081,6 +6081,30 @@ it is converted.
     says the count in words; the row still scrolls by touch and the page does
     not scroll sideways. Axe passes and `/books/list` stays within its budget.
 
+- ☐ 6.29 **Switch medium shows what is in hand** · S. From TASK-148 (6.25, 2 of
+  3; PR #354). D-178 and frame A6 (`design/MR-A-Navigation-1.dc.html`) draw
+  each row of the phone's *Switch medium* sheet with its medium's Now in a few
+  words and a mono count (*Uncanny X-Men #141 is next · 2 runs in flight*, *The
+  Fifth Season · reading · 1 book in flight*), so the sheet doubles as a glance
+  across everything in hand. TASK-148 drew icon and name only (owner, at its
+  plan gate): the lines need each medium's data on every route.
+  - **Where the data comes from** is the plan's question: streamed with the
+    shell in a `<Suspense>` as `InboxCount` is (one query per medium, outside
+    each page's budget like the Inbox count, `docs/02-architecture.md` § 7),
+    or read when the sheet opens. Either way it comes from the views the
+    dashboards read, and stays fresh after a mark.
+  - **A medium with nothing in hand** says so in one grey line (*Nothing in
+    flight*); watch says nothing more until 8.7, and music and games join with
+    9.0 and 10.0.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first) in
+    the browser (0.11) at 360px, light and dark: with a comics run and a book
+    in flight, the sheet's Comics row reads the run's next issue and *N runs in
+    flight* and its Books row the book's title and *N books in flight*, the
+    counts in mono and equal to what the dashboards count; with nothing in
+    flight a row reads *Nothing in flight*; after a mark on `/comics`, opening
+    the sheet shows the new next issue; `test/query-budget.test.ts` passes and
+    no page's budget grows; axe passes.
+
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M
 

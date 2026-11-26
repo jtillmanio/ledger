@@ -608,6 +608,7 @@ with the task that first reads it.
 |  | 6.25 → TASK-147, TASK-148, TASK-149 | Navigation for four and five media | M | _From TASK-126 (6.23, D-178); before 9.0; placed in M21 by the 2026-11-24 coverage recount; Check proposed_ | 6.23 |
 |  | 6.26 → TASK-163 | The Library's genre row scrolls smoothly, with arrows you can hold | S | _Owner intake, 2026-11-24; after TASK-145 (6.24), which redraws the phone's filters; Check proposed_ | 4.5 |
 |  | 6.27 → TASK-164, TASK-165, TASK-166 | Plainer words on every built screen | M | _Owner intake, 2026-11-24; before 6.9, which passes over the finished screens; Check proposed_ | — |
+|  | 6.29 | Switch medium shows what is in hand | S | _From TASK-148 (6.25, PR #354); Check proposed_ | 6.25 |
 |  | 6.9 | Revisit the theme | M |  | — |
 
 ## M22: AI-assisted curation — Later

@@ -7,6 +7,8 @@ import { renderToString } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { IconSprite } from "../src/components/nav/Icons";
 import MediaBar from "../src/components/nav/MediaBar";
+import { MediumList } from "../src/components/nav/MediumSheet";
+import { SheetCloseProvider } from "../src/components/Sheet";
 import NavRail from "../src/components/nav/NavRail";
 import Sidebar from "../src/components/nav/Sidebar";
 import ShellFrame from "../src/components/nav/ShellFrame";
@@ -23,6 +25,16 @@ const bars = (items?: NavItem[]) => ({
   "the tablet rail": renderToString(<NavRail items={items} inbox={null} />),
   "the sidebar": renderToString(<Sidebar items={items} inbox={null} />),
 });
+function sheet(items: NavItem[] = NAV_ITEMS, medium: "comics" | "books" | "watch" | null = null) {
+  return renderToString(
+    <SheetCloseProvider value={() => {}}>
+      <MediumList items={items} medium={medium} pathname={nav.pathname} />
+    </SheetCloseProvider>,
+  );
+}
+/** The phone bar's medium button (6.25, D-178): the one button that opens Switch medium. */
+const mediumButton = (html: string) => /<button [^>]*class="medbtn"[^>]*>.*?<\/button>/.exec(html)?.[0] ?? "";
+const inGroupMedia = (items: NavItem[]) => visibleItems(items).filter((i) => i.group === "media");
 const flip = (id: string): NavItem[] => NAV_ITEMS.map((i) => (i.id === id ? { ...i, enabled: false } : i));
 const hrefOf = (id: string) => NAV_ITEMS.find((i) => i.id === id)!.href;
 /** The books items, in the order every bar draws them. */
@@ -39,14 +51,16 @@ describe("NAV_ITEMS (AC-2)", () => {
   });
 
   it("a disabled item renders in no bar", () => {
-    // `watch` is a medium (all three bars draw the switch); `comics-status` is a
-    // medium item (the rail and the sidebar draw those, and since 2.2i the phone's tab row).
+    // `watch` is a medium (the rail, the sidebar and, since 6.25, the phone's Switch medium sheet
+    // draw it); `comics-status` is a medium item (the rail and the sidebar draw those, and since
+    // 2.2i the phone's tab row).
     // Not `comics-runs`: comics Add shares its href until you add to a run (1.19).
+    const drawings = (items?: NavItem[]) => ({ ...bars(items), "the switch medium sheet": sheet(items) });
     for (const [id, drawnBy] of [["watch", 3], ["comics-status", 3]] as const) {
       const href = `href="${hrefOf(id)}"`;
-      const before = Object.entries(bars()).filter(([, html]) => html.includes(href));
+      const before = Object.entries(drawings()).filter(([, html]) => html.includes(href));
       expect(before.length, `${id} drawn before the flip`).toBe(drawnBy);
-      for (const [name, html] of Object.entries(bars(flip(id)))) {
+      for (const [name, html] of Object.entries(drawings(flip(id)))) {
         expect(html, `${id} in ${name}`).not.toContain(href);
       }
     }
@@ -69,8 +83,10 @@ describe("NAV_ITEMS (AC-2)", () => {
       expect(current(html).filter((a) => a.includes("Library")), name).toHaveLength(0);
     }
     const phone = renderToString(<MediaBar />);
-    expect(current(phone).filter((a) => a.includes(">Books<") && a.includes('href="/books"'))).toHaveLength(1);
+    // The medium button names Books (6.25); the tab row's Dashboard is the current link to /books.
+    expect(mediumButton(phone)).toContain(">Books<");
     expect(current(phone).filter((a) => a.includes(">Dashboard<") && a.includes('href="/books"'))).toHaveLength(1);
+    expect(current(sheet(NAV_ITEMS, "books")).filter((a) => a.includes('href="/books"'))).toHaveLength(1);
   });
 
   it("turns on Status for comics and books (task 1.9); Watch's waits for 8.8", () => {
@@ -105,9 +121,9 @@ describe("NAV_ITEMS (AC-2)", () => {
       // On the Library the rail and sidebar mark Library, and the Books switch beside them.
       expect(current(html).filter((a) => a.includes("Library")), name).toHaveLength(1);
     }
-    // The phone's media switch marks Books, and since 2.2i its tab row lists Library too, marked once.
+    // The phone's medium button names Books (6.25), and since 2.2i its tab row lists Library too, marked once.
     const phone = renderToString(<MediaBar />);
-    expect(current(phone).filter((a) => a.includes(">Books<"))).toHaveLength(1);
+    expect(mediumButton(phone)).toContain(">Books<");
     expect(current(phone).filter((a) => a.includes(">Library<"))).toHaveLength(1);
     // The switch opens the dashboard since 2.2; the Library is its own item.
     expect(hrefOf("books")).toBe("/books");
@@ -235,9 +251,14 @@ describe("NAV_ITEMS (AC-2)", () => {
   it("keeps the unbuilt screens out: Search, Tracks", () => {
     const off = ["search", "comics-tracks"];
     for (const id of off) expect(NAV_ITEMS.find((i) => i.id === id)?.enabled, id).toBe(false);
-    for (const [name, html] of Object.entries(bars())) {
-      expect(html, name).not.toMatch(/Ctrl K|Tracks/);
+    for (const [name, html] of Object.entries({ ...bars(), "the switch medium sheet": sheet() })) {
+      expect(html, name).not.toMatch(/Tracks|href="\/search"/);
+      // The phone bar draws search's button and says why it does nothing until 6.1 (D-178); nothing else does.
+      if (name !== "the phone bar") expect(html, name).not.toMatch(/Ctrl K/);
     }
+    const search = /<button [^>]*aria-label="Search \(Ctrl K\)"[^>]*>/.exec(renderToString(<MediaBar />))?.[0];
+    expect(search).toContain('aria-disabled="true"');
+    expect(search).toContain('title="Search isn&#x27;t built yet"');
   });
 
   it("Settings is on (task 2.0): the foot of the rail and the sidebar, and the phone bar's gear", () => {
@@ -248,10 +269,10 @@ describe("NAV_ITEMS (AC-2)", () => {
       expect(html.match(/href="\/settings"/g), name).toHaveLength(1);
       expect(html, name).toContain("Settings");
     }
-    // The gear is a link with a name, 44px (.iconbtn), after the media switch.
+    // The gear is a link with a name, 44px (.iconbtn), after the medium button and search (6.25).
     const phone = renderToString(<MediaBar />);
     expect(phone).toMatch(/<a [^>]*class="iconbtn gear"[^>]*href="\/settings"|<a [^>]*href="\/settings"[^>]*class="iconbtn gear"/);
-    expect(phone.indexOf('href="/settings"')).toBeGreaterThan(phone.indexOf(">Watch<"));
+    expect(phone.indexOf('href="/settings"')).toBeGreaterThan(phone.indexOf('aria-label="Search (Ctrl K)"'));
     expect(phone).toMatch(/href="\/settings"[^>]*>(?:(?!<\/a>).)*>Settings<\/span>/);
   });
 
@@ -328,10 +349,19 @@ describe("comics Add remembers the last run (1.19, AC-2)", () => {
   });
 });
 
-describe("the media bar", () => {
-  it("draws the same media nav on every route, only aria-current differs", () => {
+describe("the media bar (6.25, D-178)", () => {
+  beforeEach(() => { nav.pathname = "/comics"; });
+  // Its accessible name (aria-label), which begins with its visible text.
+  const name = (button: string) => {
+    const label = /aria-label="([^"]*)"/.exec(button)?.[1] ?? "";
+    expect(label.startsWith(button.replace(/<[^>]+>/g, ""))).toBe(true);
+    return label;
+  };
+
+  it("draws the same bar on every route: only the medium named and aria-current differ", () => {
     // The tab row (2.2i) differs by medium and screen on purpose; its tests are below.
-    const norm = (html: string) => html.replace(/ aria-current="page"/g, "").replace(/<nav aria-label="Screens".*?<\/nav>/, "");
+    const norm = (html: string) => html.replace(/ aria-current="page"/g, "").replace(/<nav aria-label="Screens".*?<\/nav>/, "")
+      .replace(/<button [^>]*class="medbtn".*?<\/button>/, "<medbtn/>");
     const seen = new Set<string>();
     for (const path of ["/comics", "/comics/runs", "/comics/some-run", "/books/list", "/books/add", "/watch", "/inbox"]) {
       nav.pathname = path;
@@ -340,20 +370,80 @@ describe("the media bar", () => {
     expect(seen.size).toBe(1);
   });
 
-  it("marks the current medium, and none on a screen under no medium", () => {
-    nav.pathname = "/books/add";
-    expect(renderToString(<MediaBar />)).toMatch(/aria-current="page"[^>]*>(?:<[^>]+>)*Books|href="\/books\/list"[^>]*aria-current="page"/);
-    nav.pathname = "/inbox";
-    const html = renderToString(<MediaBar />).replace(/<nav aria-label="Screens".*?<\/nav>/, "");
-    expect(html).not.toContain("aria-current");
+  it("reads Ledger · the medium button · search · the gear, with no Media nav of links (AC-1)", () => {
+    const html = renderToString(<MediaBar />);
+    expect(html).not.toContain('aria-label="Media"');
+    // The other media are in the sheet; the bar's only link to /comics is the tab row's Dashboard.
+    expect(html.replace(/<nav aria-label="Screens".*?<\/nav>/, "")).not.toMatch(/<a [^>]*href="\/(comics|books|watch)"/);
+    const at = (needle: string) => html.indexOf(needle);
+    expect(at(">Ledger<")).toBeGreaterThan(-1);
+    expect(at(">Ledger<")).toBeLessThan(at('class="medbtn"'));
+    expect(at('class="medbtn"')).toBeLessThan(at('aria-label="Search (Ctrl K)"'));
+    expect(at('aria-label="Search (Ctrl K)"')).toBeLessThan(at('href="/settings"'));
+    expect(html).toMatch(/<button [^>]*class="iconbtn search"/);
+    expect(html).not.toContain("⚲"); // the drawn magnifier, never the glyph
   });
 
-  it("is a media nav of three links with their names, the wordmark first", () => {
-    const html = renderToString(<MediaBar />);
-    expect(html).toContain('aria-label="Media"');
-    for (const name of ["Comics", "Books", "Watch"]) expect(html).toContain(`>${name}<`);
-    expect(html.indexOf("Ledger")).toBeLessThan(html.indexOf(">Comics<"));
-    expect(html).not.toContain("⚲"); // the drawn magnifier, never the glyph
+  it("the medium button opens a dialog, says whether it is open, and is named by its medium (AC-2)", () => {
+    nav.pathname = "/books";
+    const button = mediumButton(renderToString(<MediaBar />));
+    expect(button).toContain('type="button"');
+    expect(button).toContain('aria-haspopup="dialog"');
+    expect(button).toContain('aria-expanded="false"');
+    expect(button).toContain('data-medium="books"');
+    // Its name begins with its visible text: "Books, switch medium".
+    expect(name(button)).toBe("Books, switch medium");
+    expect(button).toContain('href="#i-chevron-down"');
+  });
+
+  it("names the medium you are in, else the one the tab row draws, else Media (AC-3)", () => {
+    nav.pathname = "/watch";
+    expect(name(mediumButton(renderToString(<MediaBar lastMedium="books" />)))).toBe("Watch, switch medium");
+    for (const path of ["/inbox", "/settings", "/progress"]) {
+      nav.pathname = path;
+      const last = mediumButton(renderToString(<MediaBar lastMedium="books" />));
+      expect(name(last), path).toBe("Books, switch medium");
+      expect(last, path).toContain('data-medium="books"');
+      // A first visit, before any medium is known: no medium's name and no medium's colour.
+      const none = mediumButton(renderToString(<MediaBar />));
+      expect(name(none), path).toBe("Media, switch medium");
+      expect(none, path).not.toContain("data-medium");
+    }
+  });
+});
+
+describe("the Switch medium sheet (6.25, D-178, AC-1)", () => {
+  const links = (html: string) => [...html.matchAll(/<a [^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/g)]
+    .map((m) => ({ href: m[1], a: m[0], text: m[2].replace(/<[^>]+>/g, "") }));
+
+  it("lists every built medium by name, to its dashboard, in nav order", () => {
+    const media = inGroupMedia(NAV_ITEMS);
+    expect(media.length).toBeGreaterThanOrEqual(3);
+    expect(links(sheet()).map((l) => [l.href, l.text])).toEqual(media.map((m) => [m.href, m.label]));
+    // An unbuilt medium has no row.
+    expect(links(sheet(flip("watch"))).map((l) => l.href)).not.toContain("/watch");
+  });
+
+  it("marks the current medium with aria-current and a grey check, and only that one", () => {
+    for (const medium of ["comics", "books", "watch"] as const) {
+      const rows = links(sheet(NAV_ITEMS, medium));
+      const current = rows.filter((l) => l.a.includes("aria-current"));
+      expect(current.map((l) => l.href), medium).toEqual([hrefOf(medium)]);
+      expect(current[0].a, medium).toContain('href="#i-check"');
+      expect(rows.filter((l) => l.a.includes('href="#i-check"')), medium).toHaveLength(1);
+    }
+    expect(sheet(NAV_ITEMS, null)).not.toContain("aria-current");
+  });
+
+  it("says where each medium opens and what / opens, Start on included (A6; TASK-147)", () => {
+    const foot = /<p class="medfoot">(.*?)<\/p>/.exec(sheet())![1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    expect(foot).toBe("Each medium opens on its dashboard. / opens the one you used last, unless Settings → Start on names one.");
+  });
+
+  it("each row carries its medium's icon, and the sprite draws the chevron, the check and the magnifier", () => {
+    for (const m of inGroupMedia(NAV_ITEMS)) expect(sheet(), m.id).toContain(`href="#i-${m.icon}"`);
+    const sprite = renderToString(<IconSprite />);
+    for (const icon of ["chevron-down", "check", "search"]) expect(sprite, icon).toContain(`id="i-${icon}"`);
   });
 });
 
@@ -361,6 +451,28 @@ const tabRow = (html: string) => /<nav aria-label="Screens"[^>]*>(.*?)<\/nav>/.e
 const labels = (html: string) => [...html.matchAll(/<a [^>]*>([^<]*)<\/a>/g)].map((m) => m[1]);
 
 describe("the tab row (2.2i, AC-2)", () => {
+  it("ends with a divider, then Inbox and Progress, the divider hidden from assistive tech (6.25, D-178, AC-1)", () => {
+    nav.pathname = "/books/list";
+    const row = tabRow(renderToString(<MediaBar />));
+    const divider = /<span class="tabdiv" aria-hidden="true"><\/span>/;
+    expect(row).toMatch(divider);
+    const at = row.search(divider);
+    expect(row.lastIndexOf('href="/books/add"')).toBeLessThan(at);
+    expect(row.indexOf('href="/inbox"')).toBeGreaterThan(at);
+    expect(row.indexOf('href="/progress"')).toBeGreaterThan(row.indexOf('href="/inbox"'));
+    // With no medium yet there is nothing to divide.
+    nav.pathname = "/settings";
+    expect(tabRow(renderToString(<MediaBar />))).not.toMatch(divider);
+  });
+
+  it("draws Inbox's count, in mono, once it streams in (6.25, D-178)", () => {
+    nav.pathname = "/comics";
+    const row = tabRow(renderToString(<MediaBar inbox={<>6</>} />));
+    // Named "Inbox 6": the space keeps the count a word of its own.
+    expect(row).toMatch(/href="\/inbox"[^>]*>Inbox <span class="count">6<\/span><\/a>/);
+    expect(tabRow(renderToString(<MediaBar />))).not.toContain('class="count"');
+  });
+
   it("lists mediumItems then Inbox and Progress, inside header.bar, for each medium", () => {
     for (const [path, medium] of [["/comics", "comics"], ["/books/list", "books"], ["/watch", "watch"]] as const) {
       nav.pathname = path;

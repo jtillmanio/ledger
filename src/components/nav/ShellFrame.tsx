@@ -69,7 +69,7 @@ export default function ShellFrame({ inbox, lastRun, lastMedium, children }: {
           <IconSprite />
           {lastRun}
           {lastMedium}
-          <MediaBar items={items} lastMedium={visited ?? cookieMedium} />
+          <MediaBar items={items} lastMedium={visited ?? cookieMedium} inbox={inbox} />
           <SyncPill strip />
           <NavRail items={items} inbox={inbox} />
           <Sidebar items={items} inbox={inbox} />

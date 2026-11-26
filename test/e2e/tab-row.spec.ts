@@ -16,6 +16,12 @@ const MEDIA = NAV_ITEMS.filter((i) => i.group === "media");
 const ITEMS = withLastRun(NAV_ITEMS, null);
 const row = (page: Page) => page.locator("header.bar nav.tabrow");
 const current = (page: Page) => row(page).locator('[aria-current="page"]');
+const button = (page: Page) => page.locator("header.bar .medbtn");
+// Inbox carries the shell's count once it streams in (6.25, D-178): "Inbox 2" (and "Inbox " before it has).
+const INBOX = /^Inbox\s*\d*$/;
+/** What an item reads in the row: its label, Inbox with or without its count. */
+const textOf = (item: { id: string; label: string }) => (item.id === "inbox" ? INBOX : item.label);
+const texts = (items: { id: string; label: string }[]) => items.map(textOf);
 
 const barHeight = (page: Page) =>
   page.evaluate(() => {
@@ -30,7 +36,7 @@ const barHeight = (page: Page) =>
 /** Taps `item`'s link in the row and waits for the screen; the pathname it should land on. */
 async function tap(page: Page, href: string, label: string) {
   const here = new URL(page.url()).pathname;
-  await row(page).getByRole("link", { name: label, exact: true }).click();
+  await row(page).getByRole("link", label === "Inbox" ? { name: INBOX } : { name: label, exact: true }).click();
   if (here !== href) await page.waitForURL(`**${href}`);
   return new URL(page.url()).pathname;
 }
@@ -43,7 +49,7 @@ for (const media of MEDIA) {
     const list = tabRowItems(ITEMS, media.medium!);
     expect(list.length, "at least the medium's own item and Inbox").toBeGreaterThanOrEqual(2);
     // The row is exactly the items NAV_ITEMS enables for this medium, then Inbox and Progress.
-    await expect(row(page).getByRole("link")).toHaveText(list.map((i) => i.label));
+    await expect(row(page).getByRole("link")).toHaveText(texts(list));
 
     for (const item of list) {
       const path = await tap(page, item.href, item.label);
@@ -52,21 +58,63 @@ for (const media of MEDIA) {
       const rowAtPath = tabRowItems(ITEMS, media.medium!);
       const expected = currentItem(rowAtPath, path);
       await expect(current(page), `${item.label} → ${path}`).toHaveCount(expected ? 1 : 0);
-      if (expected) await expect(current(page)).toHaveText(expected.label);
+      if (expected) await expect(current(page)).toHaveText(textOf(expected));
       expect(expected, `${item.label} is current somewhere`).toBeDefined();
     }
     // The last tap was Progress (task 5.12): the row still lists this medium's screens.
     await expect(page).toHaveURL(/\/progress$/);
-    await expect(row(page).getByRole("link")).toHaveText(list.map((i) => i.label));
+    await expect(row(page).getByRole("link")).toHaveText(texts(list));
 
     // Settings is the gear; the row stays and marks none of its items.
     await page.locator('header.bar a[href="/settings"]').click();
     await page.waitForURL("**/settings");
     await expect(page.locator('header.bar a[href="/settings"]')).toHaveAttribute("aria-current", "page");
     await expect(current(page)).toHaveCount(0);
-    await expect(row(page).getByRole("link")).toHaveText(list.map((i) => i.label));
+    await expect(row(page).getByRole("link")).toHaveText(texts(list));
   });
 }
+
+test("the row ends with a 1px --rule-2 divider, then Inbox with its count and Progress (6.25, D-178, AC-1)", ONCE, async ({ page }) => {
+  await size(page, 360);
+  for (const media of MEDIA) {
+    await page.goto(media.href);
+    await hydrated(page.locator("header.bar"));
+    const tail = await row(page).evaluate((nav) =>
+      [...nav.children].slice(-3).map((el) => (el.classList.contains("tabdiv") ? "divider" : el.getAttribute("href"))));
+    expect(tail, media.label).toEqual(["divider", "/inbox", "/progress"]);
+    const divider = row(page).locator(".tabdiv");
+    await expect(divider).toHaveCount(1);
+    await expect(divider).toHaveAttribute("aria-hidden", "true");
+    const look = await divider.evaluate((el) => ({ w: el.getBoundingClientRect().width, bg: getComputedStyle(el).backgroundColor }));
+    expect(look).toEqual({ w: 1, bg: await tokenColour(page, "--rule-2") });
+    // The count streams in: Inbox reads "Inbox 2" once it has.
+    await expect(row(page).locator('a[href="/inbox"]')).toHaveAccessibleName(/^Inbox \d+$/);
+  }
+});
+
+test("on a screen under no medium the medium button names the medium the tab row draws (6.25, AC-3)", ONCE, async ({ page }) => {
+  await size(page, 360);
+  await page.goto("/books/list");
+  await hydrated(button(page));
+  await expect(button(page)).toHaveAccessibleName("Books, switch medium");
+  // Tapped to: the row keeps Books' screens and the button keeps naming Books.
+  await tap(page, "/inbox", "Inbox");
+  await expect(button(page)).toHaveAccessibleName("Books, switch medium");
+  await expect(button(page)).toHaveAttribute("data-medium", "books");
+  await page.locator('header.bar a[href="/settings"]').click();
+  await page.waitForURL("**/settings");
+  await expect(button(page)).toHaveAccessibleName("Books, switch medium");
+  await expect(row(page).getByRole("link")).toHaveText(texts(tabRowItems(ITEMS, "books")));
+  // A hard load of each: the server's last medium streams in.
+  for (const path of ["/inbox", "/settings"]) {
+    await page.goto(path);
+    await expect(button(page), path).toHaveAccessibleName("Books, switch medium");
+  }
+  await page.goto("/comics");
+  await page.goto("/inbox");
+  await expect(button(page)).toHaveAccessibleName("Comics, switch medium");
+  await expect(row(page).getByRole("link")).toHaveText(texts(tabRowItems(ITEMS, "comics")));
+});
 
 test("with every books item enabled the row scrolls inside itself and the page does not (AC-1)", ONCE, async ({ page }) => {
   await size(page, 360);
@@ -156,24 +204,24 @@ test("a keyboard-focused item, the current one too, shows an inset brand ring (A
 
 test("a screen with no medium draws the last medium's items (AC-3)", ONCE, async ({ page, context }) => {
   await size(page, 360);
-  const labelsOf = (medium: "comics" | "books") => tabRowItems(ITEMS, medium).map((i) => i.label);
+  const labelsOf = (medium: "comics" | "books") => texts(tabRowItems(ITEMS, medium));
 
   // Visit books, then tap Inbox: the row keeps the books items, Inbox is current.
   await page.goto("/books/list");
   await hydrated(page.locator("header.bar"));
   await tap(page, "/inbox", "Inbox");
   await expect(row(page).getByRole("link")).toHaveText(labelsOf("books"));
-  await expect(current(page)).toHaveText("Inbox");
+  await expect(current(page)).toHaveText(INBOX);
   // The same from a hard load: the server hands the cookie over.
   await page.goto("/inbox");
   await expect(row(page).getByRole("link")).toHaveText(labelsOf("books"));
-  await expect(current(page)).toHaveText("Inbox");
+  await expect(current(page)).toHaveText(INBOX);
 
   // Comics.
   await page.goto("/comics");
   await page.goto("/inbox");
   await expect(row(page).getByRole("link")).toHaveText(labelsOf("comics"));
-  await expect(current(page)).toHaveText("Inbox");
+  await expect(current(page)).toHaveText(INBOX);
 
   // Settings: the last medium's items, none current, and the gear is.
   await page.goto("/books/list");
@@ -208,7 +256,7 @@ test("the row's height is the same before and after the last medium arrives (AC-
     tick();
   });
   await page.goto("/inbox", { waitUntil: "commit" });
-  await expect(row(page).getByRole("link")).toHaveText(tabRowItems(ITEMS, "books").map((i) => i.label));
+  await expect(row(page).getByRole("link")).toHaveText(texts(tabRowItems(ITEMS, "books")));
   await page.waitForTimeout(300);
   const { heights, counts } = await page.evaluate(() => {
     const w = window as unknown as { __heights: Set<number>; __counts: Set<number> };
@@ -252,6 +300,8 @@ test("the current item is scrolled into view inside the row and the page does no
   await page.goto("/comics");
   await page.goto("/inbox");
   await hydrated(page.locator("header.bar"));
+  // Measured once the server's last medium has streamed in: Inbox and Progress alone fit.
+  await expect(row(page).getByRole("link")).toHaveCount(tabRowItems(ITEMS, "comics").length);
   const nav = (await row(page).boundingBox())!;
   const { overflows } = await row(page).evaluate((n) => ({ overflows: n.scrollWidth > n.clientWidth }));
   expect(overflows, "the row overflows at 280px").toBe(true);
@@ -259,7 +309,7 @@ test("the current item is scrolled into view inside the row and the page does no
     const now = (await current(page).boundingBox())!;
     return now.x >= nav.x - 0.5 && now.x + now.width <= nav.x + nav.width + 0.5;
   }).toBe(true);
-  expect(await current(page).textContent()).toBe("Inbox");
+  expect(await current(page).textContent()).toMatch(INBOX);
   expect(await page.evaluate(() => window.scrollX)).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollLeft)).toBe(0);
 });
@@ -301,7 +351,7 @@ test("axe passes with the row, in both themes, with reduced motion on and off (A
         // aria-current stays on the right item whatever the motion preference.
         const medium = path === "/comics" ? "comics" : "books";
         const expected = currentItem(tabRowItems(ITEMS, medium), path)!;
-        await expect(current(page), path).toHaveText(expected.label);
+        await expect(current(page), path).toHaveText(textOf(expected));
         await expect(current(page)).toHaveCount(1);
       }
     }
