@@ -3536,7 +3536,7 @@ writes its `to_read` status and its plan row in one transaction. With 100k of
 room left, *Fits the room left* lists no book over 100k. Nothing on the sheet
 resolves to `--danger`. Screenshots at 360px and 1280px.
 
-### ☐ 2.10c Suggestions keep series order, and the sheet can search · M
+### ☑ 2.10c Suggestions keep series order, and the sheet can search · M
 Owner intake, 2026-11-24 (*I tried it and it gave me multiple later books in
 series I hadn't started yet; no search on Plan this quarter*). Of 2.10b's eight
 groups, only *Next in a series* and *Next on a shelf* read `follow_next`, which

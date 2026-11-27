@@ -1,7 +1,7 @@
 ---
 id: TASK-155
 title: 2.10c Suggestions keep series order, and the sheet can search (2 of 2) — search on the plan sheet
-status: In progress
+status: Review
 depends_on: [TASK-154]
 size: M
 model: sonnet
@@ -28,7 +28,7 @@ The plan sheet has a search field, so any book on the owner's list can be found 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the search, the screenshots and axe, TASK-154 the suggestion clauses):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the search, the screenshots and axe, TASK-154 the suggestion clauses):
 with
 the test database: a series with books 1–4, none followed, all To read, each
 50k words, and 200k of room left: the sheet for 2027 Q2 suggests book 1 under
@@ -39,10 +39,11 @@ book of each of the author's series under *More from*. Typing two letters of a
 title in the sheet's search lists that book with its place line and no read
 book; *Put in Q2* on it writes one `reading_plan` row and Undo removes it.
 Screenshots at 360px and 1280px; axe passes.
-- [ ] AC-2: Given the sheet opens, the search field is its first control and has focus only when the owner moves to it (the sheet's focus rule is unchanged); typing filters as you type, Esc clears it, and an empty field shows the groups again.
-- [ ] AC-3: Given a search matching an Unlisted book, placing it writes `to_read` and its plan row in one transaction, and Undo restores `unlisted` and removes the row.
-- [ ] AC-4: Given a search with no match, the sheet says so in one line and keeps the groups below.
+- [x] AC-2: Given the sheet opens, the search field is its first control and has focus only when the owner moves to it (the sheet's focus rule is unchanged); typing filters as you type, Esc clears it, and an empty field shows the groups again.
+- [x] AC-3: Given a search matching an Unlisted book, placing it writes `to_read` and its plan row in one transaction, and Undo restores `unlisted` and removes the row.
+- [x] AC-4: Given a search with no match, the sheet says so in one line and keeps the groups below.
 - [ ] AC-5: The sheet meets the UX floor (`docs/04-design.md` § 10. The UX floor): the field is labelled, results are real controls with names, 44 px targets at phone widths, contrast in both themes, and screenshots at each `ui.viewports` width, light and dark; `/books/plan` stays within its budget.
+  *(Open: everything but the budget is proven, `plan-sheet.spec.ts` › AC-5. The budget is the Lighthouse gate, and `LIGHTHOUSE_MODE` is off (D-158): it waits on the owner's hand run, `gh workflow run lighthouse.yml --ref task/2.10c-plan-sheet-search`.)*
 
 ## Out of scope
 
@@ -69,6 +70,11 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 - Candidate decision: the plan sheet's search starts at **2 characters** (500 ms pause; Enter from two characters, since the route refuses one), amending D-84's 3 for this box only: it reads only your own database, never an API, and the 2.10c Check types two letters; it also leaves out Reading and Listening books (the owner's answer at the plan gate), which narrows the 2.10c entry's search bullet. Not chosen: keeping 3 with Enter at 2; editing the Check to three. "Amended by D-189" added to D-84 (approved at plan, owner 2026-11-27) → docs/review/decisions.md § D-189
 - `.claude/rules/ui.md` § Design, the add-flow / search line: name the plan sheet's 2-character search as the one exception to D-84's 3 (approved at plan, owner 2026-11-27) → .claude/rules/ui.md § Design
+- schema-reviewer's two optional test gaps (the page-count word estimate; `_` as text) → not tracked: done in this PR (review round 1)
+- `design/mockups-index.md`'s line ranges are stale across the index (`plan` reads 3309, the section starts at 3413) → not tracked: already off before this task, and no script or test reads them
+- An Unlisted match shows the *Unlisted* tag and an *Unlisted* line (the plan's place tag), and a match planned elsewhere its *planned · Q3* badge and a *Q3* line → not tracked: as the plan specified; the owner's preview walk can ask for a change
+- ui-verifier: the browser's own clear "×" in the field (`type=search`) is under 24px → not tracked: every `type=search` box in the app has it (the Library, Add books), it is out of the tab order, and hiding it here would take away the phone's one-tap clear; an app-wide answer is the owner's call
+- ui-verifier, outside this task: the groups' *Fits the 759k left* beside the budget line's *760k room* (2.10b's rounding), and past quarters of the current year still offering *Plan this quarter…* (2.10b) → not tracked: reported to the owner in this PR, for 2.10b's owner to decide
 
 ## Plan
 
@@ -110,13 +116,18 @@ _Approved by the owner 2026-11-27 (attended, Opus session; implementation handed
 
 _Filled by /implement-task. One line per round._
 
+- Specs R1 (plan-sheet.spec.ts in w390-light) PASS (18) | Verify R1 PASS | CI R1 (5cb2cd0) cancelled by the review push
+- Schema R1 APPROVE (2 optional test gaps → added) | Spec R1 CHANGES (D-189 to record the Reading/Listening exclusion; follow-up destinations) → fixed in 815ec87
+- Audit R1 PASS (every new test fails on 2c630ac) | UI R1 PASS (6 widths × light/dark, axe 0, no console errors; dev data restored) | CI R2 (815ec87) PASS
+- Spec and schema not re-run on 815ec87: it changes only test/plan-search.test.ts and the docs spec-reviewer asked for; the close-out follow-ups check covers the docs
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1 (plus the touched tests after each fix)
+- Review rounds: 1 (spec CHANGES were doc-only; schema APPROVE)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 3 (a use-search test case; Enter from two characters; LIKE wildcards escaped)
