@@ -40,13 +40,15 @@ export default function NavRail({ items = NAV_ITEMS, inbox }: { items?: NavItem[
           </NavLink>
         ))}
       </div>
+      {/* Only the medium's screens scroll in a short window: what spans media and the foot stay in view. */}
       <div className="rail-mid">
         <div className="rail-group">{set.map((i) => item(i, i === now))}</div>
-        <div className="rail-rule" aria-hidden="true" />
-        <div className="rail-group">
-          {inGroup(items, "global").map((i) => item(i, pathname === i.href))}
-        </div>
       </div>
+      <div className="rail-rule" aria-hidden="true" />
+      <div className="rail-group">
+        {inGroup(items, "global").map((i) => item(i, pathname === i.href))}
+      </div>
+      <span className="grow" />
       <div className="rail-group rail-foot">
         <SearchButton className="ri">
           <span className="pill"><Icon name="search" /></span>

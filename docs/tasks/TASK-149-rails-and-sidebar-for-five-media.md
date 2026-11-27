@@ -104,6 +104,8 @@ Approved 2026-11-26 (owner: "Approve"; the well's media are 58 × 46 as A8 draws
 
 **Revision 2 (spec review R1; owner: "Yes, in this PR")**: `design/mockups.html`'s two desktop `bdash` headers still drew the *Search* verb this task removes (AC-5, MR-D4); they drop it. The 16 dashboard thumb bars that still drew a search slot (MR-D2, left by TASK-148's redraw) drop it too, since 6.25 ticks with this PR. `mockup-tablet.spec.ts` checks that no desktop header or thumb bar draws Search, and the index row says so.
 
+**Revision 3 (ui-verifier R1)**: in a short window (Books at 834 × 900), the rail's scroller held Inbox and Progress below the fold. Where the browser draws classic scrollbars, a 15px bar left the 64px items 57px and scrolled them sideways, clipping *Add*. Now only the medium's screens scroll; the rule, Inbox and Progress sit outside the scroller, which draws no scrollbar and clips sideways. The icon rail's *Switch medium* tooltip no longer sits over its own open menu. `shell.spec.ts` adds the short-window test and a tooltip check.
+
 **Risks**: at 1024 the switch names the set the rail draws, and a screen under no medium (`/inbox`) still draws comics' set (`mediumFor`, unchanged). The menu is imported statically; if `test/perf.test.ts` or the byte budgets object, it loads on first open as `MediumSheet` does. Size: 13–15 files, no schema; kept whole (part 3 of an agreed split; AC-6 binds the redraw, as TASK-148's did).
 
 ## Review log

@@ -627,6 +627,37 @@ test.describe("the tablet rail, the icon rail's menu and the sidebar (6.25)", ()
     await page.goto("/comics"); // the last-medium cookie back where other specs expect it
   });
 
+  test("in a short window only the medium's screens scroll: nothing scrolls sideways, and Inbox, Progress, Search and Settings stay in view (AC-6)", THEMES, async ({ page }) => {
+    // Books has the most screens; at 834 × 760 they don't fit, so the middle of the rail scrolls.
+    await size(page, 834, 760);
+    await page.goto("/books");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    const rail = page.locator("nav.rail");
+    const mid = rail.locator(".rail-mid");
+    const m = await mid.evaluate((el: HTMLElement) => ({ sh: el.scrollHeight, ch: el.clientHeight, sw: el.scrollWidth, cw: el.clientWidth, w: el.offsetWidth }));
+    expect(m.sh, "the screens overflow at this height").toBeGreaterThan(m.ch);
+    expect(m.sw, "no sideways scroll inside the rail").toBeLessThanOrEqual(m.cw);
+    expect(m.cw, "no scrollbar narrows the column").toBe(m.w);
+    // Where the browser draws classic scrollbars (a desktop at tablet width), a 15px bar would leave the
+    // 64px items 57px and scroll them sideways: the scroller draws none and clips sideways.
+    expect(await mid.evaluate((el) => [getComputedStyle(el).overflowX, getComputedStyle(el).scrollbarWidth])).toEqual(["hidden", "none"]);
+    // The screens are whole: each 64px item sits inside the rail.
+    for (const item of await mid.locator(".ri").all()) {
+      const b = (await item.boundingBox())!;
+      expect(b.x).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width).toBeLessThanOrEqual(72);
+    }
+    // What spans media and the foot never scroll away.
+    for (const name of [/^Inbox/, /^Progress/]) await expect(rail.getByRole("link", { name })).toBeInViewport({ ratio: 1 });
+    await expect(rail.getByRole("button", { name: "Search (Ctrl K)" })).toBeInViewport({ ratio: 1 });
+    await expect(rail.getByRole("link", { name: "Settings" })).toBeInViewport({ ratio: 1 });
+    // The last screen is reached by scrolling the middle (focus scrolls it in as well).
+    const add = mid.getByRole("link", { name: "Add" });
+    await add.focus();
+    await expect(add).toBeInViewport({ ratio: 1 });
+    expect(await mid.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  });
+
   test("at 1024 the switch names the medium and opens a menu of every medium: arrows move, Enter goes, Esc closes with focus back; axe (AC-1, AC-3, AC-6)", THEMES, async ({ page }, testInfo) => {
     await size(page, 1024, 768);
     await page.goto("/books");
@@ -695,6 +726,8 @@ test.describe("the tablet rail, the icon rail's menu and the sidebar (6.25)", ()
     await switchButton(page).click();
     await expect(menu(page)).toBeVisible();
     expect(await motion(page)).toEqual([]);
+    // The pointer still rests on the switch, but its tooltip doesn't sit over the open menu.
+    expect(await switchButton(page).evaluate((el) => getComputedStyle(el, "::after").opacity)).toBe("0");
     // Without the preference the same probe sees the menu's entrance, so the probe can fail.
     await page.keyboard.press("Escape");
     await page.emulateMedia({ reducedMotion: "no-preference" });

@@ -347,8 +347,9 @@ a{color:inherit;text-decoration:none}
 /* The tablet rail: 72px on --surface, each item a 56px target, an icon in a
    48 × 28 pill over an 11px label (touch has no tooltips). Under the L, the well of
    every medium (6.25, A8): 58 × 46, an 18px icon over its 11px name on --sunk, the
-   current one a raised --surface pill. The middle scrolls in a short window; the L,
-   the well and the foot stay. */
+   current one a raised --surface pill. In a short window the medium's screens scroll;
+   the L, the well, Inbox, Progress and the foot stay. The scroller draws no scrollbar
+   and clips sideways: a classic 15px bar would leave the 64px items 57px. */
 .rail{position:fixed;inset:0 auto 0 0;z-index:20;width:var(--nav-tab-w);flex-direction:column;align-items:center;
   gap:8px;padding:12px 0;background:var(--surface);box-shadow:inset -1px 0 0 var(--rule)}
 .rail-word{font:italic 500 24px/28px var(--display);color:var(--ink)}
@@ -358,8 +359,10 @@ a{color:inherit;text-decoration:none}
   border-radius:var(--r-sm);color:var(--muted);font-size:11px;line-height:14px;font-weight:500}
 .rw .ico{width:18px;height:18px}
 .rw[aria-current]{background:var(--surface);box-shadow:var(--sh-1);color:var(--ink);font-weight:600}
-.rail-mid{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:8px;
-  width:100%;padding:4px 0}
+.rail-mid{flex:0 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;scrollbar-width:none;display:flex;
+  flex-direction:column;align-items:center;width:100%;padding:4px 0}
+.rail-mid>.rail-group{flex:0 0 auto}
+.rail .grow{flex:1 1 0}
 .rail-group{display:flex;flex-direction:column;align-items:center;gap:2px}
 .rail-rule{width:32px;height:1px;background:var(--line)}
 .ri{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;width:64px;min-height:56px;
@@ -422,6 +425,8 @@ a{color:inherit;text-decoration:none}
 @media (hover:hover) and (pointer:fine){
   .side [data-tip]:hover::after{opacity:1;transition:opacity var(--dur-2) var(--ease-out) var(--dur-4)}
 }
+/* The switch's tip never sits over its own open menu. */
+.side .medswitch[aria-expanded="true"][data-tip]::after{opacity:0}
 
 @media (min-width:768px){
   .bar,.sync-strip{display:none}
