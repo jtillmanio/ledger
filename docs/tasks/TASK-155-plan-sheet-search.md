@@ -67,8 +67,8 @@ Screenshots at 360px and 1280px; axe passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Candidate decision: the plan sheet's search starts at **2 characters** (500 ms pause; Enter at any length), amending D-84's 3 for this box only: it reads only your own database, never an API, and the 2.10c Check types two letters. Not chosen: keeping 3 with Enter at 2; editing the Check to three. Record it with `next-id.ps1` and add "Amended by D-n" to D-84 (approved at plan, owner 2026-11-27).
-- `.claude/rules/ui.md` § Design, the add-flow / search line: name the plan sheet's 2-character search as the one exception to D-84's 3 (approved at plan, owner 2026-11-27).
+- Candidate decision: the plan sheet's search starts at **2 characters** (500 ms pause; Enter from two characters, since the route refuses one), amending D-84's 3 for this box only: it reads only your own database, never an API, and the 2.10c Check types two letters; it also leaves out Reading and Listening books (the owner's answer at the plan gate), which narrows the 2.10c entry's search bullet. Not chosen: keeping 3 with Enter at 2; editing the Check to three. "Amended by D-189" added to D-84 (approved at plan, owner 2026-11-27) → docs/review/decisions.md § D-189
+- `.claude/rules/ui.md` § Design, the add-flow / search line: name the plan sheet's 2-character search as the one exception to D-84's 3 (approved at plan, owner 2026-11-27) → .claude/rules/ui.md § Design
 
 ## Plan
 

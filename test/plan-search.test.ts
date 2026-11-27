@@ -123,7 +123,21 @@ describe("planSearch: what the sheet's search lists", () => {
   it("reads % and _ as text, not wildcards", async () => {
     await book("pct", "100% Qx", "to_read");
     await book("plain", "100 Qx", "to_read");
+    await book("under", "a_b Qx", "to_read");
+    await book("axb", "axb Qx", "to_read");
     expect(ids(await q.planSearch(USER, Q2, "0%"))).toEqual(["pct"]);
+    expect(ids(await q.planSearch(USER, Q2, "a_b"))).toEqual(["under"]);
+  });
+
+  it("counts words as plan_book_words does: pages x your words per page from 50 pages, estimated; under 50, unknown", async () => {
+    await book("p50", "Qx Fifty Pages", "to_read");
+    await book("p49", "Qx Forty-nine Pages", "to_read");
+    await sql`UPDATE books SET page_count = 50 WHERE id = 'p50'`;
+    await sql`UPDATE books SET page_count = 49 WHERE id = 'p49'`;
+    const words = async () => Object.fromEntries((await q.planSearch(USER, Q2, "qx")).map((h) => [h.id, [h.words, h.estimated]]));
+    expect(await words()).toEqual({ p50: [50 * 275, true], p49: [null, false] });
+    await sql`INSERT INTO reading_settings (user_id, words_per_page) VALUES (${USER}, 300)`;
+    expect(await words()).toEqual({ p50: [50 * 300, true], p49: [null, false] });
   });
 
   it("throws on a target that is no year or quarter", async () => {
