@@ -647,6 +647,8 @@ test.describe("the tablet rail, the icon rail's menu and the sidebar (6.25)", ()
       expect(b.x).toBeGreaterThanOrEqual(0);
       expect(b.x + b.width).toBeLessThanOrEqual(72);
     }
+    // The rule above Inbox keeps its 1px however short the window: it divides the medium from what spans media.
+    expect((await rail.locator(".rail-rule").boundingBox())!.height).toBe(1);
     // What spans media and the foot never scroll away.
     for (const name of [/^Inbox/, /^Progress/]) await expect(rail.getByRole("link", { name })).toBeInViewport({ ratio: 1 });
     await expect(rail.getByRole("button", { name: "Search (Ctrl K)" })).toBeInViewport({ ratio: 1 });
@@ -668,6 +670,8 @@ test.describe("the tablet rail, the icon rail's menu and the sidebar (6.25)", ()
     await hydrated(rail.getByRole("link", { name: "Settings" }));
     const box = (await rail.boundingBox())!;
     expect(await rail.evaluate((el) => el.scrollWidth <= el.clientWidth), "nothing scrolls sideways").toBe(true);
+    // The rule above Inbox keeps its 1px however short the window: it divides the medium from what spans media.
+    expect((await rail.locator(".rail-rule").boundingBox())!.height).toBe(1);
     for (const target of [
       rail.locator(".rail-mid").getByRole("link", { name: "Add" }), rail.getByRole("link", { name: /^Progress/ }),
       rail.getByRole("button", { name: "Search (Ctrl K)" }), rail.getByRole("link", { name: "Settings" }),

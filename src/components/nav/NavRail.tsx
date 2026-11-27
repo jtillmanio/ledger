@@ -13,8 +13,9 @@ import SyncPill from "./SyncPill";
  * name here, so all of them are one tap away (D-178): under the *L*, a `--sunk` well of every built
  * medium, 58 × 46, its icon over an 11px name, the current one a raised `--surface` pill. Then the
  * medium's items, each a 56px target (touch has no tooltips), a rule and the pages across media,
- * Inbox (its count a badge) and Progress; Search and Settings at the foot with sync. The middle
- * scrolls in a short window and the foot stays. `inbox` is the server's count, in a Suspense so a
+ * Inbox (its count a badge) and Progress; Search and Settings at the foot with sync. In a short
+ * window the medium's screens scroll and the rest stays; under 740px tall the whole rail scrolls as
+ * one column (globals.css). `inbox` is the server's count, in a Suspense so a
  * cold database never holds a skeleton back.
  */
 export default function NavRail({ items = NAV_ITEMS, inbox }: { items?: NavItem[]; inbox: React.ReactNode }) {
@@ -40,7 +41,8 @@ export default function NavRail({ items = NAV_ITEMS, inbox }: { items?: NavItem[
           </NavLink>
         ))}
       </div>
-      {/* Only the medium's screens scroll in a short window: what spans media and the foot stay in view. */}
+      {/* Only the medium's screens scroll in a short window: what spans media and the foot stay in view
+          (under 740px tall the whole rail scrolls instead). */}
       <div className="rail-mid">
         <div className="rail-group">{set.map((i) => item(i, i === now))}</div>
       </div>
