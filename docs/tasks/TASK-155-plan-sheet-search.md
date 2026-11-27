@@ -102,6 +102,8 @@ _Approved by the owner 2026-11-27 (attended, Opus session; implementation handed
 
 **Test strategy**: AC-1's search clause, AC-2, AC-4, AC-5 → the `plan-sheet.spec.ts` tests above; AC-3 → the spec plus `plan-search.test.ts`'s Unlisted row; the query's filters → `plan-search.test.ts`. AC-1's suggestion clauses are TASK-154's (`test/plan-suggestions.test.ts`). `/books/plan`'s JS budget (`scripts/perf/budget.json` `plan.jsBytes` 25200) is the Lighthouse gate: only while `LIGHTHOUSE_MODE` is on or the owner starts a hand run; otherwise say so in the PR.
 
+**Revisions during implementation** (owner, 2026-11-27: "use all recommendations"): (1) `test/use-search.test.ts` gains a `minChars: 2` case, so the hook's new option is proved where the hook is tested (a test file only). (2) Enter searches from two characters, not at any length: the route refuses one (step 2), so Enter at one character would only draw an error. D-189 says so. (3) The query escapes `%`, `_` and `\` in the typed text, so they match as text.
+
 **Risks**: the JS budget (the sheet is in `/books/plan`'s first load; keep the search code small, no new dependency). Esc ordering: the input's handler must stop the event only when the field has text. Grep `test/` for `MIN_CHARS` and `useSearch` before the first run: a test may pin the hook's signature.
 
 ## Review log

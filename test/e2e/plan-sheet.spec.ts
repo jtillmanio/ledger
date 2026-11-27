@@ -546,3 +546,144 @@ test("5.9b AC-5: the linked place lines at 360 and 1280px, light and dark: no ho
     }
   }
 });
+
+// --- Task 2.10c, 2 of 2 (TASK-155; F-65): the sheet's search --------------------------------------------------------
+// The field is the sheet's first control; two letters and a pause list your books by title or author that can go in
+// the target (GET /api/plan/search), in place of the groups, each placed as a suggestion is. Books titled *Qv…*
+// (letters no other fixture uses) are added beside the Check's fixture: a To-read book with a place line, a read book
+// and an Unlisted book, all matching the same two letters.
+
+const QV = "Qv";
+async function searchBooks() {
+  await withSql(async (sql) => {
+    await sql`INSERT INTO authors (id, name) VALUES (${id("sr-au")}, 'Sheet Search Author')`;
+    await sql`INSERT INTO books (id, title, author_id, word_count, word_count_source) VALUES
+      (${id("sr-to")}, 'Qv Search Target', ${id("sr-au")}, 40000, 'stated'),
+      (${id("sr-rd")}, 'Qv Search Read', ${id("sr-au")}, NULL, NULL),
+      (${id("sr-ul")}, 'Qv Search Unlisted', ${id("sr-au")}, NULL, NULL)`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES
+      (${E2E_USER}, ${id("sr-to")}, 'to_read'), (${E2E_USER}, ${id("sr-ul")}, 'unlisted')`;
+    await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+      VALUES (${E2E_USER}, ${id("sr-rd")}, 'read', '2026-03-01', 'exact')`;
+  });
+}
+const field = (p: Locator) => p.getByRole("searchbox", { name: "Title or author" });
+const matchesOf = (p: Locator) => p.locator("section.ps-matches");
+
+test("Check, AC-1 (search): two letters list the book with its place line and no read book; Put in Q2 writes one row and Undo removes it", async ({ page }) => {
+  await seed();
+  await searchBooks();
+  const p = await open(page);
+  await field(p).fill(QV);
+  const matches = matchesOf(p);
+  await expect(row(matches, "sr-to")).toBeVisible();
+  await expect(row(matches, "sr-to").locator(".ps-sub")).toHaveText("Sheet Search Author");
+  await expect(row(matches, "sr-to").locator(".ps-why")).toHaveText("Someday");
+  await expect(row(p, "sr-rd")).toHaveCount(0);
+  // The matches stand in place of the groups.
+  await expect(p.locator("section.ps-group")).toHaveCount(0);
+
+  expect(await planOf("sr-to")).toEqual([]);
+  await row(matches, "sr-to").getByRole("button", { name: /^Put in Q2/ }).click();
+  await expect(row(matches, "sr-to").locator(".ps-done")).toHaveText(/^✓ In Q2 · Undo/);
+  const last = await withSql(async (sql) => Number((await sql`SELECT max(ordinal) AS m FROM reading_plan WHERE user_id = ${E2E_USER} AND period = ${Q2}`)[0].m));
+  expect(await planOf("sr-to")).toEqual([[Q2, last]]);
+  await row(matches, "sr-to").locator(".ps-done").getByRole("button", { name: /^Undo/ }).click();
+  await expect(row(matches, "sr-to").getByRole("button", { name: /^Put in Q2/ })).toBeVisible();
+  expect(await planOf("sr-to")).toEqual([]);
+});
+
+test("AC-2: the field is the first control, focused only when moved to; it filters as you type; Esc clears it and the groups come back", async ({ page }) => {
+  await seed();
+  await searchBooks();
+  const p = await open(page);
+  // The sheet's focus rule is unchanged: the heading has focus at open, and Tab moves to the field first.
+  await expect(p.getByRole("heading", { name: `Plan Q2 ${Y}` })).toBeFocused();
+  await expect(field(p)).not.toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(field(p)).toBeFocused();
+
+  // Typing filters with no Enter.
+  await page.keyboard.type(QV);
+  await expect(row(matchesOf(p), "sr-to")).toBeVisible();
+  await expect(p.locator("section.ps-group")).toHaveCount(0);
+
+  // Esc with text clears the field and the sheet stays open, the groups back.
+  await page.keyboard.press("Escape");
+  await expect(field(p)).toHaveValue("");
+  await expect(p).toBeVisible();
+  await expect(matchesOf(p)).toHaveCount(0);
+  await expect(group(p, "next_in_series")).toBeVisible();
+
+  // An emptied field shows the groups too.
+  await field(p).fill(QV);
+  await expect(matchesOf(p)).toBeVisible();
+  await field(p).fill("");
+  await expect(matchesOf(p)).toHaveCount(0);
+  await expect(group(p, "next_in_series")).toBeVisible();
+
+  // Esc in the empty field reaches the sheet, which closes.
+  await field(p).focus();
+  await page.keyboard.press("Escape");
+  await expect(p).toHaveCount(0);
+});
+
+test("AC-3: a match that is Unlisted is placed with its to_read in one write, and Undo puts back unlisted and takes the row out", async ({ page }) => {
+  await seed();
+  await searchBooks();
+  const p = await open(page);
+  await field(p).fill(QV);
+  const hit = row(matchesOf(p), "sr-ul");
+  await expect(hit.locator(".ps-tag")).toHaveText("Unlisted");
+  await hit.getByRole("button", { name: /^Put in Q2/ }).click();
+  await expect(hit.locator(".ps-done")).toBeVisible();
+  expect(await statusOf("sr-ul")).toBe("to_read");
+  expect((await planOf("sr-ul")).map(([period]) => period)).toEqual([Q2]);
+  await hit.locator(".ps-done").getByRole("button", { name: /^Undo/ }).click();
+  await expect(hit.getByRole("button", { name: /^Put in Q2/ })).toBeVisible();
+  expect(await statusOf("sr-ul")).toBe("unlisted");
+  expect(await planOf("sr-ul")).toEqual([]);
+});
+
+test("AC-4: a search with no match says so in one line and keeps the groups below", async ({ page }) => {
+  await seed();
+  const p = await open(page);
+  await field(p).fill("Qvzzq");
+  await expect(p.locator(".ps-search-line")).toHaveText("Nothing on your list matches “Qvzzq”.");
+  await expect(p.locator(".ps-search-line p")).toHaveCount(1);
+  await expect(matchesOf(p)).toHaveCount(0);
+  await expect(group(p, "next_in_series")).toBeVisible();
+  await expect(row(p, "s-3")).toBeVisible();
+});
+
+test("AC-5: the search at every width, light and dark: a labelled field, named 44px controls on the phone, contrast, axe, screenshots", { tag: "@at-w390-light" }, async ({ page }, info) => {
+  await seed();
+  await searchBooks();
+  for (const scheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    for (const [width, height] of [[360, 780], [390, 844], [412, 915], [768, 1024], [1024, 768], [1280, 800]]) {
+      await page.setViewportSize({ width, height });
+      const p = await open(page);
+      await expect(field(p)).toHaveAccessibleName("Title or author");
+      expect((await field(p).boundingBox())!.height, "the field is 44px tall").toBeGreaterThanOrEqual(44);
+      await field(p).fill(QV);
+      const matches = matchesOf(p);
+      await expect(row(matches, "sr-to")).toBeVisible();
+      const min = width < 768 ? 44 : 24;
+      const buttons = await matches.locator("button").evaluateAll((els) =>
+        els.map((el) => ({ name: (el.textContent ?? "").trim(), height: el.getBoundingClientRect().height })));
+      expect(buttons.length).toBeGreaterThan(0);
+      for (const b of buttons) {
+        expect(b.name.length, "every match control has a name").toBeGreaterThan(0);
+        expect(b.height, `${b.name} at ${width}px`).toBeGreaterThanOrEqual(min);
+      }
+      await expectNoHorizontalScroll(page);
+      expect(await contrastFailures(page), `search ${width}px ${scheme}`).toEqual([]);
+      await expectNoAxeViolations(page, AXE);
+      await screenshot(page, info, `plan-sheet-search-${width}-${scheme}`);
+      await page.keyboard.press("Escape");
+      await page.keyboard.press("Escape");
+      await expect(p).toHaveCount(0);
+    }
+  }
+});

@@ -18,6 +18,8 @@ type Options<T> = {
   initialQuery?: string;
   /** A rate-limited wait: typing changes the text and searches nothing, and Enter does nothing. */
   hold?: boolean;
+  /** The shortest query a pause searches (`MIN_CHARS`); the plan sheet's box, your own books only, takes 2 (task 2.10c). */
+  minChars?: number;
   /** A request starts, by any route. */
   onSearch?: (q: string) => void;
   /** The answer to the newest query, never a late one. */
@@ -36,7 +38,7 @@ type Options<T> = {
  * The fetcher gets the trimmed query and the request's `AbortSignal`.
  */
 export function useSearch<T>(fetcher: (q: string, signal: AbortSignal) => Promise<T>, options: Options<T> = {}) {
-  const { initialQuery = "", hold = false } = options;
+  const { initialQuery = "", hold = false, minChars = MIN_CHARS } = options;
   const [q, setQ] = useState(initialQuery);
   const [state, setState] = useState<SearchState<T>>({ phase: "idle" });
   const latest = useRef({ fetcher, options });
@@ -95,7 +97,7 @@ export function useSearch<T>(fetcher: (q: string, signal: AbortSignal) => Promis
     cancelPause();
     if (hold) return;
     const query = text.trim();
-    if (query.length < MIN_CHARS) {
+    if (query.length < minChars) {
       if (shown.current !== null || controller.current) clear();
       return;
     }
