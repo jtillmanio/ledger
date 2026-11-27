@@ -658,6 +658,29 @@ test.describe("the tablet rail, the icon rail's menu and the sidebar (6.25)", ()
     expect(await mid.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
   });
 
+  test("in a very short window the whole rail scrolls: every screen and the foot can be reached and seen (AC-6)", THEMES, async ({ page }) => {
+    // 834 × 560: the L, the well, Inbox, Progress and the foot alone are taller than the window would leave
+    // the screens (a laptop at 150% zoom is about 960 × 520). Nothing may sit out of reach.
+    await size(page, 834, 560);
+    await page.goto("/books");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    const rail = page.locator("nav.rail");
+    await hydrated(rail.getByRole("link", { name: "Settings" }));
+    const box = (await rail.boundingBox())!;
+    expect(await rail.evaluate((el) => el.scrollWidth <= el.clientWidth), "nothing scrolls sideways").toBe(true);
+    for (const target of [
+      rail.locator(".rail-mid").getByRole("link", { name: "Add" }), rail.getByRole("link", { name: /^Progress/ }),
+      rail.getByRole("button", { name: "Search (Ctrl K)" }), rail.getByRole("link", { name: "Settings" }),
+    ]) {
+      await target.focus();
+      await expect(target).toBeFocused();
+      await expect(target).toBeInViewport({ ratio: 1 });
+      const b = (await target.boundingBox())!;
+      expect(b.y, "inside the rail's visible box").toBeGreaterThanOrEqual(box.y);
+      expect(b.y + b.height).toBeLessThanOrEqual(box.y + box.height);
+    }
+  });
+
   test("at 1024 the switch names the medium and opens a menu of every medium: arrows move, Enter goes, Esc closes with focus back; axe (AC-1, AC-3, AC-6)", THEMES, async ({ page }, testInfo) => {
     await size(page, 1024, 768);
     await page.goto("/books");
