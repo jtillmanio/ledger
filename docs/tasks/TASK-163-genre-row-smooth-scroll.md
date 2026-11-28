@@ -177,6 +177,23 @@ Approved by the owner, 2026-11-28 (Phase 1 on Opus; implementation on Sonnet). W
 
 None.
 
+### Implementation notes (Sonnet, 2026-11-28; same files and approach)
+
+- The scrollbar and gap rules are scoped to `.genre-wrap .genre-row`: five other chip rows borrow
+  `.genre-row` (Progress, Series, Universes, the status screen's), have no arrows (out of scope), and
+  keep their scrollbar.
+- `--dur-4` reads back as `.3s` (the build rewrites `300ms`), so the step reads the unit; a bare
+  `parseFloat` made every tap one frame.
+- The arrows' state is mirrored in a ref and set only on a change: `measure` runs after every render,
+  and a functional `setState` there looped ("Maximum update depth exceeded").
+- The glide checks for release before it moves, so nothing scrolls on the frame after a press is let
+  go (the full spec's first run caught one frame's movement).
+- The touch clause runs on the existing `w390-touch` project (`@at-w390-touch`) with CDP
+  `Input.dispatchTouchEvent` steps; `synthesizeScrollGesture` did not scroll the row headless.
+- `@at-` tests check only their own theme, so AC-4 loops light and dark itself; the screenshots are
+  `library-genre-arrows-<w>-<light|dark>`. The animated tests pin `reducedMotion: "no-preference"`.
+- Bytes: `GenreRow` is 2,689 B minified, 1,320 B gzip, 1,150 B brotli (esbuild, React external).
+
 ## Review log
 
 _Filled by /implement-task. One line per round._

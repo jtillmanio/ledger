@@ -12,12 +12,16 @@ import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScrol
 // A check with no layout in it: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
 const AXE = [
-  "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role", "aria-prohibited-attr",
+  "link-name", "button-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role", "aria-prohibited-attr",
   "aria-valid-attr-value", "landmark-unique", "duplicate-id-aria", "target-size",
 ];
 
-/** Twelve top-level genres, enough to run past a 360px row; Alpha's two books are tagged below it only. */
-const WORDS = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliet", "Kilo", "Lima"];
+/** Twenty-four top-level genres: enough to run past a 360px row, and for a held arrow at 1280px to go
+ *  further than a tap before the end (task 6.26). Alpha's two books are tagged below it only. */
+const WORDS = [
+  "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliet", "Kilo", "Lima",
+  "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray",
+];
 const BOOKS = [
   ...WORDS.slice(1).map((w) => ({ id: `e2e-gen-${w.toLowerCase()}`, title: `E2E Gen ${w} book`, genres: [`E2E Gen ${w}`] })),
   { id: "e2e-gen-sub", title: "E2E Gen Subgenre only", genres: ["E2E Gen Alpha.E2E Gen Epic"] },
@@ -55,6 +59,9 @@ test.afterAll(clean);
 
 const genres = (page: Page) => page.getByRole("group", { name: "Genre" });
 const chip = (page: Page, name: string) => genres(page).getByRole("link", { name, exact: true });
+const scroller = (page: Page) => genres(page).locator(".genre-row");
+const leftArrow = (page: Page) => page.getByRole("button", { name: "Scroll genres left" });
+const rightArrow = (page: Page) => page.getByRole("button", { name: "Scroll genres right" });
 
 async function open(page: Page, path = "/books/list") {
   await page.goto(path);
@@ -93,8 +100,8 @@ test("the genre chips are named links in one row that scrolls sideways, never th
   const tops = await links.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
   expect(new Set(tops).size, "chip rows").toBe(1);
   if (width < 768) {
-    // On the phone the row runs past its box and scrolls itself.
-    const row = await genres(page).evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth, overflow: getComputedStyle(el).overflowX }));
+    // On the phone the row runs past its box and scrolls itself (the scroller inside the group, task 6.26).
+    const row = await scroller(page).evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth, overflow: getComputedStyle(el).overflowX }));
     expect(row.scroll).toBeGreaterThan(row.client);
     expect(row.overflow).toBe("auto");
   }
@@ -155,6 +162,176 @@ test("the genre row at 360, 834 and 1280px, light and dark: no sideways page scr
       await expectNoHorizontalScroll(page);
       expect(await contrastFailures(page), `${width}px ${colorScheme}`).toEqual([]);
       await screenshot(page, info, `library-genres-${width}-${colorScheme}`);
+    }
+  }
+});
+
+// Task 6.26 (TASK-163): from 768px the genre row hides the browser's scrollbar and draws an arrow at
+// each end that has more; a tap scrolls about the row's width, smoothly, and a held press keeps going
+// until release. The phone keeps the swipe. Each test sets its own viewport: runs once, in w390-light.
+
+/** Records the scroller's scrollLeft on every animation frame for `ms`, while `act` runs. */
+async function framesDuring(page: Page, ms: number, act: () => Promise<unknown>): Promise<number[]> {
+  const sampled = page.evaluate((ms) => new Promise<number[]>((resolve) => {
+    const el = document.querySelector<HTMLElement>('[role="group"][aria-label="Genre"] .genre-row')!;
+    const out: number[] = [];
+    const end = performance.now() + ms;
+    const tick = (now: number) => {
+      out.push(el.scrollLeft);
+      if (now < end) requestAnimationFrame(tick);
+      else resolve(out);
+    };
+    requestAnimationFrame(tick);
+  }), ms);
+  await act();
+  return sampled;
+}
+
+/** At 1280px; motion as asked, never the machine's own setting (a Windows runner can report reduce). */
+async function desktop(page: Page, reducedMotion: "reduce" | "no-preference" = "no-preference") {
+  await page.emulateMedia({ reducedMotion });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await open(page);
+  await hydrated(rightArrow(page));
+  await expect(rightArrow(page)).toBeVisible();
+}
+
+/** Back to the row's start, and the arrows measured again. */
+async function toStart(page: Page) {
+  await scroller(page).evaluate((el) => { el.scrollLeft = 0; });
+  await expect(leftArrow(page)).toHaveCount(0);
+}
+
+const scrollLeft = (page: Page) => scroller(page).evaluate((el) => el.scrollLeft);
+
+test("at 1280px the genre row draws no scrollbar and no ‹ at the start; a tap on › scrolls about its width over several frames, a held press further and stops on release, and › goes at the end (6.26 AC-1)", ONCE, async ({ page }) => {
+  await desktop(page);
+  const row = scroller(page);
+  // No native scrollbar: none drawn, and none taking height under the chips.
+  expect(await row.evaluate((el: HTMLElement) => ({ bar: getComputedStyle(el).scrollbarWidth, gutter: el.offsetHeight - el.clientHeight })))
+    .toEqual({ bar: "none", gutter: 0 });
+  await expect(leftArrow(page)).toHaveCount(0);
+  const width = await row.evaluate((el) => el.clientWidth);
+
+  // A tap: several frames between the start and where it lands, about a row's width on.
+  const tap = await framesDuring(page, 700, () => rightArrow(page).click());
+  const landed = tap[tap.length - 1];
+  expect(landed, "a tap's distance").toBeGreaterThanOrEqual(0.6 * width);
+  expect(landed, "a tap's distance").toBeLessThanOrEqual(width);
+  const between = new Set(tap.filter((x) => x > 0 && x < landed));
+  expect(between.size, `frames between 0 and ${landed}: ${tap.join(", ")}`).toBeGreaterThanOrEqual(3);
+  await expect(leftArrow(page)).toBeVisible();
+
+  // A hold of a second goes further than the tap, and nothing moves once it is let go.
+  await toStart(page);
+  await rightArrow(page).hover();
+  await page.mouse.down();
+  await page.waitForTimeout(1_000);
+  await page.mouse.up();
+  const released = await scrollLeft(page);
+  expect(released, "a hold's distance against a tap's").toBeGreaterThan(landed);
+  await page.waitForTimeout(300);
+  expect(await scrollLeft(page), "after release").toBe(released);
+
+  // At the end › goes, and ‹ stays.
+  for (let i = 0; i < 12 && (await rightArrow(page).count()) > 0; i++) {
+    await rightArrow(page).click();
+    await page.waitForTimeout(400);
+  }
+  await expect(rightArrow(page)).toHaveCount(0);
+  await expect(leftArrow(page)).toBeVisible();
+  expect(await row.evaluate((el) => el.scrollWidth - el.clientWidth - el.scrollLeft)).toBeLessThanOrEqual(1);
+});
+
+test("under reduced motion a tap on › moves the row in one frame (6.26 AC-1)", ONCE, async ({ page }) => {
+  await desktop(page, "reduce");
+  const width = await scroller(page).evaluate((el) => el.clientWidth);
+  const tap = await framesDuring(page, 400, () => rightArrow(page).click());
+  const moved = new Set(tap.filter((x) => x !== tap[0]));
+  expect(moved.size, `frames after the tap: ${tap.join(", ")}`).toBe(1);
+  expect([...moved][0]).toBeGreaterThanOrEqual(0.6 * width);
+});
+
+// On the touch project (a phone, touch events on), narrowed to 360px.
+test("at 360px the genre row draws no arrows and still scrolls by touch (6.26 AC-1)", { tag: "@at-w390-touch" }, async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await open(page);
+  await hydrated(chip(page, "E2E Gen Alpha"));
+  await expect(leftArrow(page)).toHaveCount(0);
+  await expect(rightArrow(page)).toHaveCount(0);
+  const box = (await scroller(page).boundingBox())!;
+  const cdp = await page.context().newCDPSession(page);
+  // A finger drawn 200px to the left across the row: it scrolls on towards its end.
+  const y = Math.round(box.y + box.height / 2);
+  const x0 = Math.round(box.x + box.width * 0.8);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: x0, y }] });
+  for (let dx = 20; dx <= 200; dx += 20) {
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x0 - dx, y }] });
+  }
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await expect.poll(() => scrollLeft(page)).toBeGreaterThan(0);
+});
+
+test("Enter and Space on a focused arrow each scroll one step; tabbing through the chips scrolls each fully into view, clear of the arrows (6.26 AC-3)", ONCE, async ({ page }) => {
+  await desktop(page);
+  const width = await scroller(page).evaluate((el) => el.clientWidth);
+  const settle = async () => { await page.waitForTimeout(500); return scrollLeft(page); };
+
+  await rightArrow(page).focus();
+  await page.keyboard.press("Enter");
+  const first = await settle();
+  expect(first, "Enter's step").toBeGreaterThanOrEqual(0.6 * width);
+  expect(first, "Enter's step").toBeLessThanOrEqual(width);
+  await page.keyboard.press("Space");
+  const second = await settle();
+  expect(second - first, "Space's step").toBeGreaterThanOrEqual(0.6 * width);
+  expect(second - first, "Space's step").toBeLessThanOrEqual(width);
+
+  await toStart(page);
+  const links = genres(page).getByRole("link");
+  const count = await links.count();
+  await links.first().focus();
+  for (let i = 0; i < count; i++) {
+    if (i > 0) await page.keyboard.press("Tab");
+    // Empty when the focused chip is the i-th, inside the scroller and under no arrow drawn.
+    await expect.poll(() => page.evaluate((i) => {
+      const group = document.querySelector('[role="group"][aria-label="Genre"]')!;
+      const row = group.querySelector(".genre-row")!;
+      const chip = row.querySelectorAll("a")[i];
+      if (document.activeElement !== chip) return `focus is on ${document.activeElement?.textContent}`;
+      const c = chip.getBoundingClientRect();
+      const r = row.getBoundingClientRect();
+      if (c.left < r.left - 1 || c.right > r.right + 1) return `${chip.textContent} outside the row`;
+      for (const a of group.querySelectorAll<HTMLElement>("button:not([hidden])")) {
+        const b = a.getBoundingClientRect();
+        if (c.right > b.left + 1 && c.left < b.right - 1) return `${chip.textContent} under ${a.getAttribute("aria-label")}`;
+      }
+      return "";
+    }, i), `chip ${i + 1} of ${count}`).toBe("");
+  }
+});
+
+test("the arrows are named, their icons meet 3:1 in both themes, and axe passes; the row at every width, light and dark (6.26 AC-4)", ONCE, async ({ page }, info) => {
+  // Pinned to one project, the helpers check only the theme it is in: both are set here.
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    for (const [width, height] of [[360, 780], [390, 844], [412, 915], [768, 1024], [1024, 768], [1280, 800]]) {
+      await page.setViewportSize({ width, height });
+      await open(page);
+      await hydrated(chip(page, "E2E Gen Alpha"));
+      const label = `${width}px ${colorScheme}`;
+      if (width >= 768) {
+        // Part way along, so both arrows are drawn.
+        await scroller(page).evaluate((el) => { el.scrollLeft = 300; });
+        await expect(leftArrow(page), label).toBeVisible();
+        await expect(rightArrow(page), label).toBeVisible();
+        if (width === 1280) await expectNoAxeViolations(page, AXE);
+      } else {
+        await expect(page.getByRole("button", { name: /^Scroll genres/ }), label).toHaveCount(0);
+      }
+      await expectNoHorizontalScroll(page);
+      expect(await contrastFailures(page), label).toEqual([]);
+      await screenshot(page, info, `library-genre-arrows-${width}-${colorScheme}`);
     }
   }
 });
