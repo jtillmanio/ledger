@@ -21,20 +21,24 @@ type Finish = { on: string | null; precision: Precision };
 type Saved = { status: Status; finish: Finish; start: Finish; listened: boolean };
 /** Which button opened the date control: focus goes back to it when it closes. `status` is the
  * *Reading* or *Listening* button that has just been pressed (task 1.17b). */
-type Opener = "read" | "started" | "finished" | "status";
+type Opener = "read" | "started" | "finished" | "status" | "past";
 /**
  * The open date control (task 1.17b). `one` is a single date, from the date line's *Started* or
  * *Finished*, or `fresh`: *Started* offered right after *Reading* or *Listening* was set, where
  * the status is already saved and only another day is a write. `both` is *Read*: *Started* and
  * *Finished* together, one Save; `touched` says the start was changed, the only time it is sent.
+ * `past` is *Add a past read* (task 1.17c): its form holds its own dates and Save (`AddPastRead`).
  */
 type Editing =
   | { kind: "one"; what: DateFor; value: FinishValue; opener: Opener; fresh?: boolean }
-  | { kind: "both"; start: FinishValue; finish: FinishValue; touched: boolean; opener: "read" };
+  | { kind: "both"; start: FinishValue; finish: FinishValue; touched: boolean; opener: "read" }
+  | { kind: "past"; opener: "past" };
 
 /** The read list loads only when a row with several reads is open and *All reads* is pressed (task 1.17b),
- * so it adds nothing to the Library's or Now's first load (the performance budget). */
+ * so it adds nothing to the Library's or Now's first load (the performance budget). *Add a past read*'s
+ * form (task 1.17c) comes from the same chunk, when it is pressed. */
 const AllReads = lazy(() => import("@/components/AllReads"));
+const AddPastRead = lazy(() => import("@/components/AllReads").then((m) => ({ default: m.AddPastRead })));
 
 const STATUSES: { status: Exclude<Status, "unlisted" | "parked">; label: string }[] = [
   { status: "to_read", label: "To read" },
@@ -168,6 +172,7 @@ export default function BookStatus({
   const readButton = useRef<HTMLButtonElement>(null);
   const startedButton = useRef<HTMLButtonElement>(null);
   const finishedButton = useRef<HTMLButtonElement>(null);
+  const pastButton = useRef<HTMLButtonElement>(null);
   const statusButton = useRef<HTMLButtonElement | null>(null);
   const toggle = useRef<HTMLButtonElement>(null);
   const addButton = useRef<HTMLButtonElement>(null);
@@ -178,7 +183,9 @@ export default function BookStatus({
   const startReasonId = useId();
   const finishReasonId = useId();
   const readsId = useId();
-  const openers = { read: readButton, started: startedButton, finished: finishedButton, status: statusButton };
+  const openers = {
+    read: readButton, started: startedButton, finished: finishedButton, status: statusButton, past: pastButton,
+  };
 
   const unlisted = saved.status === "unlisted";
   const parked = saved.status === "parked";
@@ -338,7 +345,7 @@ export default function BookStatus({
   }
 
   async function save() {
-    if (!editing || saving || reasons.save) return;
+    if (!editing || saving || reasons.save || editing.kind === "past") return;
     if (editing.kind === "both") {
       const done = await write("read", { finish: editing.finish, ...(editing.touched && { start: editing.start }) });
       if (done) closeEditor();
@@ -395,7 +402,8 @@ export default function BookStatus({
    * and `finish` are the reasons drawn under each picker of a *Read*; `save` is the one that blocks a Save.
    */
   function why(e: Editing | null): { start: string | null; finish: string | null; save: string | null } {
-    if (!e) return { start: null, finish: null, save: null };
+    // *Add a past read*'s form says its own reasons.
+    if (!e || e.kind === "past") return { start: null, finish: null, save: null };
     if (e.kind === "both") {
       const own = finishReason(e.start, "start");
       const end = finishReason(e.finish, "finish");
@@ -444,7 +452,13 @@ export default function BookStatus({
           </button>
         )}
       </span>
-      {open && <div id={panelId}>
+      {/* Esc inside an open date control closes that control, not the book sheet around it: the sheet's
+          own keydown handler would otherwise take it first (task 1.17c). */}
+      {open && <div id={panelId} onKeyDown={(e) => {
+        if (e.key !== "Escape" || !editing) return;
+        e.stopPropagation();
+        closeEditor();
+      }}>
         <div className="opts status-group" role="group" aria-label={`Status of ${title}`}>
           {STATUSES.map((s) => (
             <button key={s.status} type="button" ref={s.status === "read" ? readButton : undefined}
@@ -488,12 +502,29 @@ export default function BookStatus({
               <AllReadsToggle count={readTotal} open={showReads} listId={readsId}
                 onToggle={() => setShowReads((o) => !o)} />
             )}
+            {/* An earlier (or later) read of a book already Read (task 1.17c): the route takes Read books only. */}
+            {saved.status === "read" && (
+              <button type="button" ref={pastButton} className="btn sec sm" aria-expanded={editing?.kind === "past"}
+                onClick={() => {
+                  setFailed(false);
+                  setRefused(null);
+                  setEditing({ kind: "past", opener: "past" });
+                }}>
+                Add a past read
+              </button>
+            )}
           </p>
         )}
         {dated && readsFailed && <ReadsFailed />}
         {dated && reads && reads.length > 1 && showReads && (
           <Suspense fallback={null}>
             <AllReads id={readsId} bookId={bookId} title={title} reads={reads} onChanged={() => void reload()} />
+          </Suspense>
+        )}
+        {editing?.kind === "past" && (
+          <Suspense fallback={null}>
+            <AddPastRead bookId={bookId} title={title} onClose={() => closeEditor()}
+              onLogged={() => { setShowReads(true); void reload(); }} onUndone={() => void reload()} />
           </Suspense>
         )}
         {editing?.kind === "one" && (

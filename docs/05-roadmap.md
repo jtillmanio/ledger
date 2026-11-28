@@ -1857,7 +1857,7 @@ second changes it and `book_status`. The same control works from *Now* on
 `/books` and from `/books/status`; a search result has none. axe passes at
 every width.
 
-### ☐ 1.17c Log a past read of a book already read · S
+### ☑ 1.17c Log a past read of a book already read · S
 Owner intake, 2026-11-24 (*ability to add a "read" date in the past*).
 Marking a book Read already takes any past finish: 1.17b's *Finished*
 picker, as a day, a month or a year. What it can't do is add a read. *Read*
@@ -6142,6 +6142,34 @@ it is converted.
     `scrollbar-width` of `none` and `offsetHeight` equal to `clientHeight`; a
     row that overflows still scrolls by touch at 360px; nothing scrolls
     sideways; axe passes.
+
+- ☐ 6.32 **A glyph for every kind of consumption** · M. From TASK-152 (1.17c,
+  PR #361; owner, at its plan gate). Only a listen draws a glyph today (the
+  headphones, named *Listened*, 1.23): a read on the page has none, so in
+  *All reads* and on a row a text read is told by the absence of one. Give
+  every kind its own drawn glyph, named in words, wherever a read or its format
+  is shown: read, listened, watched (8.x), played (10.x), listened to an album
+  (9.x), each joining with its medium. Glyph plus text, never colour alone, in
+  the text's own colour.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first) in
+    the browser (0.11) at 360px, light and dark: a book with a text read and a
+    listen lists both under *All reads (2)*, the first with an image named
+    *Read* and the second one named *Listened*; the Library row and the badge
+    draw the same glyphs; each glyph's colour is the text's (`currentColor`),
+    never `--ready`, `--blocked` or `--danger`; axe passes.
+
+- ☐ 6.33 **Esc in *All reads*' pickers closes the picker, not the book sheet** ·
+  S. From TASK-152 (1.17c, PR #361). In the book sheet's *Your record*, Esc
+  inside one read's *Started* or *Finished* picker (`AllReads`, 1.17b) closes
+  the whole sheet: the sheet's own keydown handler takes Esc before the list's
+  window listener. TASK-152 fixed it for the status control's date controls and
+  *Add a past read* (an `onKeyDown` on the panel that stops it while a control
+  is open, as `ClosingCard` does); the read list needs the same.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first) in
+    the browser (0.11) at 390px: in a Read book's sheet with two reads, *All
+    reads (2)* open and read 1's *Started* picker open, Esc closes the picker,
+    the sheet stays open and focus is on *Started …, read 1*; a second Esc
+    closes the sheet.
 
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M

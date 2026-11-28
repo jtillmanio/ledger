@@ -996,6 +996,8 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 @media (max-width:767px){
   .finish .opts .opt,.status-group .opt{min-height:44px}
   .finish .stepper button{width:44px;height:44px}
+  /* The date line's buttons (*Add a past read* among them) and that form's Save and Cancel (task 1.17c). */
+  .date-line .btn,.past-read .finish-actions .btn{min-height:44px}
 }
 /* The status control on Now and on the status rows (task 1.17b, D-131): under the band and under the text. */
 .now-status{padding:0 16px 12px}

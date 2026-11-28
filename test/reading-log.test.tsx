@@ -345,7 +345,8 @@ describe("the status control's date line (task 1.17, AC-6)", () => {
   it("Started and Finished are real buttons named with the dates they hold", async () => {
     renderBook({ status: "read", on: "2026-03-17", precision: "exact", started: "2026-03-01", startPrecision: "exact" });
     await expand();
-    expect(started()).toEqual(["Started 1 March 2026", "Finished 17 March 2026"]);
+    // A Read book's line ends with *Add a past read* (task 1.17c).
+    expect(started()).toEqual(["Started 1 March 2026", "Finished 17 March 2026", "Add a past read"]);
     for (const b of container.querySelectorAll(".date-line > *")) expect(b.tagName).toBe("BUTTON");
     act(() => root.unmount());
     root = createRoot(container);
@@ -447,7 +448,8 @@ describe("the status control's date line (task 1.17, AC-6)", () => {
   it("the date line, the row's dates and the hero's span never resolve to --danger", () => {
     const css = readFileSync("src/app/globals.css", "utf8");
     const rules = css.split("}").filter((r) => /\.(date-line|row-dates|runhero-span)\b/.test(r));
-    expect(rules).toHaveLength(3);
+    // The fourth is the phone's 44px date-line buttons (task 1.17c).
+    expect(rules).toHaveLength(4);
     expect(rules.every((r) => !r.includes("--danger"))).toBe(true);
   });
 });
