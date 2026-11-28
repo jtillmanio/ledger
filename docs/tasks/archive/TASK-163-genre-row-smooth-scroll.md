@@ -1,7 +1,7 @@
 ---
 id: TASK-163
 title: 6.26 The Library's genre row scrolls smoothly, with arrows you can hold
-status: Review
+status: Done
 depends_on: [TASK-145]
 size: S
 model: sonnet
