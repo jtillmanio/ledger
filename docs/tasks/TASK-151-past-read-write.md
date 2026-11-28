@@ -1,7 +1,7 @@
 ---
 id: TASK-151
 title: 1.17c Log a past read of a book already read (1 of 2) — the write and its undo
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -28,7 +28,7 @@ A book already Read can be given another read with past dates, without touching 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves its database clauses, TASK-152 its browser clauses):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves its database clauses, TASK-152 its browser clauses):
 with
 the test database, a book read 2024-03-10 gets a past read finished
 2019-06-01: it has two `read_events` rows, `book_status` still finishes
@@ -37,10 +37,10 @@ one row. A past read finished 2025-01-05 moves `book_status`'s finish to
 2025-01-05. In the browser (0.11) at 360px, *Add a past read* opens both
 pickers, a start after the finish is refused and writes nothing, and axe
 passes.
-- [ ] AC-2: Given a Read book, when a past read is logged with format `audio`, then its `read_events` row has `format = 'audio'` and `book_reads` counts it as a listen in its year; with no *Started*, its start is NULL with precision `none`.
-- [ ] AC-3: Given a past read whose start is after its finish, the route answers 400 with 1.17's reason and writes nothing; given a book that isn't Read (no status, To read, Reading), it answers 409 and writes nothing.
-- [ ] AC-4: Given a past read logged on a book with a ranked read, no `year_rank` changes in any year.
-- [ ] AC-5: Undo of a logged read deletes exactly that row and restores `book_status`'s finish and precision to what they were; undo after another write to that book's reads is refused (409) and changes nothing.
+- [x] AC-2: Given a Read book, when a past read is logged with format `audio`, then its `read_events` row has `format = 'audio'` and `book_reads` counts it as a listen in its year; with no *Started*, its start is NULL with precision `none`.
+- [x] AC-3: Given a past read whose start is after its finish, the route answers 400 with 1.17's reason and writes nothing; given a book that isn't Read (no status, To read, Reading), it answers 409 and writes nothing.
+- [x] AC-4: Given a past read logged on a book with a ranked read, no `year_rank` changes in any year.
+- [x] AC-5: Undo of a logged read deletes exactly that row and restores `book_status`'s finish and precision to what they were; undo after another write to that book's reads is refused (409) and changes nothing.
 
 ## Out of scope
 
@@ -64,8 +64,11 @@ passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- A decision row: a book's latest read is its latest finish (undated last, ties by id), not its highest id; re-dates keep `book_status` on whichever read is latest after the write; a new read's `reread_of` (logged past, or appended by a status write: revision 2) is the read finished just before it, no existing row rewritten; a new read finished before the latest leaves `book_status` on the latest (approved at plan) → planned: `docs/review/decisions.md` (a new D-n row)
-- A note to TASK-152: the route's shape (`PUT` / `DELETE { logged }`) and *All reads* now listed by finish, so a re-date can re-sort it (approved at plan) → planned: `docs/tasks/TASK-152-past-read-ui.md` § Context
+- Candidate decision: a book's latest read is its latest finish (undated last, ties by id), not its highest id; every write keeps `book_status` on whichever read is latest afterwards; a new read's `reread_of` (logged past, or appended by a status write: revision 2) is the read finished just before it, no existing row rewritten; undo guards judge by the newest row. D-65 marked *Amended by D-191*, and `.claude/rules/schema.md` § Reads are a log states the new rule (approved at plan) → docs/review/decisions.md § D-191
+- The route's shape (`PUT` / `DELETE { logged }`) and *All reads* now listed by finish, so it can re-sort after an add or a re-date, for the UI (approved at plan) → docs/tasks/TASK-152-past-read-ui.md § Context
+- `docs/03-data-model.md` says "the latest read" (2.18) without defining it (schema-reviewer R1, MINOR) → not tracked: its wording stays true, and D-191 and `.claude/rules/schema.md` define the latest read
+- A *Read* correction that moves the latest read before another makes that one the latest, so a second correction edits it (schema-reviewer R1, MINOR) → not tracked: accepted as is by the owner (the plan gate's latest-finish rule); recorded in D-191
+- The new `DELETE { logged }` 400 test also passes on the old route (test-auditor) → not tracked: an input guard, not an AC's proof
 
 ## Plan
 
@@ -110,7 +113,10 @@ Approved 2026-11-28. Owner at the plan gate: "latest" becomes the latest finish 
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 FAIL (`start-dates.test.ts:426` pinned an undated latest read; expectation moved to the approved order) → R2 PASS | CI R1 PASS (3819af6)
+- Schema R1 CHANGES (BLOCKER: `undoRank` guard by the latest read could delete a backfilled read; MINOR `reread_of` on append) | Spec R1 CHANGES (the same regression; uncommitted `readBefore` needed the owner) → fixed (revision 2, Plan 5c) | Verify R3 PASS
+- Schema R2 APPROVE | Spec R2 APPROVE | Audit R1 PASS (every AC PROVEN; both guards discriminating against 3819af6) | UI: not run (no UI files; `ui: false`)
+- Drift R1 update first (behind 1; main changed `src/app/globals.css`) → rebased on c80751e before close-out
 
 ## Blocked
 
@@ -118,7 +124,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 4 (R1 FAIL, R2–R4 PASS)
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 2 (the `undoBookStatus` guard; one `reread_of` rule for appended reads), plus one review fix (`undoRank`) and two Phase 2 additions (`bookDetail`'s history, `test/start-dates.test.ts`)

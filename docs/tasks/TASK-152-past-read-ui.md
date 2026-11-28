@@ -24,6 +24,7 @@ On a Read book's date line, *Add a past read* lets the owner log an earlier (or 
 - **What exists.** The date line and *All reads (n)* are `src/components/AllReads.tsx` and `src/components/useReads.tsx` (1.17b, D-131), with 1.5's picker in `src/components/FinishDate.tsx` (a day, a month or a year); the status control is `src/components/BookStatus.tsx`; Undo is `src/components/Undo.tsx`. Where 1.17b draws the date line (the Library row, Now, the status screens and the book sheet), *Add a past read* appears too.
 - Design: `design/mockups.html` § `status` and `bookdetail` (`design/mockups-index.md`); the frames gain *Add a past read* before it is built (`ui.redrawFiles`).
 - Rules: `.claude/rules/ui.md`. UX floor: `docs/04-design.md` § 10. The UX floor. Decisions: D-131, D-85.
+- *From TASK-151 (1.17c, PR #358):* the route is `PUT /api/progress/book/read` with `{ bookId, start?, finish, format? }` (each date the finish-date control's choice, `format` `text` by default or `audio`), answering `{ ok, logged }`: 400 a bad date or a start after the finish (`START_AFTER_FINISH`), 404 a missing book, 409 a book that isn't Read. Undo is `DELETE` on the same route with `{ logged }`, 409 once the book's reads or status have changed. A book's latest read is now its latest finish (D-191), so `bookReads` (*All reads*) lists by finish, oldest first, and can re-sort after an add or a re-date; a past read finished after the latest moves the book's finish line.
 
 ## Acceptance criteria
 
