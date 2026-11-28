@@ -1,7 +1,7 @@
 ---
 id: TASK-153
 title: 2.0c A pace change reaches the plan without a reload
-status: Review
+status: Done
 depends_on: []
 size: S
 model: sonnet
