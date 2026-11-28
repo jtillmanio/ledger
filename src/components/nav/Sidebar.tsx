@@ -51,10 +51,11 @@ export default function Sidebar({ items = NAV_ITEMS, inbox }: { items?: NavItem[
         <span aria-hidden="true" className="full">Ledger</span>
         <span aria-hidden="true" className="short">L</span>
       </Link>
-      <SearchButton className="si side-search" tip="Search · Ctrl K">
+      {/* Named by what it shows: "Search Ctrl K" from 1280px, "Search" on the icon rail (the shortcut is
+          hidden there). The space keeps the words apart in the name; the flex row drops it from the drawing. */}
+      <SearchButton className="si side-search" tip="Search · Ctrl K" named>
         <Icon name="search" />
-        <span className="nl">Search</span>
-        <span className="kbd" aria-hidden="true">Ctrl K</span>
+        <span className="nl">Search</span>{" "}<span className="kbd">Ctrl K</span>
       </SearchButton>
       <MediumMenu items={items} medium={shown} pathname={pathname} />
       <span className="side-head" id={ids.media}>Media</span>

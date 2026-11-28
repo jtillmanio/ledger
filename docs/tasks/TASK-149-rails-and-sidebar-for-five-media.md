@@ -87,6 +87,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - Ctrl K binds nothing → not tracked: already roadmap 6.1 (global search, `Ctrl+K`)
 - Test audit: axe runs a named rule subset, and the screenshots are evidence, not assertions → not tracked: accepted as is (auditor, optional)
 - The `next dev` badge covers the rail's sync label in a local walk → not tracked: dev tooling only, not the app
+- `test/books-dashboard.test.ts` › *812k against 760k…* timed out (5s) in 3 of 10 local `verify.full` runs: the first test of its block pays the cold imports of `QuarterStrip`, `react-dom/server` and `happy-dom`; it passes alone and in CI → not tracked: outside this task; offered to the owner in the final report
 
 ## Plan
 
@@ -117,6 +118,8 @@ Approved 2026-11-26 (owner: "Approve"; the well's media are 58 × 46 as A8 draws
 
 **Revision 3 (ui-verifier R1)**: in a short window (Books at 834 × 900), the rail's scroller held Inbox and Progress below the fold. Where the browser draws classic scrollbars, a 15px bar left the 64px items 57px and scrolled them sideways, clipping *Add*. Now only the medium's screens scroll; the rule, Inbox and Progress sit outside the scroller, which draws no scrollbar and clips sideways. The icon rail's *Switch medium* tooltip no longer sits over its own open menu. `shell.spec.ts` adds the short-window test and a tooltip check. Spec review R4: below about 620px tall, what stays would leave the screens no room and push the foot past the window, so under `max-height:740px` the whole rail scrolls as one column (no scrollbar, nothing sideways); a test at 834 × 560 focuses Add, Progress, Search and Settings and finds each wholly in view. This narrows the frame's scrolling "middle" to the medium's screens: Inbox and Progress stay, as the foot does (said in the PR).
 
+**Revision 4 (CI on the close-out head)**: axe's `label-content-name-mismatch` failed `releases.spec.ts` at w1280: the sidebar's Search showed *Search Ctrl K* under the name *Search (Ctrl K)*. It is named by what it shows now (`SearchButton`'s `named`): *Search Ctrl K* from 1280px, *Search* on the icon rail; the rail and the phone bar keep *Search (Ctrl K)*. This task's axe runs name the rule too.
+
 **Risks**: at 1024 the switch names the set the rail draws, and a screen under no medium (`/inbox`) still draws comics' set (`mediumFor`, unchanged). The menu is imported statically; if `test/perf.test.ts` or the byte budgets object, it loads on first open as `MediumSheet` does. Size: 13–15 files, no schema; kept whole (part 3 of an agreed split; AC-6 binds the redraw, as TASK-148's did).
 
 ## Review log
@@ -133,6 +136,9 @@ _Filled by /implement-task. One line per round._
 - Spec R4 CHANGES (under ~620px tall the foot fell past the window) → whole rail scrolls under 740px | Verify R7 PASS | CI R4 PASS (a8f2332)
 - Spec R5 CHANGES (.rail-rule shrank to 0) → flex:none | Verify R8 PASS | Spec R6 APPROVE | CI R5 PASS (65e2fc8)
 - Audit R2 PASS (the short-window tests and the tooltip check fail at 25df55e) | UI R2 PASS (834 × 1194/900/760/560, 768 × 1024, 1024 tooltip; light and dark)
+- Follow-ups R1 CHANGES (D-189 taken by open PR #357; STYLE_GUIDE §14.5 unplaced) → D-190, Owner checklist | Follow-ups R2 APPROVE | Drift R2 merge as-is
+- CI R6 FAIL (releases.spec.ts at w1280: label-content-name-mismatch on the sidebar's Search; it had failed on 65e2fc8 too and passed on retry) → plan revision 4 | Verify R9 FAIL (books-dashboard.test.ts timeout under load, again) | Verify R10 PASS
+- Drift R3 update first (behind 1, #357: a decisions.md conflict, both changed globals.css and the mockup, main changed src/db/queries.ts) → rebased, D-189 (#357) and D-190 kept in order | Verify R11 PASS (+ shell and thumb-bar w390-light 65, w390-dark 9, mockup-tablet and releases w1280-light 63)
 
 ## Blocked
 
@@ -140,7 +146,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds: 8 (2 failed: a type error, a timeout under load)
-- Review rounds: spec 6, audit 2, UI 2 (+1 not run), CI 5
-- First-pass AC FAILs: 1 (AC-6: the short tablet rail, found by the ui-verifier)
-- Plan revisions after approval: 3
+- Verify rounds: 10 (4 failed: a type error, a timeout under load three times)
+- Review rounds: spec 6, audit 2, UI 2 (+1 not run), CI 6 (1 failed)
+- First-pass AC FAILs: 2 (AC-6: the short tablet rail, found by the ui-verifier; the sidebar Search's name, found by CI)
+- Plan revisions after approval: 4

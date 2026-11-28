@@ -259,8 +259,11 @@ describe("NAV_ITEMS (AC-2)", () => {
     // Every bar draws search's button once and says why it does nothing until 6.1 (D-178; the rail and the
     // sidebar since TASK-149); the sheet draws none.
     for (const [name, html] of Object.entries(bars())) {
-      const search = [...html.matchAll(/<button [^>]*aria-label="Search \(Ctrl K\)"[^>]*>/g)].map((m) => m[0]);
+      // Named Search (Ctrl K) where only the magnifier or the word shows; the sidebar's is named by what it
+      // shows, *Search Ctrl K*, so its name holds its visible text (axe label-content-name-mismatch).
+      const search = [...html.matchAll(/<button [^>]*(?:aria-label="Search \(Ctrl K\)"|class="si side-search")[^>]*>/g)].map((m) => m[0]);
       expect(search, name).toHaveLength(1);
+      if (name === "the sidebar") expect(search[0]).not.toContain("aria-label");
       expect(search[0], name).toContain('aria-disabled="true"');
       expect(search[0], name).toContain('title="Search isn&#x27;t built yet"');
     }
@@ -637,9 +640,11 @@ describe("the desktop sidebar and icon rail (6.25, A9, A10)", () => {
   it("puts Search · Ctrl K under the wordmark, then the switch, then Media (AC-4)", () => {
     const html = side();
     const at = (needle: string) => html.indexOf(needle);
-    expect(at(">Ledger<")).toBeLessThan(at('aria-label="Search (Ctrl K)"'));
-    expect(html).toMatch(/aria-label="Search \(Ctrl K\)"[^>]*>(?:(?!<\/button>).)*<span class="nl">Search<\/span><span class="kbd" aria-hidden="true">Ctrl K<\/span>/);
-    expect(at('aria-label="Search (Ctrl K)"')).toBeLessThan(at('class="medswitch"'));
+    expect(at(">Ledger<")).toBeLessThan(at('class="si side-search"'));
+    // Its name is what it shows, *Search Ctrl K* (the space keeps the two words apart), not a label over it.
+    expect(html).toMatch(/<button [^>]*class="si side-search"[^>]*>(?:(?!<\/button>).)*<span class="nl">Search<\/span> <span class="kbd">Ctrl K<\/span><\/button>/);
+    expect(/<button [^>]*class="si side-search"[^>]*>/.exec(html)![0]).not.toContain("aria-label");
+    expect(at('class="si side-search"')).toBeLessThan(at('class="medswitch"'));
     expect(at('class="medswitch"')).toBeLessThan(at(">Media<"));
     expect(at(">Media<")).toBeLessThan(at('class="side-media"'));
   });

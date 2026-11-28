@@ -436,7 +436,7 @@ test.describe("the phone's medium button, search and gear (6.25)", () => {
     }));
   const RULES = [
     "color-contrast", "link-name", "button-name", "aria-dialog-name", "aria-allowed-attr", "aria-valid-attr-value",
-    "landmark-unique", "aria-hidden-focus", "svg-img-alt", "target-size", "nested-interactive",
+    "landmark-unique", "aria-hidden-focus", "svg-img-alt", "target-size", "nested-interactive", "label-content-name-mismatch",
   ];
 
   test("at 360 the bar is a 44px medium button, a 44px search button and the gear; its sheet lists every built medium, the current one aria-current; nothing scrolls sideways; no dashboard's thumb bar has a search slot; axe (AC-1, AC-5)", THEMES, async ({ page }, testInfo) => {
@@ -563,7 +563,7 @@ test.describe("the tablet rail, the icon rail's menu and the sidebar (6.25)", ()
   const RULES = [
     "color-contrast", "link-name", "button-name", "aria-allowed-attr", "aria-valid-attr-value", "aria-required-children",
     "aria-required-parent", "list", "listitem", "landmark-unique", "aria-hidden-focus", "svg-img-alt", "target-size",
-    "nested-interactive",
+    "nested-interactive", "label-content-name-mismatch",
   ];
   const BOOKS = NAV_ITEMS.filter((i) => i.group === "medium" && i.medium === "books" && i.enabled);
   const switchButton = (page: Page) => page.locator(".side .medswitch");
@@ -697,7 +697,8 @@ test.describe("the tablet rail, the icon rail's menu and the sidebar (6.25)", ()
     expect([box.width, box.height]).toEqual([48, 44]);
     // The 1280px list is not drawn here; Search is an icon above the switch.
     await expect(page.locator(".side .side-media .mrow").first()).toBeHidden();
-    const search = page.locator(".side").getByRole("button", { name: "Search (Ctrl K)" });
+    // Named by what it shows: here the word is hidden and the tooltip says it, so the name is *Search*.
+    const search = page.locator(".side").getByRole("button", { name: "Search", exact: true });
     await expect(search).toBeVisible();
     expect((await search.boundingBox())!.y).toBeLessThan(box.y);
 
@@ -771,7 +772,8 @@ test.describe("the tablet rail, the icon rail's menu and the sidebar (6.25)", ()
     await expect(switchButton(page)).toBeHidden();
 
     // Search · Ctrl K, under the wordmark and above Media.
-    const search = side.getByRole("button", { name: "Search (Ctrl K)" });
+    // Named by what it shows, so its name holds its visible text (axe label-content-name-mismatch).
+    const search = side.getByRole("button", { name: "Search Ctrl K", exact: true });
     await expect(search).toBeVisible();
     await expect(search).toContainText("Ctrl K");
     await expect(search).toHaveAttribute("title", "Search isn't built yet");
