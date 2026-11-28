@@ -2608,6 +2608,60 @@ export async function planSuggestions(userId: string, target: string, today: str
   `;
 }
 
+/** One of the planning sheet's search matches (task 2.10c, F-65): a book the sheet can place in its target. */
+export type PlanSearchHit = Omit<PlanSuggestion, "reason" | "detail" | "rank" | "status"> & {
+  /** Its status now: a book with none, To read, Unlisted or Parked. Placing any but To read writes `to_read`. */
+  status: "to_read" | "unlisted" | "parked" | null;
+  /** `to_read_level`'s level (D-37), null unless it is To read: the row's place tag (`placeTag`). */
+  level: ToReadLevel | null;
+  /** Calibre has it (`calibre_id`): an Unlisted book reads *Unlisted · Calibre*. */
+  calibre: boolean;
+};
+
+/**
+ * The planning sheet's search (task 2.10c, F-65): your books whose title or author holds `q`, as
+ * the Library's search matches them (1.22), that can be placed in `target` (`2027-Q2` or `2027`).
+ * A read, DNF, Reading or Listening book is left out, and so is one already planned in the target
+ * (for a year, planned anywhere in it), by `plan_suggestions`' own test; an Unlisted or Parked
+ * book, or one with no status, is in, since placing it moves it to To read (1.21, 5.15). One
+ * planned elsewhere carries its period (`to_read_level`'s), for *Move here*. Words as
+ * `plan_book_words` counts them. Titles starting with `q` first, then by title; at most 20.
+ */
+export async function planSearch(userId: string, target: string, q: string): Promise<PlanSearchHit[]> {
+  if (!TARGET.test(target)) throw new Error(`not a year or a quarter: ${target}`);
+  const year = Number(target.slice(0, 4));
+  const isYear = target.length === 4;
+  // The query's LIKE wildcards are typed text, not patterns.
+  const like = q.trim().replace(/[\\%_]/g, "\\$&");
+  const rows = await sql<PlanSearchHit[]>`
+    SELECT b.id, b.title, a.name AS author,
+           u.name AS universe, bs.name AS series, b.series_position AS "seriesPosition",
+           a.id AS "authorId", bs.id AS "seriesId", u.id AS "universeId",
+           st.status, (st.status = 'unlisted') IS TRUE AS unlisted,
+           tl.level, tl.period, (b.calibre_id IS NOT NULL) AS calibre,
+           COALESCE(b.word_count, CASE WHEN b.page_count >= 50
+                                       THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
+           CASE WHEN b.word_count IS NOT NULL THEN b.word_count_source = 'estimated'
+                ELSE b.page_count >= 50 END AS estimated
+    FROM books b
+    LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_series bs ON bs.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
+    LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+    LEFT JOIN to_read_level tl ON tl.book_id = b.id AND tl.user_id = ${userId}
+    LEFT JOIN reading_settings rs ON rs.user_id = ${userId}
+    WHERE b.deleted_at IS NULL
+      AND (st.status IS NULL OR st.status IN ('to_read', 'unlisted', 'parked'))
+      AND (b.title ILIKE '%' || ${like} || '%' OR a.name ILIKE '%' || ${like} || '%')
+      AND NOT EXISTS (SELECT 1 FROM plan_period pp
+                      WHERE pp.user_id = ${userId} AND pp.book_id = b.id
+                        AND (pp.period = ${target} OR (${isYear}::boolean AND pp.year = ${year})))
+    ORDER BY (b.title ILIKE ${like} || '%') DESC, b.title, b.id
+    LIMIT 20
+  `;
+  return rows.map((r) => ({ ...r, estimated: r.estimated === true }));
+}
+
 /** The volume map's size for Settings' *N rules · M series* (task 2.0): derived, never stored. */
 export async function volumeMapCounts(): Promise<{ rules: number; series: number }> {
   const [row] = await sql<{ rules: number; series: number }[]>`

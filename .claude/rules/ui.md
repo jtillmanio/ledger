@@ -99,8 +99,9 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
 - **No page render calls an external API.** The one live path is an **add
   flow**: TMDB, Metron and Hardcover (Add books, task 1.4f, D-94) are searched
   when the user submits or pauses typing in Add (3 characters, 500 ms; task
-  1.22, D-84), and results are cached. TMDB
-  attribution belongs in the footer. (What an add flow writes is
+  1.22, D-84), and results are cached. The one exception to the 3 is the
+  plan sheet's search, your own books only, which starts at 2 (task 2.10c,
+  D-189). TMDB attribution belongs in the footer. (What an add flow writes is
   `.claude/rules/schema.md`.)
 
 ## Style

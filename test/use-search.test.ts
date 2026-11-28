@@ -27,14 +27,14 @@ function fetcher(q: string, signal: AbortSignal) {
   return new Promise<string>((resolve, reject) => calls.push({ q, signal, resolve, reject }));
 }
 
-function Harness({ hold }: { hold: boolean }) {
-  const search = useSearch(fetcher, { hold, onAnswer: (a: string) => answers.push(a) });
+function Harness({ hold, minChars }: { hold: boolean; minChars?: number }) {
+  const search = useSearch(fetcher, { hold, minChars, onAnswer: (a: string) => answers.push(a) });
   useEffect(() => { api = search; });
   return null;
 }
 
-function mount(hold = false) {
-  act(() => root.render(createElement(Harness, { hold })));
+function mount(hold = false, minChars?: number) {
+  act(() => root.render(createElement(Harness, { hold, minChars })));
 }
 
 const type = (text: string) => act(() => api.change(text));
@@ -97,6 +97,22 @@ describe("when it searches (AC-2)", () => {
     type("pi");
     await wait(600);
     expect(calls).toHaveLength(0);
+  });
+
+  it("minChars 2 (the plan sheet's box, task 2.10c): two characters send after the pause, one clears", async () => {
+    mount(false, 2);
+    type("p");
+    await wait(600);
+    expect(calls).toHaveLength(0);
+    type("pi");
+    await wait(499);
+    expect(calls).toHaveLength(0);
+    await wait(1);
+    expect(calls.map((c) => c.q)).toEqual(["pi"]);
+    await answer(calls[0]);
+    expect(state().phase).toBe("answered");
+    type("p");
+    expect(state()).toEqual({ phase: "idle" });
   });
 
   it("piranesi typed quickly is one request, not six", async () => {

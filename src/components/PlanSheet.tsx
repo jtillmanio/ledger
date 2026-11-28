@@ -7,10 +7,11 @@ import BookPlace from "@/components/BookPlace";
 import { acceptYear, undoAccept } from "@/components/RebalanceSheet";
 import Sheet, { useSheetClose } from "@/components/Sheet";
 import { useUndo } from "@/components/Undo";
-import type { PeriodCapacity, PlanSuggestion, SuggestionReason } from "@/db/queries";
+import type { PeriodCapacity, PlanSearchHit, PlanSuggestion, SuggestionReason } from "@/db/queries";
 import type { PlanMove } from "@/db/writes";
-import { quarterName, subParts } from "@/lib/format";
+import { placeTag, quarterName, subParts } from "@/lib/format";
 import { kWords } from "@/lib/plan-rail";
+import { useSearch } from "@/lib/use-search";
 
 /** The groups' headings, in `SUGGESTION_REASONS` order (the roadmap entry 2.10b's). */
 export const GROUP_NAMES: Record<SuggestionReason, string> = {
@@ -143,6 +144,12 @@ export function PlanSheetButton({ target, className = "btn sec sm", children }: 
 /** A placement as it stands on its row: where it went, and its undo. */
 type Placed = { to: string; undo: () => Promise<void> };
 
+/** A row's book: a suggestion, or a search match with its place tag as its line (task 2.10c). */
+type SheetBook = Omit<PlanSuggestion, "reason" | "rank" | "status"> & { status: PlanSearchHit["status"] };
+
+/** The sheet's search starts at two letters: your own books only, never an API (task 2.10c, amending D-84's 3). */
+const SEARCH_FROM = 2;
+
 /**
  * The sheet's body: the budget line, then the suggestions grouped by why (`GET /api/plan/suggestions`, read once
  * when the sheet opens), each group five rows then *More*. A row's *Put in Q2* (for a year, the bare year and the
@@ -150,10 +157,27 @@ type Placed = { to: string; undo: () => Promise<void> };
  * `POST /api/books`, which writes its `to_read` and its plan row in one transaction (1.21's promote). A planned book
  * offers *Move here* (`POST /api/plan` from its period). Each placement pushes its undo onto the 1.2 stack, its row
  * reads *✓ In Q2 · Undo*, and the sheet stays open. *Not now* hides a row for this sitting only.
+ *
+ * Above the budget line, the sheet's first control, is its search (task 2.10c): from two letters and a pause,
+ * `GET /api/plan/search` lists your books by title or author that can go in the target, in place of the groups,
+ * each placed as a suggestion is. No match is one line with the groups kept below; Esc in a field with text clears
+ * it (and only then, so Esc in an empty field still closes the sheet); an empty field shows the groups again.
  */
 function PlanBody({ target, figures, onDone }: { target: string; figures: PlanFigures; onDone: () => void }) {
   const router = useRouter();
   const { push, notify } = useUndo();
+  const searchId = useId();
+  const [hits, setHits] = useState<PlanSearchHit[] | null>(null);
+  const search = useSearch<PlanSearchHit[]>(
+    (q, signal) => fetch(`/api/plan/search?target=${target}&q=${encodeURIComponent(q)}`, { cache: "no-store", signal })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("search failed"))))
+      .then((body: { hits: PlanSearchHit[] }) => body.hits),
+    { minChars: SEARCH_FROM, onAnswer: setHits },
+  );
+  const typed = (text: string) => {
+    if (text.trim().length < SEARCH_FROM) setHits(null);
+    search.change(text);
+  };
   const [rows, setRows] = useState<PlanSuggestion[] | "failed" | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
@@ -184,7 +208,7 @@ function PlanBody({ target, figures, onDone }: { target: string; figures: PlanFi
     return next;
   });
 
-  async function place(s: PlanSuggestion, to: string) {
+  async function place(s: SheetBook, to: string) {
     if (busy) return;
     setBusy(s.id);
     setError(s.id, null);
@@ -213,7 +237,7 @@ function PlanBody({ target, figures, onDone }: { target: string; figures: PlanFi
     }
   }
 
-  async function undoRow(s: PlanSuggestion) {
+  async function undoRow(s: SheetBook) {
     const p = placed[s.id];
     if (!p || busy) return;
     setBusy(s.id);
@@ -231,19 +255,62 @@ function PlanBody({ target, figures, onDone }: { target: string; figures: PlanFi
     }
   }
 
+  const rowOf = (s: SheetBook) => (
+    <Row key={s.id} s={s} target={target} year={year} isYear={isYear} placed={placed[s.id]}
+      busy={busy !== null} error={errors[s.id]}
+      onPlace={(to) => void place(s, to)} onUndo={() => void undoRow(s)}
+      onHide={() => setHidden((h) => new Set(h).add(s.id))} />
+  );
+  const found = search.state;
+  // The last answer stays while a newer query loads, so the matches don't flicker back to the groups.
+  const matches = (found.phase === "answered" || found.phase === "loading") && hits
+    ? hits.filter((h) => !hidden.has(h.id)) : [];
+  const matching = matches.length > 0;
+
   return (
     <div className="ps">
       <p className="lede ps-lede">
         {isYear ? "Grouped by why. Put a book in the year, or straight into a quarter." : "Grouped by why. Each one is a tap; the sheet stays open."}
       </p>
+      <form className="ps-search" role="search" aria-label="Find a book to plan"
+        onSubmit={(e) => { e.preventDefault(); if (search.q.trim().length >= SEARCH_FROM) search.submit(); }}>
+        <label htmlFor={`${searchId}q`} className="ps-search-label">Title or author</label>
+        <input id={`${searchId}q`} type="search" className="txt" enterKeyHint="search" autoComplete="off" spellCheck={false}
+          value={search.q} onChange={(e) => typed(e.target.value)}
+          onKeyDown={(e) => {
+            // Esc clears a field with text and stops there; in an empty field it reaches the sheet, which closes.
+            if (e.key !== "Escape" || search.q === "") return;
+            e.preventDefault();
+            e.stopPropagation();
+            typed("");
+          }} />
+      </form>
+      <div className="ps-search-line" role="status" aria-live="polite">
+        {found.phase === "loading" && <p>Searching your books…</p>}
+        {found.phase === "answered" && found.answer.length === 0 && <p>Nothing on your list matches “{found.q}”.</p>}
+      </div>
+      {found.phase === "failed" && (
+        <div className="ps-error">
+          <p className="neutral-error small" role="alert">
+            <span aria-hidden="true">×</span> Couldn’t search your books. Nothing was changed.
+          </p>
+          <button type="button" className="btn sec sm" onClick={() => search.run(found.q)}>Try again</button>
+        </div>
+      )}
       <Budget target={target} figures={figures} />
-      {rows === null && (
+      {matching && (
+        <section className="ps-matches" aria-labelledby={`${searchId}m`}>
+          <h3 id={`${searchId}m`} className="ps-k">Matches</h3>
+          <ul className="ps-rows">{matches.map((h) => rowOf({ ...h, detail: placeTag(h) }))}</ul>
+        </section>
+      )}
+      {!matching && rows === null && (
         <div className="ps-loading">
           <span className="sr-only" role="status">Loading suggestions</span>
           {[0, 1, 2].map((n) => <span key={n} className="sk ps-sk" aria-hidden="true" />)}
         </div>
       )}
-      {rows === "failed" && (
+      {!matching && rows === "failed" && (
         <div className="ps-error">
           <p className="neutral-error small" role="alert">
             <span aria-hidden="true">×</span> Couldn’t load the suggestions. Nothing was changed.
@@ -251,14 +318,14 @@ function PlanBody({ target, figures, onDone }: { target: string; figures: PlanFi
           <button type="button" className="btn sec sm" onClick={() => { setRows(null); setAttempt((n) => n + 1); }}>Try again</button>
         </div>
       )}
-      {Array.isArray(rows) && rows.length === 0 && (
+      {!matching && Array.isArray(rows) && rows.length === 0 && (
         <div className="ps-empty">
           <p className="ps-empty-line">Nothing to suggest for {periodName(target)}.</p>
           <p className="ps-empty-sub">Suggestions come from what you follow as Reading, On deck, releases and your to-read list.</p>
           <Link href="/books/list" prefetch={false} className="btn sm">Open the Library</Link>
         </div>
       )}
-      {Array.isArray(rows) && rows.length > 0 && (Object.keys(GROUP_NAMES) as SuggestionReason[]).map((reason) => {
+      {!matching && Array.isArray(rows) && rows.length > 0 && (Object.keys(GROUP_NAMES) as SuggestionReason[]).map((reason) => {
         const group = rows.filter((r) => r.reason === reason && !hidden.has(r.id));
         if (group.length === 0) return null;
         const open = more.has(reason);
@@ -267,14 +334,7 @@ function PlanBody({ target, figures, onDone }: { target: string; figures: PlanFi
         return (
           <section key={reason} className="ps-group" data-reason={reason} aria-labelledby={headingId}>
             <h3 id={headingId} className="ps-k">{GROUP_NAMES[reason]}</h3>
-            <ul className="ps-rows">
-              {shown.map((s) => (
-                <Row key={s.id} s={s} target={target} year={year} isYear={isYear} placed={placed[s.id]}
-                  busy={busy !== null} error={errors[s.id]}
-                  onPlace={(to) => void place(s, to)} onUndo={() => void undoRow(s)}
-                  onHide={() => setHidden((h) => new Set(h).add(s.id))} />
-              ))}
-            </ul>
+            <ul className="ps-rows">{shown.map(rowOf)}</ul>
             {!open && group.length > GROUP_SHOWS && (
               <button type="button" className="btn sec sm ps-more" onClick={(e) => {
                 // *More* goes once it is used: focus moves to the first row it showed.
@@ -297,13 +357,14 @@ function PlanBody({ target, figures, onDone }: { target: string; figures: PlanFi
 /**
  * One placement through 2.3's writes; answers its undo, or `moved` when the book wasn't where the sheet saw it
  * (nothing written). An Unlisted book, or one with no status, goes through Add books' `{ use }` add to the period,
- * which promotes it to `to_read` and writes its plan row in one transaction; every other book is a plan move.
+ * which promotes it to `to_read` and writes its plan row in one transaction; so does a Parked one, a search
+ * match, which the add unparks with its undo (5.15). Every other book is a plan move.
  * `already`: that add found the book planned there already (another tab placed it), so it wrote no plan row and
  * has no undo, though it may have put the book on your list.
  */
-async function write(s: PlanSuggestion, to: string): Promise<(() => Promise<void>) | "moved" | "already"> {
+async function write(s: SheetBook, to: string): Promise<(() => Promise<void>) | "moved" | "already"> {
   const json = { "content-type": "application/json" };
-  if (s.unlisted || s.status === null) {
+  if (s.unlisted || s.status === null || s.status === "parked") {
     const res = await fetch("/api/books", {
       method: "POST", headers: json, body: JSON.stringify({ item: { use: s.id }, destination: { kind: "period", period: to } }),
     });
@@ -334,9 +395,12 @@ async function write(s: PlanSuggestion, to: string): Promise<(() => Promise<void
   };
 }
 
-/** One suggestion's row (exported for test/plan-page.test.tsx: the sheet's rows are fetched in the browser). */
+/**
+ * One suggestion's or search match's row (exported for test/plan-page.test.tsx: the sheet's rows are fetched in
+ * the browser). Its line is the suggestion's reason, or a match's place tag (*Someday*, *Q3 2027*, *Parked*).
+ */
 export function Row({ s, target, year, isYear, placed, busy, error, onPlace, onUndo, onHide }: {
-  s: PlanSuggestion; target: string; year: number; isYear: boolean; placed: Placed | undefined; busy: boolean;
+  s: SheetBook; target: string; year: number; isYear: boolean; placed: Placed | undefined; busy: boolean;
   error: string | undefined; onPlace: (to: string) => void; onUndo: () => void; onHide: () => void;
 }) {
   const parts = subParts({
