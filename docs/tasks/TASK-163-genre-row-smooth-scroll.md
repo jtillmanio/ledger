@@ -1,7 +1,7 @@
 ---
 id: TASK-163
 title: 6.26 The Library's genre row scrolls smoothly, with arrows you can hold
-status: In progress
+status: Review
 depends_on: [TASK-145]
 size: S
 model: sonnet
@@ -28,7 +28,7 @@ On a tablet or desktop, the Library's genre chips scroll smoothly with arrow but
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim):
+- [x] AC-1 (roadmap **Check:**, verbatim):
 in
 the browser (0.11) at 1280px, with more genres than fit: no native
 scrollbar is drawn and there is no left arrow at the start; a tap on the
@@ -37,9 +37,9 @@ frames; holding it for a second moves it further than a tap and it stops on
 release; at the end the right arrow goes. At 360px there are no arrows and
 the row still scrolls by touch. Under reduced motion a tap moves in one
 frame. Axe passes, and `/books/list` stays within its budget.
-- [ ] AC-2: Given the row fits without scrolling, no arrow is drawn.
-- [ ] AC-3: Given keyboard focus on an arrow, Enter or Space scrolls one step; tabbing through the chips scrolls each into view.
-- [ ] AC-4: The row meets the UX floor (`docs/04-design.md` § 10. The UX floor): arrows named, contrast 3:1 for the icon in both themes, reduced motion honoured, and screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-2: Given the row fits without scrolling, no arrow is drawn.
+- [x] AC-3: Given keyboard focus on an arrow, Enter or Space scrolls one step; tabbing through the chips scrolls each into view.
+- [x] AC-4: The row meets the UX floor (`docs/04-design.md` § 10. The UX floor): arrows named, contrast 3:1 for the icon in both themes, reduced motion honoured, and screenshots at each `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -62,6 +62,11 @@ frame. Axe passes, and `/books/list` stays within its budget.
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- Five other chip rows borrow `.genre-row` and still draw the browser's scrollbar (the status screen's *On deck genre* and *Done by format*, Progress's *Medium*, the Series and Universes *Show* rows); 6.26 hid it only under `.genre-wrap`, and arrows elsewhere were out of scope → docs/05-roadmap.md § 6.31 (new; Check proposed), with its row in docs/06-tasklist.md § M21 and F-44's list
+- Duration tokens read back in seconds (`--dur-4` is `.3s` after the build), so JS that reads one must parse the unit; `GenreRow` is the only reader → not tracked: said in `GenreRow`'s comment, and no other code reads a `--dur-*` token
+- A hold's tab order: once the row is at its end, › is hidden, so tabbing forward from the last chip skips it (ui-verifier R1) → not tracked: accepted as is; an arrow with nothing to show is hidden by the plan (AC-2's rule), and every chip stays reachable
+- The `/books/list` budget clause of the Check is not measured while Lighthouse is off (D-158); `GenreRow` is 1,320 B gzip → not tracked: stated in PR #359; the library route's Lighthouse row is the check once `LIGHTHOUSE_MODE` is on
 
 ## Plan
 
@@ -193,10 +198,27 @@ None.
 - `@at-` tests check only their own theme, so AC-4 loops light and dark itself; the screenshots are
   `library-genre-arrows-<w>-<light|dark>`. The animated tests pin `reducedMotion: "no-preference"`.
 - Bytes: `GenreRow` is 2,689 B minified, 1,320 B gzip, 1,150 B brotli (esbuild, React external).
+- The fade is `.genre-arrow::before`, as step 4 drew it (spec-reviewer R1: on the button's own background
+  it hid the glyph from `contrastFailures`); the AC-4 test also measures each glyph on its disc.
+
+**Plan revision 1 (after ui-verifier R1, owner's go-ahead to finish the task, 2026-11-28).** Step 2's hold
+ran the tap's whole ease-out before gliding, so a hold slowed almost to a stop at ~280ms, then crept on
+at a twentieth of the step's top speed: the choppiness 6.26 exists to remove. While held, the step now
+hands over to the glide once its speed has fallen to the glide's (0.9 px/ms). AC-1's hold test samples
+every frame and requires ≥ 0.45 px/ms from the first movement to release; it failed on the old hold
+(`849, 850, 850, 850, 864…`). The glide is timed from the step's last frame (no assumed 16ms first
+frame), and the test times each movement by the shorter of the two frame intervals around it, so a
+sampler a frame behind the writes can't read a slow frame as a slow scroll (spec-reviewer R3).
 
 ## Review log
 
 _Filled by /implement-task. One line per round._
+
+- Local e2e R1 FAIL (AC-1 tap one frame: `--dur-4` read as `.3s`; render loop in `measure`; touch gesture) → R2–R4 fixed | Verify R1 PASS | CI R1 PASS (cf823e8, every project)
+- Spec R1 CHANGES (AC-4 UNTESTED: the glyph's contrast skipped under the gradient) → fixed (c6a582d) | Verify R2 PASS | CI R2 PASS (c6a582d) | Spec R2 APPROVE
+- Audit R1 PASS (the 360px touch clause a guard, as the Check's *still* asks)
+- UI R1 PASS, noting a near-stop between a hold's step and its glide → plan revision 1 (the hand-over, and a per-frame speed test that failed on the old hold) (d448669) | Verify R3 PASS | genre spec ×3 + touch PASS | CI R3 PASS (d448669)
+- Spec R3 CHANGES (the glide's first frame assumed 16ms; the speed test could read a stalled frame as slow) | UI R2 FAIL on d448669 (a ~2 px/ms spike after the hand-over), PASS on the fix → fixed (3724034); the old hold still fails the revised test | genre spec ×3 + touch PASS | Verify R4 PASS | Spec R4 APPROVE
 
 ## Blocked
 
@@ -204,7 +226,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 4 (all PASS; local e2e failed four times before the first, fixed in place)
+- Review rounds: spec 4, audit 1, UI 2
+- First-pass AC FAILs: 1 (AC-4's contrast clause UNTESTED)
+- Plan revisions after approval: 1 (the hold's hand-over from step to glide)

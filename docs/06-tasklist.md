@@ -118,7 +118,7 @@ milestone._
 | F-41 Offline and the keyboard | Later | 6.4, 6.5 | M20 |
 | F-42 Prerequisite graph and events | Later | 6.3, 6.8 | M19 |
 | F-43 Choosing from the master list | Later | 6.10 | M19 |
-| F-44 Appearance | Later | 6.11, 6.14, 6.15, 6.9, 6.23, 6.24, 6.24b, 6.24c, 6.26, 6.27 | M20, M21 |
+| F-44 Appearance | Later | 6.11, 6.14, 6.15, 6.9, 6.23, 6.24, 6.24b, 6.24c, 6.26, 6.27, 6.31 | M20, M21 |
 | F-45 Hardening | Later | 6.13, 6.16, 6.18, 6.22 | M21 |
 | F-46 Import from Goodreads or StoryGraph | Later | 6.6 | M21 |
 | F-47 AI review and drafting | Later | 7.1, 7.2, 7.3, 7.4, 7.5 | M22 |
@@ -606,10 +606,11 @@ with the task that first reads it.
 |  | 6.24b | The batch and finish sheets' steppers are typed and held | S | _From TASK-144 (6.24, PR #345); Check proposed_ | 6.24 |
 |  | 6.24c | The finish toast keeps to E10's two chip rows and its uppercase mono label | S | _From TASK-143 (6.24, PR #340), settled at TASK-146's plan; Check proposed_ | 6.24 |
 | ✅ | 6.25 → TASK-147, TASK-148, TASK-149 | Navigation for four and five media | M | _From TASK-126 (6.23, D-178); before 9.0; placed in M21 by the 2026-11-24 coverage recount; Check proposed_ | 6.23 |
-|  | 6.26 → TASK-163 | The Library's genre row scrolls smoothly, with arrows you can hold | S | _Owner intake, 2026-11-24; after TASK-145 (6.24), which redraws the phone's filters; Check proposed_ | 4.5 |
+| ✅ | 6.26 → TASK-163 | The Library's genre row scrolls smoothly, with arrows you can hold | S | _Owner intake, 2026-11-24; after TASK-145 (6.24), which redraws the phone's filters; Check proposed_ | 4.5 |
 |  | 6.27 → TASK-164, TASK-165, TASK-166 | Plainer words on every built screen | M | _Owner intake, 2026-11-24; before 6.9, which passes over the finished screens; Check proposed_ | — |
 |  | 6.29 | Switch medium shows what is in hand | S | _From TASK-148 (6.25, PR #354); Check proposed_ | 6.25 |
 |  | 6.30 | The rail and the sidebar follow the last medium on a screen under none | S | _From TASK-149 (6.25, PR #356); Check proposed_ | 6.25 |
+|  | 6.31 | The other sideways chip rows draw no browser scrollbar | S | _From TASK-163 (6.26, PR #359); Check proposed_ | 6.26 |
 |  | 6.9 | Revisit the theme | M |  | — |
 
 ## M22: AI-assisted curation — Later
