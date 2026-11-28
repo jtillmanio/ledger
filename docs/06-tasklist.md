@@ -494,7 +494,7 @@ with the task that first reads it.
 | ✅ | 4.4b → TASK-128 | A year-only Calibre date isn't rewritten every sync | S | _From TASK-082, TASK-083 (PR #267, PR #270), 2026-11-23; pulled ahead of 1.26 (D-172): before the owner turns `CALIBRE_SYNC_READS` on; Check proposed_ | 4.4 |
 |  | 4.4c → TASK-157, TASK-158 | A listen's date in Calibre, and a date changed on either side | M | _Owner intake, 2026-11-24 (D-184); takes Calibre's dates only once `CALIBRE_SYNC_READS` is on; Check proposed_ | 4.4b, 1.17b |
 | ✅ | 4.6 → TASK-129 | Decide a waiting Calibre near spelling on the Calibre page | S | _From TASK-083 (PR #270); pulled ahead of 1.26 (D-172); Check proposed_ | 4.4 |
-|  | 4.6b → TASK-139 | Flag a book the sync created under a new author | S | _From TASK-129 (PR #326); Check proposed_ | 4.6 |
+| ✅ | 4.6b → TASK-139 | Flag a book the sync created under a new author | S | _From TASK-129 (PR #326); Check proposed_ | 4.6 |
 |  | 4.1 | Metron backfill | M |  | — |
 | ✅ | 4.2 → TASK-084 | Open Library and Hardcover backfill | M | _Pulled ahead of 1.26 (D-139)_ | — |
 | ✅ | 4.3 → TASK-085, TASK-086, TASK-087 | Covers in the UI | S |  | — |

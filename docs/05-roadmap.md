@@ -4870,7 +4870,7 @@ the book or creates a new one to match, and logs it. In the browser the entry
 reads *Merged* or *Kept separate* after the press, each button is named for its
 book and 44px at 360px, and axe reports no violation.
 
-### ☐ 4.6b Flag a book the sync created under a new author · S
+### ☑ 4.6b Flag a book the sync created under a new author · S
 *From task 4.6 (TASK-129, PR #326), which left 4.6's *Noted with it* paragraph undone. The Check is a proposal: agreed when merged, or edit it first.*
 A Calibre author spelled a new way creates a new author when the sync creates
 the book (the app keeps no author merges), and the *Calibre* page can't tell a

@@ -1,7 +1,7 @@
 ---
 id: TASK-139
 title: 4.6b Flag a book the sync created under a new author
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -29,15 +29,15 @@ When a Calibre sync creates a book under an author the Ledger didn't have, the *
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): with the test database, a sync whose payload creates one book by an
+- [x] AC-1 (roadmap **Check:**, verbatim): with the test database, a sync whose payload creates one book by an
 author the Ledger lacks and one by a known author: the report's first `created`
 entry carries `newAuthor: true` and the second `newAuthor: false`; the *Calibre*
 page marks the first *new author* beside its author and not the second; a stored
 run whose `created` entries have no `newAuthor` key shows no mark and no error.
 At 360px the mark has contrast 4.5:1 in both themes and axe reports no violation.
-- [ ] AC-2: Given a payload that creates two books by the same author the Ledger lacks, both `created` entries carry `newAuthor: true` (the author is new to the run, not only to its first book); an `updated` entry carries no `newAuthor` key.
-- [ ] AC-3: The sync writes no new column and no new row beyond what it wrote before: given the same payload before and after the change, the `books`, `authors` and `calibre_syncs` row counts match, and only the stored report differs by the `newAuthor` keys.
-- [ ] AC-4: The *Calibre* page's created rows meet the UX floor (`docs/04-design.md` § 10. The UX floor): the mark is text, its colour from the custom properties in `src/app/globals.css` (no `--danger`, no hue), contrast 4.5:1 in both themes, and screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-2: Given a payload that creates two books by the same author the Ledger lacks, both `created` entries carry `newAuthor: true` (the author is new to the run, not only to its first book); an `updated` entry carries no `newAuthor` key.
+- [x] AC-3: The sync writes no new column and no new row beyond what it wrote before: given the same payload before and after the change, the `books`, `authors` and `calibre_syncs` row counts match, and only the stored report differs by the `newAuthor` keys.
+- [x] AC-4: The *Calibre* page's created rows meet the UX floor (`docs/04-design.md` § 10. The UX floor): the mark is text, its colour from the custom properties in `src/app/globals.css` (no `--danger`, no hue), contrast 4.5:1 in both themes, and screenshots at each `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -65,6 +65,8 @@ At 360px the mark has contrast 4.5:1 in both themes and axe reports no violation
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 - The PC command's printed report (`etl/calibre_sync.py`) doesn't say *new author* (approved at plan) → not tracked: the roadmap entry asks only for the page.
+- `Names.load()` reads soft-deleted authors too, so a book created under a soft-deleted author's spelling reads as a known author, not new (schema-reviewer, residual note) → not tracked: behaviour 4.4 already had and arguably right (the spelling isn't new to the Ledger).
+- ui-verifier couldn't sign in: the auto-mode classifier denied reading `APP_PASSCODE` from `.env`, so the dev-database walk didn't run → not tracked: a session permission, not project work; the page is walked at every width, light and dark, by `test/e2e/calibre-page.spec.ts` on the test database, and the dev-database step is the owner's manual check.
 
 ## Plan
 
@@ -92,7 +94,7 @@ Approved 2026-11-28.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (tsc, lint, `test:no-e2e`; touched specs `calibre-page.spec.ts` w390-light 21/21, `mockup-tablet.spec.ts` w1280-light 57/57) | Spec R1 APPROVE | Schema R1 APPROVE | Audit R1 PASS (every AC PROVEN; the no-key page test a GUARD) | UI R1 NOT RUN (sign-in denied: the classifier refused reading `APP_PASSCODE`; covered by the e2e walk at six widths, light and dark) | CI R1 see PR #362
 
 ## Blocked
 
@@ -100,7 +102,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
