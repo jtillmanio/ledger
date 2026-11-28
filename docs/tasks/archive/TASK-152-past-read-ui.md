@@ -1,7 +1,7 @@
 ---
 id: TASK-152
 title: 1.17c Log a past read of a book already read (2 of 2) — Add a past read
-status: Review
+status: Done
 depends_on: [TASK-151]
 size: M
 model: sonnet
