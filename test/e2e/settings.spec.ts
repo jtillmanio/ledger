@@ -829,11 +829,10 @@ test.describe("a pace change reaches the plan without a reload (TASK-153)", () =
   test("a press still waiting when Settings is left by Back reaches Plan (TASK-153 AC-3)", ONCE, async ({ page }) => {
     const before = await capacity();
     await planThenSettings(page);
-    // 45 → 51: six presses well inside the 500 ms wait, then Back before it runs out (the keepalive send).
+    // 45 → 51: six presses well inside the 500 ms wait, then Back at once, before it runs out (the keepalive
+    // send). Nothing is asserted between the presses and Back: a check there could outlast the wait.
     const up = press(page, "Increase", "Minutes a day");
     for (let n = 0; n < 6; n++) await up.click();
-    await expect(output(page, "Minutes a day")).toHaveText("51");
-    expect(await storedMinutes()).toBeNull(); // still waiting when the screen is left
     await page.goBack();
     await page.waitForURL("**/books/plan");
     await expect.poll(storedMinutes).toBe(51);
