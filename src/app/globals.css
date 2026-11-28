@@ -1553,10 +1553,15 @@ p{margin:0 0 .75rem;max-width:66ch}
   .genre-arrow{position:absolute;top:50%;z-index:1;display:flex;align-items:center;justify-content:center;
     width:44px;height:44px;margin-top:-22px;padding:0;border:0;color:var(--ink-2);cursor:pointer;
     touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
-  .genre-arrow.prev{left:-4px;background:linear-gradient(to right,var(--page) 55%,transparent)}
-  .genre-arrow.next{right:-4px;background:linear-gradient(to left,var(--page) 55%,transparent)}
+  .genre-arrow{background:none}
+  .genre-arrow.prev{left:-4px}
+  .genre-arrow.next{right:-4px}
+  /* The fade is a layer under the disc, not the button's background, so the glyph is measured on its disc. */
+  .genre-arrow::before{content:"";position:absolute;inset:0}
+  .genre-arrow.prev::before{background:linear-gradient(to right,var(--page) 55%,transparent)}
+  .genre-arrow.next::before{background:linear-gradient(to left,var(--page) 55%,transparent)}
   .genre-arrow[hidden]{display:none}
-  .genre-arrow span{display:flex;align-items:center;justify-content:center;width:28px;height:28px;
+  .genre-arrow span{position:relative;display:flex;align-items:center;justify-content:center;width:28px;height:28px;
     border-radius:50%;border:1px solid var(--rule-2);background:var(--surface);box-shadow:var(--sh-1);
     font-size:1.25rem;line-height:1;padding-bottom:2px;box-sizing:border-box}
   .genre-arrow:focus-visible{outline:none}

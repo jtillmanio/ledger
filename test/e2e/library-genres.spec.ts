@@ -204,6 +204,21 @@ async function toStart(page: Page) {
 
 const scrollLeft = (page: Page) => scroller(page).evaluate((el) => el.scrollLeft);
 
+/** The WCAG contrast of each drawn arrow's glyph against its disc. */
+function glyphContrast(page: Page): Promise<number[]> {
+  return page.locator(".genre-arrow:not([hidden]) span").evaluateAll((spans) => spans.map((span) => {
+    const lum = (css: string) => {
+      const [r, g, b, a = 1] = css.match(/[\d.]+/g)!.map(Number);
+      if (a < 1) throw new Error(`a see-through colour: ${css}`);
+      const lin = (c: number) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+      return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    };
+    const cs = getComputedStyle(span);
+    const [hi, lo] = [lum(cs.color), lum(cs.backgroundColor)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  }));
+}
+
 test("at 1280px the genre row draws no scrollbar and no ‹ at the start; a tap on › scrolls about its width over several frames, a held press further and stops on release, and › goes at the end (6.26 AC-1)", ONCE, async ({ page }) => {
   await desktop(page);
   const row = scroller(page);
@@ -325,6 +340,8 @@ test("the arrows are named, their icons meet 3:1 in both themes, and axe passes;
         await scroller(page).evaluate((el) => { el.scrollLeft = 300; });
         await expect(leftArrow(page), label).toBeVisible();
         await expect(rightArrow(page), label).toBeVisible();
+        // Each glyph on its own disc, measured here as well as by contrastFailures: 3:1 for an icon.
+        for (const ratio of await glyphContrast(page)) expect(ratio, `arrow glyph at ${label}`).toBeGreaterThanOrEqual(3);
         if (width === 1280) await expectNoAxeViolations(page, AXE);
       } else {
         await expect(page.getByRole("button", { name: /^Scroll genres/ }), label).toHaveCount(0);
