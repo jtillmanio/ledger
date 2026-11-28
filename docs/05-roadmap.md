@@ -6019,7 +6019,7 @@ it is converted.
   current one expanded and an *Across media* group; with *Start on* set to
   Books, `/` opens `/books`; axe reports no new violations at each width.
 
-- ☐ 6.26 **The Library's genre row scrolls smoothly, with arrows you can
+- ☑ 6.26 **The Library's genre row scrolls smoothly, with arrows you can
   hold** · S. Owner intake, 2026-11-24 and 2026-11-25 (*it's choppy; if I hold
   down on the arrow it should scroll smoothly*). The genre row is the one chip
   row that still draws the browser's scrollbar (`.genre-row`, `globals.css`),
@@ -6126,6 +6126,22 @@ it is converted.
     medium* and the sidebar opens Books, with no medium `aria-current`; in a
     fresh context with no medium cookie `/inbox` draws comics' screens as
     today; nothing scrolls sideways; axe passes.
+
+- ☐ 6.31 **The other sideways chip rows draw no browser scrollbar** · S. From
+  TASK-163 (6.26, PR #359). Five chip rows borrow `.genre-row` and still draw
+  the browser's scrollbar, whose Windows arrows step: the status screen's
+  *On deck genre* row (`src/app/books/status/page.tsx`), which can run as long
+  as the Library's, *Done by format* there, Progress's *Medium* row and the
+  Series and Universes *Show* rows (`.series-chips`, `.prog-chips`). 6.26 hid
+  it only under `.genre-wrap`. Hide it on every `.genre-row`, as `.tabrow` and
+  `.shelf` do; whether *On deck genre* also gets 6.26's arrows (`GenreRow`) is
+  the plan's question.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first) in
+    the browser (0.11) at 1280px, every `.genre-row` on `/books/status`,
+    `/progress`, `/books/series` and `/books/universes` has a computed
+    `scrollbar-width` of `none` and `offsetHeight` equal to `clientHeight`; a
+    row that overflows still scrolls by touch at 360px; nothing scrolls
+    sideways; axe passes.
 
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M

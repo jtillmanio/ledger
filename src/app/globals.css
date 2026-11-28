@@ -1539,6 +1539,35 @@ p{margin:0 0 .75rem;max-width:66ch}
 .genre-row{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;padding:4px;margin-left:-4px;margin-right:-4px}
 .genre-row .chip{flex:0 0 auto;display:inline-flex;align-items:center;white-space:nowrap;min-height:44px}
 @media (min-width:768px){ .genre-row .chip{min-height:28px} }
+/* The Library's genre row (task 6.26): no browser scrollbar (its Windows arrows step), as .tabrow and .shelf;
+   the group is the wrap, the chips scroll inside it. From 768px an arrow at each end that has more: a 44px
+   button over the row's end, the page fading out under it, the glyph in --ink-2 on a --surface disc (3:1
+   and more for the icon in both themes). The phone keeps the swipe, with no arrows. Other chip rows that
+   borrow .genre-row keep their scrollbar. */
+.genre-wrap{display:block;position:relative}
+.genre-wrap .genre-row{display:flex;gap:.375rem;scrollbar-width:none}
+.genre-wrap .genre-row::-webkit-scrollbar{display:none}
+.genre-arrow{display:none}
+@media (min-width:768px){
+  .genre-wrap .genre-row{scroll-padding-inline:44px}
+  .genre-arrow{position:absolute;top:50%;z-index:1;display:flex;align-items:center;justify-content:center;
+    width:44px;height:44px;margin-top:-22px;padding:0;border:0;color:var(--ink-2);cursor:pointer;
+    touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  .genre-arrow{background:none}
+  .genre-arrow.prev{left:-4px}
+  .genre-arrow.next{right:-4px}
+  /* The fade is a layer under the disc, not the button's background, so the glyph is measured on its disc. */
+  .genre-arrow::before{content:"";position:absolute;inset:0}
+  .genre-arrow.prev::before{background:linear-gradient(to right,var(--page) 55%,transparent)}
+  .genre-arrow.next::before{background:linear-gradient(to left,var(--page) 55%,transparent)}
+  .genre-arrow[hidden]{display:none}
+  .genre-arrow span{position:relative;display:flex;align-items:center;justify-content:center;width:28px;height:28px;
+    border-radius:50%;border:1px solid var(--rule-2);background:var(--surface);box-shadow:var(--sh-1);
+    font-size:1.25rem;line-height:1;padding-bottom:2px;box-sizing:border-box}
+  .genre-arrow:focus-visible{outline:none}
+  .genre-arrow:focus-visible span{box-shadow:var(--focus-ring)}
+}
+@media (min-width:768px) and (pointer:fine){ .genre-arrow:hover span{border-color:var(--faint-deco)} }
 /* The Library's dropdown chips (task 6.24, MR-D20, frame E7): *Owned* and *Sort* on one row, each a chip that
    names its choice and a caret, and opens a panel of links (the `.menu` surface). Grey like every chip, the
    `--ink` border only while open: no hue. 44px on the phone, 28px from the tablet up, as the genre chips; a

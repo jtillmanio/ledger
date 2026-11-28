@@ -9,6 +9,7 @@ import BookPlace from "@/components/BookPlace";
 import BookSort, { BookOwned } from "@/components/BookSort";
 import BookStatus from "@/components/BookStatus";
 import { bookInitials, Pending, RowCover } from "@/components/Cover";
+import GenreRow from "@/components/GenreRow";
 import SheetLinks from "@/components/SheetLinks";
 import { bookHref } from "@/components/StatusBookRow";
 import { bookDates, bookSub, ownedWords, readSummary, subParts } from "@/lib/format";
@@ -126,14 +127,16 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
           most books first. A chip finds every book under it, a subgenre's too. One row that scrolls
           sideways, never the page; the chip's text is the genre's whole name. Only the chosen chip
           carries aria-current: a `false` on each of some forty chips cost the route's byte budget
-          ~1.5 KB in the HTML and the RSC payload, and no attribute already means not current. */}
+          ~1.5 KB in the HTML and the RSC payload, and no attribute already means not current. From 768px the
+          row has no scrollbar and an arrow at each end that has more, which a held press keeps scrolling
+          (task 6.26); the chips are still these server links, passed in. */}
       {genres.length > 0 && (
-        <div className="filters genre-row" role="group" aria-label="Genre">
+        <GenreRow>
           {genres.map(({ genre: g }) => (
             <Link key={g} prefetch={false} href={genreChipHref({ status, level, owned, ...order }, g)} className="chip"
                   aria-current={genre?.toLowerCase() === g.toLowerCase() || undefined}>{g}</Link>
           ))}
-        </div>
+        </GenreRow>
       )}
 
       {/* A tap on a title opens the book's sheet over the list (task 3.5): one handler for every row. */}
