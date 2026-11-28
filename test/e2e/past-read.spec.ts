@@ -193,6 +193,27 @@ test("a past read finished after the latest moves the finish line to it; Undo pu
   expect(await reads()).toEqual([{ finished_on: "2024-03-10", fp: "exact", format: "text" }]);
 });
 
+test("in the book sheet, Esc closes the form, not the sheet, and focus returns to Add a past read (AC-4)", ONCE, async ({ page }) => {
+  await page.goto(`/books/list?q=${encodeURIComponent(BOOK.title)}`);
+  const link = page.locator(".book-row .row-title").getByRole("link", { name: BOOK.title, exact: true });
+  await hydrated(link);
+  await link.click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByRole("heading", { level: 2, name: BOOK.title })).toBeVisible();
+  const add = sheet.getByRole("button", { name: "Add a past read" });
+  await hydrated(add);
+  await add.click();
+  const started = sheet.getByRole("group", { name: "Started" });
+  await started.getByRole("radio", { name: "Year only" }).focus();
+  await page.keyboard.press("Escape");
+  await expect(sheet.getByRole("group", { name: "Format" })).toHaveCount(0);
+  await expect(sheet).toBeVisible();
+  await expect(add).toBeFocused();
+  // A second Esc, with no date control open, is the sheet's again.
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
+});
+
 test("a book that isn't Read has no Add a past read (AC-1)", ONCE, async ({ page }) => {
   await withSql((sql) => sql`UPDATE book_status SET status = 'reading', finished_on = NULL, finished_on_precision = 'none'
                              WHERE book_id = ${BOOK.id}`);

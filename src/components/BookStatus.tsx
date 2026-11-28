@@ -452,7 +452,13 @@ export default function BookStatus({
           </button>
         )}
       </span>
-      {open && <div id={panelId}>
+      {/* Esc inside an open date control closes that control, not the book sheet around it: the sheet's
+          own keydown handler would otherwise take it first (task 1.17c). */}
+      {open && <div id={panelId} onKeyDown={(e) => {
+        if (e.key !== "Escape" || !editing) return;
+        e.stopPropagation();
+        closeEditor();
+      }}>
         <div className="opts status-group" role="group" aria-label={`Status of ${title}`}>
           {STATUSES.map((s) => (
             <button key={s.status} type="button" ref={s.status === "read" ? readButton : undefined}
