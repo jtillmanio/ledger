@@ -1,14 +1,14 @@
 ---
 id: TASK-153
 title: 2.0c A pace change reaches the plan without a reload
-status: Ready
+status: In progress
 depends_on: []
 size: S
 model: sonnet
 autonomy: unattended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 6937521
 ---
 
 # TASK-153 — 2.0c A pace change reaches the plan without a reload
@@ -59,7 +59,49 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-11-28 ("approve with recommendations"; implemented on Opus by the owner's choice, not the `model: sonnet` above).
+
+**Why `router.refresh()`** (Next 16.4.6, `node_modules/next/dist/client/components/router-reducer/reducers/refresh-reducer.js`):
+`refreshReducer` calls `invalidateSegmentCacheEntries` and then `refreshDynamicData`, whose first act is
+`invalidateBfCache()` (`segment-cache/bfcache.js`), bumping the version every Back/forward read checks. So one
+refresh after a successful save makes Back, the nav and the dashboard all fetch afresh. `use-router.md` says the
+refresh clears "the current route"; the source clears every route's dynamic data and the back/forward cache.
+
+**Steps**
+
+1. `src/components/PaceSettings.tsx`: `useRouter()` from `next/navigation`; in `send()`, after `res.ok` and
+   `saved.current` is updated, `router.refresh()`. Never in the catch. A hold is one `PATCH` (2.0b), so one
+   refresh; a save flushed by the unmount cleanup (the `keepalive` send) refreshes whatever route is current
+   when it lands, which is the Plan the user went to.
+2. `test/pace-settings.test.tsx` (new, `@vitest-environment happy-dom`; not `test/settings.test.tsx`, which runs
+   in node against the TEST database): AC-2.
+3. `test/e2e/settings.spec.ts`: AC-1 (two tests: the save, the failed save), AC-3, AC-4.
+
+**Files**
+
+- `src/components/PaceSettings.tsx`: drop the router cache after a successful save.
+- `test/pace-settings.test.tsx` (new; the task listed `test/settings.test.tsx`): AC-2 with fake timers.
+- `test/e2e/settings.spec.ts`: AC-1, AC-3, AC-4 in the browser.
+- No `design/mockups.html` redraw: nothing on the screen changes.
+- `test/stepper.test.tsx` (revision 1, after approval: its 2.0b PaceSettings tests render outside an app router,
+  so `useRouter()` threw; they get the same `next/navigation` mock the other component tests use).
+
+**Test strategy**
+
+- AC-1: `settings.spec.ts` › "a pace change reaches Plan by Back and by the nav, and the dashboard, without a
+  reload (TASK-153 AC-1)": one book planned in this year's lane (`e2e-pace-*`), Plan → Settings by the nav,
+  *Minutes a day* 45 → 90; `.plan-total` ends `of <kWords(year capacity)>` from `plan_capacity`, after Back and
+  after the nav, with a `window` marker that a reload would clear; the dashboard's `.qfigs` reads the quarter's
+  capacity. › "a pace save that fails leaves Plan's capacity as it was (TASK-153 AC-1)": the route answers 500.
+- AC-2: `pace-settings.test.tsx` › a held + sends one PATCH and refreshes once, after it resolves; a 500 refreshes
+  nothing; Retry that lands refreshes once.
+- AC-3: `settings.spec.ts` › "a press still waiting when Settings is left by Back reaches Plan (TASK-153 AC-3)".
+- AC-4: `settings.spec.ts` › "the refresh after a save moves nothing on Settings, at 360 and 1280px (TASK-153
+  AC-4)": the steppers' and the card's boxes are equal before and after the refresh's RSC request; screenshots.
+  The existing floor tests keep running at every width.
+
+**Risks**: the refresh re-renders Settings, but `PaceSettings` keeps its `useState(initial)`, so nothing jumps
+(AC-4). The bundle cost is nil: `next/navigation` is already in the client bundle.
 
 ## Review log
 

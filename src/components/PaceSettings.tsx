@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Stepper from "@/components/Stepper";
 import { useUndo } from "@/components/Undo";
@@ -21,8 +22,15 @@ const ROWS: { key: SettingKey; label: string }[] = [
  * only the fields that changed, and any press still waiting is sent when the page is left. Saves
  * go out one at a time, so an older answer never lands over a newer one. A save that fails puts
  * the steppers back to what is stored and raises the app's failed-write line with Retry.
+ *
+ * A save that lands drops the router cache (task 2.0c): capacity is derived from the pace on every render
+ * (`plan_capacity`), so Plan and the books dashboard, reached by Back or by the nav, draw the new figure.
+ * `router.refresh()` empties the back/forward cache as well as the current route's (Next 16), so one call
+ * covers both. A held stepper is one save and so one refresh; a save sent as the screen is left lands
+ * on the route the user went to, which is the one refreshed.
  */
 export default function PaceSettings({ initial, year }: { initial: ReadingSettings; year: number }) {
+  const router = useRouter();
   const undo = useUndo();
   const [values, setValues] = useState(initial);
   const latest = useRef(initial);
@@ -47,6 +55,7 @@ export default function PaceSettings({ initial, year }: { initial: ReadingSettin
       });
       if (!res.ok) throw new Error(`settings PATCH ${res.status}`);
       saved.current = { ...saved.current, ...body };
+      router.refresh();
     } catch {
       show({ ...latest.current, ...Object.fromEntries(changed.map((k) => [k, saved.current[k]])) });
       undo.fail({

@@ -10,6 +10,9 @@ import PaceSettings from "../src/components/PaceSettings";
 import Stepper from "../src/components/Stepper";
 import { UndoProvider } from "../src/components/Undo";
 
+// A landed save refreshes the router (task 2.0c); the refresh itself is test/pace-settings.test.tsx.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }) }));
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 let container: HTMLDivElement;
