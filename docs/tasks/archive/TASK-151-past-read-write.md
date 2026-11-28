@@ -1,7 +1,7 @@
 ---
 id: TASK-151
 title: 1.17c Log a past read of a book already read (1 of 2) — the write and its undo
-status: Review
+status: Done
 depends_on: []
 size: M
 model: opus
