@@ -1,7 +1,7 @@
 ---
 id: TASK-149
 title: 6.25 Navigation for four and five media (3 of 3) — the tablet rail, the icon rail's menu and the sidebar
-status: In progress
+status: Review
 depends_on: [TASK-147, TASK-148]
 size: M
 model: opus
@@ -35,7 +35,7 @@ On the tablet and the desktop, every medium is one tap away where it fits by nam
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the 834px, 1024px and 1280px clauses and axe at those widths. With TASK-147 and TASK-148 merged, every clause is proven and 6.25 is ticked):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the 834px, 1024px and 1280px clauses and axe at those widths. With TASK-147 and TASK-148 merged, every clause is proven and 6.25 is ticked):
 browser test, light and dark: at 360px the bar shows the current medium as a
 44px button whose sheet lists every built medium with the current one
 `aria-current`, a 44px search button and the gear, nothing scrolls sideways,
@@ -45,11 +45,11 @@ divider, *Inbox* and *Progress*; at 834px the rail names every medium; at
 focus return work in; at 1280px the sidebar lists every medium with the
 current one expanded and an *Across media* group; with *Start on* set to
 Books, `/` opens `/books`; axe reports no new violations at each width.
-- [ ] AC-2: At 834px on `/books`, the rail shows a named item for each built medium with Books marked `aria-current`, then a rule, Inbox and Progress; tapping Watch opens `/watch`.
-- [ ] AC-3: At 1024px, the switch button names the current medium and carries `aria-haspopup="menu"`; Enter opens the menu with focus on the first item, ArrowDown and ArrowUp move between media, Enter on Comics navigates to `/comics`, and Esc closes the menu with focus back on the button.
-- [ ] AC-4: At 1280px on `/books`, the sidebar's *Media* list has a row per built medium with Books `aria-expanded="true"` and its screens nested under it, the others `aria-expanded="false"` or plain links to their dashboards; an *Across media* group holds Inbox with its count and Progress; *Search · Ctrl K* sits under the wordmark.
-- [ ] AC-5: At 1024px and up, no dashboard header carries a *Search* verb, and each keeps its other verbs in D-25's order, primary last.
-- [ ] AC-6: The rails, menu and sidebar meet the UX floor (`docs/04-design.md` § 10. The UX floor): targets at least 24px (56px on the tablet rail), every control a real button or link with a name, text 4.5:1 in both themes, reduced motion respected on the menu, axe reports no new violations, screenshots at 768, 1024 and 1280px, light and dark; and `design/mockups.html`'s tablet rails, icon rails and sidebars are redrawn from A8–A10 with `design/mockups-index.md` saying so.
+- [x] AC-2: At 834px on `/books`, the rail shows a named item for each built medium with Books marked `aria-current`, then a rule, Inbox and Progress; tapping Watch opens `/watch`.
+- [x] AC-3: At 1024px, the switch button names the current medium and carries `aria-haspopup="menu"`; Enter opens the menu with focus on the first item, ArrowDown and ArrowUp move between media, Enter on Comics navigates to `/comics`, and Esc closes the menu with focus back on the button.
+- [x] AC-4: At 1280px on `/books`, the sidebar's *Media* list has a row per built medium with Books `aria-expanded="true"` and its screens nested under it, the others `aria-expanded="false"` or plain links to their dashboards; an *Across media* group holds Inbox with its count and Progress; *Search · Ctrl K* sits under the wordmark.
+- [x] AC-5: At 1024px and up, no dashboard header carries a *Search* verb, and each keeps its other verbs in D-25's order, primary last.
+- [x] AC-6: The rails, menu and sidebar meet the UX floor (`docs/04-design.md` § 10. The UX floor): targets at least 24px (56px on the tablet rail), every control a real button or link with a name, text 4.5:1 in both themes, reduced motion respected on the menu, axe reports no new violations, screenshots at 768, 1024 and 1280px, light and dark; and `design/mockups.html`'s tablet rails, icon rails and sidebars are redrawn from A8–A10 with `design/mockups-index.md` saying so.
 
 ## Out of scope
 
@@ -76,6 +76,17 @@ Books, `/` opens `/books`; axe reports no new violations at each width.
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- On `/inbox`, `/progress` and `/settings` the tablet rail, the icon rail's switch and the sidebar draw comics' screens (`mediumFor`), while the phone's tab row draws the medium used last → docs/05-roadmap.md § 6.30 (new; Check proposed), docs/06-tasklist.md § M21
+- Roadmap 6.1 still said the thumb bar's and desktop header's Search slot waits for it (`SearchVerb` in `ThumbBar.tsx`); search is now `SearchButton.tsx` in the bar, the rail and the sidebar → docs/05-roadmap.md § 6.1
+- Candidate decision: in a short window the tablet rail scrolls only the medium's screens, under 740px tall the whole rail scrolls (no scrollbar, nothing sideways), and the sidebar's open medium is a disclosure that can close → docs/review/decisions.md § D-190 (approved at close-out)
+- The mockup's 16 dashboard thumb bars still drew a search slot (MR-D2, left by TASK-148) → not tracked: done in this PR (plan revision 2, owner)
+- STYLE_GUIDE §14.5 still says *the middle scrolls and the foot stays*, which D-190 narrows; the file is protected (design tool only) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- Lighthouse: the shell's markup grows on every route and `LIGHTHOUSE_MODE` is off (D-158) → not tracked: an owner gate in the PR's verification table (a hand run is the owner's call)
+- *Activity* in the rails and the sidebar's *Across media* → not tracked: already roadmap 6.17
+- Ctrl K binds nothing → not tracked: already roadmap 6.1 (global search, `Ctrl+K`)
+- Test audit: axe runs a named rule subset, and the screenshots are evidence, not assertions → not tracked: accepted as is (auditor, optional)
+- The `next dev` badge covers the rail's sync label in a local walk → not tracked: dev tooling only, not the app
 
 ## Plan
 
@@ -112,13 +123,24 @@ Approved 2026-11-26 (owner: "Approve"; the well's media are 58 × 46 as A8 draws
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS (+ shell/thumb-bar w390-light 63, w390-dark 7, mockup-tablet w1280-light 56) | CI R1 PASS (25e95d7)
+- Spec R1 CHANGES (mockups.html bdash desktop headers still drew Search; note: 16 thumb bars) → plan revision 2 (owner: in this PR) | Verify R2 PASS
+- Drift R1 update first (behind 1; main changed etl/views.sql, #355) → rebased | Verify R3 PASS | CI R2 PASS (25df55e)
+- Spec R2 CHANGES (bdash note *The verbs* still named Search) → fixed | Spec R3 APPROVE
+- Audit R1 PASS (all ACs PROVEN against 2c630ac)
+- UI R1 NOT RUN (passcode read denied) → owner allowed the read | UI R1 CHANGES (short tablet rail: Inbox/Progress below the fold, items clipped sideways under classic scrollbars; switch tooltip over the open menu) → plan revision 3
+- Verify R4 FAIL (tsc, shell.spec.ts:637) → fixed | Verify R5 FAIL (books-dashboard.test.ts timeout under load; passes alone) | Verify R6 PASS | CI R3 PASS (99f0d24)
+- Spec R4 CHANGES (under ~620px tall the foot fell past the window) → whole rail scrolls under 740px | Verify R7 PASS | CI R4 PASS (a8f2332)
+- Spec R5 CHANGES (.rail-rule shrank to 0) → flex:none | Verify R8 PASS | Spec R6 APPROVE | CI R5 PASS (65e2fc8)
+- Audit R2 PASS (the short-window tests and the tooltip check fail at 25df55e) | UI R2 PASS (834 × 1194/900/760/560, 768 × 1024, 1024 tooltip; light and dark)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 8 (2 failed: a type error, a timeout under load)
+- Review rounds: spec 6, audit 2, UI 2 (+1 not run), CI 5
+- First-pass AC FAILs: 1 (AC-6: the short tablet rail, found by the ui-verifier)
+- Plan revisions after approval: 3

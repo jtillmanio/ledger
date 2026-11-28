@@ -5637,6 +5637,12 @@ it is converted.
   *From 6.23 (2026-11-24, D-177):* frame F16 in `design/MR-F-Unbuilt-2.dc.html`
   draws search on the phone: *Search everything*, verbs first, opened from the
   bar (D-178). The bar's button is 6.25's.
+  *From 6.25 (TASK-149, PR #356):* the thumb bars' and the desktop headers'
+  Search slots are gone (D-178). Search is `SearchButton.tsx`, drawn
+  `aria-disabled` in the phone bar, at the tablet rail's foot, above the icon
+  rail's switch and as *Search · Ctrl K* under the sidebar's wordmark; Ctrl K
+  binds nothing yet. Turning on the `search` item makes each a link (the rail
+  and the sidebar skip the item in their foot, so none is drawn twice).
 
 - ☐ 6.2 Stats and year in review — depends on 1.5 and 2.1b · L
   Five charts per product § Metrics: books/year with plan overlaid, genre mix
@@ -5989,7 +5995,7 @@ it is converted.
   *+N · Follow…* on the other), the *Now reading* label resolves to uppercase
   IBM Plex Mono, nothing scrolls sideways, and every chip stays 44px.
 
-- ☐ 6.25 **Navigation for four and five media** · M. From 6.23 (TASK-126,
+- ☑ 6.25 **Navigation for four and five media** · M. From 6.23 (TASK-126,
   D-178). The three-media phone bar is at its width limit, so this lands
   before 9.0 adds a fourth medium. On the phone the bar reads *Ledger* · the
   current medium as a 44px button that opens the **Switch medium** sheet, then
@@ -6104,6 +6110,22 @@ it is converted.
     flight a row reads *Nothing in flight*; after a mark on `/comics`, opening
     the sheet shows the new next issue; `test/query-budget.test.ts` passes and
     no page's budget grows; axe passes.
+
+- ☐ 6.30 **The rail and the sidebar follow the last medium on a screen under
+  none** · S. From TASK-149 (6.25, 3 of 3; PR #356). On `/inbox`,
+  `/progress` and `/settings` the phone's tab row draws the medium you used
+  last (2.2i; `ShellFrame`'s `visited ?? cookieMedium`), but the tablet
+  rail, the icon rail's switch and the sidebar still draw comics' screens
+  (`mediumFor`'s fallback): after a session in books the switch names Comics
+  and the sidebar opens Comics. Draw the medium the tab row draws, with none
+  current in the well or the media list, and comics only before any medium is
+  known, without a flash at hydration (the cookie streams in).
+  - **Check:** (proposed; the owner agrees it by merging or edits it first) in
+    the browser (0.11) at 834, 1024 and 1280px: after visiting `/books`,
+    `/inbox` shows Books' screens in the rail, the switch reads *Books, switch
+    medium* and the sidebar opens Books, with no medium `aria-current`; in a
+    fresh context with no medium cookie `/inbox` draws comics' screens as
+    today; nothing scrolls sideways; axe passes.
 
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M
