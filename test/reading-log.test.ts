@@ -424,18 +424,20 @@ describe("a book's reads (roadmap 1.17b, AC-5)", () => {
     expect(await status("wok")).toMatchObject({ status: "read", on: "2026-03-18", precision: "exact" });
   });
 
-  it("bookReads lists a book's reads in the log's order, oldest first, with format, start, finish and precisions", async () => {
-    // The log's order is the order the reads were logged (id), as the latest read is the last:
-    // a re-date never reorders them, even when it moves the first read past the second.
+  it("bookReads lists a book's reads by finish, oldest first, with format, start, finish and precisions", async () => {
+    // The latest read is the latest finish (task 1.17c; owner at TASK-151's plan gate), and it is the last:
+    // a read logged later with an earlier finish sorts before it, and an undated read sorts first.
     await sql`INSERT INTO read_events (user_id, book_id, started_on, started_on_precision, finished_on, finished_on_precision, format)
               VALUES (${USER}, 'wok', '2019-02-01', 'exact', '2027-01-01', 'exact', 'text')`;
     await sql`INSERT INTO read_events (user_id, book_id, started_on, started_on_precision, finished_on, finished_on_precision, format)
               VALUES (${USER}, 'wok', NULL, 'none', '2024-07-01', 'approximate', 'audio')`;
+    await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision) VALUES (${USER}, 'wok', NULL, 'none')`;
     await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision) VALUES (${USER}, 'mst', NULL, 'none')`;
     const ids = (await events("wok")).map((e) => e.id);
     const wok = [
-      { id: ids[0], format: "text", started_on: "2019-02-01", started_on_precision: "exact", finished_on: "2027-01-01", finished_on_precision: "exact" },
+      { id: ids[2], format: "text", started_on: null, started_on_precision: "none", finished_on: null, finished_on_precision: "none" },
       { id: ids[1], format: "audio", started_on: null, started_on_precision: "none", finished_on: "2024-07-01", finished_on_precision: "approximate" },
+      { id: ids[0], format: "text", started_on: "2019-02-01", started_on_precision: "exact", finished_on: "2027-01-01", finished_on_precision: "exact" },
     ];
     expect(await q.bookReads(USER, "wok")).toEqual(wok);
 
@@ -452,5 +454,251 @@ describe("a book's reads (roadmap 1.17b, AC-5)", () => {
     expect(await q.bookReads(USER, "wok")).toEqual([]);
     expect(await q.bookReads(USER, "mst")).toEqual([]);
     expect((await bookRead.GET(new Request("http://test/api/progress/book/read"))).status).toBe(400);
+  });
+});
+
+describe("a past read (roadmap 1.17c)", () => {
+  const addPast = (body: unknown) => bookRead.PUT(req("/api/progress/book/read", "PUT", body));
+  const undoPast = (logged: unknown) => bookRead.DELETE(req("/api/progress/book/read", "DELETE", { logged }));
+  const day = (date: string) => ({ mode: "date", date });
+  const readOn = (id: string, date: string) => setStatus({ bookId: id, status: "read", finish: day(date) });
+  /** The years book_reads counts the book in, with each read's format (D-65, D-85). */
+  const readYears = async (id: string) => (await sql`
+    SELECT extract(year FROM finished_on)::int AS year, format FROM book_reads
+    WHERE user_id = ${USER} AND book_id = ${id} ORDER BY finished_on NULLS FIRST`).map((r) => [r.year, r.format]);
+  /** Every column a write could touch, for "changes nothing". */
+  const log = (id: string) => sql`
+    SELECT id, started_on::text AS started, started_on_precision AS sp, finished_on::text AS on,
+           finished_on_precision AS precision, format, reread_of, year_rank
+    FROM read_events WHERE user_id = ${USER} AND book_id = ${id} ORDER BY id`;
+  const fullStatus = async (id: string) => (await sql`
+    SELECT status, finished_on::text AS on, finished_on_precision AS precision,
+           started_on::text AS started, started_on_precision AS sp
+    FROM book_status WHERE user_id = ${USER} AND book_id = ${id}`)[0] ?? null;
+  const row = async (id: string) => (await q.listBooks(USER)).find((r) => r.id === id)!;
+
+  it("a book read 2024-03-10 gets a past read finished 2019-06-01: two rows, the status still 2024, both years counted; Undo leaves one", async () => {
+    await readOn("wok", "2024-03-10");
+    const res = await addPast({ bookId: "wok", finish: day("2019-06-01") });
+    expect(res.status).toBe(200);
+    const { logged } = await res.json();
+    expect((await events("wok")).map((e) => e.on)).toEqual(["2024-03-10", "2019-06-01"]);
+    expect(await status("wok")).toMatchObject({ status: "read", on: "2024-03-10", precision: "exact" });
+    expect(await readYears("wok")).toEqual([[2019, "text"], [2024, "text"]]);
+    expect([await byYear(2019), await byYear(2024)]).toEqual([1, 1]);
+
+    expect((await undoPast(logged)).status).toBe(200);
+    expect((await events("wok")).map((e) => e.on)).toEqual(["2024-03-10"]);
+    expect(await status("wok")).toMatchObject({ status: "read", on: "2024-03-10", precision: "exact" });
+    expect(await readYears("wok")).toEqual([[2024, "text"]]);
+  });
+
+  it("a past read finished 2025-01-05 moves book_status's finish to 2025-01-05", async () => {
+    await readOn("wok", "2024-03-10");
+    expect((await addPast({ bookId: "wok", finish: day("2025-01-05") })).status).toBe(200);
+    expect(await status("wok")).toMatchObject({ status: "read", on: "2025-01-05", precision: "exact" });
+    expect(await readYears("wok")).toEqual([[2024, "text"], [2025, "text"]]);
+  });
+
+  it("chains reread_of to the read finished just before it, and rewrites no existing row", async () => {
+    await readOn("wok", "2024-03-10");
+    await addPast({ bookId: "wok", finish: day("2019-06-01") });
+    await addPast({ bookId: "wok", finish: day("2022-02-02") });
+    const [r2024, r2019, r2022] = await events("wok");
+    expect(r2019).toMatchObject({ on: "2019-06-01", reread_of: null });
+    expect(r2022).toMatchObject({ on: "2022-02-02", reread_of: r2019.id });
+    // The 2024 read keeps the link it had: nothing chained before it.
+    expect(r2024).toMatchObject({ on: "2024-03-10", reread_of: null });
+  });
+
+  it("a listen with no Started is logged as audio, counted as a listen in its year, its start NULL and none", async () => {
+    await readOn("wok", "2024-03-10");
+    expect((await addPast({ bookId: "wok", finish: day("2019-06-01"), format: "audio" })).status).toBe(200);
+    const past = (await log("wok")).find((r) => r.on === "2019-06-01");
+    expect(past).toMatchObject({ format: "audio", started: null, sp: "none", precision: "exact" });
+    expect(await readYears("wok")).toEqual([[2019, "audio"], [2024, "text"]]);
+    expect(await row("wok")).toMatchObject({ reads: 1, listens: 1 });
+  });
+
+  it("keeps a start sent with it, with its precision", async () => {
+    await readOn("wok", "2024-03-10");
+    await addPast({ bookId: "wok", start: { mode: "year", year: 2019 }, finish: day("2019-06-01") });
+    expect((await log("wok")).find((r) => r.on === "2019-06-01")).toMatchObject({ started: "2019-07-01", sp: "approximate" });
+  });
+
+  it("a start after its finish is a 400 with 1.17's reason, and nothing is written", async () => {
+    await readOn("wok", "2024-03-10");
+    const before = [await log("wok"), await fullStatus("wok")];
+    const res = await addPast({ bookId: "wok", start: day("2019-07-01"), finish: day("2019-06-01") });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("the start is after the finish");
+    expect([await log("wok"), await fullStatus("wok")]).toEqual(before);
+  });
+
+  it("a book with no status, To read or Reading is a 409, and nothing is written", async () => {
+    const tryIt = () => addPast({ bookId: "mst", finish: day("2019-06-01") });
+    expect((await tryIt()).status).toBe(409);
+    expect(await fullStatus("mst")).toBeNull();
+    for (const s of ["to_read", "reading"]) {
+      await setStatus({ bookId: "mst", status: s });
+      const before = await fullStatus("mst");
+      expect((await tryIt()).status).toBe(409);
+      expect(await fullStatus("mst")).toEqual(before);
+      expect(await log("mst")).toEqual([]);
+    }
+  });
+
+  it("an unknown or removed book is a 404, a missing or bad finish or format a 400, and nothing is written", async () => {
+    expect((await addPast({ bookId: "nope", finish: day("2019-06-01") })).status).toBe(404);
+    await readOn("wok", "2024-03-10");
+    const before = await log("wok");
+    for (const body of [
+      { bookId: "wok" },
+      { bookId: "wok", finish: day("2019-02-30") },
+      { bookId: "wok", finish: day("2019-06-01"), format: "video" },
+      { finish: day("2019-06-01") },
+    ]) expect((await addPast(body)).status).toBe(400);
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 'wok'`;
+    expect((await addPast({ bookId: "wok", finish: day("2019-06-01") })).status).toBe(404);
+    expect(await log("wok")).toEqual(before);
+  });
+
+  it("a Read book whose read only the status holds has that read logged first, and Undo takes both back", async () => {
+    // As the workbook loaded it: a read status with no log row (D-65).
+    await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+              VALUES (${USER}, 'wok', 'read', '2024-03-10', 'exact')`;
+    const { logged } = await (await addPast({ bookId: "wok", finish: day("2019-06-01") })).json();
+    expect((await events("wok")).map((e) => [e.on, e.precision])).toEqual([["2024-03-10", "exact"], ["2019-06-01", "exact"]]);
+    expect(await readYears("wok")).toEqual([[2019, "text"], [2024, "text"]]);
+    expect(await status("wok")).toMatchObject({ on: "2024-03-10", precision: "exact" });
+
+    expect((await undoPast(logged)).status).toBe(200);
+    expect(await events("wok")).toEqual([]);
+    expect(await status("wok")).toMatchObject({ status: "read", on: "2024-03-10", precision: "exact" });
+    expect(await readYears("wok")).toEqual([[2024, "text"]]);
+  });
+
+  it("changes no year_rank in any year when the book has a ranked read", async () => {
+    await readOn("wok", "2024-03-10");
+    await readOn("mst", "2024-05-01");
+    await sql`UPDATE read_events SET year_rank = CASE book_id WHEN 'mst' THEN 1 ELSE 2 END WHERE user_id = ${USER}`;
+    const ranks = () => sql`SELECT id, year_rank FROM read_events WHERE user_id = ${USER} ORDER BY id`;
+    const before = await ranks();
+    await addPast({ bookId: "wok", finish: day("2024-01-02") });
+    await addPast({ bookId: "wok", finish: day("2019-06-01") });
+    const after = await ranks();
+    expect(after.slice(0, before.length)).toEqual(before);
+    expect(after.slice(before.length).map((r) => r.year_rank)).toEqual([null, null]);
+  });
+
+  it("Undo deletes exactly that row and puts book_status's finish and precision back", async () => {
+    await setStatus({ bookId: "wok", status: "read", finish: { mode: "year", year: 2024 } });
+    await readOn("mst", "2023-01-01");
+    const others = await log("mst");
+    const before = await log("wok");
+    const { logged } = await (await addPast({ bookId: "wok", finish: day("2025-01-05") })).json();
+    expect(await status("wok")).toMatchObject({ on: "2025-01-05", precision: "exact" });
+    expect((await undoPast(logged)).status).toBe(200);
+    expect(await log("wok")).toEqual(before);
+    expect(await status("wok")).toMatchObject({ status: "read", on: "2024-07-01", precision: "approximate" });
+    expect(await log("mst")).toEqual(others);
+  });
+
+  it("Undo after another read is re-dated is a 409 and changes nothing", async () => {
+    await readOn("wok", "2024-03-10");
+    const [first] = await events("wok");
+    const { logged } = await (await addPast({ bookId: "wok", finish: day("2019-06-01") })).json();
+    await bookRead.POST(req("/api/progress/book/read", "POST", { bookId: "wok", readId: first.id, finish: day("2024-04-01") }));
+    const before = [await log("wok"), await fullStatus("wok")];
+    expect((await undoPast(logged)).status).toBe(409);
+    expect([await log("wok"), await fullStatus("wok")]).toEqual(before);
+  });
+
+  it("Undo after a status write, or after another read is added, is a 409 and changes nothing", async () => {
+    await readOn("wok", "2024-03-10");
+    const first = await (await addPast({ bookId: "wok", finish: day("2019-06-01") })).json();
+    await addPast({ bookId: "wok", finish: day("2020-06-01") });
+    let before = [await log("wok"), await fullStatus("wok")];
+    expect((await undoPast(first.logged)).status).toBe(409);
+    expect([await log("wok"), await fullStatus("wok")]).toEqual(before);
+
+    const { logged } = await (await addPast({ bookId: "wok", finish: day("2021-06-01") })).json();
+    await setStatus({ bookId: "wok", status: "dnf" });
+    before = [await log("wok"), await fullStatus("wok")];
+    expect((await undoPast(logged)).status).toBe(409);
+    expect([await log("wok"), await fullStatus("wok")]).toEqual(before);
+  });
+
+  it("Undo of something that isn't an add's answer is a 400", async () => {
+    for (const logged of [null, {}, { bookId: "wok" }, { bookId: "wok", readId: "x", prior: {}, reads: "" }]) {
+      expect((await undoPast(logged)).status).toBe(400);
+    }
+  });
+});
+
+describe("the latest read is the latest finish (task 1.17c)", () => {
+  const day = (date: string) => ({ mode: "date", date });
+  const addPast = (body: unknown) => bookRead.PUT(req("/api/progress/book/read", "PUT", body));
+
+  async function withPastRead() {
+    await setStatus({ bookId: "wok", status: "read", start: day("2024-03-01"), finish: day("2024-03-10") });
+    await addPast({ bookId: "wok", start: day("2019-05-01"), finish: day("2019-06-01") });
+    const [r2024, r2019] = await events("wok");
+    return { r2024, r2019 };
+  }
+
+  it("Read on the book corrects the 2024 read, not the 2019 one logged after it", async () => {
+    await withPastRead();
+    await setStatus({ bookId: "wok", status: "read", finish: day("2024-03-12") });
+    expect((await events("wok")).map((e) => e.on)).toEqual(["2024-03-12", "2019-06-01"]);
+    expect(await status("wok")).toMatchObject({ on: "2024-03-12" });
+  });
+
+  it("the Library row, the book's sheet and bookReads read the 2024 read as the latest", async () => {
+    const { r2024, r2019 } = await withPastRead();
+    expect((await q.listBooks(USER)).find((r) => r.id === "wok"))
+      .toMatchObject({ started_on: "2024-03-01", finished_on: "2024-03-10", days_taken: 9 });
+    const detail = await q.bookDetail(USER, "wok");
+    expect(detail).toMatchObject({ started_on: "2024-03-01", finished_on: "2024-03-10" });
+    expect(detail!.history.map((h) => h.id)).toEqual([r2024.id, r2019.id]);
+    expect((await q.bookReads(USER, "wok")).map((r) => r.id)).toEqual([r2019.id, r2024.id]);
+  });
+
+  it("the Calibre sync sends the 2024 finish", async () => {
+    await withPastRead();
+    await sql`UPDATE books SET calibre_id = 77 WHERE id = 'wok'`;
+    const { syncCalibre } = await import("../src/db/calibre-sync");
+    const { holdings } = await syncCalibre(USER, {
+      records: [{ calibreId: 77, title: "The Way of Kings", authors: [] }], calibreIds: [77], missingColumns: [],
+    }, { maxLookups: 0 });
+    expect(holdings.find((h) => h.bookId === "wok")).toMatchObject({ finishedOn: "2024-03-10", precision: "exact" });
+  });
+
+  it("a Read correction that moves the latest read before another moves book_status to the other, and its undo back", async () => {
+    await setStatus({ bookId: "wok", status: "read", finish: day("2019-06-01") });
+    await setStatus({ bookId: "wok", status: "reading" });
+    await setStatus({ bookId: "wok", status: "read", start: day("2024-03-01"), finish: day("2024-03-10") });
+    const res = await setStatus({ bookId: "wok", status: "read", start: { mode: "none" }, finish: day("2018-01-01") });
+    expect((await events("wok")).map((e) => e.on)).toEqual(["2019-06-01", "2018-01-01"]);
+    expect(await status("wok")).toMatchObject({ on: "2019-06-01", precision: "exact" });
+    const { change } = await res.json();
+    expect((await undoStatus(change)).status).toBe(200);
+    expect((await events("wok")).map((e) => e.on)).toEqual(["2019-06-01", "2024-03-10"]);
+    expect(await status("wok")).toMatchObject({ on: "2024-03-10", precision: "exact" });
+  });
+
+  it("re-dating the latest read before another moves book_status to the other, and its undo moves it back", async () => {
+    await setStatus({ bookId: "wok", status: "read", finish: day("2019-06-01") });
+    await setStatus({ bookId: "wok", status: "reading" });
+    // Reading stamped today's start: the 2024 finish takes its own.
+    await setStatus({ bookId: "wok", status: "read", start: day("2024-03-01"), finish: day("2024-03-10") });
+    const [, r2024] = await events("wok");
+    const res = await bookRead.POST(req("/api/progress/book/read", "POST", {
+      bookId: "wok", readId: r2024.id, start: { mode: "none" }, finish: day("2018-01-01") }));
+    expect(res.status).toBe(200);
+    expect(await status("wok")).toMatchObject({ on: "2019-06-01", precision: "exact" });
+    const { redate } = await res.json();
+    expect((await bookRead.DELETE(req("/api/progress/book/read", "DELETE", { redate }))).status).toBe(200);
+    expect(await status("wok")).toMatchObject({ on: "2024-03-10", precision: "exact" });
   });
 });

@@ -423,7 +423,8 @@ describe("re-dating any read (roadmap 1.17b, AC-2)", () => {
     const firstBefore = await eventRow(first);
     await redate({ readId: second, start: day("2026-01-30"), finish: { mode: "none" } });
     expect((await events())[1]).toMatchObject({ id: second, started: "2026-01-30", sp: "exact", finished: null, fp: "none" });
-    expect(await status()).toMatchObject({ status: "read", finished: null, fp: "none", started: null, sp: "none" });
+    // Undated, it is no longer the latest read: the first, dated, is (task 1.17c; owner at TASK-151's plan gate).
+    expect(await status()).toMatchObject({ status: "read", finished: "2025-01-20", fp: "exact", started: null, sp: "none" });
     expect(await eventRow(first)).toBe(firstBefore);
 
     await redate({ readId: second, finish: { mode: "year", year: 2026 } });

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { RefusedStatus, isRankExit, redateBookRead, undoBookRedate, type BookRedate } from "@/db/writes";
+import {
+  NotRead, RefusedStatus, isRankExit, logPastRead, redateBookRead, undoBookRedate, undoPastRead, type BookRedate, type PastRead,
+} from "@/db/writes";
 import { bookReads } from "@/db/queries";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { isFinish, resolveFinish, resolveStart, startAfterFinish, type Finish } from "@/lib/finish-date";
@@ -70,13 +72,64 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true, redate });
 }
 
-/** A re-date's undo: `{ redate }` as the POST answered it. 409 when the read has
- * been re-dated since, or its old year's ranking has moved since (task 3.4c), and
- * nothing is changed. A malformed rank change is a 400. */
+/**
+ * Log a past read of a book already Read (task 1.17c): `{ bookId, start?, finish,
+ * format? }`, each date the finish-date control's choice, `format` `text` (the
+ * default) or `audio`. One new read beside the others, which stay as they are;
+ * `book_status`'s finish moves only when this read finishes after the latest. No
+ * rank is written. A bad or future date, or a start after its finish, is a 400; a
+ * book that isn't Read (no status, To read, Reading, …) a 409; a missing or
+ * removed book a 404. Nothing is written in each. Answers `{ logged }`, which
+ * `DELETE` here sends back to undo it.
+ */
+export async function PUT(req: Request) {
+  const userId = await apiUserId();
+  if (!userId) return unauthorized();
+  const { bookId, start: startChoice, finish: finishChoice, format = "text" } = await req.json();
+  if (typeof bookId !== "string" || bookId === "") return bad("bookId is required");
+  if (finishChoice === undefined) return bad("a past read needs a finish");
+  if (format !== "text" && format !== "audio") return bad("format is text or audio");
+
+  const finish = resolveFinish(finishChoice);
+  if (!finish.ok) return bad(finish.error);
+  let start: Finish | undefined;
+  if (startChoice !== undefined) {
+    const resolved = resolveStart(startChoice);
+    if (!resolved.ok) return bad(resolved.error);
+    start = resolved.start;
+  }
+
+  let logged;
+  try {
+    logged = await logPastRead(userId, { bookId, start, finish: finish.finish, format });
+  } catch (e) {
+    if (e instanceof NotRead) return NextResponse.json({ error: e.message }, { status: 409 });
+    if (e instanceof RefusedStatus) return bad(e.message);
+    throw e;
+  }
+  if (!logged) return NextResponse.json({ error: "no such book" }, { status: 404 });
+  return NextResponse.json({ ok: true, logged });
+}
+
+/**
+ * An undo: `{ redate }` as the POST answered it, or `{ logged }` as the PUT did
+ * (task 1.17c). 409 when the read has been re-dated since, or its old year's
+ * ranking has moved since (task 3.4c); for a past read, when anything about the
+ * book's reads or status has changed since. Nothing is changed then. A malformed
+ * answer is a 400.
+ */
 export async function DELETE(req: Request) {
   const userId = await apiUserId();
   if (!userId) return unauthorized();
-  const { redate } = await req.json();
+  const body = await req.json();
+  if (typeof body === "object" && body !== null && "logged" in body) {
+    if (!validLogged(body.logged)) return bad("logged is a past read's answer");
+    if (!(await undoPastRead(userId, body.logged))) {
+      return NextResponse.json({ error: "the book's reads have changed since" }, { status: 409 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+  const { redate } = body ?? {};
   if (!validRedate(redate)) return bad("redate is a re-date's answer");
   if (!(await undoBookRedate(userId, redate))) {
     return NextResponse.json({ error: "the read has changed since" }, { status: 409 });
@@ -111,4 +164,18 @@ function validRedate(r: unknown): r is BookRedate {
     return false;
   }
   return validDates(before, readId === null) && validDates(after, readId === null);
+}
+
+/** Longer than any book's status and reads, as `bookLogState` writes them: not an add's answer. */
+const MAX_STATE = 200_000;
+
+function validLogged(l: unknown): l is PastRead {
+  if (typeof l !== "object" || l === null) return false;
+  const { bookId, readId, backfilled, prior, reads } = l as Record<string, unknown>;
+  if (typeof bookId !== "string" || bookId === "" || !isId(readId)) return false;
+  if (backfilled !== null && !isId(backfilled)) return false;
+  if (typeof prior !== "object" || prior === null) return false;
+  const p = prior as Record<string, unknown>;
+  if (!isFinish({ on: p.finishedOn, precision: p.precision })) return false;
+  return typeof reads === "string" && reads !== "" && reads.length <= MAX_STATE;
 }

@@ -683,7 +683,7 @@ export async function listBooks(
       SELECT e.started_on, e.started_on_precision, e.finished_on, e.finished_on_precision
       FROM read_events e
       WHERE e.user_id = ${userId} AND e.book_id = b.id
-      ORDER BY e.id DESC
+      ORDER BY e.finished_on DESC NULLS LAST, e.id DESC
       LIMIT 1
     ) lr ON st.status = 'read'
     -- Its reads and listens (task 1.23): derived from the log, never stored (Hard rule 2).
@@ -918,7 +918,7 @@ export async function booksDone(userId: string) {
       SELECT e.started_on, e.started_on_precision, e.finished_on, e.finished_on_precision
       FROM read_events e
       WHERE e.user_id = ${userId} AND e.book_id = b.id
-      ORDER BY e.id DESC
+      ORDER BY e.finished_on DESC NULLS LAST, e.id DESC
       LIMIT 1
     ) lr ON st.status = 'read'
     WHERE st.user_id = ${userId} AND st.status IN ('read', 'dnf')
@@ -1044,9 +1044,11 @@ export type BookRead = {
 };
 
 /**
- * A book's reads, oldest first (task 1.17b, D-131): its `read_events` rows in
- * the log's order, the order they were logged, so the last is the latest read
- * `book_status` keeps in step with. A re-date never reorders them. A read the
+ * A book's reads, oldest first (task 1.17b, D-131): its `read_events` rows by
+ * finish, an undated read first and two on one day in the order they were
+ * logged, so the last is the latest read `book_status` keeps in step with
+ * (`latestRead`'s order reversed, task 1.17c). A past read logged today sorts by
+ * its own finish, and a re-date can reorder them. A read the
  * status holds with no log row (the workbook's) is not listed: it has no row to
  * re-date, and a book with it has only that one read. Empty for a removed book.
  */
@@ -1058,7 +1060,7 @@ export async function bookReads(userId: string, bookId: string): Promise<BookRea
     FROM read_events e
     JOIN books b ON b.id = e.book_id AND b.deleted_at IS NULL
     WHERE e.user_id = ${userId} AND e.book_id = ${bookId}
-    ORDER BY e.id
+    ORDER BY e.finished_on ASC NULLS FIRST, e.id
   `;
 }
 
@@ -1106,7 +1108,7 @@ export type BookDetail = {
   owned: OwnedKind[];
   /** Its reads by eye and its listens, from `book_reads` (task 1.23). */
   reads: number; listens: number;
-  /** Every read, newest first: the log's order, which a re-date never changes. */
+  /** Every read, newest first: the latest finish first, an undated read last (task 1.17c), so a re-date can reorder it. */
   history: HistoryRead[];
 };
 
@@ -1150,7 +1152,9 @@ export async function bookDetail(userId: string, bookId: string): Promise<BookDe
            (SELECT COUNT(*) FILTER (WHERE r.format = 'audio') FROM book_reads r
             WHERE r.user_id = ${userId} AND r.book_id = b.id)::int AS listens,
            COALESCE((
-             SELECT json_agg(to_jsonb(h) - 'sort' ORDER BY h.sort DESC)
+             -- The latest read first, as latestRead sorts (task 1.17c): finish, undated last, then the log's order.
+             -- finished_on is ISO text here, which sorts as the date does.
+             SELECT json_agg(to_jsonb(h) - 'sort' ORDER BY h.finished_on DESC NULLS LAST, h.sort DESC)
              FROM (
                SELECT e.id, e.format,
                       e.started_on::text AS started_on, e.started_on_precision,
@@ -1186,7 +1190,7 @@ export async function bookDetail(userId: string, bookId: string): Promise<BookDe
       SELECT e.started_on, e.started_on_precision
       FROM read_events e
       WHERE e.user_id = ${userId} AND e.book_id = b.id
-      ORDER BY e.id DESC
+      ORDER BY e.finished_on DESC NULLS LAST, e.id DESC
       LIMIT 1
     ) lr ON st.status = 'read'
     WHERE b.id = ${bookId} AND b.deleted_at IS NULL`;
@@ -1434,7 +1438,7 @@ export async function seriesPage(userId: string, seriesId: string): Promise<Seri
                SELECT e.started_on, e.started_on_precision, e.finished_on, e.finished_on_precision
                FROM read_events e
                WHERE e.user_id = ${userId} AND e.book_id = b.id
-               ORDER BY e.id DESC
+               ORDER BY e.finished_on DESC NULLS LAST, e.id DESC
                LIMIT 1
              ) lr ON st.status = 'read'
              WHERE b.series_id = p.series_id AND b.deleted_at IS NULL), '[]'::json) AS books,
@@ -1527,7 +1531,7 @@ export async function authorPage(userId: string, authorId: string): Promise<Grou
                SELECT e.started_on, e.started_on_precision, e.finished_on, e.finished_on_precision
                FROM read_events e
                WHERE e.user_id = ${userId} AND e.book_id = b.id
-               ORDER BY e.id DESC
+               ORDER BY e.finished_on DESC NULLS LAST, e.id DESC
                LIMIT 1
              ) lr ON st.status = 'read'
              WHERE b.author_id = p.author_id AND b.deleted_at IS NULL), '[]'::json) AS books
@@ -1572,7 +1576,7 @@ export async function universePage(userId: string, universeId: string): Promise<
                SELECT e.started_on, e.started_on_precision, e.finished_on, e.finished_on_precision
                FROM read_events e
                WHERE e.user_id = ${userId} AND e.book_id = b.id
-               ORDER BY e.id DESC
+               ORDER BY e.finished_on DESC NULLS LAST, e.id DESC
                LIMIT 1
              ) lr ON st.status = 'read'
              WHERE b.universe_id = p.universe_id AND b.deleted_at IS NULL), '[]'::json) AS books
