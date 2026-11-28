@@ -616,9 +616,11 @@ async function holdingsFor(tx: Tx, userId: string, calibreIds: number[]): Promis
            coalesce((SELECT array_agg(o.format ORDER BY o.format) FROM owned_copies o WHERE o.book_id = b.id), '{}') AS owned
     FROM books b
     LEFT JOIN book_status bs ON bs.book_id = b.id AND bs.user_id = ${userId}
+    -- The latest read: the latest finish, an undated one last (task 1.17c, as latestRead in writes.ts).
     LEFT JOIN LATERAL (
       SELECT r.id, r.finished_on, r.finished_on_precision FROM read_events r
-      WHERE r.book_id = b.id AND r.user_id = ${userId} ORDER BY r.id DESC LIMIT 1
+      WHERE r.book_id = b.id AND r.user_id = ${userId}
+      ORDER BY r.finished_on DESC NULLS LAST, r.id DESC LIMIT 1
     ) lr ON true
     WHERE b.deleted_at IS NULL
       AND b.calibre_id IN (SELECT jsonb_array_elements_text(${JSON.stringify(calibreIds)}::jsonb)::int)

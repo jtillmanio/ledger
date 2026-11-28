@@ -352,9 +352,15 @@ Release, test isolation) and the Hard rules a reviewer checks.
 - **Reads are a log** (task 1.5, product #22). `read_events` holds one row per
   finished read, a book (`book_id`) or a placement (`placement_id`, never the
   issue), exactly one (`num_nonnulls` CHECK); `reread_of` is the same item's
-  previous read. `book_status` is the current-status projection over it, written
+  previous read, the one finished just before it. `book_status` is the current-status projection over it, written
   only through `saveBookStatus`: entering `read` appends a read, `read` on a book
   already read re-dates its latest one, and leaving `read` keeps the finish date.
+  **A book's latest read is its latest finish** (task 1.17c, D-191): an undated
+  read last, two on one day the later logged (`finished_on DESC NULLS LAST, id
+  DESC`), never simply the newest row; every reader of the latest read sorts so,
+  and `book_status`'s finish is the latest read's after every write. A past read
+  of a book already Read is logged beside its others by `logPastRead`, with no
+  rank, and its undo refuses once the book's reads or status have changed.
   Comic reads don't write `read_events` yet; `issue_progress` is their record.
   **A listen is a read** (task 1.23, D-85, data model 2.22): `listening` is
   Reading by ear, one in-progress state with `reading` (switching keeps the
