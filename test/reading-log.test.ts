@@ -629,6 +629,31 @@ describe("a past read (roadmap 1.17c)", () => {
     expect([await log("wok"), await fullStatus("wok")]).toEqual(before);
   });
 
+  it("a rank's undo is refused once an earlier past read is logged after the read it backfilled, and both reads stay", async () => {
+    // The read only the status holds is logged by ranking it (task 3.4b); its undo would delete that row.
+    await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+              VALUES (${USER}, 'wok', 'read', '2024-05-01', 'exact')`;
+    const rank = await import("../src/app/api/progress/book/rank/route");
+    const { change } = await (await rank.POST(req("/api/progress/book/rank", "POST", { bookId: "wok", rank: 1 }))).json();
+    expect(change.backfilled).toEqual(expect.any(Number));
+    await addPast({ bookId: "wok", finish: day("2020-06-01") });
+    const before = [await log("wok"), await fullStatus("wok")];
+    expect((await rank.DELETE(req("/api/progress/book/rank", "DELETE", { change }))).status).toBe(409);
+    expect([await log("wok"), await fullStatus("wok")]).toEqual(before);
+    expect(await readYears("wok")).toEqual([[2020, "text"], [2024, "text"]]);
+  });
+
+  it("a reread finished before the latest read links reread_of to the read before it, as a past read does", async () => {
+    await readOn("wok", "2024-03-10");
+    await addPast({ bookId: "wok", finish: day("2019-06-01") });
+    await setStatus({ bookId: "wok", status: "reading", start: day("2020-01-01") });
+    await setStatus({ bookId: "wok", status: "read", finish: day("2020-02-01") });
+    const [, r2019, r2020] = await events("wok");
+    expect(r2020).toMatchObject({ on: "2020-02-01", reread_of: r2019.id });
+    // Not the latest finish, so book_status stays on the 2024 read.
+    expect(await status("wok")).toMatchObject({ status: "read", on: "2024-03-10", precision: "exact" });
+  });
+
   it("Undo of something that isn't an add's answer is a 400", async () => {
     for (const logged of [null, {}, { bookId: "wok" }, { bookId: "wok", readId: "x", prior: {}, reads: "" }]) {
       expect((await undoPast(logged)).status).toBe(400);

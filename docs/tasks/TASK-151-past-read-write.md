@@ -64,8 +64,8 @@ passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- A decision row: a book's latest read is its latest finish (undated last, ties by id), not its highest id; re-dates keep `book_status` on whichever read is latest after the write; a logged past read's `reread_of` is the read finished just before it, no existing row rewritten (approved at plan)
-- A note to TASK-152: the route's shape (`PUT` / `DELETE { logged }`) and *All reads* now listed by finish, so a re-date can re-sort it (approved at plan)
+- A decision row: a book's latest read is its latest finish (undated last, ties by id), not its highest id; re-dates keep `book_status` on whichever read is latest after the write; a new read's `reread_of` (logged past, or appended by a status write: revision 2) is the read finished just before it, no existing row rewritten; a new read finished before the latest leaves `book_status` on the latest (approved at plan) → planned: `docs/review/decisions.md` (a new D-n row)
+- A note to TASK-152: the route's shape (`PUT` / `DELETE { logged }`) and *All reads* now listed by finish, so a re-date can re-sort it (approved at plan) → planned: `docs/tasks/TASK-152-past-read-ui.md` § Context
 
 ## Plan
 
@@ -81,6 +81,8 @@ Approved 2026-11-28. Owner at the plan gate: "latest" becomes the latest finish 
 4. `logPastRead(userId, { bookId, start?, finish, format })` under `lockBook`: a book not Read is refused (`NotRead`, 409); a Read book whose read the status holds alone has it logged first (as `saveBookStatus` does); one row inserted, no rank, `reread_of` the read finished just before it; `book_status`'s finish set from the latest read. Answers the prior finish and a snapshot of the book's reads and status after the add.
 5. `undoPastRead`: refuses (409, nothing changed) unless the book's reads and status are exactly the snapshot; else deletes the row (and the backfilled one) and puts the prior finish and precision back.
 5a. (Plan revision 1, owner 2026-11-28.) `undoBookStatus`'s "the log hasn't moved on" guard no longer asks for the touched read to be the latest: a read the write appended or backfilled must still be the newest row, and a read it corrected must exist and be the latest again with its old dates back. Otherwise a correction that moves the read before another could not be undone.
+5b. (Plan revision 2, owner 2026-11-28.) A read appended by a status write (Reading or Listening, then Read) takes the same `reread_of` rule as a past read: the read finished just before it (`readBefore`). A reread finished today still points at the latest read.
+5c. (Review fix, schema-reviewer and spec-reviewer R1.) `undoRank`'s backfill guard judges by the newest row (`newestRead`), as revision 1 does for `undoBookStatus`: by the latest read, an earlier past read logged after the backfill let the undo delete the 2024 read.
 6. Route `src/app/api/progress/book/read/route.ts`: `PUT { bookId, start?, finish, format? }` adds (400 bad dates or `START_AFTER_FINISH`, 404 missing book, 409 not Read); `DELETE { logged }` undoes it, `DELETE { redate }` as before.
 
 **Files**

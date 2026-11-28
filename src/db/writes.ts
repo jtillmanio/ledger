@@ -152,6 +152,19 @@ async function readSortsAfter(tx: Tx, userId: string, bookId: string, read: { id
   return Boolean(later);
 }
 
+/** The read a new read finishing `on` would sort just after in `latestRead`'s order: the latest of the book's
+ * reads finished on or before it (an undated read sorts first, and a new read after any on its day), or null
+ * when it would be the earliest. A new read's `reread_of` (task 1.17c; owner at TASK-151's plan gate). */
+async function readBefore(tx: Tx, userId: string, bookId: string, on: string | null): Promise<number | null> {
+  const before = on === null
+    ? isNull(readEvents.finishedOn)
+    : or(isNull(readEvents.finishedOn), sql`${readEvents.finishedOn} <= ${on}::date`);
+  const [row] = await tx.select({ id: readEvents.id }).from(readEvents)
+    .where(and(eq(readEvents.userId, userId), eq(readEvents.bookId, bookId), before))
+    .orderBy(sql`${readEvents.finishedOn} DESC NULLS LAST`, desc(readEvents.id)).limit(1);
+  return row?.id ?? null;
+}
+
 /** Put the latest read's finish on `book_status` (task 1.17b, D-133; task 1.17c), so the two never
  * disagree whichever read a write moved, added or took away. A book with no read keeps its own. */
 async function keepFinishInStep(tx: Tx, userId: string, bookId: string) {
@@ -301,7 +314,8 @@ export async function saveBookStatus(
         // the book was in when you finished it says how it was read.
         format = before?.status === "listening" ? "audio" : "text";
         const [row] = await tx.insert(readEvents)
-          .values({ userId, bookId, ...dated, ...asStart(kept), format, rereadOf: latest?.id ?? null })
+          // Its previous read is the one finished just before it, as a past read's is (task 1.17c).
+          .values({ userId, bookId, ...dated, ...asStart(kept), format, rereadOf: await readBefore(tx, userId, bookId, finished.on) })
           .returning({ id: readEvents.id });
         appended = row.id;
       }
@@ -737,17 +751,10 @@ export async function logPastRead(userId: string, input: PastReadInput): Promise
         .returning({ id: readEvents.id });
       backfilled = row.id;
     }
-    // The read just before it: the latest of the reads it sorts after (an undated read sorts first).
-    const before = finish.on === null
-      ? isNull(readEvents.finishedOn)
-      : or(isNull(readEvents.finishedOn), sql`${readEvents.finishedOn} <= ${finish.on}::date`);
-    const [previous] = await tx.select({ id: readEvents.id }).from(readEvents)
-      .where(and(eq(readEvents.userId, userId), eq(readEvents.bookId, bookId), before))
-      .orderBy(sql`${readEvents.finishedOn} DESC NULLS LAST`, desc(readEvents.id)).limit(1);
     const [row] = await tx.insert(readEvents)
       .values({
         userId, bookId, finishedOn: finish.on, finishedOnPrecision: finish.precision, ...asStart(start), format,
-        rereadOf: previous?.id ?? null,
+        rereadOf: await readBefore(tx, userId, bookId, finish.on),
       })
       .returning({ id: readEvents.id });
     await keepFinishInStep(tx, userId, bookId);
@@ -1038,7 +1045,9 @@ export async function undoRank(userId: string, change: RankChange): Promise<bool
     if (!(await asLeft(tx, userId, { year, after, left }))) return false;
     if (backfilled !== null) {
       if (!(await lockBook(tx, bookId))) return false;
-      if ((await latestRead(tx, userId, bookId))?.id !== backfilled) return false;
+      // Still the book's newest row: nothing logged since (task 1.17c). Not the latest read, which is the
+      // latest finish: an earlier past read logged since would leave it the latest, and the undo would delete it.
+      if ((await newestRead(tx, userId, bookId)) !== backfilled) return false;
       const [status] = await tx.select({ status: bookStatus.status }).from(bookStatus)
         .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId)));
       if (status?.status !== "read") return false;
