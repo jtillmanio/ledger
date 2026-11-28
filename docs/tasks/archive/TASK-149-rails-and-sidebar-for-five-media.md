@@ -1,7 +1,7 @@
 ---
 id: TASK-149
 title: 6.25 Navigation for four and five media (3 of 3) — the tablet rail, the icon rail's menu and the sidebar
-status: Review
+status: Done
 depends_on: [TASK-147, TASK-148]
 size: M
 model: opus
@@ -139,6 +139,7 @@ _Filled by /implement-task. One line per round._
 - Follow-ups R1 CHANGES (D-189 taken by open PR #357; STYLE_GUIDE §14.5 unplaced) → D-190, Owner checklist | Follow-ups R2 APPROVE | Drift R2 merge as-is
 - CI R6 FAIL (releases.spec.ts at w1280: label-content-name-mismatch on the sidebar's Search; it had failed on 65e2fc8 too and passed on retry) → plan revision 4 | Verify R9 FAIL (books-dashboard.test.ts timeout under load, again) | Verify R10 PASS
 - Drift R3 update first (behind 1, #357: a decisions.md conflict, both changed globals.css and the mockup, main changed src/db/queries.ts) → rebased, D-189 (#357) and D-190 kept in order | Verify R11 PASS (+ shell and thumb-bar w390-light 65, w390-dark 9, mockup-tablet and releases w1280-light 63)
+- Spec R7 APPROVE (the Search name fix; decisions.md after the rebase) | CI R7 PASS (555156e) | Drift R4 merge as-is | owner: accepted
 
 ## Blocked
 
@@ -147,6 +148,6 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 ## Metrics
 
 - Verify rounds: 10 (4 failed: a type error, a timeout under load three times)
-- Review rounds: spec 6, audit 2, UI 2 (+1 not run), CI 6 (1 failed)
+- Review rounds: spec 7, audit 2, UI 2 (+1 not run), CI 7 (1 failed)
 - First-pass AC FAILs: 2 (AC-6: the short tablet rail, found by the ui-verifier; the sidebar Search's name, found by CI)
 - Plan revisions after approval: 4
