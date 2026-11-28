@@ -14,6 +14,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import Loading from "../../src/app/settings/loading";
+import { today } from "../../src/lib/finish-date";
+import { kWords } from "../../src/lib/plan-rail";
 import { easternYear, formatWords, wordsPerYear } from "../../src/lib/settings";
 import { testSql } from "../db";
 import {
@@ -694,4 +696,173 @@ test("Settings with Review parked items at 360 and 1280px, light and dark (TASK-
       await screenshot(page, info, `settings-parked-${width}-${colorScheme}`);
     }
   }
+});
+
+// ---- Task 2.0c (TASK-153, F-21): a pace change reaches the plan without a reload ------------------------
+// Capacity is derived from the pace on every render (`plan_capacity`, hard rule 2); what went stale was the
+// client's router cache. A save that lands drops it (`router.refresh()`), so Plan reached by Back or by the
+// nav, and the books dashboard, draw the new figure. One book is planned in this year's own lane so Plan's
+// total line carries the year's capacity; it is made under an *e2e-pace-* id and removed after each test.
+// A `window` mark a reload would clear proves no page load happened.
+
+const DAY = today();
+const YEAR = Number(DAY.slice(0, 4));
+const QUARTER = Math.floor((Number(DAY.slice(5, 7)) - 1) / 3) + 1;
+const PACE_BOOK = "e2e-pace-lane";
+
+async function planOneBook() {
+  const sql = testSql();
+  try {
+    await sql`DELETE FROM books WHERE id LIKE 'e2e-pace-%'`;
+    await sql`INSERT INTO books (id, title, word_count, word_count_source) VALUES (${PACE_BOOK}, 'Pace Lane', 100000, 'stated')`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${PACE_BOOK}, 'to_read')`;
+    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${E2E_USER}, ${PACE_BOOK}, ${String(YEAR)}, NULL)`;
+  } finally {
+    await sql.end();
+  }
+}
+
+async function dropPaceBooks() {
+  const sql = testSql();
+  try {
+    await sql`DELETE FROM books WHERE id LIKE 'e2e-pace-%'`;
+  } finally {
+    await sql.end();
+  }
+}
+
+/** The year's and this quarter's capacity at the stored pace, as the view derives them. */
+async function capacity() {
+  const sql = testSql();
+  try {
+    const rows = await sql<{ period: string; capacity: number }[]>`
+      SELECT period, capacity FROM plan_capacity
+      WHERE user_id = ${E2E_USER} AND period IN (${String(YEAR)}, ${`${YEAR}-Q${QUARTER}`})`;
+    const of = (period: string) => Number(rows.find((r) => r.period === period)!.capacity);
+    return { year: of(String(YEAR)), quarter: of(`${YEAR}-Q${QUARTER}`) };
+  } finally {
+    await sql.end();
+  }
+}
+
+const planTotal = (page: Page) => page.locator(".plan-total");
+const navTo = (page: Page, href: string) => page.locator(`a[href="${href}"]:visible`).first().click();
+/** A mark on `window` that only a full page load clears. */
+const markPage = (page: Page) => page.evaluate(() => { (window as { __kept?: boolean }).__kept = true; });
+const pageKept = (page: Page) => page.evaluate(() => (window as { __kept?: boolean }).__kept === true);
+/** The refresh a landed save starts: the Settings route fetched again as an RSC payload, not a page load. */
+const settingsRefresh = (page: Page) => page.waitForResponse((r) =>
+  new URL(r.url()).pathname === "/settings" && r.request().headers()["rsc"] === "1");
+
+/** Plan, then Settings by the nav (a client navigation, so Plan is in the router cache). */
+async function planThenSettings(page: Page) {
+  await page.goto("/books/plan");
+  await expect(planTotal(page)).toContainText(`of ${kWords((await capacity()).year)}`);
+  await markPage(page);
+  await navTo(page, "/settings");
+  await page.waitForURL("**/settings");
+  await hydrated(press(page, "Increase", "Minutes a day"));
+}
+
+/** Types a value into *Minutes a day* and commits it with Enter. */
+async function typeMinutes(page: Page, value: string) {
+  await edit(page, "Minutes a day").click();
+  await field(page, "Minutes a day").fill(value);
+  await field(page, "Minutes a day").press("Enter");
+}
+
+test.describe("a pace change reaches the plan without a reload (TASK-153)", () => {
+  test.beforeEach(async () => { await reset(); await planOneBook(); });
+  test.afterEach(async () => { await dropPaceBooks(); await reset(); });
+
+  test("a pace change reaches Plan by Back and by the nav, and the dashboard, without a reload (TASK-153 AC-1)", ONCE, async ({ page }) => {
+    const before = await capacity();
+    await planThenSettings(page);
+    await expect(output(page, "Minutes a day")).toHaveText("45");
+
+    const saved = page.waitForResponse((r) => r.url().endsWith("/api/settings") && r.request().method() === "PATCH");
+    await typeMinutes(page, "90");
+    expect((await saved).status()).toBe(200);
+    expect(await storedMinutes()).toBe(90);
+    const after = await capacity();
+    expect(kWords(after.year)).not.toBe(kWords(before.year)); // the two figures differ on screen
+
+    // Back: the browser's own history, served from the router's back/forward cache unless it was dropped.
+    await page.goBack();
+    await page.waitForURL("**/books/plan");
+    await expect(planTotal(page)).toContainText(`of ${kWords(after.year)}`);
+    expect(await pageKept(page)).toBe(true);
+
+    // Again from the nav.
+    await navTo(page, "/settings");
+    await page.waitForURL("**/settings");
+    await navTo(page, "/books/plan");
+    await page.waitForURL("**/books/plan");
+    await expect(planTotal(page)).toContainText(`of ${kWords(after.year)}`);
+
+    // The books dashboard's budget line agrees: this quarter's capacity at 90 minutes.
+    await navTo(page, "/books");
+    await page.waitForURL(/\/books$/);
+    await expect(page.locator(".qfigs > :last-child")).toHaveText(`${kWords(after.quarter)} a quarter`);
+    expect(await pageKept(page)).toBe(true);
+  });
+
+  test("a pace save that fails leaves Plan's capacity as it was (TASK-153 AC-1)", ONCE, async ({ page }) => {
+    const before = await capacity();
+    await planThenSettings(page);
+    await page.route("**/api/settings", (route) => route.fulfill({ status: 500, contentType: "application/json", body: "{}" }));
+    await typeMinutes(page, "90");
+    await expect(page.locator(".toast")).toContainText("Couldn't save your reading pace");
+    await expect(output(page, "Minutes a day")).toHaveText("45");
+    await page.unroute("**/api/settings");
+
+    await page.goBack();
+    await page.waitForURL("**/books/plan");
+    await expect(planTotal(page)).toContainText(`of ${kWords(before.year)}`);
+    await navTo(page, "/books");
+    await page.waitForURL(/\/books$/);
+    await expect(page.locator(".qfigs > :last-child")).toHaveText(`${kWords(before.quarter)} a quarter`);
+    expect(await storedMinutes()).toBeNull();
+    expect(await pageKept(page)).toBe(true);
+  });
+
+  test("a press still waiting when Settings is left by Back reaches Plan (TASK-153 AC-3)", ONCE, async ({ page }) => {
+    const before = await capacity();
+    await planThenSettings(page);
+    // 45 → 51: six presses well inside the 500 ms wait, then Back at once, before it runs out (the keepalive
+    // send). Nothing is asserted between the presses and Back: a check there could outlast the wait.
+    const up = press(page, "Increase", "Minutes a day");
+    for (let n = 0; n < 6; n++) await up.click();
+    await page.goBack();
+    await page.waitForURL("**/books/plan");
+    await expect.poll(storedMinutes).toBe(51);
+    const after = await capacity();
+    expect(kWords(after.year)).not.toBe(kWords(before.year));
+    await expect(planTotal(page)).toContainText(`of ${kWords(after.year)}`);
+    expect(await pageKept(page)).toBe(true);
+  });
+
+  // Sets its own viewports: runs once, in w390-light.
+  test("the refresh after a save moves nothing on Settings, at 360 and 1280px (TASK-153 AC-4)", ONCE, async ({ page }, info) => {
+    const boxes = () => page.evaluate(() => [...document.querySelectorAll(".frow, .pace-card, .stepper")]
+      .map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map(Math.round); }));
+    for (const [width, height] of [[360, 780], [1280, 800]]) {
+      await reset();
+      await page.setViewportSize({ width, height });
+      await open(page);
+      // Words per page: the card's sentence does not name it, so only the refresh could move anything.
+      const refreshed = settingsRefresh(page);
+      await press(page, "Increase", "Words per page").click();
+      await expect(output(page, "Words per page")).toHaveText("280");
+      const drawn = await boxes();
+      const scrolled = await page.evaluate(() => window.scrollY);
+      await refreshed;
+      await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+      expect(await boxes()).toEqual(drawn);
+      expect(await page.evaluate(() => window.scrollY)).toBe(scrolled);
+      await expect(output(page, "Words per page")).toHaveText("280");
+      await expectNoHorizontalScroll(page);
+      await screenshot(page, info, `settings-pace-saved-${width}`);
+    }
+  });
 });

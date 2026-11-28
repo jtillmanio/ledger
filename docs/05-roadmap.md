@@ -2132,7 +2132,7 @@ value. In the browser (0.11), the input has `inputmode="numeric"`, focus
 returns to the number after a commit, and axe passes. Screenshots at 360px and
 1280px.
 
-### ☐ 2.0c A pace change reaches the plan without a reload · S
+### ☑ 2.0c A pace change reaches the plan without a reload · S
 Owner intake, 2026-11-24 (*changing reading time updates plan*; 2026-11-25:
 *I wanted it to happen automatically, not need a new load*). Capacity is
 derived from the pace on every render (`plan_capacity`, hard rule 2), but
