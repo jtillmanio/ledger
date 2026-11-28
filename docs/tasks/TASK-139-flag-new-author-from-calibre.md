@@ -1,14 +1,14 @@
 ---
 id: TASK-139
 title: 4.6b Flag a book the sync created under a new author
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 727118b
 ---
 
 # TASK-139 — 4.6b Flag a book the sync created under a new author
@@ -64,9 +64,31 @@ At 360px the mark has contrast 4.5:1 in both themes and axe reports no violation
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The PC command's printed report (`etl/calibre_sync.py`) doesn't say *new author* (approved at plan) → not tracked: the roadmap entry asks only for the page.
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-28.
+
+**Steps**
+
+1. **Sync** (`src/db/calibre-sync.ts`): `Names` keeps the set of author ids it inserted during the run (`Names.author()` inserts only when the key is missing). Each `created` entry gets `newAuthor: created.has(authorId)`, so two books by one new author are both `true`; an `updated` entry gets no key. `InChange` gains `newAuthor?: boolean` (optional: older stored reports lack it). No schema change: the key lives only in the stored report.
+2. **Log** (`src/lib/calibre-log.ts`): `BookEntry` gains `newAuthor: boolean`, true only when a created entry has `newAuthor === true`; a missing key or any other value means no mark.
+3. **Page** (`src/app/settings/calibre/page.tsx`): a created row showing its author adds `<span className="ctag" data-mark="new-author"> · new author</span>` after the name. Text, `--muted` through the existing `.ctag` rule, no button. `src/app/globals.css` is not touched: the existing rule covers it.
+4. **Mockup**: in `design/mockups.html`, *Gideon the Ninth · new · Tamsyn Muir* gains *· new author* in each of its three frames (phone, 834px, desktop); the `calibre` row in `design/mockups-index.md` gains one clause naming 4.6b.
+
+**Files** (8, all in "Files likely touched"): `src/db/calibre-sync.ts`, `src/lib/calibre-log.ts`, `src/app/settings/calibre/page.tsx`, `design/mockups.html`, `design/mockups-index.md`, `test/calibre-sync.test.ts`, `test/calibre-page.test.tsx`, `test/e2e/calibre-page.spec.ts`.
+
+**Test strategy**
+
+- `test/calibre-sync.test.ts`, describe *a new author (task 4.6b)*: AC-1's report clauses (an unknown author first, a known author second: `newAuthor` true, then false); AC-2 (two books by one new author both true; the `updated` entry has no key); AC-3 (`books` +2, `authors` +1, `calibre_syncs` +1, the counts the code wrote before; each created entry's keys exactly the old five plus `newAuthor`, which fails on the pre-task code; the suite can't run the old code side by side, so the old counts are pinned instead).
+- `test/calibre-page.test.tsx`: `byBook` carries `newAuthor`; the rendered page marks the first author and not the second; a stored run without the key renders with no mark and no error.
+- `test/e2e/calibre-page.spec.ts`, one `@at-w390-light` test: AC-1's browser clauses (at 360px in both themes the mark is visible beside its author, contrast clean, axe passes); AC-4 (the mark's computed colour is `--muted`; screenshots at all six `ui.viewports` widths, light and dark).
+- Manual: `/settings/calibre` on the dev database's existing runs → no mark, no error.
+
+**Risks**: the page shows the author the book has today; if a later sync changed that book's author, the mark sits beside the new name. The roadmap's wording accepts this.
+
+**Size**: 8 files, no schema change; no split.
 
 ## Review log
 

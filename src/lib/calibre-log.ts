@@ -97,6 +97,12 @@ export type BookEntry = {
   bookId: string; calibreId: number; title: string;
   /** The sync made this book. */
   created: boolean;
+  /**
+   * The sync made this book under an author it made in the same run (task 4.6b): the page says
+   * *new author*. Only a created entry whose `newAuthor` is `true` sets it; a report stored before
+   * 4.6b has no key, and that, or any other value, is no mark.
+   */
+  newAuthor: boolean;
   came: Change[];
   went: Change[];
 };
@@ -111,12 +117,13 @@ export function byBook(raw: SyncReport, now = new Date()): BookEntry[] {
   const books = new Map<string, BookEntry>();
   const entry = (bookId: string, calibreId: number, title: string) => {
     let e = books.get(bookId);
-    if (!e) books.set(bookId, e = { bookId, calibreId, title, created: false, came: [], went: [] });
+    if (!e) books.set(bookId, e = { bookId, calibreId, title, created: false, newAuthor: false, came: [], went: [] });
     return e;
   };
   for (const c of report.in) {
     const e = entry(c.bookId, c.calibreId, c.title);
     e.created = e.created || c.kind === "created";
+    e.newAuthor = e.newAuthor || (c.kind === "created" && c.newAuthor === true);
     for (const f of c.changes) {
       e.came.push({ label: f.field, from: c.kind === "created" ? null : showValue(f.from, now), to: showValue(f.to, now) });
     }

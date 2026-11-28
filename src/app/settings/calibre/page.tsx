@@ -37,6 +37,7 @@ function Books({ entries, side, authors }: { entries: BookEntry[]; side: "came" 
             <span className="ctitle">{e.title}</span>
             {e.created && <span className="ctag"> · new</span>}
             {e.created && authors.get(e.bookId) && <span className="cby"> · {authors.get(e.bookId)}</span>}
+            {e.created && e.newAuthor && authors.get(e.bookId) && <span className="ctag" data-mark="new-author"> · new author</span>}
             <Lines changes={e[side]} />
           </li>
         ))}

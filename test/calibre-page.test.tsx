@@ -272,6 +272,49 @@ describe("the Calibre page (AC-1 browser clauses, AC-2, AC-4)", () => {
     expect(changedNothing({} as never)).toBe(true);
   });
 
+  describe("a new author (task 4.6b, AC-1, AC-4)", () => {
+    // Gideon the Ninth was created under an author the run created; The Fifth Season under one the Ledger knew.
+    const NEW_AUTHOR = empty({
+      in: [
+        { kind: "created", calibreId: 2, bookId: "b2", title: "Gideon the Ninth", newAuthor: true, changes: [{ field: "status", from: null, to: "unlisted" }] },
+        { kind: "created", calibreId: 1, bookId: "b1", title: "The Fifth Season", newAuthor: false, changes: [{ field: "status", from: null, to: "unlisted" }] },
+      ],
+    });
+    /** The `<li>` of the book with this title, as rendered. */
+    const row = (html: string, title: string) => html.split("<li>").find((li) => li.includes(`>${title}<`)) ?? "";
+
+    it("byBook says newAuthor only where a created entry says true: no key, false or anything else is no mark", () => {
+      expect(byBook(NEW_AUTHOR).map((e) => [e.title, e.newAuthor])).toEqual([["Gideon the Ninth", true], ["The Fifth Season", false]]);
+      expect(byBook(FRESH)[0].newAuthor).toBe(false);
+      const odd = empty({ in: [{ kind: "created", calibreId: 2, bookId: "b2", title: "Gideon the Ninth", newAuthor: "yes", changes: [] } as never] });
+      expect(byBook(odd)[0].newAuthor).toBe(false);
+      // An update never marks, whatever its entry holds.
+      const upd = empty({ in: [{ kind: "updated", calibreId: 1, bookId: "b1", title: "The Fifth Season", newAuthor: true, changes: [] }] });
+      expect(byBook(upd)[0].newAuthor).toBe(false);
+    });
+
+    it("marks new author, in text, beside the first book's author and not beside the second's", async () => {
+      await run("2026-11-14T23:30:00Z", NEW_AUTHOR);
+      const html = await render();
+      const gideon = row(html, "Gideon the Ninth");
+      expect(gideon).toMatch(/Tamsyn Muir<\/span><span class="ctag" data-mark="new-author"> · new author<\/span>/);
+      const fifth = row(html, "The Fifth Season");
+      expect(fifth).toContain("N. K. Jemisin");
+      expect(fifth).not.toContain("new author");
+      expect(html.match(/new author/g)).toHaveLength(1);
+      // A mark, not a control: nothing to press, and no colour of its own.
+      expect(gideon).not.toMatch(/<button|<a /);
+      expect(gideon).not.toMatch(/danger|style=/);
+    });
+
+    it("a stored run whose created entries have no newAuthor key shows no mark and no error", async () => {
+      await run("2026-11-14T23:30:00Z", FRESH);
+      const html = await render();
+      expect(row(html, "Gideon the Ninth")).toContain("Tamsyn Muir");
+      expect(html).not.toContain("new author");
+    });
+  });
+
   it("before any run: the empty state, one line, no button and no run list", async () => {
     const html = await render();
     expect(html).toContain("No sync yet");
