@@ -114,7 +114,9 @@ export default function GenreRow({ children }: { children: ReactNode }) {
       if (start < 0) start = now - 16;
       const t = Math.min(1, (now - start) / dur);
       el.scrollLeft = from + (to - from) * (1 - (1 - t) ** 3);
-      if (t < 1) frame.current = requestAnimationFrame(tick);
+      // Held, the step hands over to the glide once it has slowed to the glide's speed: no dip between them.
+      if (held.current && !atEnd && 3 * (1 - t) ** 2 * Math.abs(to - from) / dur <= GLIDE) glide(dir);
+      else if (t < 1) frame.current = requestAnimationFrame(tick);
       else if (held.current && !atEnd) glide(dir);
       else { held.current = false; frame.current = 0; }
     };

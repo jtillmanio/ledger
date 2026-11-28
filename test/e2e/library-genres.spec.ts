@@ -188,6 +188,24 @@ async function framesDuring(page: Page, ms: number, act: () => Promise<unknown>)
 }
 
 /** At 1280px; motion as asked, never the machine's own setting (a Windows runner can report reduce). */
+/** As framesDuring, with each frame's time: [ms, scrollLeft]. */
+async function timedFramesDuring(page: Page, ms: number, act: () => Promise<unknown>): Promise<[number, number][]> {
+  const sampled = page.evaluate((ms) => new Promise<[number, number][]>((resolve) => {
+    const el = document.querySelector<HTMLElement>('[role="group"][aria-label="Genre"] .genre-row')!;
+    const out: [number, number][] = [];
+    let end = -1;
+    const tick = (now: number) => {
+      if (end < 0) end = now + ms;
+      out.push([now, el.scrollLeft]);
+      if (now < end) requestAnimationFrame(tick);
+      else resolve(out);
+    };
+    requestAnimationFrame(tick);
+  }), ms);
+  await act();
+  return sampled;
+}
+
 async function desktop(page: Page, reducedMotion: "reduce" | "no-preference" = "no-preference") {
   await page.emulateMedia({ reducedMotion });
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -239,12 +257,21 @@ test("at 1280px the genre row draws no scrollbar and no ‹ at the start; a tap 
 
   // A hold of a second goes further than the tap, and nothing moves once it is let go.
   await toStart(page);
+  // Steady: once moving, no frame slows below half the glide's speed (0.9 px/ms) before release,
+  // so the tap's ease-out hands over to the glide with no stop between them.
   await rightArrow(page).hover();
-  await page.mouse.down();
-  await page.waitForTimeout(1_000);
+  const held = await timedFramesDuring(page, 1_000, () => page.mouse.down());
   await page.mouse.up();
   const released = await scrollLeft(page);
   expect(released, "a hold's distance against a tap's").toBeGreaterThan(landed);
+  const max = await row.evaluate((el) => el.scrollWidth - el.clientWidth);
+  const moving = held.findIndex(([, x]) => x > 0);
+  for (let i = Math.max(1, moving + 1); i < held.length; i++) {
+    const [[t0, x0], [t1, x1]] = [held[i - 1], held[i]];
+    if (x1 >= max - 1) break;
+    expect((x1 - x0) / (t1 - t0), `speed at ${Math.round(t1 - held[0][0])}ms: ${held.map(([, x]) => Math.round(x)).join(", ")}`)
+      .toBeGreaterThanOrEqual(0.45);
+  }
   await page.waitForTimeout(300);
   expect(await scrollLeft(page), "after release").toBe(released);
 
@@ -341,7 +368,9 @@ test("the arrows are named, their icons meet 3:1 in both themes, and axe passes;
         await expect(leftArrow(page), label).toBeVisible();
         await expect(rightArrow(page), label).toBeVisible();
         // Each glyph on its own disc, measured here as well as by contrastFailures: 3:1 for an icon.
-        for (const ratio of await glyphContrast(page)) expect(ratio, `arrow glyph at ${label}`).toBeGreaterThanOrEqual(3);
+        const ratios = await glyphContrast(page);
+        expect(ratios, `both glyphs measured at ${label}`).toHaveLength(2);
+        for (const ratio of ratios) expect(ratio, `arrow glyph at ${label}`).toBeGreaterThanOrEqual(3);
         if (width === 1280) await expectNoAxeViolations(page, AXE);
       } else {
         await expect(page.getByRole("button", { name: /^Scroll genres/ }), label).toHaveCount(0);
