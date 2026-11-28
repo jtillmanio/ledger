@@ -111,6 +111,12 @@ export type Holding = {
 type FieldChange = { field: string; from: unknown; to: unknown };
 export type InChange = {
   kind: "created" | "updated"; calibreId: number; bookId: string; title: string; changes: FieldChange[];
+  /**
+   * On a `created` entry only (task 4.6b): the book's author did not exist before this run, so a
+   * stray new spelling can be told from a known author. Read from the run, never stored on the book
+   * (hard rule 2); a report stored before 4.6b has no such key, which reads as no mark.
+   */
+  newAuthor?: boolean;
 };
 export type OutWrite = { calibreId: number; bookId: string; title: string; column: CalibreColumn; from: unknown; to: unknown };
 export type Waiting = {
@@ -295,7 +301,14 @@ class Names {
   private seriesIds = new Map<string, string>();
   private universeIds = new Map<string, string>();
   private subseries = new Map<string, { id: string; seriesId: string }>();
+  /** Authors this run inserted (task 4.6b): a created book under one of them is under a new author. */
+  private createdAuthors = new Set<string>();
   constructor(private tx: Tx) {}
+
+  /** The author did not exist before this run: `author()` inserted it, for this book or an earlier one. */
+  isNewAuthor(id: string): boolean {
+    return this.createdAuthors.has(id);
+  }
 
   async load() {
     for (const r of await this.tx.select({ id: authors.id, k: keySql(authors.name) }).from(authors)) this.authorIds.set(String(r.k), r.id);
@@ -323,6 +336,7 @@ class Names {
       id = await this.freshId(authors, name);
       await this.tx.insert(authors).values({ id, name });
       this.authorIds.set(k, id);
+      this.createdAuthors.add(id);
     }
     return id;
   }
@@ -437,7 +451,7 @@ export async function syncCalibre(userId: string, payload: SyncPayload, opts: Sy
     };
 
     // Books Calibre has, created.
-    const toCreate: { rec: CalibreRecord; row: BookRow }[] = [];
+    const toCreate: { rec: CalibreRecord; row: BookRow; newAuthor: boolean }[] = [];
     for (const [rec, plan] of plans) {
       if (plan.kind === "skip") report.skipped.push({ reason: plan.reason, calibreId: rec.calibreId, title: normalizeLine(rec.title) });
       if (plan.kind === "wait") report.waiting.push(plan.waiting);
@@ -461,7 +475,7 @@ export async function syncCalibre(userId: string, payload: SyncPayload, opts: Sy
         report.notes.push(`${title}: Hardcover wasn't asked, so its page count waits for the backfill`);
       }
       const type = (rec.type ?? "").trim();
-      toCreate.push({ rec, row: {
+      toCreate.push({ rec, newAuthor: names.isNewAuthor(authorId), row: {
         title, author: authorName, authorId, series: seriesName, seriesId, position: seriesId ? rec.seriesIndex ?? null : null,
         calibreId: rec.calibreId, bookType: type && type.toLowerCase() !== "book" ? type : undefined,
         universeId, universePosition: universeId ? rec.superseriesIndex ?? null : null,
@@ -472,7 +486,7 @@ export async function syncCalibre(userId: string, payload: SyncPayload, opts: Sy
       } });
     }
     const ids = await createBooks(tx, toCreate.map((c) => c.row));
-    for (const [i, { rec, row }] of toCreate.entries()) {
+    for (const [i, { rec, row, newAuthor }] of toCreate.entries()) {
       const bookId = ids[i];
       const read = calibreRead(rec);
       await tx.insert(bookStatus).values({
@@ -488,7 +502,7 @@ export async function syncCalibre(userId: string, payload: SyncPayload, opts: Sy
       report.in.push({ kind: "created", calibreId: rec.calibreId, bookId, title: row.title, changes: [
         { field: "status", from: null, to: read.read ? "read" : "unlisted" },
         ...(read.read ? [{ field: "read", from: null, to: { finishedOn: read.finishedOn, precision: read.precision } }] : []),
-      ] });
+      ], newAuthor });
     }
 
     // Books the Ledger has, given Calibre's values.

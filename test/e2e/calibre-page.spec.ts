@@ -86,6 +86,7 @@ const clean = () => withSql(async (sql) => {
   await sql`DELETE FROM calibre_syncs`;
   await sql`DELETE FROM calibre_decisions`;
   await sql`DELETE FROM books WHERE id LIKE 'e2e-cal-%'`;
+  await sql`DELETE FROM authors WHERE id LIKE 'e2e-cal-%'`;
 });
 
 test.beforeEach(clean);
@@ -425,6 +426,54 @@ test("the line passes contrast and axe, and nothing red (AC-3, AC-5)", FLOOR, as
   expect(await contrastFailures(page)).toEqual([]);
   await expectNoAxeViolations(page, AXE.filter((r) => r !== "list" && r !== "listitem"));
   await expectNoHorizontalScroll(page);
+});
+
+// ---- a new author (task 4.6b) -------------------------------------------------------------------
+
+/** A run that created two books: Gideon under an author the run created, the second under one the Ledger knew. */
+const NEW_AUTHOR = report({
+  in: [
+    { kind: "created", calibreId: 9003, bookId: "e2e-cal-b3", title: "E2E Calibre Gideon", newAuthor: true, changes: [{ field: "status", from: null, to: "unlisted" }] },
+    { kind: "created", calibreId: 9006, bookId: "e2e-cal-b6", title: "E2E Calibre Fifth Season", newAuthor: false, changes: [{ field: "status", from: null, to: "unlisted" }] },
+  ],
+});
+const newAuthorBooks = () => withSql(async (sql) => {
+  await sql`INSERT INTO authors (id, name) VALUES ('e2e-cal-a1', 'E2E Tamsyn Muir'), ('e2e-cal-a2', 'E2E N. K. Jemisin')`;
+  await sql`INSERT INTO books (id, title, author_id, calibre_id) VALUES
+    ('e2e-cal-b3', 'E2E Calibre Gideon', 'e2e-cal-a1', 9003), ('e2e-cal-b6', 'E2E Calibre Fifth Season', 'e2e-cal-a2', 9006)`;
+});
+
+const VIEWPORTS = [[360, 780], [390, 844], [412, 915], [768, 1024], [1024, 768], [1280, 800]] as const;
+
+test("marks new author beside the first book's author, not the second's: grey text, contrast and axe at 360px, every width light and dark (AC-1, AC-4)", ONCE, async ({ page }, info) => {
+  await seedRuns([daysAgo(1), NEW_AUTHOR]);
+  await newAuthorBooks();
+  const book = (title: string) => page.locator(".cruns .cbooks li").filter({ hasText: title });
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    for (const [width, height] of VIEWPORTS) {
+      const at = `${width}px ${colorScheme}`;
+      await page.setViewportSize({ width, height });
+      await open(page);
+      const mark = book("E2E Calibre Gideon").locator('[data-mark="new-author"]');
+      await expect(mark, at).toBeVisible();
+      await expect(mark, at).toHaveText("· new author");
+      // Beside its author: the author's name comes straight before it.
+      expect(await mark.evaluate((el) => el.previousElementSibling?.textContent?.trim()), at).toBe("· E2E Tamsyn Muir");
+      await expect(book("E2E Calibre Fifth Season"), at).toContainText("E2E N. K. Jemisin");
+      await expect(book("E2E Calibre Fifth Season").locator('[data-mark="new-author"]'), at).toHaveCount(0);
+      // Its colour is the muted token: grey, never --danger, no hue of its own.
+      const style = await computedStyle(mark, ["color"]);
+      expect(style.color, at).toBe(await tokenColour(page, "--muted"));
+      expect(style.color, at).not.toBe(await tokenColour(page, "--danger"));
+      if (width === 360) {
+        expect(await contrastFailures(page), at).toEqual([]);
+        await expectNoAxeViolations(page, AXE);
+      }
+      await expectNoHorizontalScroll(page);
+      await screenshot(page, info, `calibre-new-author-${width}-${colorScheme}`);
+    }
+  }
 });
 
 // ---- the screenshots ---------------------------------------------------------------------------

@@ -533,3 +533,55 @@ describe("a year-only date read (task 4.4b)", () => {
     expect(dateWrites(result)).toEqual([]);
   });
 });
+
+describe("a new author (task 4.6b)", () => {
+  // The Ledger knows Susanna Clarke (with one Calibre book, Piranesi) and has never heard of Ann Leckie.
+  beforeEach(async () => {
+    await author("susanna-clarke", "Susanna Clarke");
+    await book({ id: "piranesi", title: "Piranesi", authorId: "susanna-clarke", calibreId: 20, words: 80000 });
+    await status("piranesi", "to_read");
+  });
+
+  const leckie = (calibreId: number, title: string): CalibreRecord => ({ calibreId, title, authors: ["Ann Leckie"], read: false });
+  const strange: CalibreRecord = { calibreId: 22, title: "Jonathan Strange & Mr Norrell", authors: ["Susanna Clarke"], read: false };
+  const created = (r: SyncResult) => r.report.in.filter((c) => c.kind === "created");
+
+  it("the Check: a book by an author the Ledger lacks says newAuthor true, one by a known author false (AC-1)", async () => {
+    const result = await sync(payloadOf([leckie(21, "Ancillary Justice"), strange]));
+    expect(created(result).map((c) => [c.calibreId, c.newAuthor])).toEqual([[21, true], [22, false]]);
+    // The stored report says the same: the page reads it from the log.
+    const [log] = await sql<{ report: SyncResult["report"] }[]>`SELECT report FROM calibre_syncs`;
+    expect(log.report.in.filter((c) => c.kind === "created").map((c) => c.newAuthor)).toEqual([true, false]);
+  });
+
+  it("two books by one new author both say newAuthor: the author is new to the run; an update carries no key (AC-2)", async () => {
+    const renamed: CalibreRecord = { calibreId: 20, title: "Piranesi: A Novel", authors: ["Susanna Clarke"], words: 85000, read: false };
+    const result = await sync(payloadOf([leckie(21, "Ancillary Justice"), leckie(23, "Ancillary Sword"), renamed]));
+    expect(created(result).map((c) => [c.calibreId, c.newAuthor])).toEqual([[21, true], [23, true]]);
+    const updated = result.report.in.filter((c) => c.kind === "updated");
+    expect(updated.map((c) => c.calibreId)).toEqual([20]);
+    expect(Object.keys(updated[0])).not.toContain("newAuthor");
+    // One author row for the two books: the second found the author the first created.
+    expect(await sql`SELECT count(*)::int AS n FROM authors WHERE name = 'Ann Leckie'`).toEqual([{ n: 1 }]);
+  });
+
+  it("writes no new column and no new row: the same rows as before, the report differing only by newAuthor (AC-3)", async () => {
+    const count = async () => {
+      const [r] = await sql<{ books: number; authors: number; syncs: number }[]>`SELECT
+        (SELECT count(*)::int FROM books) AS books, (SELECT count(*)::int FROM authors) AS authors,
+        (SELECT count(*)::int FROM calibre_syncs) AS syncs`;
+      return r;
+    };
+    const before = await count();
+    const result = await sync(payloadOf([leckie(21, "Ancillary Justice"), strange]));
+    // What the sync wrote before this change for this payload: two books, one author (Ann Leckie), one log row.
+    expect(await count()).toEqual({ books: before.books + 2, authors: before.authors + 1, syncs: before.syncs + 1 });
+    // Each created entry is the five keys it always had, plus newAuthor and nothing else.
+    for (const c of created(result)) {
+      expect(Object.keys(c).sort()).toEqual(["bookId", "calibreId", "changes", "kind", "newAuthor", "title"]);
+    }
+    // No column of books or authors holds it (hard rule 2).
+    expect(await sql`SELECT column_name FROM information_schema.columns
+      WHERE table_name IN ('books', 'authors') AND column_name ILIKE '%new%author%'`).toEqual([]);
+  });
+});
