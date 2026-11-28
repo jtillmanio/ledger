@@ -374,7 +374,7 @@ with the task that first reads it.
 |---|---|---|---|---|---|
 | ✅ | 2.0 → TASK-045 | Settings | S |  | — |
 | ✅ | 2.0b → TASK-053 | Type a setting, and hold to step | S |  | 2.0 |
-|  | 2.0c → TASK-153 | A pace change reaches the plan without a reload | S | _Owner intake, 2026-11-24; Check proposed_ | 2.0, 2.10 |
+| ✅ | 2.0c → TASK-153 | A pace change reaches the plan without a reload | S | _Owner intake, 2026-11-24; Check proposed_ | 2.0, 2.10 |
 | ✅ | 2.1 → TASK-046 | Capacity view | M |  | 1.7, 2.0 |
 |  | 2.1b | Reading sessions — after-the-fact entry | S |  | 2.0 |
 | ✅ | 2.2 → TASK-049 | Books dashboard | M |  | 1.7, 1.8, 2.1 |

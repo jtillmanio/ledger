@@ -1,7 +1,7 @@
 ---
 id: TASK-153
 title: 2.0c A pace change reaches the plan without a reload
-status: In progress
+status: Review
 depends_on: []
 size: S
 model: sonnet
@@ -26,16 +26,16 @@ After the reading pace is changed in Settings, the Plan screen and the books das
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim):
+- [x] AC-1 (roadmap **Check:**, verbatim):
 in the
 browser (0.11): open Plan and note this year's capacity, go to Settings and
 change *Minutes a day* from 45 to 90; Plan reached with the browser's Back, and
 again from the nav, shows the capacity for 90 minutes without a reload, and the
 books dashboard's budget line agrees. A save that fails (the route answering
 500) leaves the capacity as it was.
-- [ ] AC-2: Given a held stepper that sends one `PATCH` (2.0b), the cache is dropped once, after that save succeeds, not on every step.
-- [ ] AC-3: Given the page is left while a save is still waiting (the `keepalive` send), the next Plan visit shows the new capacity.
-- [ ] AC-4: Settings meets the UX floor (`docs/04-design.md` § 10. The UX floor) as before: no layout shift from the refresh, and screenshots at 360px and 1280px.
+- [x] AC-2: Given a held stepper that sends one `PATCH` (2.0b), the cache is dropped once, after that save succeeds, not on every step.
+- [x] AC-3: Given the page is left while a save is still waiting (the `keepalive` send), the next Plan visit shows the new capacity.
+- [x] AC-4: Settings meets the UX floor (`docs/04-design.md` § 10. The UX floor) as before: no layout shift from the refresh, and screenshots at 360px and 1280px.
 
 ## Out of scope
 
@@ -50,12 +50,17 @@ books dashboard's budget line agrees. A save that fails (the route answering
 
 ## Verification
 
-- Automated: `test/settings.test.tsx` (one refresh per save; none on a failed save); `test/e2e/settings.spec.ts` (AC-1, AC-3).
+- Automated: `test/pace-settings.test.tsx` (one refresh per save; none on a failed save; see the Plan for why not `test/settings.test.tsx`); `test/e2e/settings.spec.ts` (AC-1, AC-3, AC-4).
 - Manual: `npm run dev`, Plan → Settings → *Minutes a day* 90 → Back → expected: the year's capacity is the 90-minute figure without a reload.
 
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- This task's Verification named `test/settings.test.tsx` for the refresh's unit test; the test is `test/pace-settings.test.tsx` (spec-reviewer, R1) → docs/tasks/TASK-153-pace-change-refreshes-plan.md § Verification (fixed in this PR)
+- `router.refresh()` after a client write whose figure other screens derive, and in Next 16.4 it also empties the back/forward cache → not tracked: the pattern is already the app's (`src/components/AddBooks.tsx`); the Next 16.4 detail is recorded in `PaceSettings`'s doc comment and this task's Plan, so no new decision
+- AC-4's no-shift assertions can only fail once the refresh has happened: on the old code the test fails by waiting for the refresh, not on a box (test-auditor) → not tracked: accepted as is; the refresh is the event the AC is about, and AC-2's unit tests prove there is none on a failed save
+- At 360px the Settings screen's visible nav has no Plan link (ui-verifier) → not tracked: the phone nav is 6.25's (D-178) and this task doesn't change it; at 390px the browser test reaches Plan from Settings through a visible nav link
 
 ## Plan
 
@@ -107,13 +112,18 @@ refresh clears "the current route"; the source clears every route's dynamic data
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 FAIL (`test/stepper.test.tsx`: `useRouter` outside an app router; tsc and lint passed) → mock added (plan revision 1) | Verify R2 PASS | touched specs in w390-light PASS (settings.spec.ts 35 tests; the refresh removed, AC-1's Back and AC-3 show `of 3M`)
+- CI R1 (f4f3c55) PASS | Spec R1 APPROVE (note: AC-3's stored-row check could race the 500 ms wait) → test fixed | Verify R3 PASS | CI R2 (cea830c) PASS | Drift R1 merge as-is (0 behind)
+- Audit R1 PASS (AC-1, AC-2 ×2, AC-3, AC-4 PROVEN; the failed save a guard) | UI R1 PASS (AC-1, its failure leg, AC-3 at 390; AC-4 at 360, 768, 1280; no console errors; the dev data left as found)
+- Spec not re-run for the AC-3 fix: a test-only change it asked for; the close-out check covers the close-out
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1 (the `next/navigation` mock in `test/stepper.test.tsx`)
