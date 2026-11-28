@@ -77,6 +77,153 @@ function useRedate() {
   }, [router, push]);
 }
 
+type Format = "text" | "audio";
+
+type LogArgs = {
+  bookId: string;
+  /** The title, for the toast. */
+  name: string;
+  start: FinishValue;
+  finish: FinishValue;
+  format: Format;
+  /** Runs once the server has saved, before the page refreshes. */
+  onSaved: () => void;
+  /** Runs once an Undo has taken the read back, before the page refreshes. */
+  onUndone: () => void;
+};
+
+/**
+ * Log a past read of a book already Read (task 1.17c, D-191): `PUT /api/progress/book/read`, a page
+ * refresh (a read finished after the latest moves the book's finish line), and a toast whose Undo is
+ * `DELETE` with the server's own `{ logged }`, which takes that read back alone. Resolves `{ refused }`
+ * on a 400 or a 409 (nothing was written) and `{ logged }` when it saved; anything else throws.
+ */
+function useLogPastRead() {
+  const router = useRouter();
+  const { push } = useUndo();
+  return useCallback(async ({
+    bookId, name, start, finish, format, onSaved, onUndone,
+  }: LogArgs): Promise<{ refused: string } | { logged: true }> => {
+    const res = await fetch("/api/progress/book/read", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ bookId, start: toChoice(start), finish: toChoice(finish), format }),
+    });
+    if (res.status === 400 || res.status === 409) {
+      const { error } = (await res.json()) as { error?: string };
+      return { refused: error ?? "the server refused it" };
+    }
+    if (!res.ok) throw new Error("past read failed");
+    const { logged } = (await res.json()) as { logged: unknown };
+    onSaved();
+    router.refresh();
+    push({
+      label: `${name}: past read added`,
+      detail: `Finished ${finishWords(finish)}`,
+      undo: async () => {
+        const back = await fetch("/api/progress/book/read", {
+          method: "DELETE",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ logged }),
+        });
+        if (!back.ok) throw new Error("undo failed");
+        onUndone();
+        router.refresh();
+      },
+    });
+    return { logged: true };
+  }, [router, push]);
+}
+
+const FORMATS: { format: Format; label: string }[] = [
+  { format: "text", label: "Read" },
+  { format: "audio", label: "Listened" },
+];
+const AFTER_FINISH = "That's after the day you finished.";
+
+/**
+ * *Add a past read* (task 1.17c, D-191; mockup `blist`, frame d): on a Read book's date line, an earlier
+ * (or later) read with its dates and format. *Started* opens on *No date* (a start is optional),
+ * *Finished* on *Today*, *Format* on **Read**, or **Listened** for a listen (sent as `text` / `audio`).
+ * A start after the finish shows 1.17's reason under *Started*, Save is `aria-disabled` and nothing is
+ * sent; the server's 400 or 409 shows its reason under Save. A confirm logs the read (`useLogPastRead`),
+ * `onLogged` opens *All reads (n)* on it, and `onClose` puts focus back on *Add a past read*, as Cancel
+ * and Esc (the status control's) do. It loads with *All reads*, never with the page.
+ */
+export function AddPastRead({ bookId, title, onClose, onLogged, onUndone }: {
+  bookId: string; title: string; onClose: () => void; onLogged: () => void; onUndone: () => void;
+}) {
+  const log = useLogPastRead();
+  const [start, setStart] = useState(() => initialFinish(null, "none"));
+  const [finish, setFinish] = useState(() => initialFinish(null));
+  const [format, setFormat] = useState<Format>("text");
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [refused, setRefused] = useState<string | null>(null);
+  const startReasonId = useId();
+  const finishReasonId = useId();
+  const reasonId = useId();
+
+  const end = finishReason(finish, "finish");
+  const startReason = finishReason(start, "start")
+    ?? (!end && startAfterFinish(storedDay(start), storedDay(finish)) ? AFTER_FINISH : null);
+  const blocked = startReason ?? end;
+  const describedBy = [startReason && startReasonId, end && finishReasonId, refused && reasonId]
+    .filter(Boolean).join(" ") || undefined;
+
+  async function save() {
+    if (blocked || saving) return;
+    setSaving(true);
+    setFailed(false);
+    setRefused(null);
+    try {
+      const done = await log({ bookId, name: title, start, finish, format, onSaved: onLogged, onUndone });
+      if ("refused" in done) setRefused(`Not saved: ${done.refused}.`);
+      else onClose();
+    } catch {
+      setFailed(true);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="past-read">
+      <FinishDate value={start} what="start" name={`past-started-${bookId}`}
+        onChange={(v) => { setRefused(null); setStart(v); }} />
+      <p id={startReasonId} className="small muted sheet-reason" aria-live="polite">{startReason}</p>
+      <FinishDate value={finish} what="finish" name={`past-finished-${bookId}`}
+        onChange={(v) => { setRefused(null); setFinish(v); }} />
+      <p id={finishReasonId} className="small muted sheet-reason" aria-live="polite">{end}</p>
+      <div className="finish">
+        <fieldset className="opts">
+          <legend className="finish-legend">Format</legend>
+          {FORMATS.map((f) => (
+            <label key={f.format} className="opt">
+              <input type="radio" name={`past-format-${bookId}`} value={f.format} checked={format === f.format}
+                onChange={() => { setRefused(null); setFormat(f.format); }} />
+              <span>{f.label}</span>
+            </label>
+          ))}
+        </fieldset>
+      </div>
+      <div className="btnrow finish-actions">
+        <button type="button" className="btn sm" aria-disabled={Boolean(blocked) || saving || undefined}
+          aria-describedby={describedBy} onClick={() => void save()}>
+          {saving ? "Saving…" : "Save"}
+        </button>
+        <button type="button" className="btn sec sm" onClick={onClose}>Cancel</button>
+      </div>
+      <p id={reasonId} className="small muted sheet-reason" aria-live="polite">{refused}</p>
+      {failed && (
+        <p className="small sheet-reason sheet-error" role="alert">
+          <span aria-hidden="true">×</span> That didn&apos;t save. Check your connection and try again.
+        </p>
+      )}
+    </div>
+  );
+}
+
 type Day = { on: string | null; precision: Precision };
 const started = (r: BookRead): Day => ({ on: r.started_on, precision: r.started_on_precision });
 const finished = (r: BookRead): Day => ({ on: r.finished_on, precision: r.finished_on_precision });
