@@ -605,10 +605,11 @@ with the task that first reads it.
 | ✅ | 6.24 → TASK-143, TASK-144, TASK-145, TASK-146 | Built screens follow the mediums review | M | _From TASK-126 (6.23, D-177); placed in M21 by the 2026-11-24 coverage recount; Check proposed_ | 6.23 |
 |  | 6.24b | The batch and finish sheets' steppers are typed and held | S | _From TASK-144 (6.24, PR #345); Check proposed_ | 6.24 |
 |  | 6.24c | The finish toast keeps to E10's two chip rows and its uppercase mono label | S | _From TASK-143 (6.24, PR #340), settled at TASK-146's plan; Check proposed_ | 6.24 |
-|  | 6.25 → TASK-147, TASK-148, TASK-149 | Navigation for four and five media | M | _From TASK-126 (6.23, D-178); before 9.0; placed in M21 by the 2026-11-24 coverage recount; Check proposed_ | 6.23 |
+| ✅ | 6.25 → TASK-147, TASK-148, TASK-149 | Navigation for four and five media | M | _From TASK-126 (6.23, D-178); before 9.0; placed in M21 by the 2026-11-24 coverage recount; Check proposed_ | 6.23 |
 |  | 6.26 → TASK-163 | The Library's genre row scrolls smoothly, with arrows you can hold | S | _Owner intake, 2026-11-24; after TASK-145 (6.24), which redraws the phone's filters; Check proposed_ | 4.5 |
 |  | 6.27 → TASK-164, TASK-165, TASK-166 | Plainer words on every built screen | M | _Owner intake, 2026-11-24; before 6.9, which passes over the finished screens; Check proposed_ | — |
 |  | 6.29 | Switch medium shows what is in hand | S | _From TASK-148 (6.25, PR #354); Check proposed_ | 6.25 |
+|  | 6.30 | The rail and the sidebar follow the last medium on a screen under none | S | _From TASK-149 (6.25, PR #356); Check proposed_ | 6.25 |
 |  | 6.9 | Revisit the theme | M |  | — |
 
 ## M22: AI-assisted curation — Later

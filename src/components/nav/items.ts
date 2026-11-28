@@ -11,8 +11,8 @@ export type IconName =
   | "layout-dashboard" | "list-checks" | "layers" | "route" | "plus" | "calendar-range" | "library"
   | "list-ordered" | "calendar-clock" | "book-open" | "book" | "book-copy" | "book-marked" | "tv" | "inbox" | "download" | "search"
   | "settings" | "film" | "chart-no-axes-gantt"
-  // The phone's medium button and its Switch medium sheet (6.25, D-178).
-  | "chevron-down" | "check";
+  // The phone's medium button and its Switch medium sheet, the icon rail's switch and the sidebar's media rows (6.25, D-178).
+  | "chevron-down" | "chevron-right" | "check";
 
 export interface NavItem {
   id: string;

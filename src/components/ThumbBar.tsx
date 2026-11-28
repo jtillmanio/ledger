@@ -10,7 +10,6 @@ import type { RangeChoice } from "@/components/RangeSheet";
 import { useUndo } from "@/components/Undo";
 import { useBookWrite } from "@/components/useBookWrite";
 import { Icon } from "@/components/nav/Icons";
-import SearchButton from "@/components/nav/SearchButton";
 import { issueName } from "@/lib/format";
 import { BOOKS_NEXT_HREF } from "@/lib/status-tabs";
 import { markPlacement, markRangeRead } from "@/lib/mark";
@@ -20,9 +19,9 @@ export type { Upcoming };
 /**
  * What the three slots hold (D-25, task 1.8b). Slot 1 is the medium's mark
  * verb, primary; slot 2 its second verb; slot 3 `+` Add issues on the run
- * detail. Search left the dashboards' thumb bars for the phone's top bar (6.25,
- * D-178), so a dashboard's bar has no slot 3; the desktop header still draws it
- * as Search until TASK-149. What differs between media is what fills a slot, not the slot.
+ * detail. Search left the dashboards' thumb bars for the phone's top bar and their
+ * desktop headers for the sidebar and icon rail (6.25, D-178), so a dashboard has no
+ * slot 3. What differs between media is what fills a slot, not the slot.
  */
 export type BarConfig =
   /** A comics dashboard with a run in hand: Mark #141 read · + batch. */
@@ -37,7 +36,7 @@ export type BarConfig =
   | { kind: "empty"; verb: { label: string; href: string } }
   /**
    * The books dashboard (task 2.2). With a book in hand: Log progress · ✓ finished, the
-   * header *Search · Finished it · Log pages*; logging waits for 2.1b's sessions. With none
+   * header *Finished it · Log pages*; logging waits for 2.1b's sessions. With none
    * (*Between books*): Start {the top of the plan}, or Pick a book with nothing planned.
    */
   | { kind: "books"; book: BookRef & { status: "reading" | "listening" } | null; next: BookRef | null }
@@ -193,9 +192,6 @@ export function VerbsProvider({ config, refresh = () => {}, children }: {
   const slots: Api["slots"] = (where) => {
     // Books name the same two verbs differently in the header than on the bar (design 14.6).
     const header = where === "header";
-    // A dashboard's slot 3: Search in the desktop header (until TASK-149), nothing on the thumb bar,
-    // since search is in the phone's top bar on every screen (6.25, D-178).
-    const search = header ? <SearchButton /> : null;
     switch (config.kind) {
       case "comics":
       case "run":
@@ -213,7 +209,8 @@ export function VerbsProvider({ config, refresh = () => {}, children }: {
               </button>
             ),
           third: config.kind === "comics"
-            ? search
+            // A dashboard has no slot 3: search is in the phone's top bar, the rail and the sidebar (6.25, D-178).
+            ? null
             // No prefetch: the add screen's queries wait for the tap (task 1.3c).
             : (
               <Link prefetch={false} href={`/comics/${encodeURIComponent(config.runId)}/add`} className="iconbtn" aria-label="Add issues" title="Add issues">
@@ -229,14 +226,14 @@ export function VerbsProvider({ config, refresh = () => {}, children }: {
             </Link>
           ),
           second: null,
-          third: search,
+          third: null,
         };
       case "books":
         if (config.book) {
           return {
             primary: <Waiting label={header ? "Log pages" : "Log progress"} reason={LOG_WAITS} />,
             second: <FinishVerb book={config.book} label={header ? "Finished it" : "✓ finished"} />,
-            third: search,
+            third: null,
           };
         }
         // Between books there is no second verb: nothing is in hand to finish (§14.6).
@@ -249,13 +246,13 @@ export function VerbsProvider({ config, refresh = () => {}, children }: {
               </Link>
             ),
           second: null,
-          third: search,
+          third: null,
         };
       case "watch":
         return {
           primary: <Waiting label="Mark S2 watched" reason="Watch arrives in 8.7" />,
           second: <Waiting secondary label="+ Add" reason="Watch arrives in 8.7" />,
-          third: search,
+          third: null,
         };
     }
   };
@@ -287,7 +284,7 @@ export function DashboardVerbs({ config, children }: { config: BarConfig; childr
 
 /**
  * The page header's verbs from 1024px (STYLE_GUIDE §14.6): the same three slots
- * in the reverse order, primary last, so *Search · + batch · Mark #141 read*.
+ * in the reverse order, primary last, so *+ batch · Mark #141 read* (no Search, 6.25).
  * Hidden below 1024px by CSS, where the bottom bar has them.
  */
 export function HeaderVerbs() {

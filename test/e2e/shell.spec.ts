@@ -84,13 +84,17 @@ test("at 768 and 834 the rail shows with its labels, and no media bar or sidebar
       await expect(page.locator(".bar")).toBeHidden();
       await expect(page.locator(".side")).toBeHidden();
 
-      const items = page.locator(".rail a");
+      // The medium's items, the pages across media and the foot are 56px targets; the well's media are
+      // 58 × 46 (6.25, A8). Every one shows its name.
+      const items = page.locator(".rail .ri");
       expect(await items.count()).toBeGreaterThan(3);
-      for (const item of await items.all()) {
-        const box = (await item.boundingBox())!;
-        expect(box.height, `${await item.textContent()} at ${width}`).toBeGreaterThanOrEqual(56);
-        expect((await item.textContent())?.trim().length, "a visible text label").toBeGreaterThan(0);
-        await expect(item.locator(".rl")).toBeVisible();
+      for (const [list, min] of [[items, 56], [page.locator(".rail .rw"), 46]] as const) {
+        for (const item of await list.all()) {
+          const box = (await item.boundingBox())!;
+          expect(box.height, `${await item.textContent()} at ${width}`).toBeGreaterThanOrEqual(min);
+          expect((await item.textContent())?.trim().length, "a visible text label").toBeGreaterThan(0);
+          await expect(item.locator(".rl")).toBeVisible();
+        }
       }
       // 48px targets with 12px above and below, and the glass edge's 1px (task 1.8b, STYLE_GUIDE §14.5).
       const bar = (await page.locator(".actionbar").boundingBox())!;
@@ -131,7 +135,9 @@ test("at 1100 the sidebar is a 64px icon rail: every item named, its tooltip hid
   await expect(page.locator(".rail")).toBeHidden();
   expect((await page.locator(".side").boundingBox())!.width).toBe(64);
 
-  const links = page.locator(".side a");
+  // What the icon rail draws (the media list is the 1280px sidebar's, hidden here).
+  const links = page.locator(".side a, .side button").locator("visible=true");
+  expect(await links.count()).toBeGreaterThan(5);
   for (const link of await links.all()) await expect(link).toHaveAccessibleName(/\S/);
 
   // Runs by its label: comics Add shares its href until you add to a run (1.19).
@@ -430,7 +436,7 @@ test.describe("the phone's medium button, search and gear (6.25)", () => {
     }));
   const RULES = [
     "color-contrast", "link-name", "button-name", "aria-dialog-name", "aria-allowed-attr", "aria-valid-attr-value",
-    "landmark-unique", "aria-hidden-focus", "svg-img-alt", "target-size", "nested-interactive",
+    "landmark-unique", "aria-hidden-focus", "svg-img-alt", "target-size", "nested-interactive", "label-content-name-mismatch",
   ];
 
   test("at 360 the bar is a 44px medium button, a 44px search button and the gear; its sheet lists every built medium, the current one aria-current; nothing scrolls sideways; no dashboard's thumb bar has a search slot; axe (AC-1, AC-5)", THEMES, async ({ page }, testInfo) => {
@@ -547,6 +553,285 @@ test.describe("the phone's medium button, search and gear (6.25)", () => {
       await expect(dialog(page)).toHaveCount(0);
     }
     await page.goto("/comics");
+  });
+});
+
+// 6.25, 3 of 3 (TASK-149, D-178, MR-D4, MR-D5, frames A8–A10): every medium one tap away where it fits by
+// name (the 834px rail, the 1280px sidebar), one switch button away where it doesn't (the 1024px icon rail).
+test.describe("the tablet rail, the icon rail's menu and the sidebar (6.25)", () => {
+  const THEMES = { tag: ["@at-w390-light", "@at-w390-dark"] };
+  const RULES = [
+    "color-contrast", "link-name", "button-name", "aria-allowed-attr", "aria-valid-attr-value", "aria-required-children",
+    "aria-required-parent", "list", "listitem", "landmark-unique", "aria-hidden-focus", "svg-img-alt", "target-size",
+    "nested-interactive", "label-content-name-mismatch",
+  ];
+  const BOOKS = NAV_ITEMS.filter((i) => i.group === "medium" && i.medium === "books" && i.enabled);
+  const switchButton = (page: Page) => page.locator(".side .medswitch");
+  const menu = (page: Page) => page.getByRole("menu", { name: "Switch medium" });
+  const focused = (page: Page) => page.evaluate(() => document.activeElement?.textContent?.trim() ?? "");
+  /** The menu's elements whose animation or transition lasts longer than 0s, as the sheet's probe above. */
+  const motion = (page: Page) => menu(page).evaluate((host) =>
+    [host, ...host.querySelectorAll("*")].flatMap((el) => {
+      const cs = getComputedStyle(el);
+      const long = (list: string) => list.split(",").map((d) => d.trim()).filter((d) => parseFloat(d) > 0);
+      const name = (el.getAttribute("class") ?? el.tagName.toLowerCase()).split(" ").at(-1);
+      return [
+        ...long(cs.animationDuration).filter(() => cs.animationName !== "none").map((d) => `${name} animation ${d}`),
+        ...long(cs.transitionDuration).map((d) => `${name} transition ${d}`),
+      ];
+    }));
+  /** Every visible control in a nav that is smaller than `min` either way: "name w×h". */
+  const small = (page: Page, nav: string, min: number) => page.locator(nav).evaluate((root, m) =>
+    [...root.querySelectorAll<HTMLElement>("a, button")].flatMap((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) return [];
+      return r.width < m || r.height < m ? [`${el.getAttribute("aria-label") ?? el.textContent?.trim()} ${r.width}×${r.height}`] : [];
+    }), min);
+
+  test("at 834 the rail's well names every built medium, Books current on /books, then a rule, Inbox and Progress; Watch opens /watch; axe (AC-1, AC-2, AC-6)", THEMES, async ({ page }, testInfo) => {
+    for (const width of [768, 834]) {
+      await size(page, width, 1112);
+      await page.goto("/books");
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible(); // past the skeleton
+      const rail = page.locator("nav.rail");
+      await expect(rail).toBeVisible();
+      const well = rail.getByRole("group", { name: "Medium" });
+      const media = well.getByRole("link");
+      await expect(media).toHaveText(MEDIA.map((m) => m.label));
+      for (const [n, m] of MEDIA.entries()) {
+        await expect(media.nth(n)).toHaveAttribute("href", m.href);
+        if (m.medium === "books") await expect(media.nth(n)).toHaveAttribute("aria-current", "page");
+        else await expect(media.nth(n)).not.toHaveAttribute("aria-current");
+        const box = (await media.nth(n).boundingBox())!;
+        expect([box.width, box.height], m.label).toEqual([58, 46]);
+      }
+      // Top to bottom: the well, the medium's screens, a rule, Inbox and Progress; Search then Settings at the foot.
+      const y = async (sel: string) => (await rail.locator(sel).first().boundingBox())!.y;
+      const order = [
+        await y(".rail-well"), await y('a[href="/books/add"]'), await y(".rail-rule"), await y('a[href="/inbox"]'),
+        await y('a[href="/progress"]'), await y('button[aria-label="Search (Ctrl K)"]'), await y('a[href="/settings"]'),
+      ];
+      expect(order, `${width}: in order`).toEqual([...order].sort((a, b) => a - b));
+      await expect(rail.getByRole("link", { name: /^Inbox/ })).toContainText(`${E2E_INBOX_COUNT}`);
+      await expect(rail.getByRole("button", { name: "Search (Ctrl K)" })).toHaveAttribute("aria-disabled", "true");
+      expect(await small(page, "nav.rail", 44), `${width}: every target`).toEqual([]);
+      await expectNoHorizontalScroll(page);
+      await expectNoAxeViolations(page, RULES, "nav.rail");
+      await screenshot(page, testInfo, `rail-${width}-books`);
+    }
+    // One tap reaches another medium.
+    await hydrated(page.locator("nav.rail").getByRole("link", { name: "Watch" }));
+    await page.locator("nav.rail").getByRole("link", { name: "Watch" }).click();
+    await page.waitForURL("**/watch");
+    await expect(page.locator("nav.rail").getByRole("group", { name: "Medium" }).getByRole("link", { name: "Watch" })).toHaveAttribute("aria-current", "page");
+    await page.goto("/comics"); // the last-medium cookie back where other specs expect it
+  });
+
+  test("in a short window only the medium's screens scroll: nothing scrolls sideways, and Inbox, Progress, Search and Settings stay in view (AC-6)", THEMES, async ({ page }) => {
+    // Books has the most screens; at 834 × 760 they don't fit, so the middle of the rail scrolls.
+    await size(page, 834, 760);
+    await page.goto("/books");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    const rail = page.locator("nav.rail");
+    const mid = rail.locator(".rail-mid");
+    const m = await mid.evaluate((el: HTMLElement) => ({ sh: el.scrollHeight, ch: el.clientHeight, sw: el.scrollWidth, cw: el.clientWidth, w: el.offsetWidth }));
+    expect(m.sh, "the screens overflow at this height").toBeGreaterThan(m.ch);
+    expect(m.sw, "no sideways scroll inside the rail").toBeLessThanOrEqual(m.cw);
+    expect(m.cw, "no scrollbar narrows the column").toBe(m.w);
+    // Where the browser draws classic scrollbars (a desktop at tablet width), a 15px bar would leave the
+    // 64px items 57px and scroll them sideways: the scroller draws none and clips sideways.
+    expect(await mid.evaluate((el) => [getComputedStyle(el).overflowX, getComputedStyle(el).scrollbarWidth])).toEqual(["hidden", "none"]);
+    // The screens are whole: each 64px item sits inside the rail.
+    for (const item of await mid.locator(".ri").all()) {
+      const b = (await item.boundingBox())!;
+      expect(b.x).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width).toBeLessThanOrEqual(72);
+    }
+    // The rule above Inbox keeps its 1px however short the window: it divides the medium from what spans media.
+    expect((await rail.locator(".rail-rule").boundingBox())!.height).toBe(1);
+    // What spans media and the foot never scroll away.
+    for (const name of [/^Inbox/, /^Progress/]) await expect(rail.getByRole("link", { name })).toBeInViewport({ ratio: 1 });
+    await expect(rail.getByRole("button", { name: "Search (Ctrl K)" })).toBeInViewport({ ratio: 1 });
+    await expect(rail.getByRole("link", { name: "Settings" })).toBeInViewport({ ratio: 1 });
+    // The last screen is reached by scrolling the middle (focus scrolls it in as well).
+    const add = mid.getByRole("link", { name: "Add" });
+    await add.focus();
+    await expect(add).toBeInViewport({ ratio: 1 });
+    expect(await mid.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  });
+
+  test("in a very short window the whole rail scrolls: every screen and the foot can be reached and seen (AC-6)", THEMES, async ({ page }) => {
+    // 834 × 560: the L, the well, Inbox, Progress and the foot alone are taller than the window would leave
+    // the screens (a laptop at 150% zoom is about 960 × 520). Nothing may sit out of reach.
+    await size(page, 834, 560);
+    await page.goto("/books");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    const rail = page.locator("nav.rail");
+    await hydrated(rail.getByRole("link", { name: "Settings" }));
+    const box = (await rail.boundingBox())!;
+    expect(await rail.evaluate((el) => el.scrollWidth <= el.clientWidth), "nothing scrolls sideways").toBe(true);
+    // The rule above Inbox keeps its 1px however short the window: it divides the medium from what spans media.
+    expect((await rail.locator(".rail-rule").boundingBox())!.height).toBe(1);
+    for (const target of [
+      rail.locator(".rail-mid").getByRole("link", { name: "Add" }), rail.getByRole("link", { name: /^Progress/ }),
+      rail.getByRole("button", { name: "Search (Ctrl K)" }), rail.getByRole("link", { name: "Settings" }),
+    ]) {
+      await target.focus();
+      await expect(target).toBeFocused();
+      await expect(target).toBeInViewport({ ratio: 1 });
+      const b = (await target.boundingBox())!;
+      expect(b.y, "inside the rail's visible box").toBeGreaterThanOrEqual(box.y);
+      expect(b.y + b.height).toBeLessThanOrEqual(box.y + box.height);
+    }
+  });
+
+  test("at 1024 the switch names the medium and opens a menu of every medium: arrows move, Enter goes, Esc closes with focus back; axe (AC-1, AC-3, AC-6)", THEMES, async ({ page }, testInfo) => {
+    await size(page, 1024, 768);
+    await page.goto("/books");
+    await hydrated(switchButton(page));
+    await expect(switchButton(page)).toBeVisible();
+    await expect(switchButton(page)).toHaveAccessibleName("Books, switch medium");
+    await expect(switchButton(page)).toHaveAttribute("aria-haspopup", "menu");
+    await expect(switchButton(page)).toHaveAttribute("aria-expanded", "false");
+    const box = (await switchButton(page).boundingBox())!;
+    expect([box.width, box.height]).toEqual([48, 44]);
+    // The 1280px list is not drawn here; Search is an icon above the switch.
+    await expect(page.locator(".side .side-media .mrow").first()).toBeHidden();
+    // Named by what it shows: here the word is hidden and the tooltip says it, so the name is *Search*.
+    const search = page.locator(".side").getByRole("button", { name: "Search", exact: true });
+    await expect(search).toBeVisible();
+    expect((await search.boundingBox())!.y).toBeLessThan(box.y);
+
+    // Enter opens it with focus on the first medium; the arrows move and wrap.
+    await switchButton(page).focus();
+    await page.keyboard.press("Enter");
+    await expect(menu(page)).toBeVisible();
+    await expect(switchButton(page)).toHaveAttribute("aria-expanded", "true");
+    const items = menu(page).getByRole("menuitem");
+    await expect(items).toHaveText(MEDIA.map((m) => m.label));
+    await expect(menu(page).locator("[aria-current]")).toHaveCount(1);
+    await expect(menu(page).locator("[aria-current]")).toHaveAttribute("href", "/books");
+    await expect(items.first()).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    expect(await focused(page)).toBe(MEDIA[1].label);
+    await page.keyboard.press("ArrowUp");
+    expect(await focused(page)).toBe(MEDIA[0].label);
+    await page.keyboard.press("ArrowUp");
+    expect(await focused(page), "wraps to the last").toBe(MEDIA.at(-1)!.label);
+    for (const item of await items.all()) expect((await item.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+    await expectNoAxeViolations(page, RULES, ".side");
+    // A full-page capture restarts the menu's entrance, and the frame would catch it half-faded: drawn
+    // under reduced motion (no entrance at all), as the menu stands once open.
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await screenshot(page, testInfo, "icon-rail-1024-menu");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+
+    // Esc closes it, and focus is back on the button.
+    await page.keyboard.press("Escape");
+    await expect(menu(page)).toHaveCount(0);
+    await expect(switchButton(page)).toBeFocused();
+    await expect(switchButton(page)).toHaveAttribute("aria-expanded", "false");
+
+    // Enter on Comics goes there, and the switch then names it.
+    await page.keyboard.press("Enter");
+    await expect(items.first()).toBeFocused();
+    await page.keyboard.press("Home");
+    expect(await focused(page)).toBe("Comics");
+    await page.keyboard.press("Enter");
+    await page.waitForURL("**/comics");
+    await expect(menu(page)).toHaveCount(0);
+    await expect(switchButton(page)).toHaveAccessibleName("Comics, switch medium");
+    expect(await small(page, "nav.side", 24), "every target").toEqual([]);
+    await expectNoHorizontalScroll(page);
+    await screenshot(page, testInfo, "icon-rail-1024-comics");
+  });
+
+  test("the menu doesn't move under reduced motion (AC-6)", THEMES, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await size(page, 1024, 768);
+    await page.goto("/books");
+    await hydrated(switchButton(page));
+    await switchButton(page).click();
+    await expect(menu(page)).toBeVisible();
+    expect(await motion(page)).toEqual([]);
+    // The pointer still rests on the switch, but its tooltip doesn't sit over the open menu.
+    expect(await switchButton(page).evaluate((el) => getComputedStyle(el, "::after").opacity)).toBe("0");
+    // Without the preference the same probe sees the menu's entrance, so the probe can fail.
+    await page.keyboard.press("Escape");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await switchButton(page).click();
+    await expect(menu(page)).toBeVisible();
+    expect(await motion(page)).toContainEqual(expect.stringMatching(/^medmenu animation/));
+  });
+
+  test("at 1280 the sidebar lists every medium with Books open and its screens nested, an Across media group and Search · Ctrl K under the wordmark; axe (AC-1, AC-4, AC-6)", THEMES, async ({ page }, testInfo) => {
+    await size(page, 1280, 900);
+    await page.goto("/books");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    const side = page.locator("nav.side");
+    await expect(switchButton(page)).toBeHidden();
+
+    // Search · Ctrl K, under the wordmark and above Media.
+    // Named by what it shows, so its name holds its visible text (axe label-content-name-mismatch).
+    const search = side.getByRole("button", { name: "Search Ctrl K", exact: true });
+    await expect(search).toBeVisible();
+    await expect(search).toContainText("Ctrl K");
+    await expect(search).toHaveAttribute("title", "Search isn't built yet");
+    const list = side.getByRole("list", { name: "Media" });
+    const at = async (l: ReturnType<Page["locator"]>) => (await l.boundingBox())!.y;
+    expect(await at(side.locator(".brand"))).toBeLessThan(await at(search));
+    expect(await at(search)).toBeLessThan(await at(list));
+
+    // Media: a row per built medium; Books open with its screens nested, the others links to their dashboards.
+    const rows = list.locator(":scope > li");
+    await expect(rows).toHaveCount(MEDIA.length);
+    for (const [n, m] of MEDIA.entries()) {
+      const row = rows.nth(n);
+      if (m.medium === "books") {
+        const open = row.getByRole("button", { name: "Books" });
+        await expect(open).toHaveAttribute("aria-expanded", "true");
+        const nested = row.getByRole("link");
+        await expect(nested).toHaveText(BOOKS.map((i) => i.sideLabel ?? i.label));
+        await expect(row.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
+        expect((await open.boundingBox())!.height).toBe(36);
+        expect((await nested.first().boundingBox())!.height).toBe(34);
+        // A disclosure: it closes and opens again.
+        await hydrated(open);
+        await open.click();
+        await expect(open).toHaveAttribute("aria-expanded", "false");
+        await expect(nested.first()).toBeHidden();
+        await open.click();
+        await expect(open).toHaveAttribute("aria-expanded", "true");
+        await expect(nested.first()).toBeVisible();
+      } else {
+        const link = row.getByRole("link");
+        await expect(link).toHaveCount(1);
+        await expect(link).toHaveAccessibleName(m.label);
+        await expect(link).toHaveAttribute("href", m.href);
+        await expect(link).not.toHaveAttribute("aria-expanded");
+        expect((await link.boundingBox())!.height).toBe(36);
+      }
+    }
+
+    // Across media: Inbox with its count, then Progress.
+    const across = side.getByRole("group", { name: "Across media" });
+    await expect(across.getByRole("link")).toHaveCount(2);
+    await expect(across.getByRole("link").first()).toHaveAttribute("href", "/inbox");
+    await expect(across.getByRole("link").first()).toContainText(`${E2E_INBOX_COUNT}`);
+    await expect(across.getByRole("link").last()).toHaveAttribute("href", "/progress");
+    expect(await at(list)).toBeLessThan(await at(across));
+
+    expect(await small(page, "nav.side", 24), "every target").toEqual([]);
+    await expectNoHorizontalScroll(page);
+    await expectNoAxeViolations(page, RULES, "nav.side");
+    await page.mouse.move(640, 880); // off the sidebar, so no row is drawn hovered
+    await screenshot(page, testInfo, "sidebar-1280-books");
+
+    // Choosing another medium from the list opens its set there.
+    await rows.nth(MEDIA.findIndex((m) => m.medium === "comics")).getByRole("link").click();
+    await page.waitForURL("**/comics");
+    await expect(list.getByRole("button", { name: "Comics" })).toHaveAttribute("aria-expanded", "true");
+    await expect(list.getByRole("link", { name: "Books" })).toHaveAttribute("href", "/books");
   });
 });
 

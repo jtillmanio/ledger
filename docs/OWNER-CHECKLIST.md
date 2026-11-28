@@ -358,6 +358,12 @@ tick them.
       and no new measure jobs. Then close the PR and delete the branch. The
       Lighthouse workflow is enabled and the label exists since 2026-11-24
       (from TASK-133, 0.13, PR #332).
+- [ ] In the design tool, update `design/STYLE_GUIDE.md` §14.5 (Tablet) to D-190:
+      in a short window the rail scrolls only the medium's screens (the well,
+      Inbox, Progress and the foot stay), and under 740px tall the whole rail
+      scrolls, with no scrollbar. It still says *Below about 1010px tall the
+      middle scrolls and the foot stays*; the file is protected, so Claude
+      can't edit it (from TASK-149, 6.25, PR #356).
 
 ## Approvals from follow-ups
 

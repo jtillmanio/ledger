@@ -22,6 +22,8 @@ const PATHS: Record<IconName, React.ReactNode> = {
   </>),
   plus: (<><path d="M5 12h14" /><path d="M12 5v14" /></>),
   "chevron-down": (<path d="m6 9 6 6 6-6" />),
+  // The sidebar's closed media rows (6.25, frame A9).
+  "chevron-right": (<path d="m9 18 6-6-6-6" />),
   check: (<path d="M20 6 9 17l-5-5" />),
   "calendar-range": (<>
     <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M16 2v3" /><path d="M3 9h18" /><path d="M8 2v3" />

@@ -22,6 +22,9 @@ const MATRIX: Entry[] = [
   { name: ".bar a", subject: /^a(?![\w-])/, within: bound(".bar") },
   { name: ".rail a", subject: /^a(?![\w-])/, within: bound(".rail") },
   { name: ".side a", subject: /^a(?![\w-])/, within: bound(".side") },
+  // Search, the icon rail's medium switch and the sidebar's open medium (6.25, TASK-149).
+  { name: ".rail button", subject: /^button(?![\w-])/, within: bound(".rail") },
+  { name: ".side button", subject: /^button(?![\w-])/, within: bound(".side") },
   { name: ".row", subject: bound(".row") },
   { name: ".switch", subject: bound(".switch") },
   { name: ".stepper button", subject: /^button(?![\w-])/, within: bound(".stepper") },
