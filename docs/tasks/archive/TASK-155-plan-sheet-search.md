@@ -1,7 +1,7 @@
 ---
 id: TASK-155
 title: 2.10c Suggestions keep series order, and the sheet can search (2 of 2) — search on the plan sheet
-status: Review
+status: Done
 depends_on: [TASK-154]
 size: M
 model: sonnet
