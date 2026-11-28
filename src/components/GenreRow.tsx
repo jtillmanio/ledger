@@ -73,15 +73,16 @@ export default function GenreRow({ children }: { children: ReactNode }) {
     (other && !other.hidden ? other : chips?.[dir === 1 ? chips.length - 1 : 0])?.focus();
   }, [more]);
 
-  function glide(dir: Dir) {
+  /** A held press's steady scroll, after its step: `since` is the step's last frame, the glide's clock. */
+  function glide(dir: Dir, since: number) {
     const el = row.current!;
     let pos = el.scrollLeft;
-    let last = -1;
+    let last = since;
     const tick = (now: number) => {
       // Let go since the last frame: not one pixel more.
       if (!held.current) { frame.current = 0; return; }
       const max = el.scrollWidth - el.clientWidth;
-      pos = Math.min(max, Math.max(0, pos + dir * GLIDE * (last < 0 ? 16 : now - last)));
+      pos = Math.min(max, Math.max(0, pos + dir * GLIDE * (now - last)));
       last = now;
       el.scrollLeft = pos;
       if (pos <= 0 || pos >= max) { held.current = false; frame.current = 0; return; }
@@ -115,9 +116,9 @@ export default function GenreRow({ children }: { children: ReactNode }) {
       const t = Math.min(1, (now - start) / dur);
       el.scrollLeft = from + (to - from) * (1 - (1 - t) ** 3);
       // Held, the step hands over to the glide once it has slowed to the glide's speed: no dip between them.
-      if (held.current && !atEnd && 3 * (1 - t) ** 2 * Math.abs(to - from) / dur <= GLIDE) glide(dir);
+      // The glide is timed from this frame, so a slow next frame moves it as far as the time says.
+      if (held.current && !atEnd && 3 * (1 - t) ** 2 * Math.abs(to - from) / dur <= GLIDE) glide(dir, now);
       else if (t < 1) frame.current = requestAnimationFrame(tick);
-      else if (held.current && !atEnd) glide(dir);
       else { held.current = false; frame.current = 0; }
     };
     frame.current = requestAnimationFrame(tick);

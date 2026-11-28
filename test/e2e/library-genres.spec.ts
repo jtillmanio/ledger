@@ -187,7 +187,6 @@ async function framesDuring(page: Page, ms: number, act: () => Promise<unknown>)
   return sampled;
 }
 
-/** At 1280px; motion as asked, never the machine's own setting (a Windows runner can report reduce). */
 /** As framesDuring, with each frame's time: [ms, scrollLeft]. */
 async function timedFramesDuring(page: Page, ms: number, act: () => Promise<unknown>): Promise<[number, number][]> {
   const sampled = page.evaluate((ms) => new Promise<[number, number][]>((resolve) => {
@@ -206,6 +205,7 @@ async function timedFramesDuring(page: Page, ms: number, act: () => Promise<unkn
   return sampled;
 }
 
+/** At 1280px; motion as asked, never the machine's own setting (a Windows runner can report reduce). */
 async function desktop(page: Page, reducedMotion: "reduce" | "no-preference" = "no-preference") {
   await page.emulateMedia({ reducedMotion });
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -269,7 +269,10 @@ test("at 1280px the genre row draws no scrollbar and no ‹ at the start; a tap 
   for (let i = Math.max(1, moving + 1); i < held.length; i++) {
     const [[t0, x0], [t1, x1]] = [held[i - 1], held[i]];
     if (x1 >= max - 1) break;
-    expect((x1 - x0) / (t1 - t0), `speed at ${Math.round(t1 - held[0][0])}ms: ${held.map(([, x]) => Math.round(x)).join(", ")}`)
+    // The sampler may read a frame behind the row's writes, so a movement is timed by the shorter of
+    // the two intervals around it: a slow frame never reads as a slow scroll, and a stop still reads 0.
+    const dt = i >= 2 ? Math.min(t1 - t0, t0 - held[i - 2][0]) : t1 - t0;
+    expect((x1 - x0) / dt, `speed at ${Math.round(t1 - held[0][0])}ms: ${held.map(([, x]) => Math.round(x)).join(", ")}`)
       .toBeGreaterThanOrEqual(0.45);
   }
   await page.waitForTimeout(300);
