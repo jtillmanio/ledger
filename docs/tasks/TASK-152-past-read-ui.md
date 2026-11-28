@@ -1,14 +1,14 @@
 ---
 id: TASK-152
 title: 1.17c Log a past read of a book already read (2 of 2) — Add a past read
-status: Ready
+status: In progress
 depends_on: [TASK-151]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 6937521
 ---
 
 # TASK-152 — 1.17c Log a past read of a book already read (2 of 2) — Add a past read
@@ -64,9 +64,38 @@ passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- A glyph for every kind of consumption, not only a listen: read, listened, watched, played, listened to an album, wherever a read or format is shown (owner, at the plan gate: its own task) → `docs/05-roadmap.md` § phase 6, new item (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-28 (owner: frames as proposed; format words match the app; the glyph for every kind of consumption is its own item).
+
+**Steps**
+
+1. Write `test/e2e/past-read.spec.ts` first, seeded as `start-dates.spec.ts` seeds (a book read 2024-03-10, one read); confirm each test fails.
+2. `src/components/BookStatus.tsx`: *Add a past read* on the date line, Read books only (the route answers 409 otherwise), with a ref so focus returns to it. Opening it closes the other date controls; opening one of them closes it.
+3. `src/components/AllReads.tsx`: `AddPastRead`, lazy from the same chunk as *All reads* (no cost to the Library's first load). *Started* (1.5's picker, opens on *No date*: optional), *Finished* (opens on *Today*), *Format*: **Read · Listened** (the app's words: *Read 2× · Listened 1×*, the Done tab's *Listened* chip; sent as `text` / `audio`), Save and Cancel. A start after the finish shows *That's after the day you finished.* under *Started*, Save `aria-disabled`, nothing sent; a server 400 or 409 shows its reason the same way. Esc, Cancel and a confirm return focus to *Add a past read*.
+4. `useLogPastRead` beside `useRedate` in `AllReads.tsx` (the lazy chunk, not `useReads.tsx`): `PUT /api/progress/book/read`, then a page refresh, the reads reloaded and *All reads (n)* opened; the toast *‹title›: past read added* · *Finished 2019, approximate*; its Undo is `DELETE { logged }`, then a reload and a refresh.
+5. `design/mockups.html`: `blist` frame c gains *Add a past read* on its date line, and a new frame d draws the form open (*Year only* 2019, *Listened*); a notes entry, and a line in the `status` and `bookdetail` notes that the same control sits on their date line. `design/mockups-index.md` follows.
+6. The touched spec in one project, then `verify.full`.
+
+**Files**
+
+- `src/components/BookStatus.tsx`: the button (not in Files likely touched: the date line is drawn here, for the Library row, Now, the status tabs and the sheet).
+- `src/components/AllReads.tsx`: the form and the add's hook.
+- `design/mockups.html`, `design/mockups-index.md`: `blist` frames c and d, notes.
+- `test/e2e/past-read.spec.ts`: new.
+- `src/app/globals.css`: tokens only, and only if the form needs spacing the existing classes don't give.
+- `useReads.tsx` and `FinishDate.tsx` unchanged (the picker is reused as it is).
+
+**Test strategy** (`test/e2e/past-read.spec.ts`)
+
+- AC-1 (browser clauses): at 360px *Add a past read* opens *Started* and *Finished*; a start after the finish shows the reason, sends no PUT and leaves one `read_events` row; axe passes.
+- AC-2: a *Listened* read finished *Year only* 2019 → *All reads (2)*, a row *Finished 2019, approximate* with the *Listened* glyph (a text read has no glyph yet: the follow-up).
+- AC-3: Undo → one read, *Finished 10 March 2024* unchanged; and a 2025-01-05 read moves *Finished* to 5 January 2025, Undo puts 10 March 2024 back.
+- AC-4: 44px targets at phone widths, focus back after a confirm and after Esc, axe light and dark, screenshots at every `ui.viewports` width, light and dark.
+
+**Risks**: the sheet's `readCount` is fixed at page load; the refresh and the reload cover it. **Size**: 5–6 files, UI only.
 
 ## Review log
 
