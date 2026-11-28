@@ -1,7 +1,7 @@
 ---
 id: TASK-152
 title: 1.17c Log a past read of a book already read (2 of 2) — Add a past read
-status: In progress
+status: Review
 depends_on: [TASK-151]
 size: M
 model: sonnet
@@ -28,7 +28,7 @@ On a Read book's date line, *Add a past read* lets the owner log an earlier (or 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves its browser clauses, TASK-151 its database clauses):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves its browser clauses, TASK-151 its database clauses):
 with
 the test database, a book read 2024-03-10 gets a past read finished
 2019-06-01: it has two `read_events` rows, `book_status` still finishes
@@ -37,9 +37,9 @@ one row. A past read finished 2025-01-05 moves `book_status`'s finish to
 2025-01-05. In the browser (0.11) at 360px, *Add a past read* opens both
 pickers, a start after the finish is refused and writes nothing, and axe
 passes.
-- [ ] AC-2: Given a Read book with one read, when *Add a past read* is confirmed with a finish of a year only, then the date line lists *All reads (2)*, the new read shown by its year, with its format glyph.
-- [ ] AC-3: Given a logged read, when Undo is pressed in the toast, then the list is back to the reads before and the book's finish line is unchanged from before the add.
-- [ ] AC-4: The control meets the UX floor (`docs/04-design.md` § 10. The UX floor): every control named, 44 px targets at phone widths, focus returns to *Add a past read* after a confirm or Esc, contrast in both themes, and screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-2: Given a Read book with one read, when *Add a past read* is confirmed with a finish of a year only, then the date line lists *All reads (2)*, the new read shown by its year, with its format glyph.
+- [x] AC-3: Given a logged read, when Undo is pressed in the toast, then the list is back to the reads before and the book's finish line is unchanged from before the add.
+- [x] AC-4: The control meets the UX floor (`docs/04-design.md` § 10. The UX floor): every control named, 44 px targets at phone widths, focus returns to *Add a past read* after a confirm or Esc, contrast in both themes, and screenshots at each `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -64,7 +64,11 @@ passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- A glyph for every kind of consumption, not only a listen: read, listened, watched, played, listened to an album, wherever a read or format is shown (owner, at the plan gate: its own task) → `docs/05-roadmap.md` § phase 6, new item (approved at plan)
+- A glyph for every kind of consumption, not only a listen: read, listened, watched, played, listened to an album, wherever a read or format is shown (owner, at the plan gate: its own task) → docs/05-roadmap.md § 6.32 (new) (approved at plan)
+- In the book sheet, Esc inside one of *All reads*' pickers (1.17b, `AllReads.tsx`) closes the whole sheet, as the status control's date controls did before this task fixed them (ui-verifier R1) → docs/05-roadmap.md § 6.33 (new)
+- `book-detail.spec.ts` › "a book with no summary opens with no layout shift" failed in two local runs (shift 0.000109) on `main`'s code as well as this branch's, passed in a third, and passes in CI at every project → not tracked: a local flake, green in CI
+- `design/mockups-index.md`'s line ranges for screens other than `blist` were already stale (`series` says 5174–5412; it sits at 4944) → not tracked: a navigation hint only; `scripts/screen.ps1` finds a screen by its id
+- `.claude/scripts/next-id.ps1 -List` listed only a handful of roadmap IDs (6.7, 6.13, …), not every one in use; 6.32 and 6.33 were checked free by hand on `main` and the open branches → not tracked: a kit script (upgrades overwrite it), noted here for the next kit upgrade
 
 ## Plan
 
@@ -97,9 +101,15 @@ Approved 2026-11-28 (owner: frames as proposed; format words match the app; the 
 
 **Risks**: the sheet's `readCount` is fixed at page load; the refresh and the reload cover it. **Size**: 5–6 files, UI only.
 
+**As built.** The form is `AddPastRead` and the button an `Editing` kind of its own (`past`) in `BookStatus`, so Esc, Cancel and focus return go through the control's one `closeEditor`. Two test files outside the list moved with it: `test/reading-log.test.tsx` (two pins: the date line's third button, a fourth `.date-line` CSS rule) and `test/e2e/shard-times.json` (the new spec's times, so the shard plan stays balanced). `globals.css` gained one sizing rule: the date line's buttons and the form's Save and Cancel are 44px on a phone. After ui-verifier R1, the status panel stops Esc while a date control is open, so in the book sheet Esc closes the control and not the sheet (`BookStatus.tsx`, a planned file).
+
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Red: past-read.spec.ts 4 of 5 failed on the pre-task code (no *Add a past read*); the guard passed by design
+- Verify R1 FAIL(4: two reading-log.test.tsx pins, the e2e-shards balance with the new spec unpriced, a books-dashboard.test.ts 5s timeout under load) → fixed | Verify R2 PASS (139 files, 2885 tests) | past-read.spec.ts PASS at w360/w390/w412/w768/w1024/w1280
+- PR #361 opened ready | CI R1 PASS (every project, 10 shards; Vercel pass) | Lighthouse skipped (`LIGHTHOUSE_MODE` unset, D-158)
+- Spec R1 APPROVE | Audit R1 PASS (every AC discriminating against 2bd7c44)
+- UI R1 CHANGES (AC-4: Esc in the book sheet's form closed the sheet) → fixed in BookStatus.tsx, new test in past-read.spec.ts (failed first) | Verify R3 PASS (start-dates, book-detail, status, dnf-reason specs 79 passed; 139 files, 2885 tests) | Spec R2 APPROVE (fix, and the close-out placements and ticks) | UI R2 PASS (360, 1280: Esc in the sheet closes the form or picker, a second Esc the sheet) | Audit not re-run: the fix's test failed first, and no other test changed
 
 ## Blocked
 
@@ -107,7 +117,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 2
+- First-pass AC FAILs: 1 (AC-4, Esc in the book sheet)
+- Plan revisions after approval: 0 (two test files outside the list moved with the change; see Plan § As built)

@@ -118,7 +118,7 @@ milestone._
 | F-41 Offline and the keyboard | Later | 6.4, 6.5 | M20 |
 | F-42 Prerequisite graph and events | Later | 6.3, 6.8 | M19 |
 | F-43 Choosing from the master list | Later | 6.10 | M19 |
-| F-44 Appearance | Later | 6.11, 6.14, 6.15, 6.9, 6.23, 6.24, 6.24b, 6.24c, 6.26, 6.27, 6.31 | M20, M21 |
+| F-44 Appearance | Later | 6.11, 6.14, 6.15, 6.9, 6.23, 6.24, 6.24b, 6.24c, 6.26, 6.27, 6.31, 6.32, 6.33 | M20, M21 |
 | F-45 Hardening | Later | 6.13, 6.16, 6.18, 6.22 | M21 |
 | F-46 Import from Goodreads or StoryGraph | Later | 6.6 | M21 |
 | F-47 AI review and drafting | Later | 7.1, 7.2, 7.3, 7.4, 7.5 | M22 |
@@ -529,7 +529,7 @@ with the task that first reads it.
 | ✅ | 5.17b → TASK-122, TASK-123 | Own it from Search and By hand | S | _From TASK-094 (PR #268)_ | 5.17 |
 | ✅ | 5.18 → TASK-130 | A Parked book stays out of the plan and the listen queue, through every undo | S | _From TASK-127 and TASK-111 (PR #304, PR #311); pulled ahead of 1.26 (D-172); Check proposed_ | 5.15 |
 |  | 5.19 | A series whose id isn't the slug of its name is reachable by hand | S | _From TASK-142 (PR #347); Check proposed_ | 5.9b |
-|  | 1.17c → TASK-151, TASK-152 | Log a past read of a book already read | S | _Owner intake, 2026-11-24; Phase 1's, listed here with the book surfaces; not a cutover gate; Check proposed_ | 1.17b |
+| ✅ | 1.17c → TASK-151, TASK-152 | Log a past read of a book already read | S | _Owner intake, 2026-11-24; Phase 1's, listed here with the book surfaces; not a cutover gate; Check proposed_ | 1.17b |
 
 ## M18: Comic surfaces — Later
 
@@ -611,6 +611,8 @@ with the task that first reads it.
 |  | 6.29 | Switch medium shows what is in hand | S | _From TASK-148 (6.25, PR #354); Check proposed_ | 6.25 |
 |  | 6.30 | The rail and the sidebar follow the last medium on a screen under none | S | _From TASK-149 (6.25, PR #356); Check proposed_ | 6.25 |
 |  | 6.31 | The other sideways chip rows draw no browser scrollbar | S | _From TASK-163 (6.26, PR #359); Check proposed_ | 6.26 |
+|  | 6.32 | A glyph for every kind of consumption | M | _From TASK-152 (1.17c, PR #361); owner, at its plan gate; Check proposed_ | 1.17c |
+|  | 6.33 | Esc in _All reads_' pickers closes the picker, not the book sheet | S | _From TASK-152 (1.17c, PR #361); Check proposed_ | 1.17b |
 |  | 6.9 | Revisit the theme | M |  | — |
 
 ## M22: AI-assisted curation — Later
